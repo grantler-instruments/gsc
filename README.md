@@ -44,7 +44,7 @@ src/
 | **Audio** | Drag/import WAV, MP3, etc. |
 | **Video** | Drag/import MP4, WebM, etc. |
 | **Image** | Drag/import PNG, JPG, WebP, etc. |
-| **MIDI** | Created from **+ Cue → MIDI**; edit channel/message in the Inspector (playback not wired yet) |
+| **MIDI** | Created from **+ Cue → MIDI**; edit channel/message in the Inspector; GO sends the message to the MIDI interface in Settings |
 
 ## .gsc projects
 

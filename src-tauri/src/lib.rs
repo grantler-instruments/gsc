@@ -1,6 +1,6 @@
 mod devices;
 
-use devices::{list_audio_output_devices, list_midi_ports};
+use devices::{list_audio_output_devices, list_midi_ports, send_midi};
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::Emitter;
 
@@ -13,6 +13,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             list_audio_output_devices,
             list_midi_ports,
+            send_midi,
         ])
         .setup(setup_app_menu)
         .on_menu_event(|app, event| {

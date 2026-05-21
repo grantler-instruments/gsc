@@ -7,6 +7,7 @@ import { SettingsDialog } from "./components/SettingsDialog";
 import { TransportBar } from "./components/TransportBar";
 import { useAppKeyboard } from "./hooks/useAppKeyboard";
 import { useAudioEngine } from "./hooks/useAudioEngine";
+import { useMidiEngine } from "./hooks/useMidiEngine";
 import { useSequenceFadeBridge } from "./hooks/useSequenceFadeBridge";
 import { useFadeAnimation } from "./hooks/useFadeAnimation";
 import { useOutputPublisher } from "./hooks/useOutputPublisher";
@@ -20,6 +21,7 @@ function App() {
   const sessionReady = useProjectSession();
   useAppKeyboard();
   useAudioEngine();
+  useMidiEngine();
   useFadeAnimation();
   useSequenceFadeBridge();
   useOutputPublisher();

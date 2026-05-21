@@ -56,3 +56,26 @@ pub fn list_midi_ports() -> Vec<DeviceInfo> {
     }
     out
 }
+
+#[tauri::command]
+pub fn send_midi(port_id: String, message: Vec<u8>) -> Result<(), String> {
+    if message.is_empty() || message.len() > 3 {
+        return Err("MIDI message must be 1–3 bytes".to_string());
+    }
+
+    let index: usize = port_id
+        .parse()
+        .map_err(|_| format!("invalid MIDI port id: {port_id}"))?;
+
+    let midi = midir::MidiOutput::new("gsc-midi").map_err(|e| e.to_string())?;
+    let ports = midi.ports();
+    let port = ports
+        .get(index)
+        .ok_or_else(|| format!("MIDI port not found: {port_id}"))?;
+
+    let mut conn = midi
+        .connect(port, "gsc-midi-sender")
+        .map_err(|e| e.to_string())?;
+    conn.send(&message).map_err(|e| e.to_string())?;
+    Ok(())
+}
