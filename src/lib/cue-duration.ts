@@ -58,8 +58,10 @@ function leafDurationMs(cue: Cue): number {
   }
 
   if (cue.type === "image") {
-    const hold = cue.outTime ?? DEFAULT_MEDIA_SEC;
-    return hold * 1000;
+    if (cue.outTime === undefined) {
+      return INFINITE_LOOP_ESTIMATE_SEC * 1000;
+    }
+    return Math.max(MIN_STEP_SEC * 1000, cue.outTime * 1000);
   }
 
   const sourceDur = cue.assetPath

@@ -8,11 +8,20 @@ import { isExternalFileDrag } from "../lib/asset-drop";
 import { isAssetDrag, setAssetDragData } from "../lib/drag";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
+import { useGscTokens } from "../theme/useGscTokens";
 import { useVfsStore } from "../stores/vfs";
 import type { VfsEntry } from "../stores/vfs";
 import { CueTypeBadge } from "./CueTypeIcon";
 
+const emptyListSx = {
+  py: 2,
+  px: 1.5,
+  color: "text.secondary",
+  fontSize: 13,
+} as const;
+
 export function AssetsPanel() {
+  const tokens = useGscTokens();
   const showMode = useUiStore((s) => s.showMode);
   const canEdit = !showMode;
   const entries = useVfsStore((s) => s.entries);
@@ -64,7 +73,6 @@ export function AssetsPanel() {
 
   return (
     <Box
-      className="sidebar-panel-content"
       onDropCapture={onDrop}
       onDragOverCapture={onDragOver}
       sx={{
@@ -113,9 +121,19 @@ export function AssetsPanel() {
           : "Assets are view-only in show mode."}
       </Typography>
 
-      <Box component="ul" className="asset-list" sx={{ listStyle: "none", m: 0, p: 0 }}>
+      <Box
+        component="ul"
+        sx={{
+          listStyle: "none",
+          m: 0,
+          py: 0.5,
+          px: 0,
+          overflowY: "auto",
+          flex: 1,
+        }}
+      >
         {entries.length === 0 && (
-          <Box component="li" className="asset-list-empty">
+          <Box component="li" sx={emptyListSx}>
             No assets yet
           </Box>
         )}
@@ -123,33 +141,36 @@ export function AssetsPanel() {
           <Box
             component="li"
             key={entry.path}
-            className={["asset-item", canEdit && "asset-item-draggable"]
-              .filter(Boolean)
-              .join(" ")}
             draggable={canEdit}
             onDragStart={
               canEdit ? (e) => onAssetDragStart(e, entry) : undefined
             }
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              py: 0.75,
+              px: 1.5,
+              borderBottom: 1,
+              borderColor: "divider",
+              "&:hover": { bgcolor: tokens.bgHover },
+              ...(canEdit && {
+                cursor: "grab",
+                "&:active": { cursor: "grabbing" },
+              }),
+            }}
           >
-            <CueTypeBadge
-              type={entry.kind}
-              showLabel={false}
-              className="asset-kind"
-            />
-            <Box
+            <CueTypeBadge type={entry.kind} showLabel={false} compact />
+            <Typography
               component="span"
-              className="asset-path"
+              noWrap
               title={entry.path}
-              sx={{ flex: 1, minWidth: 0 }}
+              sx={{ flex: 1, minWidth: 0, fontSize: 13 }}
             >
               {entry.name}
-            </Box>
+            </Typography>
             {canEdit && (
-              <Stack
-                direction="row"
-                className="asset-actions"
-                sx={{ gap: 0.25 }}
-              >
+              <Stack direction="row" sx={{ gap: 0.25, flexShrink: 0 }}>
                 <IconButton
                   size="small"
                   title="Add as cue"

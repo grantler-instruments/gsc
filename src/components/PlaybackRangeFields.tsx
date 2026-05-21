@@ -53,7 +53,7 @@ export function PlaybackRangeFields({
             ? "Drag the markers to set In and Out. Hover the waveform for a frame preview."
             : "Drag the markers on the waveform to set In and Out. Drag Out to the end to play through."
           : isImage
-            ? "How long the image stays on screen. In is always 0."
+            ? "Clear duration or click ∞ to hold until a stop cue. Set seconds to auto-hide."
             : "In and Out are positions within the file (seconds). Leave Out empty to play to the end."}
       </p>
 
@@ -95,7 +95,7 @@ export function PlaybackRangeFields({
 
       {!hasWaveform && (
         <label className="inspector-field">
-          {isImage ? "Duration" : "Out"}
+          {isImage ? "Duration (seconds)" : "Out"}
           <div className="inspector-time-row">
             <input
               type="number"
@@ -113,8 +113,28 @@ export function PlaybackRangeFields({
                 patchOut(Number(raw));
               }}
             />
-            {outTime !== undefined && (
-              <span className="inspector-time-formatted">{formatTime(outTime)}</span>
+            {isImage ? (
+              <>
+                <span className="inspector-time-formatted">
+                  {outTime !== undefined ? formatTime(outTime) : "∞"}
+                </span>
+                {!readOnly && outTime !== undefined && (
+                  <button
+                    type="button"
+                    className="inspector-infinite-btn"
+                    title="Hold until stop cue"
+                    onClick={() => patchOut(undefined)}
+                  >
+                    ∞
+                  </button>
+                )}
+              </>
+            ) : (
+              outTime !== undefined && (
+                <span className="inspector-time-formatted">
+                  {formatTime(outTime)}
+                </span>
+              )
             )}
           </div>
         </label>

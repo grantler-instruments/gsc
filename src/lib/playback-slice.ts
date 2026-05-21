@@ -4,7 +4,13 @@ import type { Cue } from "../types/cue";
 const DEFAULT_MEDIA_SEC = 5;
 const DEFAULT_MIDI_SEC = 0.15;
 
+/** Image cues without a duration stay on screen until a stop cue. */
+export function isImageInfiniteHold(cue: Cue): boolean {
+  return cue.type === "image" && cue.outTime === undefined;
+}
+
 export function cueShowsPlaybackProgress(cue: Cue): boolean {
+  if (isImageInfiniteHold(cue)) return false;
   return (
     cue.type === "audio" ||
     cue.type === "video" ||
@@ -23,7 +29,10 @@ export function getPlaybackSliceSec(
   }
 
   if (cue.type === "image") {
-    return Math.max(0.01, cue.outTime ?? DEFAULT_MEDIA_SEC);
+    if (cue.outTime === undefined) {
+      return 1;
+    }
+    return Math.max(0.01, cue.outTime);
   }
 
   const inT = cue.inTime ?? 0;
@@ -44,6 +53,8 @@ export interface PlaybackBounds {
   inTime: number;
   loopCount: number | "inf";
   looping: boolean;
+  /** Image with no duration — held until stop cue. */
+  imageHoldInfinite?: boolean;
 }
 
 /** Snapshot timing for one GO — avoids bar jumps when duration loads mid-playback. */
@@ -53,6 +64,18 @@ export function createPlaybackBounds(
 ): PlaybackBounds {
   const inTime = cue.inTime ?? 0;
   const sliceSec = getPlaybackSliceSec(cue, sourceDurationSec);
+
+  if (isImageInfiniteHold(cue)) {
+    return {
+      sliceSec,
+      endSec: sliceSec,
+      inTime: 0,
+      loopCount: 1,
+      looping: false,
+      imageHoldInfinite: true,
+    };
+  }
+
   const endSec =
     cue.type === "image"
       ? sliceSec
@@ -134,7 +157,7 @@ export function isFinitePlaybackComplete(
   bounds: PlaybackBounds,
   elapsedSec: number,
 ): boolean {
-  if (bounds.looping) return false;
+  if (bounds.imageHoldInfinite || bounds.looping) return false;
   const totalRunSec = bounds.sliceSec * (bounds.loopCount as number);
   return elapsedSec >= totalRunSec;
 }

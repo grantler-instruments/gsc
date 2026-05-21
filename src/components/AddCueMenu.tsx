@@ -1,10 +1,12 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { useState } from "react";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
+import { ADD_CUE_ICON_COLORS } from "../theme/cueStyles";
 import type { CueType } from "../types/cue";
 import { CueTypeIcon } from "./CueTypeIcon";
 
@@ -91,12 +93,16 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
         }}
       >
         {ADD_CUE_TYPES.map((type) => (
-          <MenuItem
-            key={type}
-            onClick={() => handleAddCue(type)}
-            className={`add-cue-item add-cue-item-${type}`}
-          >
-            <CueTypeIcon type={type} className="add-cue-item-icon" />
+          <MenuItem key={type} onClick={() => handleAddCue(type)}>
+            <ListItemIcon
+              sx={{
+                minWidth: 28,
+                color: ADD_CUE_ICON_COLORS[type] ?? "inherit",
+                "& .MuiSvgIcon-root": { fontSize: 20, opacity: 0.9 },
+              }}
+            >
+              <CueTypeIcon type={type} />
+            </ListItemIcon>
             {ADD_CUE_LABELS[type]}
           </MenuItem>
         ))}

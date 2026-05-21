@@ -58,7 +58,9 @@ export function formatPlaybackRangeLabel(
   const hasIn = inVal > 0;
   const hasOut = outTime !== undefined;
 
-  if (!hasIn && !hasOut) return null;
+  if (!hasIn && !hasOut) {
+    return isImage ? "∞" : null;
+  }
 
   if (isImage && hasOut) {
     return formatTime(outTime!);

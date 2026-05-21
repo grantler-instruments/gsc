@@ -1,8 +1,11 @@
+import Box from "@mui/material/Box";
 import { useState } from "react";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
+import { useGscTokens } from "../theme/useGscTokens";
 
 export function CueListTabs() {
+  const tokens = useGscTokens();
   const showMode = useUiStore((s) => s.showMode);
   const canEdit = !showMode;
   const cueLists = useProjectStore((s) => s.cueLists);
@@ -25,16 +28,31 @@ export function CueListTabs() {
   };
 
   return (
-    <div className="cue-list-tabs" role="tablist" aria-label="Cue lists">
+    <Box
+      role="tablist"
+      aria-label="Cue lists"
+      sx={{
+        display: "flex",
+        alignItems: "stretch",
+        gap: 0.25,
+        pt: 0.75,
+        px: 1,
+        pb: 0,
+        borderBottom: 1,
+        borderColor: "divider",
+        overflowX: "auto",
+        flexShrink: 0,
+      }}
+    >
       {cueLists.map((list) => {
         const active = list.id === activeCueListId;
         const topLevelCount = list.cues.filter((c) => !c.parentId).length;
 
         if (renamingId === list.id) {
           return (
-            <input
+            <Box
               key={list.id}
-              className="cue-list-tab-input"
+              component="input"
               value={renameValue}
               autoFocus
               onChange={(e) => setRenameValue(e.currentTarget.value)}
@@ -44,19 +62,28 @@ export function CueListTabs() {
                 if (e.key === "Escape") setRenamingId(null);
               }}
               onClick={(e) => e.stopPropagation()}
+              sx={{
+                width: 120,
+                py: "5px",
+                px: 1,
+                font: "inherit",
+                fontSize: 12,
+                border: `1px solid ${tokens.accent}`,
+                borderRadius: "4px 4px 0 0",
+                bgcolor: tokens.bgElevated,
+                color: tokens.text,
+              }}
             />
           );
         }
 
         return (
-          <button
+          <Box
             key={list.id}
+            component="button"
             type="button"
             role="tab"
             aria-selected={active}
-            className={["cue-list-tab", active && "cue-list-tab-active"]
-              .filter(Boolean)
-              .join(" ")}
             onClick={() => setActiveCueList(list.id)}
             onDoubleClick={
               canEdit
@@ -71,12 +98,63 @@ export function CueListTabs() {
                 ? `${list.name} (${topLevelCount} cues). Double-click to rename.`
                 : `${list.name} (${topLevelCount} cues)`
             }
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.75,
+              maxWidth: 160,
+              py: 0.75,
+              px: 1,
+              border: "1px solid transparent",
+              borderBottom: "none",
+              borderRadius: "4px 4px 0 0",
+              bgcolor: "transparent",
+              color: "text.secondary",
+              font: "inherit",
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: "pointer",
+              flexShrink: 0,
+              "&:hover": {
+                bgcolor: tokens.bgHover,
+                color: tokens.text,
+              },
+              ...(active && {
+                bgcolor: tokens.bgElevated,
+                borderColor: "divider",
+                color: tokens.text,
+                mb: "-1px",
+                pb: "7px",
+              }),
+            }}
           >
-            <span className="cue-list-tab-name">{list.name}</span>
-            <span className="cue-list-tab-count">{topLevelCount}</span>
+            <Box
+              component="span"
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {list.name}
+            </Box>
+            <Box
+              component="span"
+              sx={{
+                fontSize: 10,
+                fontVariantNumeric: "tabular-nums",
+                color: "text.secondary",
+                bgcolor: tokens.bg,
+                py: "1px",
+                px: 0.625,
+                borderRadius: 1,
+              }}
+            >
+              {topLevelCount}
+            </Box>
             {canEdit && cueLists.length > 1 && (
-              <span
-                className="cue-list-tab-close"
+              <Box
+                component="span"
                 role="button"
                 tabIndex={-1}
                 aria-label={`Close ${list.name}`}
@@ -84,24 +162,61 @@ export function CueListTabs() {
                   e.stopPropagation();
                   removeCueList(list.id);
                 }}
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 16,
+                  height: 16,
+                  borderRadius: 0.75,
+                  fontSize: 14,
+                  lineHeight: 1,
+                  color: "text.secondary",
+                  "&:hover": {
+                    bgcolor: "rgba(204, 68, 68, 0.2)",
+                    color: "error.main",
+                  },
+                }}
               >
                 ×
-              </span>
+              </Box>
             )}
-          </button>
+          </Box>
         );
       })}
       {canEdit && (
-        <button
+        <Box
+          component="button"
           type="button"
-          className="cue-list-tab cue-list-tab-add"
           title="New cue list"
           aria-label="New cue list"
           onClick={() => addCueList()}
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minWidth: 32,
+            py: 0.75,
+            px: 1,
+            border: "1px solid transparent",
+            borderBottom: "none",
+            borderRadius: "4px 4px 0 0",
+            bgcolor: "transparent",
+            font: "inherit",
+            fontSize: 16,
+            fontWeight: 400,
+            color: "text.secondary",
+            cursor: "pointer",
+            flexShrink: 0,
+            "&:hover": {
+              bgcolor: tokens.bgHover,
+              color: tokens.text,
+            },
+          }}
         >
           +
-        </button>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }

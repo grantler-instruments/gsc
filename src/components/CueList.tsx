@@ -67,15 +67,29 @@ import {
 import type { Cue } from "../types/cue";
 import { vfsHas } from "../vfs/engine";
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import { AddCueMenu } from "./AddCueMenu";
+import { CueContextMenu, type CueContextMenuState } from "./CueContextMenu";
 import { CueListTabs } from "./CueListTabs";
 import { CueNotesIcon } from "./CueNotesIcon";
 import { CueTypeBadge } from "./CueTypeIcon";
-import { PanelHeader } from "./layout/PanelHeader";
 import { useActiveCueList } from "../stores/project";
+import { useGscTokens } from "../theme/useGscTokens";
+import {
+  cueAssetSx,
+  cueDetailSx,
+  cueExpandBtnSx,
+  cueListDropActiveSx,
+  cueListEmptySx,
+  cueNameSx,
+  cueNumberSx,
+  cueRenameInputSx,
+  cueRowFadeActionSx,
+  cueRowStopActionSx,
+  cueRowSx,
+  cueWarningSx,
+} from "../theme/cueStyles";
 
 function cueNeedsAsset(cue: Cue): boolean {
   return cue.type === "audio" || cue.type === "video" || cue.type === "image";
@@ -88,6 +102,8 @@ function cueMissingAsset(cue: Cue): boolean {
 }
 
 export function CueList() {
+  const tokens = useGscTokens();
+  const showMode = useUiStore((s) => s.showMode);
   const activeList = useActiveCueList();
   const cues = activeList.cues;
   const selectedCueIds = activeList.selectedCueIds;
@@ -106,10 +122,11 @@ export function CueList() {
   const addFadeCueForTarget = useProjectStore((s) => s.addFadeCueForTarget);
   const moveCueToGroup = useProjectStore((s) => s.moveCueToGroup);
   const reorderCueRelative = useProjectStore((s) => s.reorderCueRelative);
+  const copySelectedCues = useProjectStore((s) => s.copySelectedCues);
+  const duplicateSelectedCues = useProjectStore((s) => s.duplicateSelectedCues);
   const activeCueIds = useTransportStore((s) => s.activeCueIds);
   const runningSequence = useTransportStore((s) => s.runningSequence);
   const [listDropActive, setListDropActive] = useState(false);
-  const showMode = useUiStore((s) => s.showMode);
   const canEdit = !showMode;
   const collapsedCueGroupIds = useUiStore((s) => s.collapsedCueGroupIds);
   const toggleCueGroupCollapsed = useUiStore((s) => s.toggleCueGroupCollapsed);
@@ -118,6 +135,11 @@ export function CueList() {
     [collapsedCueGroupIds],
   );
   const [hoveredCueId, setHoveredCueId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<CueContextMenuState | null>(
+    null,
+  );
+  const [renamingCueId, setRenamingCueId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   const tree = useMemo(() => buildCueTree(cues), [cues]);
 
@@ -138,6 +160,51 @@ export function CueList() {
     },
     [selectCue, selectCueRange, toggleSelectCue, visibleCueOrder],
   );
+
+  const handleRowContextMenu = useCallback(
+    (cueId: string, e: MouseEvent) => {
+      if (!canEdit) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!selectedCueIdSet.has(cueId)) {
+        selectCue(cueId);
+      }
+
+      setContextMenu({ mouseX: e.clientX, mouseY: e.clientY, cueId });
+    },
+    [canEdit, selectCue, selectedCueIdSet],
+  );
+
+  const contextMenuCue = contextMenu
+    ? cues.find((c) => c.id === contextMenu.cueId)
+    : undefined;
+  const canRenameFromMenu =
+    !!contextMenuCue &&
+    selectedCueIds.length === 1 &&
+    !isUtilityCue(contextMenuCue);
+
+  const startRename = useCallback((cueId: string) => {
+    const cue = cues.find((c) => c.id === cueId);
+    if (!cue || isUtilityCue(cue)) return;
+    setRenamingCueId(cueId);
+    setRenameValue(cue.name);
+  }, [cues]);
+
+  const commitRename = useCallback(
+    (cueId: string) => {
+      const trimmed = renameValue.trim();
+      if (trimmed) {
+        updateCue(cueId, { name: trimmed });
+      }
+      setRenamingCueId(null);
+    },
+    [renameValue, updateCue],
+  );
+
+  const cancelRename = useCallback(() => {
+    setRenamingCueId(null);
+  }, []);
 
   const hoveredStopTargetId = useMemo(() => {
     const cue = cues.find((c) => c.id === hoveredCueId);
@@ -257,6 +324,7 @@ export function CueList() {
           staticAsStopTarget={node.cue.id === selectedStopTargetId}
           onHoverChange={setHoveredCueId}
           onSelect={(e) => handleRowSelect(node.cue.id, e)}
+          onContextMenu={(e) => handleRowContextMenu(node.cue.id, e)}
           onGo={() => handleGo(node.cue)}
           onRemove={() => removeCue(node.cue.id)}
           onCreateStop={() => addStopCueForTarget(node.cue.id)}
@@ -277,6 +345,11 @@ export function CueList() {
           onCueReorder={reorderCueRelative}
           onToggleExpand={() => toggleGroup(node.cue.id)}
           canEdit={canEdit}
+          isRenaming={renamingCueId === node.cue.id}
+          renameValue={renameValue}
+          onRenameChange={setRenameValue}
+          onRenameCommit={() => commitRename(node.cue.id)}
+          onRenameCancel={cancelRename}
         />
       );
 
@@ -289,62 +362,35 @@ export function CueList() {
   return (
     <Box
       component="section"
-      className="cue-list-panel"
       sx={{
         flex: 1,
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
         minWidth: 0,
+        borderRight: showMode ? 0 : 1,
+        borderColor: "divider",
       }}
     >
       <CueListTabs />
-      <PanelHeader>
-        <Chip
-          label={cues.filter((c) => !c.parentId).length}
-          size="small"
-          variant="outlined"
-          sx={{
-            height: "auto",
-            fontSize: 11,
-            "& .MuiChip-label": { px: 1, py: 0.125 },
-          }}
-        />
-        {selectedCueIds.length > 1 && (
-          <Chip
-            label={`${selectedCueIds.length} selected`}
-            size="small"
-            sx={{
-              height: "auto",
-              fontSize: 11,
-              bgcolor: "action.hover",
-              "& .MuiChip-label": { px: 1, py: 0.125 },
-            }}
-          />
-        )}
-        {canEdit && (
-          <Typography
-            variant="overline"
-            color="text.secondary"
-            title="Group selected cues into a parallel group"
-          >
-            ⌘G
-          </Typography>
-        )}
-      </PanelHeader>
 
       <Box
         component="ul"
-        className={["cue-list", listDropActive && "cue-list-drop-active"]
-          .filter(Boolean)
-          .join(" ")}
         onDragOver={onListDragOver}
         onDragLeave={onListDragLeave}
         onDrop={onListDrop}
-        sx={{ listStyle: "none", m: 0, p: 0 }}
+        sx={{
+          listStyle: "none",
+          m: 0,
+          p: 0,
+          overflowY: "auto",
+          flex: 1,
+          minHeight: 120,
+          ...(listDropActive && cueListDropActiveSx(tokens)),
+        }}
       >
         {tree.length === 0 && (
-          <Box component="li" className="cue-list-empty">
+          <Box component="li" sx={cueListEmptySx}>
             {canEdit
               ? "Drag assets here to create cues, or use + Cue below."
               : "No cues in this list."}
@@ -352,6 +398,19 @@ export function CueList() {
         )}
         {renderNodes(tree)}
       </Box>
+
+      {canEdit && (
+        <CueContextMenu
+          menu={contextMenu}
+          canRename={canRenameFromMenu}
+          onClose={() => setContextMenu(null)}
+          onCopy={copySelectedCues}
+          onDuplicate={duplicateSelectedCues}
+          onRename={() => {
+            if (contextMenu) startRename(contextMenu.cueId);
+          }}
+        />
+      )}
 
       {canEdit && (
         <Box
@@ -387,6 +446,7 @@ interface CueRowProps {
   staticAsStopTarget: boolean;
   onHoverChange: (cueId: string | null) => void;
   onSelect: (e: MouseEvent) => void;
+  onContextMenu: (e: MouseEvent) => void;
   onGo: () => void;
   onRemove: () => void;
   onCreateStop: () => void;
@@ -401,6 +461,11 @@ interface CueRowProps {
   ) => void;
   onToggleExpand: () => void;
   canEdit: boolean;
+  isRenaming: boolean;
+  renameValue: string;
+  onRenameChange: (value: string) => void;
+  onRenameCommit: () => void;
+  onRenameCancel: () => void;
   runningSequence: RunningSequence | null;
   allCues: Cue[];
 }
@@ -420,6 +485,7 @@ function CueRow({
   runningSequence,
   onHoverChange,
   onSelect,
+  onContextMenu,
   onGo,
   onRemove,
   onCreateStop,
@@ -430,7 +496,13 @@ function CueRow({
   onCueReorder,
   onToggleExpand,
   canEdit,
+  isRenaming,
+  renameValue,
+  onRenameChange,
+  onRenameCommit,
+  onRenameCancel,
 }: CueRowProps) {
+  const tokens = useGscTokens();
   const [dropActive, setDropActive] = useState(false);
   const [insertPlace, setInsertPlace] = useState<"before" | "after" | null>(
     null,
@@ -469,31 +541,34 @@ function CueRow({
     cue.type === "audio" || cue.type === "video"
       ? formatLoopLabel(cue)
       : null;
+  const hasWarning =
+    missingAsset || stopTargetMissing || fadeTargetMissing;
+  const rowStyleState = {
+    tokens,
+    selected: selected && !primarySelected,
+    primarySelected,
+    active,
+    isGroup: isContainer,
+    isSequence,
+    isStop,
+    isVolumeFade: isFade && cue.type === "volumeFade",
+    isOpacityFade: isFade && cue.type === "opacityFade",
+    isSequenceStep: isCurrentSequenceStep,
+    hasWarning,
+    pulseAsStopTarget,
+    staticAsStopTarget,
+    dropActive: dropActive && isContainer,
+    insertBefore: insertPlace === "before",
+    insertAfter: insertPlace === "after",
+  };
 
   return (
-    <li
-      className={[
-        "cue-row",
-        isContainer && "cue-row-group",
-        isSequence && "cue-row-sequence",
-        isStop && "cue-row-stop",
-        isFade && cue.type === "volumeFade" && "cue-row-volume-fade",
-        isFade && cue.type === "opacityFade" && "cue-row-opacity-fade",
-        isCurrentSequenceStep && "cue-row-sequence-step",
-        selected && !primarySelected && "cue-row-selected",
-        primarySelected && "cue-row-primary-selected",
-        pulseAsStopTarget && "cue-row-stop-target-linked",
-        staticAsStopTarget && "cue-row-stop-target-linked-static",
-        active && "cue-row-active",
-        (missingAsset || stopTargetMissing || fadeTargetMissing) &&
-          "cue-row-warning",
-        dropActive && isContainer && "cue-row-drop-active",
-        insertPlace === "before" && "cue-row-drop-before",
-        insertPlace === "after" && "cue-row-drop-after",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      style={{ paddingLeft: `${12 + depth * 16}px` }}
+    <Box
+      component="li"
+      sx={{
+        ...cueRowSx(rowStyleState),
+        pl: `${12 + depth * 16}px`,
+      }}
       onMouseEnter={() => onHoverChange(cue.id)}
       onMouseLeave={(e) => {
         if (pointerLeftElement(e.currentTarget, e.relatedTarget)) {
@@ -512,6 +587,7 @@ function CueRow({
       }
       onDragEnd={() => setActiveCueDrag(null)}
       onClick={(e) => onSelect(e)}
+      onContextMenu={canEdit ? onContextMenu : undefined}
       onDoubleClick={onGo}
       onDragOver={(e) => {
         if (!canEdit) return;
@@ -611,8 +687,8 @@ function CueRow({
       {isContainer ? (
         <IconButton
           size="small"
-          className="cue-expand-btn"
           aria-expanded={expanded}
+          sx={cueExpandBtnSx(tokens)}
           onClick={(e) => {
             e.stopPropagation();
             onToggleExpand();
@@ -625,55 +701,98 @@ function CueRow({
           )}
         </IconButton>
       ) : (
-        <span className="cue-expand-spacer" />
+        <Box component="span" sx={{ width: 24, flexShrink: 0 }} />
       )}
-      <span className="cue-number">{cue.number}</span>
-      <CueTypeBadge
-        type={cue.type}
-        showLabel={false}
-        className="cue-row-type"
-      />
-      <div className="cue-row-main">
-        <span className="cue-name">{getCueDisplayName(cue, allCues)}</span>
+      <Box component="span" sx={cueNumberSx(tokens)}>
+        {cue.number}
+      </Box>
+      <CueTypeBadge type={cue.type} showLabel={false} compact />
+      <Box
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: 0.25,
+        }}
+      >
+        {isRenaming ? (
+          <Box
+            component="input"
+            value={renameValue}
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => onRenameChange(e.currentTarget.value)}
+            onBlur={onRenameCommit}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === "Enter") onRenameCommit();
+              if (e.key === "Escape") onRenameCancel();
+            }}
+            sx={cueRenameInputSx(tokens)}
+          />
+        ) : (
+          <Box component="span" sx={cueNameSx(rowStyleState)}>
+            {getCueDisplayName(cue, allCues)}
+          </Box>
+        )}
         {isParallel && (
-          <span className="cue-detail">
+          <Typography component="span" sx={cueDetailSx}>
             {childCount === 0
               ? "Empty — drag cues here (parallel)"
               : `${childCount} cue${childCount === 1 ? "" : "s"} · parallel`}
-          </span>
+          </Typography>
         )}
         {isSequence && (
-          <span className="cue-detail">
+          <Typography component="span" sx={cueDetailSx}>
             {sequenceProgress
               ? `Playing step ${sequenceProgress.currentStep + 1} of ${sequenceProgress.stepCount}`
               : childCount === 0
                 ? "Empty — drag cues here (sequential)"
                 : `${childCount} cue${childCount === 1 ? "" : "s"} · sequential`}
-          </span>
+          </Typography>
         )}
         {stopTargetMissing && (
-          <span className="cue-detail">Target cue missing</span>
+          <Typography component="span" sx={cueDetailSx}>
+            Target cue missing
+          </Typography>
         )}
         {fadeTargetMissing && (
-          <span className="cue-detail">Fade target missing</span>
+          <Typography component="span" sx={cueDetailSx}>
+            Fade target missing
+          </Typography>
         )}
-        {fadeDetail && <span className="cue-detail">{fadeDetail}</span>}
+        {fadeDetail && (
+          <Typography component="span" sx={cueDetailSx}>
+            {fadeDetail}
+          </Typography>
+        )}
         {cue.type === "midi" && cue.midi && (
-          <span className="cue-detail">{formatMidiCue(cue.midi)}</span>
+          <Typography component="span" sx={cueDetailSx}>
+            {formatMidiCue(cue.midi)}
+          </Typography>
         )}
-        {rangeLabel && <span className="cue-detail">{rangeLabel}</span>}
-        {loopLabel && <span className="cue-detail">{loopLabel}</span>}
+        {rangeLabel && (
+          <Typography component="span" sx={cueDetailSx}>
+            {rangeLabel}
+          </Typography>
+        )}
+        {loopLabel && (
+          <Typography component="span" sx={cueDetailSx}>
+            {loopLabel}
+          </Typography>
+        )}
         {active && playback && cueShowsPlaybackProgress(cue) && (
           <PlaybackProgress progress={playback} compact />
         )}
-      </div>
+      </Box>
       <CueNotesIcon notes={cue.notes} />
       {canEdit && !isUtility && (
         <>
           {showVolumeFadeAction && (
             <IconButton
               size="small"
-              className="cue-row-action cue-row-action-fade"
+              sx={cueRowFadeActionSx}
               title={`Create volume fade for ${cue.number}`}
               aria-label={`Create volume fade for ${cue.name}`}
               onClick={(e) => {
@@ -687,7 +806,7 @@ function CueRow({
           {showOpacityFadeAction && (
             <IconButton
               size="small"
-              className="cue-row-action cue-row-action-fade"
+              sx={cueRowFadeActionSx}
               title={`Create opacity fade for ${cue.number}`}
               aria-label={`Create opacity fade for ${cue.name}`}
               onClick={(e) => {
@@ -700,7 +819,7 @@ function CueRow({
           )}
           <IconButton
             size="small"
-            className="cue-row-action cue-row-action-stop"
+            sx={cueRowStopActionSx}
             title={`Create stop cue for ${cue.number}`}
             aria-label={`Create stop cue for ${cue.name}`}
             onClick={(e) => {
@@ -713,13 +832,14 @@ function CueRow({
         </>
       )}
       {cue.assetPath && (
-        <span className="cue-asset" title={cue.assetPath}>
+        <Typography component="span" noWrap title={cue.assetPath} sx={cueAssetSx}>
           {cue.assetPath.split("/").pop()}
-        </span>
+        </Typography>
       )}
-      {(missingAsset || stopTargetMissing || fadeTargetMissing) && (
-        <span
-          className="cue-warning"
+      {hasWarning && (
+        <Box
+          component="span"
+          sx={cueWarningSx}
           title={
             fadeTargetMissing
               ? "Fade target missing"
@@ -729,7 +849,7 @@ function CueRow({
           }
         >
           !
-        </span>
+        </Box>
       )}
       {canEdit && (
         <IconButton
@@ -743,6 +863,6 @@ function CueRow({
           ×
         </IconButton>
       )}
-    </li>
+    </Box>
   );
 }

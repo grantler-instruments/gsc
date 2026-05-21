@@ -10,7 +10,68 @@ import { getPrimarySelectedCueId } from "../lib/cue-selection";
 import { getCueDisplayName } from "../lib/cues";
 import { triggerGoSelected } from "../lib/transport-actions";
 import { SIDEBAR_WIDTH } from "../types/sidebar";
+import type { Cue } from "../types/cue";
 import { CueTypeBadge } from "./CueTypeIcon";
+import { TransportCueThumbnail } from "./TransportCueThumbnail";
+
+const TRANSPORT_FOOTER_HEIGHT = 72;
+const NOTES_ROW_HEIGHT = 36;
+const STATUS_SLOT_WIDTH = 240;
+
+function CueNotesLine({ notes }: { notes?: string }) {
+  const text = notes?.trim();
+
+  return (
+    <Box
+      sx={{
+        height: NOTES_ROW_HEIGHT,
+        overflowY: "auto",
+        flexShrink: 0,
+      }}
+    >
+      {text ? (
+        <Typography
+          component="p"
+          variant="caption"
+          sx={{
+            m: 0,
+            whiteSpace: "pre-wrap",
+            lineHeight: 1.35,
+            fontSize: 12,
+            color: "text.secondary",
+          }}
+        >
+          {text}
+        </Typography>
+      ) : null}
+    </Box>
+  );
+}
+
+function CueSummary({
+  cue,
+  allCues,
+}: {
+  cue: Cue;
+  allCues?: Cue[];
+}) {
+  const displayName = allCues ? getCueDisplayName(cue, allCues) : cue.name;
+
+  return (
+    <Stack direction="row" sx={{ alignItems: "flex-start", gap: 1.25, minWidth: 0 }}>
+      <Box sx={{ alignSelf: "center", flexShrink: 0 }}>
+        <CueTypeBadge type={cue.type} showLabel={false} />
+      </Box>
+      <TransportCueThumbnail cue={cue} allCues={allCues} />
+      <Stack sx={{ flex: 1, minWidth: 0, pt: 0.125 }}>
+        <Typography noWrap sx={{ lineHeight: 1.3, fontSize: 14 }}>
+          {displayName}
+        </Typography>
+        <CueNotesLine notes={cue.notes} />
+      </Stack>
+    </Stack>
+  );
+}
 
 export function TransportBar() {
   const cueLists = useProjectStore((s) => s.cueLists);
@@ -37,6 +98,7 @@ export function TransportBar() {
       sx={{
         display: "flex",
         alignItems: "stretch",
+        height: TRANSPORT_FOOTER_HEIGHT,
         borderTop: 1,
         borderColor: "divider",
         bgcolor: "background.paper",
@@ -49,7 +111,6 @@ export function TransportBar() {
           width: SIDEBAR_WIDTH,
           flexShrink: 0,
           px: 1.5,
-          py: 1.25,
           gap: 1,
           alignItems: "center",
           borderRight: 1,
@@ -78,100 +139,48 @@ export function TransportBar() {
           flex: 1,
           minWidth: 0,
           px: 2,
-          py: 1.25,
+          py: 0.75,
+          overflow: "hidden",
         }}
       >
-        {selectedCue ? (
-          <Stack sx={{ flex: 1, minWidth: 0, gap: 0.5 }}>
-            <Stack
-              direction="row"
-              sx={{ alignItems: "center", gap: 1, minWidth: 0 }}
-            >
-              <Typography
-                variant="overline"
-                color="text.secondary"
-                sx={{ flexShrink: 0 }}
-              >
-                Selected
-              </Typography>
-              <CueTypeBadge type={selectedCue.type} showLabel={false} />
-              <Typography
-                component="strong"
-                sx={{
-                  color: "primary.main",
-                  fontVariantNumeric: "tabular-nums",
-                  flexShrink: 0,
-                }}
-              >
-                {selectedCue.number}
-              </Typography>
-              <Typography noWrap sx={{ minWidth: 0 }}>
-                {getCueDisplayName(selectedCue, cues)}
-              </Typography>
-            </Stack>
-            {selectedCue.notes?.trim() && (
-              <Typography
-                variant="caption"
-                sx={{
-                  m: 0,
-                  p: 1,
-                  color: "text.secondary",
-                  bgcolor: "background.default",
-                  border: 1,
-                  borderColor: "divider",
-                  borderRadius: 1,
-                  whiteSpace: "pre-wrap",
-                  maxHeight: "4.5em",
-                  overflowY: "auto",
-                  lineHeight: 1.45,
-                }}
-              >
-                {selectedCue.notes.trim()}
-              </Typography>
-            )}
-          </Stack>
-        ) : (
-          <Typography variant="caption" color="text.secondary">
-            No cue selected
-          </Typography>
-        )}
-        {playingOther && activeCue && (
-          <Stack
-            direction="row"
-            sx={{ alignItems: "center", gap: 1, minWidth: 0 }}
-          >
-            <Typography
-              variant="overline"
-              color="text.secondary"
-              sx={{ flexShrink: 0 }}
-            >
-              Playing
-            </Typography>
-            <CueTypeBadge type={activeCue.type} showLabel={false} />
-            <Typography
-              component="strong"
-              sx={{ color: "primary.main", fontVariantNumeric: "tabular-nums" }}
-            >
-              {activeCue.number}
-            </Typography>
-            <Typography noWrap>{activeCue.name}</Typography>
-          </Stack>
-        )}
-        {isPlaying && activeCount > 0 && !playingOther && (
-          <Chip
-            label={activeCount === 1 ? "Playing" : `${activeCount} active`}
-            size="small"
-            sx={{
-              bgcolor: "var(--playing-badge-bg)",
-              color: "success.main",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              height: "auto",
-              "& .MuiChip-label": { fontSize: 10, px: 1, py: 0.25 },
-            }}
-          />
-        )}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          {selectedCue ? (
+            <CueSummary cue={selectedCue} allCues={cues} />
+          ) : (
+            <CueNotesLine />
+          )}
+        </Box>
+
+        <Box
+          sx={{
+            width: STATUS_SLOT_WIDTH,
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            alignSelf: "center",
+            minWidth: 0,
+            overflow: "hidden",
+          }}
+        >
+          {playingOther && activeCue ? (
+            <CueSummary cue={activeCue} allCues={cues} />
+          ) : isPlaying && activeCount > 0 ? (
+            <Chip
+              label={activeCount === 1 ? "Playing" : `${activeCount} active`}
+              size="small"
+              sx={{
+                bgcolor: "var(--playing-badge-bg)",
+                color: "success.main",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                height: "auto",
+                "& .MuiChip-label": { fontSize: 10, px: 1, py: 0.25 },
+              }}
+            />
+          ) : null}
+        </Box>
       </Box>
 
       <Stack
@@ -183,7 +192,6 @@ export function TransportBar() {
           color: "text.secondary",
           flexShrink: 0,
           px: 2,
-          py: 1.25,
         }}
       >
         <Typography variant="caption" color="inherit">

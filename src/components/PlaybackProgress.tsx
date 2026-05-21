@@ -1,3 +1,5 @@
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { formatPlaybackClock } from "../lib/time";
 import type { CuePlaybackProgress } from "../stores/playback";
 
@@ -22,36 +24,74 @@ export function PlaybackProgress({
       : null;
 
   return (
-    <div
-      className={["playback-progress", compact && "playback-progress-compact"]
-        .filter(Boolean)
-        .join(" ")}
+    <Box
       role="progressbar"
       aria-valuenow={ariaPct}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={`Playback ${timeLabel}${loopLabel ? `, loop ${loopLabel}` : ""}`}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: compact ? 0.75 : 1,
+        width: "100%",
+        minWidth: 0,
+        ...(compact && { mt: 0.25 }),
+      }}
     >
-      <div className="playback-progress-track">
-        <div
-          className="playback-progress-fill"
-          style={{ width: `${fillPct}%` }}
+      <Box
+        sx={{
+          flex: 1,
+          minWidth: 48,
+          height: 4,
+          borderRadius: 0.5,
+          bgcolor: "divider",
+          overflow: "hidden",
+        }}
+      >
+        <Box
+          sx={{
+            height: "100%",
+            borderRadius: 0.5,
+            bgcolor: "success.main",
+            width: `${fillPct}%`,
+          }}
         />
-      </div>
-      <span className="playback-progress-time">{timeLabel}</span>
+      </Box>
+      <Typography
+        component="span"
+        sx={{
+          flexShrink: 0,
+          minWidth: "17ch",
+          fontSize: 10,
+          fontVariantNumeric: "tabular-nums",
+          color: "text.secondary",
+          textAlign: "right",
+        }}
+      >
+        {timeLabel}
+      </Typography>
       {loopLabel && (
-        <span
-          className="playback-progress-loop"
+        <Typography
+          component="span"
           title={
             progress.loopTotal === "inf"
               ? `Loop iteration ${progress.loopIteration}`
               : `Loop ${progress.loopIteration} of ${progress.loopTotal}`
           }
+          sx={{
+            flexShrink: 0,
+            fontSize: 10,
+            fontVariantNumeric: "tabular-nums",
+            color: "primary.main",
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+          }}
         >
           {progress.looping && "↻ "}
           {loopLabel}
-        </span>
+        </Typography>
       )}
-    </div>
+    </Box>
   );
 }

@@ -1,3 +1,5 @@
+import Box from "@mui/material/Box";
+import GlobalStyles from "@mui/material/GlobalStyles";
 import { useEffect, useRef, useState } from "react";
 import {
   createOutputChannel,
@@ -53,8 +55,30 @@ export function OutputApp() {
   }, []);
 
   return (
-    <div className="output-app">
-      <VisualStage layers={layers} role="output" />
-    </div>
+    <>
+      <GlobalStyles
+        styles={{
+          "#root": {
+            width: "100vw",
+            height: "100vh",
+            background: "#000",
+          },
+        }}
+      />
+      <Box
+        sx={{
+          width: "100vw",
+          height: "100vh",
+          bgcolor: "#000",
+          overflow: "hidden",
+          "& .visual-stage": {
+            minHeight: "100%",
+            height: "100%",
+          },
+        }}
+      >
+        <VisualStage layers={layers} role="output" />
+      </Box>
+    </>
   );
 }

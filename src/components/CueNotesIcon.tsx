@@ -1,4 +1,5 @@
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
 
 interface CueNotesIconProps {
@@ -25,15 +26,23 @@ export function CueNotesIcon({ notes }: CueNotesIconProps) {
         },
       }}
     >
-      <span
-        className="cue-notes-icon"
+      <Box
+        component="span"
         role="img"
         aria-label="Cue notes"
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
+        sx={{
+          display: "inline-flex",
+          alignItems: "center",
+          flexShrink: 0,
+          fontSize: 14,
+          color: "text.secondary",
+          cursor: "help",
+        }}
       >
         <InfoOutlinedIcon fontSize="inherit" />
-      </span>
+      </Box>
     </Tooltip>
   );
 }

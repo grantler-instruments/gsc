@@ -24,6 +24,12 @@ import {
   buildParallelGroupFromSelection,
   getPrimarySelectedCueId,
 } from "../lib/cue-selection";
+import {
+  collectCuesForCopy,
+  getCueClipboard,
+  prepareCuePaste,
+  setCueClipboard,
+} from "../lib/cue-clipboard";
 import { cueListsToSnapshot, snapshotToCueLists } from "../lib/project-snapshot";
 import { canEditProject } from "../lib/show-mode";
 import { defaultMidiCueData } from "../lib/midi";
@@ -102,6 +108,9 @@ interface ProjectState {
   toggleSelectCue: (id: string) => void;
   selectCueRange: (id: string, visibleOrder: string[]) => void;
   groupSelectedCues: () => Cue | null;
+  copySelectedCues: () => boolean;
+  pasteSelectedCues: () => boolean;
+  duplicateSelectedCues: () => boolean;
   addCueList: (name?: string) => CueList;
   removeCueList: (listId: string) => void;
   renameCueList: (listId: string, name: string) => void;
@@ -468,6 +477,67 @@ export const useProjectStore = create<ProjectState>()(
           })),
         });
         return group;
+      },
+
+      copySelectedCues: () => {
+        if (!canEditProject()) return false;
+        const active = getActiveList(get());
+        const collected = collectCuesForCopy(
+          active.selectedCueIds,
+          active.cues,
+        );
+        if (collected.length === 0) return false;
+        setCueClipboard(collected);
+        return true;
+      },
+
+      pasteSelectedCues: () => {
+        if (!canEditProject()) return false;
+        const clipboard = getCueClipboard();
+        if (!clipboard?.length) return false;
+
+        const active = getActiveList(get());
+        const anchorId = getPrimarySelectedCueId(active.selectedCueIds);
+        const prepared = prepareCuePaste(clipboard, active.cues, anchorId);
+        if (!prepared) return false;
+
+        set({
+          ...patchActiveList(get(), () => ({
+            cues: prepared.cues,
+            selectedCueIds: prepared.selectedCueIds,
+            selectionAnchorId:
+              prepared.selectedCueIds[prepared.selectedCueIds.length - 1] ??
+              null,
+          })),
+        });
+        return true;
+      },
+
+      duplicateSelectedCues: () => {
+        if (!canEditProject()) return false;
+        const active = getActiveList(get());
+        if (active.selectedCueIds.length === 0) return false;
+
+        const collected = collectCuesForCopy(
+          active.selectedCueIds,
+          active.cues,
+        );
+        if (collected.length === 0) return false;
+
+        const anchorId = getPrimarySelectedCueId(active.selectedCueIds);
+        const prepared = prepareCuePaste(collected, active.cues, anchorId);
+        if (!prepared) return false;
+
+        set({
+          ...patchActiveList(get(), () => ({
+            cues: prepared.cues,
+            selectedCueIds: prepared.selectedCueIds,
+            selectionAnchorId:
+              prepared.selectedCueIds[prepared.selectedCueIds.length - 1] ??
+              null,
+          })),
+        });
+        return true;
       },
 
       addCueList: (name) => {

@@ -1,3 +1,5 @@
+import Box from "@mui/material/Box";
+import type { SxProps, Theme } from "@mui/material/styles";
 import { useCallback, useEffect, useRef } from "react";
 import {
   isOutputLayerLooping,
@@ -157,10 +159,11 @@ interface VisualStageProps {
   layers: OutputLayer[];
   role: VisualStageRole;
   className?: string;
+  sx?: SxProps<Theme>;
 }
 
 /** Composites active video/image layers (picture only — audio via Web Audio in control app). */
-export function VisualStage({ layers, role, className }: VisualStageProps) {
+export function VisualStage({ layers, role, className, sx }: VisualStageProps) {
   const stopCue = useTransportStore((s) => s.stopCue);
 
   const handleEnded = useCallback(
@@ -175,7 +178,18 @@ export function VisualStage({ layers, role, className }: VisualStageProps) {
   const classes = ["visual-stage", className].filter(Boolean).join(" ");
 
   return (
-    <div className={classes}>
+    <Box
+      className={classes}
+      sx={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        minHeight: 120,
+        bgcolor: "#000",
+        overflow: "hidden",
+        ...sx,
+      }}
+    >
       {layers.map((layer, index) => (
         <div
           key={layer.cueId}
@@ -192,6 +206,6 @@ export function VisualStage({ layers, role, className }: VisualStageProps) {
           )}
         </div>
       ))}
-    </div>
+    </Box>
   );
 }

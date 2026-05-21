@@ -10,6 +10,7 @@ import { getPrimarySelectedCueId } from "../lib/cue-selection";
 import { findCueInLists } from "../lib/cue-lists";
 import { findProjectCue, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
+import { useGscTokens } from "../theme/useGscTokens";
 import { AudioWaveform } from "./AudioWaveform";
 import { PlaybackProgress } from "./PlaybackProgress";
 import { CueTypeBadge } from "./CueTypeIcon";
@@ -17,7 +18,14 @@ import { cueShowsPlaybackProgress } from "../lib/playback-slice";
 import { usePlaybackStore } from "../stores/playback";
 import { VisualMonitor } from "./VisualMonitor";
 
+const emptyListSx = {
+  p: "16px 12px",
+  color: "text.secondary",
+  fontSize: 13,
+} as const;
+
 export function ActiveCuesPanel() {
+  const tokens = useGscTokens();
   const cueLists = useProjectStore((s) => s.cueLists);
   const activeList = useProjectStore((s) =>
     s.cueLists.find((l) => l.id === s.activeCueListId) ?? s.cueLists[0],
@@ -39,7 +47,6 @@ export function ActiveCuesPanel() {
 
   return (
     <Box
-      className="sidebar-panel-content"
       sx={{
         flex: 1,
         display: "flex",
@@ -48,7 +55,7 @@ export function ActiveCuesPanel() {
         overflow: "hidden",
       }}
     >
-      <VisualMonitor className="visual-monitor-sidebar" />
+      <VisualMonitor variant="sidebar" />
 
       {activeCues.length > 0 && (
         <Stack
@@ -68,14 +75,24 @@ export function ActiveCuesPanel() {
         </Stack>
       )}
 
-      <Box component="ul" className="active-cue-list">
+      <Box
+        component="ul"
+        sx={{
+          listStyle: "none",
+          m: 0,
+          p: 0,
+          overflowY: "auto",
+          flex: 1,
+        }}
+      >
         {activeCues.length === 0 && (
-          <Box component="li" className="asset-list-empty">
+          <Box component="li" sx={emptyListSx}>
             No active cues. Press GO to run the selected cue.
           </Box>
         )}
         {activeCues.map((cue) => {
           const isPrimary = cue.id === activeCueId;
+          const selected = cue.id === selectedCueId;
           const playback = progressByCueId[cue.id];
           const rangeLabel =
             cue.type !== "midi"
@@ -90,48 +107,74 @@ export function ActiveCuesPanel() {
             <Box
               component="li"
               key={cue.id}
-              className={[
-                "active-cue-item",
-                cue.id === selectedCueId && "active-cue-item-selected",
-                isPrimary && "active-cue-item-primary",
-              ]
-                .filter(Boolean)
-                .join(" ")}
               onClick={() => selectCue(cue.id)}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                px: 1.5,
+                py: 1,
+                borderBottom: 1,
+                borderColor: "divider",
+                cursor: "pointer",
+                "&:hover": { bgcolor: tokens.bgHover },
+                ...(selected && {
+                  bgcolor: tokens.rowSelected,
+                  boxShadow: `inset 4px 0 0 ${tokens.accent}`,
+                }),
+                ...(isPrimary && { bgcolor: tokens.rowActive }),
+              }}
             >
-              <CueTypeBadge
-                type={cue.type}
-                showLabel={false}
-                className="cue-row-type"
-              />
-              <Box className="active-cue-item-main">
+              <CueTypeBadge type={cue.type} showLabel={false} compact />
+              <Box
+                sx={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 0.25,
+                }}
+              >
                 <Typography
                   component="span"
-                  className="active-cue-number"
-                  sx={{ fontVariantNumeric: "tabular-nums" }}
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: 12,
+                    color: tokens.accent,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
                 >
                   {cue.number}
                 </Typography>
-                <Typography component="span" className="active-cue-name" noWrap>
+                <Typography component="span" noWrap sx={{ fontSize: 13 }}>
                   {cue.name}
                 </Typography>
                 {cue.type === "midi" && cue.midi && (
-                  <Typography component="span" className="cue-detail" noWrap>
+                  <Typography
+                    component="span"
+                    noWrap
+                    sx={{ fontSize: 11, color: "text.secondary" }}
+                  >
                     {formatMidiCue(cue.midi)}
                   </Typography>
                 )}
                 {cue.type === "audio" && cue.assetPath && (
-                  <AudioWaveform
-                    assetPath={cue.assetPath}
-                    inTime={cue.inTime}
-                    outTime={cue.outTime}
-                    positionSec={playback?.positionSec}
-                    height={36}
-                    className="audio-waveform-active"
-                  />
+                  <Box sx={{ mt: 0.5 }}>
+                    <AudioWaveform
+                      assetPath={cue.assetPath}
+                      inTime={cue.inTime}
+                      outTime={cue.outTime}
+                      positionSec={playback?.positionSec}
+                      height={36}
+                    />
+                  </Box>
                 )}
                 {rangeLabel && (
-                  <Typography component="span" className="cue-detail" noWrap>
+                  <Typography
+                    component="span"
+                    noWrap
+                    sx={{ fontSize: 11, color: "text.secondary" }}
+                  >
                     {rangeLabel}
                   </Typography>
                 )}
@@ -142,8 +185,12 @@ export function ActiveCuesPanel() {
               {isPrimary && (
                 <Box
                   component="span"
-                  className="active-cue-badge"
                   title="Last triggered"
+                  sx={{
+                    color: "success.main",
+                    fontSize: 10,
+                    flexShrink: 0,
+                  }}
                 >
                   ●
                 </Box>

@@ -4,17 +4,20 @@ import { useVisualOutputLayers } from "../hooks/useVisualOutputLayers";
 import { VisualStage } from "./VisualStage";
 
 interface VisualMonitorProps {
-  className?: string;
+  /** Sidebar layout: 16:9 stage that sizes to panel width. */
+  variant?: "default" | "sidebar";
 }
 
 /** Live preview monitor for active video/image cues. */
-export function VisualMonitor({ className }: VisualMonitorProps) {
+export function VisualMonitor({ variant = "default" }: VisualMonitorProps) {
   const layers = useVisualOutputLayers();
+  const sidebar = variant === "sidebar";
 
   return (
     <Box
-      className={["visual-monitor", className].filter(Boolean).join(" ")}
       sx={{
+        display: "flex",
+        flexDirection: "column",
         flexShrink: 0,
         borderBottom: 1,
         borderColor: "divider",
@@ -30,7 +33,10 @@ export function VisualMonitor({ className }: VisualMonitorProps) {
       <VisualStage
         layers={layers}
         role="control"
-        className="visual-monitor-stage"
+        sx={{
+          height: sidebar ? "auto" : 200,
+          ...(sidebar && { aspectRatio: "16 / 9", minHeight: 0 }),
+        }}
       />
     </Box>
   );

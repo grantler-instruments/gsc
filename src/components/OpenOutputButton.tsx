@@ -1,4 +1,5 @@
 import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { useCallback, useState } from "react";
 import { openOutputWindow } from "../platform/output-window";
@@ -27,9 +28,16 @@ export function OpenOutputButton() {
         Output
       </Button>
       {error && (
-        <span className="output-open-error" title={error}>
+        <Typography
+          component="span"
+          variant="caption"
+          color="error"
+          title={error}
+          noWrap
+          sx={{ maxWidth: 200 }}
+        >
           {error}
-        </span>
+        </Typography>
       )}
     </>
   );

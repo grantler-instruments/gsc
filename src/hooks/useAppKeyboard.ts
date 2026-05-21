@@ -12,6 +12,9 @@ import { useUiStore } from "../stores/ui";
 
 export function useAppKeyboard(): void {
   const groupSelectedCues = useProjectStore((s) => s.groupSelectedCues);
+  const copySelectedCues = useProjectStore((s) => s.copySelectedCues);
+  const pasteSelectedCues = useProjectStore((s) => s.pasteSelectedCues);
+  const duplicateSelectedCues = useProjectStore((s) => s.duplicateSelectedCues);
   const toggleShowMode = useUiStore((s) => s.toggleShowMode);
   const panic = useTransportStore((s) => s.panic);
 
@@ -57,6 +60,42 @@ export function useAppKeyboard(): void {
       if (
         canEditProject() &&
         (e.metaKey || e.ctrlKey) &&
+        e.key.toLowerCase() === "c" &&
+        !e.shiftKey
+      ) {
+        if (copySelectedCues()) {
+          e.preventDefault();
+        }
+        return;
+      }
+
+      if (
+        canEditProject() &&
+        (e.metaKey || e.ctrlKey) &&
+        e.key.toLowerCase() === "v" &&
+        !e.shiftKey
+      ) {
+        if (pasteSelectedCues()) {
+          e.preventDefault();
+        }
+        return;
+      }
+
+      if (
+        canEditProject() &&
+        (e.metaKey || e.ctrlKey) &&
+        e.key.toLowerCase() === "d" &&
+        !e.shiftKey
+      ) {
+        if (duplicateSelectedCues()) {
+          e.preventDefault();
+        }
+        return;
+      }
+
+      if (
+        canEditProject() &&
+        (e.metaKey || e.ctrlKey) &&
         e.key.toLowerCase() === "g"
       ) {
         e.preventDefault();
@@ -66,5 +105,5 @@ export function useAppKeyboard(): void {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [groupSelectedCues, panic, toggleShowMode]);
+  }, [copySelectedCues, duplicateSelectedCues, groupSelectedCues, panic, pasteSelectedCues, toggleShowMode]);
 }

@@ -7,9 +7,12 @@ import PlaylistPlayIcon from "@mui/icons-material/PlaylistPlay";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import VolumeDownIcon from "@mui/icons-material/VolumeDown";
 import VideocamIcon from "@mui/icons-material/Videocam";
+import Box from "@mui/material/Box";
+import type { SxProps, Theme } from "@mui/material/styles";
 import type { SvgIconProps } from "@mui/material/SvgIcon";
 import type { ElementType } from "react";
 import type { AssetKind, CueType } from "../types/cue";
+import { cueTypeBadgeSx } from "../theme/cueStyles";
 
 const CUE_TYPE_ICONS: Record<CueType, ElementType<SvgIconProps>> = {
   audio: AudiotrackIcon,
@@ -46,22 +49,27 @@ export function CueTypeIcon({
 export function CueTypeBadge({
   type,
   showLabel = true,
-  className,
+  compact = false,
+  sx,
 }: {
   type: CueType | AssetKind;
   showLabel?: boolean;
-  className?: string;
+  /** Tighter padding for list rows. */
+  compact?: boolean;
+  sx?: SxProps<Theme>;
 }) {
-  const label = CUE_TYPE_LABELS[type];
+  const label =
+    type in CUE_TYPE_LABELS
+      ? CUE_TYPE_LABELS[type as CueType]
+      : String(type);
   return (
-    <span
-      className={["cue-type", `cue-type-${type}`, className]
-        .filter(Boolean)
-        .join(" ")}
+    <Box
+      component="span"
       title={label}
+      sx={[cueTypeBadgeSx(type, compact), ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}
     >
-      <CueTypeIcon type={type} className="cue-type-icon" />
-      {showLabel && <span className="cue-type-label">{label}</span>}
-    </span>
+      <CueTypeIcon type={type} />
+      {showLabel && <Box component="span">{label}</Box>}
+    </Box>
   );
 }

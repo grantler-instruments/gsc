@@ -47,16 +47,7 @@ function App() {
             minHeight: 0,
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              flex: 1,
-              minHeight: 0,
-              "& .cue-list-panel": showMode
-                ? { borderRight: "none" }
-                : { borderRight: 1, borderColor: "divider" },
-            }}
-          >
+          <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
             <CueList />
             {!showMode && <CueInspector />}
           </Box>
