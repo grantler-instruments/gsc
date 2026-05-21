@@ -10,11 +10,20 @@ import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { MidiCueData, MidiMessageKind } from "../types/cue";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
-import { getCueDisplayName, isContainerCue, isFadeCue, isStopCue } from "../lib/cues";
+import { getCueAssetWarning } from "../lib/cue-asset";
+import { CueAssetAssign } from "./CueAssetAssign";
+import {
+  getCueDisplayName,
+  isContainerCue,
+  isFadeCue,
+  isStopCue,
+  isWaitCue,
+} from "../lib/cues";
 import { CueTypeBadge } from "./CueTypeIcon";
 import { ContainerInspectorFields } from "./ContainerInspectorFields";
 import { FadeInspectorFields } from "./FadeInspectorFields";
 import { StopInspectorFields } from "./StopInspectorFields";
+import { WaitInspectorFields } from "./WaitInspectorFields";
 import { LoopFields } from "./LoopFields";
 import { PlaybackRangeFields } from "./PlaybackRangeFields";
 import { CueAssetPreview } from "./CueAssetPreview";
@@ -24,7 +33,6 @@ import {
   inspectorFieldSx,
   inspectorFieldsSx,
   inspectorGroupHintSx,
-  inspectorHintSx,
   inspectorPanelEmptySx,
   inspectorPanelSx,
   inspectorReadonlySx,
@@ -49,6 +57,8 @@ export function CueInspector() {
       </Box>
     );
   }
+
+  const assetWarning = cue ? getCueAssetWarning(cue) : null;
 
   const patchMidi = (midiPatch: Partial<MidiCueData>) => {
     if (readOnly || cue.type !== "midi" || !cue.midi) return;
@@ -97,11 +107,17 @@ export function CueInspector() {
           sx={{ mb: 1.5 }}
         />
 
+        {assetWarning && (
+          <CueAssetAssign cue={cue} readOnly={readOnly} />
+        )}
+
         {isContainerCue(cue) && <ContainerInspectorFields container={cue} />}
 
         {isStopCue(cue) && <StopInspectorFields stopCue={cue} />}
 
         {isFadeCue(cue) && <FadeInspectorFields fadeCue={cue} />}
+
+        {isWaitCue(cue) && <WaitInspectorFields waitCue={cue} />}
 
         {cue.type === "midi" && cue.midi && (
           <>
@@ -331,11 +347,6 @@ export function CueInspector() {
           </Box>
         )}
 
-        {cue.type === "image" && !cue.assetPath && (
-          <Typography component="p" sx={inspectorHintSx}>
-            Drag an image from Assets onto this cue, or onto the cue list.
-          </Typography>
-        )}
       </Box>
     </Box>
   );

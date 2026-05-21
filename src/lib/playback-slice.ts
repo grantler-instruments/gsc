@@ -1,4 +1,5 @@
 import { getLoopPlayCount, isLoopableMediaCue } from "./loop";
+import { getWaitDurationSec, isWaitCue } from "./wait";
 import type { Cue } from "../types/cue";
 
 const DEFAULT_MEDIA_SEC = 5;
@@ -10,6 +11,7 @@ export function isImageInfiniteHold(cue: Cue): boolean {
 }
 
 export function cueShowsPlaybackProgress(cue: Cue): boolean {
+  if (isWaitCue(cue)) return true;
   if (isImageInfiniteHold(cue)) return false;
   return (
     cue.type === "audio" ||
@@ -62,6 +64,17 @@ export function createPlaybackBounds(
   cue: Cue,
   sourceDurationSec?: number,
 ): PlaybackBounds {
+  if (isWaitCue(cue)) {
+    const sliceSec = getWaitDurationSec(cue);
+    return {
+      sliceSec,
+      endSec: sliceSec,
+      inTime: 0,
+      loopCount: 1,
+      looping: false,
+    };
+  }
+
   const inTime = cue.inTime ?? 0;
   const sliceSec = getPlaybackSliceSec(cue, sourceDurationSec);
 

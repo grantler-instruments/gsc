@@ -5,6 +5,7 @@ import {
   resolveParallelGoIds,
 } from "./cues";
 import { isFadeCue } from "./fade";
+import { getWaitDurationSec, isWaitCue } from "./wait";
 import { getLoopPlayCount, INFINITE_LOOP_ESTIMATE_SEC } from "./loop";
 import { getMediaDurationSec } from "./media-duration";
 import { getPlaybackSliceSec } from "./playback-slice";
@@ -45,6 +46,10 @@ export function estimateStepDurationMs(
 }
 
 function leafDurationMs(cue: Cue): number {
+  if (isWaitCue(cue)) {
+    return Math.max(MIN_STEP_SEC * 1000, getWaitDurationSec(cue) * 1000);
+  }
+
   if (isFadeCue(cue)) {
     const sec = cue.fadeDuration ?? 2;
     return Math.max(MIN_STEP_SEC * 1000, sec * 1000);

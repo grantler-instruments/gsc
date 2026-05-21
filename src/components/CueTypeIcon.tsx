@@ -4,6 +4,7 @@ import LayersIcon from "@mui/icons-material/Layers";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import PianoIcon from "@mui/icons-material/Piano";
 import PlaylistPlayIcon from "@mui/icons-material/PlaylistPlay";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import VolumeDownIcon from "@mui/icons-material/VolumeDown";
 import VideocamIcon from "@mui/icons-material/Videocam";
@@ -22,6 +23,7 @@ const CUE_TYPE_ICONS: Record<CueType, ElementType<SvgIconProps>> = {
   group: LayersIcon,
   sequence: PlaylistPlayIcon,
   stop: StopCircleOutlinedIcon,
+  wait: HourglassEmptyIcon,
   volumeFade: VolumeDownIcon,
   opacityFade: OpacityIcon,
 };
@@ -34,6 +36,7 @@ const CUE_TYPE_LABELS: Record<CueType, string> = {
   group: "Parallel",
   sequence: "Sequence",
   stop: "Stop",
+  wait: "Wait",
   volumeFade: "Volume fade",
   opacityFade: "Opacity fade",
 };

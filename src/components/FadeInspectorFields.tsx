@@ -13,6 +13,7 @@ import {
   formatStopTargetLabel,
   getFadeTarget,
   isStopCue,
+  isWaitCue,
 } from "../lib/cues";
 import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
@@ -42,7 +43,14 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
   const fadeType = fadeCue.type as FadeCueType;
   const target = getFadeTarget(fadeCue, cues);
   const eligibleTargets = cues.filter((c) => {
-    if (c.id === fadeCue.id || isStopCue(c) || isFadeCue(c)) return false;
+    if (
+      c.id === fadeCue.id ||
+      isStopCue(c) ||
+      isFadeCue(c) ||
+      isWaitCue(c)
+    ) {
+      return false;
+    }
     return fadeType === "volumeFade"
       ? canVolumeFadeTarget(c)
       : canOpacityFadeTarget(c);

@@ -20,6 +20,7 @@ export const CUE_TYPE_COLORS: Record<
   group: { color: "#c9a227", bgcolor: "#2a2818" },
   sequence: { color: "#9eb8ff", bgcolor: "#1e2438" },
   stop: { color: "#e88a8a", bgcolor: "#3a1e1e" },
+  wait: { color: "#e8c86d", bgcolor: "#3a3218" },
   volumeFade: { color: "#8ac4e8", bgcolor: "#1e2e3a" },
   opacityFade: { color: "#c4a8e8", bgcolor: "#2a1e3a" },
 };
@@ -31,12 +32,14 @@ export const ADD_CUE_ICON_COLORS: Partial<Record<CueType, string>> = {
   image: "#e8b86d",
   group: "#c9a227",
   sequence: "#9eb8ff",
+  wait: "#e8c86d",
   volumeFade: "#8ac4e8",
   opacityFade: "#c4a8e8",
 };
 
 const CUE_NAME_TINT = {
   stop: "#e8b4b4",
+  wait: "#e8d4a8",
   volumeFade: "#b4d4e8",
   opacityFade: "#d4b4e8",
   warning: "#e8a87c",

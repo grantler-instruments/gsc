@@ -5,6 +5,7 @@ import {
   isParallelGroup,
   isSequenceGroup,
   isStopCue,
+  isWaitCue,
   resolveParallelGoIds,
   resolveStopCueIds,
 } from "./cues";
@@ -27,6 +28,8 @@ function triggerParallelGroup(
     if (isStopCue(child)) {
       const target = getStopTarget(child, cues);
       if (target) triggerStopCue(target, cues, actions.stopMany);
+    } else if (isWaitCue(child)) {
+      /* no-op — duration handled by parent sequence timer */
     } else if (isFadeCue(child)) {
       triggerFadeCue(child, cues);
     } else if (isSequenceGroup(child)) {
@@ -51,6 +54,10 @@ export function triggerGo(
     const target = getStopTarget(cue, cues);
     if (target) triggerStopCue(target, cues, actions.stopMany);
     return { triggered: [], emptyContainer: !target };
+  }
+
+  if (isWaitCue(cue)) {
+    return { triggered: [], emptyContainer: false };
   }
 
   if (isFadeCue(cue)) {

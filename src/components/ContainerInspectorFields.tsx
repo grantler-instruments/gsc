@@ -41,6 +41,7 @@ export function ContainerInspectorFields({
   const updateCue = useProjectStore((s) => s.updateCue);
   const moveCueToGroup = useProjectStore((s) => s.moveCueToGroup);
   const addSelectedCueToGroup = useProjectStore((s) => s.addSelectedCueToGroup);
+  const addCue = useProjectStore((s) => s.addCue);
 
   const children = getChildCues(cues, container.id);
   const isSequence = isSequenceGroup(container);
@@ -88,6 +89,18 @@ export function ContainerInspectorFields({
           onClick={() => addSelectedCueToGroup(container.id)}
         >
           Add selected cue to {isSequence ? "sequence" : "group"}
+        </Button>
+      )}
+
+      {canEdit && isSequence && (
+        <Button
+          variant="text"
+          size="small"
+          onClick={() =>
+            addCue({ name: "Wait", type: "wait", parentId: container.id })
+          }
+        >
+          Add wait step
         </Button>
       )}
 

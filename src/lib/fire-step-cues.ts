@@ -8,6 +8,7 @@ import {
   isSequenceGroup,
   isStopCue,
   isUtilityCue,
+  isWaitCue,
   resolveStopCueIds,
 } from "./cues";
 import { triggerFadeCue } from "./trigger-fade";
@@ -50,6 +51,8 @@ export function fireStepCues(
 
     if (isStopCue(cue)) {
       fireStopCue(cue, cues, actions.stopMany);
+    } else if (isWaitCue(cue)) {
+      /* no-op — sequence timer advances after wait duration */
     } else if (isFadeCue(cue)) {
       triggerFadeCue(cue, cues);
     } else if (isSequenceGroup(cue)) {
@@ -77,6 +80,8 @@ function fireParallelGroup(
   for (const child of getChildCues(cues, cue.id)) {
     if (isStopCue(child)) {
       fireStopCue(child, cues, actions.stopMany);
+    } else if (isWaitCue(child)) {
+      /* no-op */
     } else if (isFadeCue(child)) {
       triggerFadeCue(child, cues);
     } else if (isSequenceGroup(child)) {

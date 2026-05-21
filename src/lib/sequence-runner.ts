@@ -58,6 +58,7 @@ function runSequenceStep(
     currentStep: index,
     stepCount: steps.length,
     stepCueIds,
+    stepStartedAtMs: performance.now(),
   });
 
   fireStepCues(

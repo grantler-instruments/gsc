@@ -2,7 +2,12 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { isFadeCue } from "../lib/fade";
-import { formatStopTargetLabel, getStopTarget, isStopCue } from "../lib/cues";
+import {
+  formatStopTargetLabel,
+  getStopTarget,
+  isStopCue,
+  isWaitCue,
+} from "../lib/cues";
 import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue } from "../types/cue";
@@ -28,7 +33,11 @@ export function StopInspectorFields({ stopCue }: StopInspectorFieldsProps) {
 
   const target = getStopTarget(stopCue, cues);
   const stoppableCues = cues.filter(
-    (c) => !isStopCue(c) && !isFadeCue(c) && c.id !== stopCue.id,
+    (c) =>
+      !isStopCue(c) &&
+      !isFadeCue(c) &&
+      !isWaitCue(c) &&
+      c.id !== stopCue.id,
   );
 
   return (

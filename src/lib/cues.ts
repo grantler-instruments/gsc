@@ -1,5 +1,8 @@
 import { fadeCueLabel, isFadeCue, isValidFadeTarget } from "./fade";
+import { formatWaitDurationLabel, isWaitCue } from "./wait";
 import type { Cue, FadeCueType } from "../types/cue";
+
+export { isWaitCue } from "./wait";
 
 export function isParallelGroup(cue: Cue): boolean {
   return cue.type === "group";
@@ -15,9 +18,9 @@ export function isStopCue(cue: Cue): boolean {
 
 export { isFadeCue, isOpacityFadeCue, isVolumeFadeCue } from "./fade";
 
-/** Stop or fade utility cues — not fired as playback leaves in parallel groups. */
+/** Stop, wait, or fade utility cues — not fired as playback leaves in parallel groups. */
 export function isUtilityCue(cue: Cue): boolean {
-  return isStopCue(cue) || isFadeCue(cue);
+  return isStopCue(cue) || isWaitCue(cue) || isFadeCue(cue);
 }
 
 /** Parallel or sequential container. */
@@ -61,6 +64,9 @@ export function getCueDisplayName(cue: Cue, cues: Cue[]): string {
     const label = fadeCueLabel(cue.type as FadeCueType);
     if (!target) return `${label} (no target)`;
     return `${label} ${target.name}`;
+  }
+  if (isWaitCue(cue)) {
+    return `${cue.name} · ${formatWaitDurationLabel(cue)}`;
   }
   return cue.name;
 }

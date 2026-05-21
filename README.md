@@ -44,6 +44,7 @@ src/
 | **Audio** | Drag/import WAV, MP3, etc. |
 | **Video** | Drag/import MP4, WebM, etc. |
 | **Image** | Drag/import PNG, JPG, WebP, etc. |
+| **Wait** | Timed pause between steps (no media). Runs when placed inside a **sequence**; add from **+ Cue** and drag where you want it. |
 | **MIDI** | **Out:** **+ Cue → MIDI**, GO sends to **Settings → MIDI output**. **In:** **Settings → MIDI map** to bind incoming notes/CCs to GO, select cue, panic, etc. |
 
 ## .gsc projects

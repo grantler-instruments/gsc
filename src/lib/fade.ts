@@ -24,7 +24,14 @@ export function isValidFadeTarget(
   fadeType: FadeCueType,
   target: Cue | undefined,
 ): boolean {
-  if (!target || isFadeCue(target) || target.type === "stop") return false;
+  if (
+    !target ||
+    isFadeCue(target) ||
+    target.type === "stop" ||
+    target.type === "wait"
+  ) {
+    return false;
+  }
   if (fadeType === "volumeFade") return canVolumeFadeTarget(target);
   return canOpacityFadeTarget(target);
 }

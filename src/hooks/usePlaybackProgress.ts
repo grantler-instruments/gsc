@@ -5,6 +5,7 @@ import {
   getMediaDurationSec,
   prefetchMediaDurations,
 } from "../lib/media-duration";
+import { isWaitCue } from "../lib/wait";
 import {
   computePlaybackProgressWithBounds,
   createPlaybackBounds,
@@ -119,6 +120,27 @@ export function usePlaybackProgress(): void {
       const now = performance.now();
       const entries: CuePlaybackProgress[] = [];
       const completedCueIds: string[] = [];
+
+      const { runningSequence } = useTransportStore.getState();
+      if (runningSequence) {
+        const stepElapsedSec =
+          (now - runningSequence.stepStartedAtMs) / 1000;
+        for (const cueId of runningSequence.stepCueIds) {
+          const cue = cueById.get(cueId);
+          if (!cue || !isWaitCue(cue)) continue;
+          const bounds = createPlaybackBounds(cue);
+          const snapshot = computePlaybackProgressWithBounds(
+            bounds,
+            stepElapsedSec,
+          );
+          entries.push({
+            cueId,
+            elapsedSec: stepElapsedSec,
+            sliceSec: bounds.sliceSec,
+            ...snapshot,
+          });
+        }
+      }
 
       for (const cueId of activeCueIds) {
         const session = sessionsRef.current.get(cueId);

@@ -17,6 +17,7 @@ const ADD_CUE_TYPES = [
   "midi",
   "group",
   "sequence",
+  "wait",
   "volumeFade",
   "opacityFade",
 ] as const satisfies readonly CueType[];
@@ -28,6 +29,7 @@ const ADD_CUE_LABELS: Record<(typeof ADD_CUE_TYPES)[number], string> = {
   midi: "MIDI",
   group: "Parallel",
   sequence: "Sequence",
+  wait: "Wait",
   volumeFade: "Volume fade",
   opacityFade: "Opacity fade",
 };
@@ -54,6 +56,8 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
       addSequenceCue();
     } else if (type === "volumeFade" || type === "opacityFade") {
       addFadeCue(type);
+    } else if (type === "wait") {
+      addCue({ name: "Wait", type: "wait" });
     } else {
       const labels = {
         audio: "Audio cue",

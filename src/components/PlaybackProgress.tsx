@@ -7,11 +7,14 @@ interface PlaybackProgressProps {
   progress: CuePlaybackProgress;
   /** Compact single-line layout for cue list rows. */
   compact?: boolean;
+  /** Bar color — wait cues use warning tone. */
+  tone?: "media" | "wait";
 }
 
 export function PlaybackProgress({
   progress,
   compact = false,
+  tone = "media",
 }: PlaybackProgressProps) {
   const fillPct = Math.max(0, Math.min(100, progress.progress * 100));
   const ariaPct = Math.round(fillPct);
@@ -53,7 +56,7 @@ export function PlaybackProgress({
           sx={{
             height: "100%",
             borderRadius: 0.5,
-            bgcolor: "success.main",
+            bgcolor: tone === "wait" ? "warning.main" : "success.main",
             width: `${fillPct}%`,
           }}
         />

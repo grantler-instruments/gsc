@@ -16,6 +16,8 @@ import { usePlaybackProgress } from "./hooks/usePlaybackProgress";
 import { useProjectSession } from "./hooks/useProjectSession";
 import { usePreventBrowserFileDrop } from "./hooks/usePreventBrowserFileDrop";
 import { useTauriAppMenu } from "./hooks/useTauriAppMenu";
+import { getPrimarySelectedCueId } from "./lib/cue-selection";
+import { useActiveCueList } from "./stores/project";
 import { useUiStore } from "./stores/ui";
 
 function App() {
@@ -31,6 +33,9 @@ function App() {
   usePreventBrowserFileDrop();
   useTauriAppMenu();
   const showMode = useUiStore((s) => s.showMode);
+  const selectedCueIds = useActiveCueList().selectedCueIds;
+  const hasSelectedCue =
+    !showMode && getPrimarySelectedCueId(selectedCueIds) !== null;
 
   if (!sessionReady) {
     return null;
@@ -62,7 +67,7 @@ function App() {
         >
           <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
             <CueList />
-            {!showMode && <CueInspector />}
+            {hasSelectedCue && <CueInspector />}
           </Box>
         </Box>
       </Box>

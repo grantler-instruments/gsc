@@ -151,6 +151,7 @@ export const useProjectStore = create<ProjectState>()(
           const parent = cues.find((c) => c.id === parentId);
           if (!parent || !isContainerCue(parent)) parentId = undefined;
         }
+
         const cue: Cue = {
           id: crypto.randomUUID(),
           number: "0",
@@ -165,6 +166,7 @@ export const useProjectStore = create<ProjectState>()(
           fadeOut: type === "audio" || type === "video" ? 0 : undefined,
           inTime: isMediaCueType(type) ? 0 : undefined,
           outTime: undefined,
+          waitDurationSec: type === "wait" ? 1 : undefined,
         };
         const next = applyRenumber(appendCueInList(cues, cue));
         set({

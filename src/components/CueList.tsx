@@ -47,6 +47,7 @@ import {
   isParallelGroup,
   isSequenceGroup,
   isStopCue,
+  isWaitCue,
   isUtilityCue,
   type CueListNode,
 } from "../lib/cues";
@@ -56,6 +57,7 @@ import {
   resolveFadeFromLevel,
 } from "../lib/fade";
 import { formatMidiCue } from "../lib/midi";
+import { formatWaitDurationLabel } from "../lib/wait";
 import { formatLoopLabel } from "../lib/loop";
 import { formatPlaybackRangeLabel } from "../lib/time";
 import { triggerGoAndAdvance } from "../lib/transport-actions";
@@ -66,7 +68,7 @@ import {
   type RunningSequence,
 } from "../stores/transport";
 import type { Cue } from "../types/cue";
-import { vfsHas } from "../vfs/engine";
+import { cueMissingAsset, getCueAssetWarning } from "../lib/cue-asset";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
@@ -91,16 +93,6 @@ import {
   cueRowSx,
   cueWarningSx,
 } from "../theme/cueStyles";
-
-function cueNeedsAsset(cue: Cue): boolean {
-  return cue.type === "audio" || cue.type === "video" || cue.type === "image";
-}
-
-function cueMissingAsset(cue: Cue): boolean {
-  if (!cueNeedsAsset(cue)) return false;
-  if (!cue.assetPath) return true;
-  return !vfsHas(cue.assetPath);
-}
 
 export function CueList() {
   const tokens = useGscTokens();
@@ -373,7 +365,8 @@ export function CueList() {
         flexDirection: "column",
         minHeight: 0,
         minWidth: 0,
-        borderRight: showMode ? 0 : 1,
+        borderRight:
+          !showMode && getPrimarySelectedCueId(selectedCueIds) ? 1 : 0,
         borderColor: "divider",
       }}
     >
@@ -523,11 +516,13 @@ function CueRow({
   const isSequence = isSequenceGroup(cue);
   const isStop = isStopCue(cue);
   const isFade = isFadeCue(cue);
+  const isWait = isWaitCue(cue);
   const isUtility = isUtilityCue(cue);
   const stopTarget = isStop ? getStopTarget(cue, allCues) : undefined;
   const fadeTarget = isFade ? getFadeTarget(cue, allCues) : undefined;
   const stopTargetMissing = isStop && !stopTarget;
   const fadeTargetMissing = isFade && !fadeTarget;
+  const assetWarning = getCueAssetWarning(cue);
   const showVolumeFadeAction = canVolumeFadeTarget(cue);
   const showOpacityFadeAction = canOpacityFadeTarget(cue);
   const fadeDetail =
@@ -775,6 +770,16 @@ function CueRow({
             Fade target missing
           </Typography>
         )}
+        {isWait && (
+          <Typography component="span" sx={cueDetailSx}>
+            Hold {formatWaitDurationLabel(cue)}
+          </Typography>
+        )}
+        {assetWarning && (
+          <Typography component="span" sx={cueDetailSx}>
+            {assetWarning.detail}
+          </Typography>
+        )}
         {fadeDetail && (
           <Typography component="span" sx={cueDetailSx}>
             {fadeDetail}
@@ -796,7 +801,11 @@ function CueRow({
           </Typography>
         )}
         {active && playback && cueShowsPlaybackProgress(cue) && (
-          <PlaybackProgress progress={playback} compact />
+          <PlaybackProgress
+            progress={playback}
+            compact
+            tone={isWait ? "wait" : "media"}
+          />
         )}
       </Box>
       <CueNotesIcon notes={cue.notes} />
@@ -855,10 +864,12 @@ function CueRow({
           sx={cueWarningSx}
           title={
             fadeTargetMissing
-              ? "Fade target missing"
-              : stopTargetMissing
-                ? "Stop target missing"
-                : "Asset missing or not loaded"
+                ? "Fade target missing"
+                : stopTargetMissing
+                  ? "Stop target missing"
+                  : assetWarning
+                    ? `${assetWarning.title} — drag from Assets onto this cue or the list`
+                    : "Warning"
           }
         >
           !

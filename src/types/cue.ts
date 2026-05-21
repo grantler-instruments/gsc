@@ -6,6 +6,7 @@ export type CueType =
   | "group"
   | "sequence"
   | "stop"
+  | "wait"
   | "volumeFade"
   | "opacityFade";
 
@@ -14,7 +15,7 @@ export type FadeCueType = "volumeFade" | "opacityFade";
 /** Media file cues (not MIDI). */
 export type AssetKind = Exclude<
   CueType,
-  "midi" | "group" | "sequence" | "stop" | "volumeFade" | "opacityFade"
+  "midi" | "group" | "sequence" | "stop" | "wait" | "volumeFade" | "opacityFade"
 >;
 
 export type MidiMessageKind =
@@ -71,6 +72,8 @@ export interface Cue {
   notes?: string;
   /** For stop cues: id of the cue to stop when this cue is triggered. */
   stopTargetId?: string;
+  /** For wait cues: how long to hold before the next sequence step (seconds). */
+  waitDurationSec?: number;
 }
 
 export interface CueListSnapshot {

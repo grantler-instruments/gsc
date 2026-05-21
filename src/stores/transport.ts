@@ -8,6 +8,8 @@ export interface RunningSequence {
   currentStep: number;
   stepCount: number;
   stepCueIds: string[];
+  /** Wall-clock ms when the current step started (for wait progress). */
+  stepStartedAtMs: number;
 }
 
 interface TransportState {

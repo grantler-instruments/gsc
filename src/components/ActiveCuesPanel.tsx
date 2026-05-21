@@ -2,7 +2,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { isContainerCue, isStopCue } from "../lib/cues";
+import { isContainerCue, isStopCue, isWaitCue } from "../lib/cues";
 import { formatMidiCue } from "../lib/midi";
 import { triggerStopCue } from "../lib/trigger";
 import { formatPlaybackRangeLabel } from "../lib/time";
@@ -42,7 +42,10 @@ export function ActiveCuesPanel() {
     .map((id) => findProjectCue(cueLists, id))
     .filter(
       (c): c is NonNullable<typeof c> =>
-        c !== undefined && !isContainerCue(c) && !isStopCue(c),
+        c !== undefined &&
+        !isContainerCue(c) &&
+        !isStopCue(c) &&
+        !isWaitCue(c),
     );
 
   return (
