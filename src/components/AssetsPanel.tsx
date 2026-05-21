@@ -3,9 +3,11 @@ import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { isExternalFileDrag } from "../lib/asset-drop";
+import { pointerLeftElement } from "../lib/dom";
 import { isAssetDrag, setAssetDragData } from "../lib/drag";
+import { cueListDropActiveSx } from "../theme/cueStyles";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import { useGscTokens } from "../theme/useGscTokens";
@@ -30,9 +32,11 @@ export function AssetsPanel() {
   const removeEntry = useVfsStore((s) => s.removeEntry);
   const addCue = useProjectStore((s) => s.addCue);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [dropActive, setDropActive] = useState(false);
 
   const onDrop = useCallback(
     async (e: React.DragEvent) => {
+      setDropActive(false);
       e.preventDefault();
       e.stopPropagation();
       if (!canEdit) return;
@@ -49,18 +53,30 @@ export function AssetsPanel() {
   const onDragOver = useCallback(
     (e: React.DragEvent) => {
       if (isAssetDrag(e.dataTransfer) && !isExternalFileDrag(e.dataTransfer)) {
+        setDropActive(false);
         return;
       }
-      if (!isExternalFileDrag(e.dataTransfer)) return;
+      if (!isExternalFileDrag(e.dataTransfer)) {
+        setDropActive(false);
+        return;
+      }
       e.preventDefault();
       if (!canEdit) {
         e.dataTransfer.dropEffect = "none";
+        setDropActive(false);
         return;
       }
       e.dataTransfer.dropEffect = "copy";
+      setDropActive(true);
     },
     [canEdit],
   );
+
+  const onDragLeave = useCallback((e: React.DragEvent) => {
+    if (pointerLeftElement(e.currentTarget, e.relatedTarget)) {
+      setDropActive(false);
+    }
+  }, []);
 
   const onFileInput = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,12 +91,14 @@ export function AssetsPanel() {
     <Box
       onDropCapture={onDrop}
       onDragOverCapture={onDragOver}
+      onDragLeaveCapture={onDragLeave}
       sx={{
         flex: 1,
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
         overflow: "hidden",
+        ...(dropActive && cueListDropActiveSx(tokens)),
       }}
     >
       <Stack

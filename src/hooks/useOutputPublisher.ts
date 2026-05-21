@@ -10,7 +10,7 @@ import { useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import { usePlaybackStore } from "../stores/playback";
 import { useFadeStore } from "../stores/fade";
-import { vfsGet } from "../vfs/engine";
+import { resolveAssetBlob } from "../platform/vfs-asset";
 
 /** Publishes visual output state to the output window via BroadcastChannel. */
 export function useOutputPublisher(): void {
@@ -24,13 +24,13 @@ export function useOutputPublisher(): void {
     const publish = () => {
       void (async () => {
         revisionRef.current += 1;
-        const state = buildOutputState(revisionRef.current);
+        const state = await buildOutputState(revisionRef.current);
 
         await Promise.all(
           state.layers.map(async (layer) => {
-            const blob = vfsGet(layer.assetPath);
+            const blob = await resolveAssetBlob(layer.assetPath);
             if (blob) {
-              await cacheAsset(layer.assetPath, blob);
+              await cacheAsset(state.projectId, layer.assetPath, blob);
             }
           }),
         );

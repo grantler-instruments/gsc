@@ -1,4 +1,7 @@
+import { isProjectBundlePath } from "./project-paths";
 import { filesFromDataTransfer } from "../platform/files.web";
+import { getPlatform } from "../platform";
+import { openDroppedProjectBundle } from "../platform/project-storage";
 import { useVfsStore } from "../stores/vfs";
 import {
   isAssetDrag,
@@ -31,6 +34,17 @@ export async function resolveAssetDropPayloads(
 
   const files = filesFromDataTransfer(dataTransfer);
   if (!files.length) return [];
+
+  if (getPlatform() === "tauri") {
+    const bundleFile = files.find((f) => isProjectBundlePath(f.name));
+    if (bundleFile) {
+      const path = (bundleFile as File & { path?: string }).path;
+      if (path) {
+        void openDroppedProjectBundle(path);
+      }
+      return [];
+    }
+  }
 
   const imported = await useVfsStore.getState().importFromFileList(files);
   return imported.map(({ path, name, kind }) => ({ path, name, kind }));

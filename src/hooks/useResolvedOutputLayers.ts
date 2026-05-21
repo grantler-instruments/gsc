@@ -34,7 +34,7 @@ export function useResolvedOutputLayers(
       for (const layer of state.layers) {
         let blob: Blob | undefined;
         for (let attempt = 0; attempt < 8; attempt += 1) {
-          blob = await getCachedAsset(layer.assetPath);
+          blob = await getCachedAsset(state.projectId, layer.assetPath);
           if (blob || cancelled) break;
           await new Promise((r) => setTimeout(r, 50));
         }

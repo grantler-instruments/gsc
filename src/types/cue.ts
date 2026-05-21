@@ -86,6 +86,8 @@ export interface ProjectSnapshotV1 {
 
 export interface ProjectSnapshotV2 {
   version: 2;
+  /** Stable project identity; assigned on creation, preserved across save/load. */
+  id: string;
   name: string;
   cueLists: CueListSnapshot[];
   activeCueListId: string;

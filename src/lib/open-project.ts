@@ -1,0 +1,23 @@
+import { setActiveProjectId } from "./active-project-id";
+import { collectSessionAssetPaths } from "./project-session";
+import { snapshotToCueLists } from "./project-snapshot";
+import type { ProjectSnapshot } from "../types/cue";
+import { useProjectStore } from "../stores/project";
+import { useProjectLocationStore } from "../stores/project-location";
+import { useVfsStore } from "../stores/vfs";
+import { hydrateVfsFromProjectCache, vfsClear } from "../vfs/engine";
+
+/** Replace the open project and reload any cached assets for it. */
+export async function openProjectSnapshot(snap: ProjectSnapshot): Promise<void> {
+  vfsClear();
+  useProjectLocationStore.getState().setRootDir(null);
+  const loaded = snapshotToCueLists(snap);
+  setActiveProjectId(loaded.id);
+  useProjectStore.setState(loaded);
+
+  const snapshot = useProjectStore.getState().getSnapshot();
+  if (snapshot.version !== 2) return;
+  const paths = collectSessionAssetPaths(snapshot, []);
+  await hydrateVfsFromProjectCache(loaded.id, paths);
+  useVfsStore.getState().syncFromEngine();
+}

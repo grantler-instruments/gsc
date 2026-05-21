@@ -10,10 +10,13 @@ import { useSequenceFadeBridge } from "./hooks/useSequenceFadeBridge";
 import { useFadeAnimation } from "./hooks/useFadeAnimation";
 import { useOutputPublisher } from "./hooks/useOutputPublisher";
 import { usePlaybackProgress } from "./hooks/usePlaybackProgress";
+import { useProjectSession } from "./hooks/useProjectSession";
 import { usePreventBrowserFileDrop } from "./hooks/usePreventBrowserFileDrop";
+import { useTauriProjectBundleDrop } from "./hooks/useTauriProjectBundleDrop";
 import { useUiStore } from "./stores/ui";
 
 function App() {
+  const sessionReady = useProjectSession();
   useAppKeyboard();
   useAudioEngine();
   useFadeAnimation();
@@ -21,7 +24,12 @@ function App() {
   useOutputPublisher();
   usePlaybackProgress();
   usePreventBrowserFileDrop();
+  useTauriProjectBundleDrop();
   const showMode = useUiStore((s) => s.showMode);
+
+  if (!sessionReady) {
+    return null;
+  }
 
   return (
     <Box

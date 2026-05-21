@@ -5,7 +5,9 @@ import { filesFromDataTransfer } from "../platform/files.web";
 import { vfsAllPaths, vfsHas, vfsRemove } from "../vfs/engine";
 import { clearCachedAudioBuffer } from "../audio/buffer-cache";
 import { clearMediaDuration } from "../lib/media-duration";
+import { getPlatform } from "../platform";
 import { assetKindFromPath, importFiles, type ImportedAsset } from "../vfs/import";
+import { vfsGet } from "../vfs/engine";
 
 export interface VfsEntry {
   path: string;
@@ -55,6 +57,15 @@ export const useVfsStore = create<VfsState>()(
             a.path.localeCompare(b.path),
           ),
         });
+        if (getPlatform() === "tauri") {
+          const { syncImportedAssetToDisk } = await import(
+            "../platform/project-storage.tauri"
+          );
+          for (const asset of imported) {
+            const blob = vfsGet(asset.path);
+            if (blob) await syncImportedAssetToDisk(asset.path, blob);
+          }
+        }
         return imported;
       },
 
@@ -67,6 +78,11 @@ export const useVfsStore = create<VfsState>()(
         vfsRemove(path);
         clearCachedAudioBuffer(path);
         clearMediaDuration(path);
+        if (getPlatform() === "tauri") {
+          void import("../platform/project-storage.tauri").then(
+            ({ removeAssetFromDisk }) => removeAssetFromDisk(path),
+          );
+        }
         set((s) => ({
           entries: s.entries.filter((e) => e.path !== path),
         }));

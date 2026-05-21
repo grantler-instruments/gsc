@@ -3,16 +3,38 @@
  * Blobs are not stored in Zustand — only metadata lives in the vfs store.
  */
 
-import { cacheAsset, removeCachedAsset } from "../lib/asset-cache";
+import { tryGetActiveProjectId } from "../lib/active-project-id";
+import { cacheAsset, getCachedAsset, removeCachedAsset } from "../lib/asset-cache";
 
 const blobs = new Map<string, Blob>();
 const objectUrls = new Map<string, string>();
+/** Paths known on disk (Tauri) — resolved into memory on first read. */
+const diskBackedPaths = new Set<string>();
 
-export function vfsPut(path: string, blob: Blob): void {
+export function vfsPut(
+  path: string,
+  blob: Blob,
+  options?: { cache?: boolean },
+): void {
   const normalized = normalizePath(path);
   revokeUrl(normalized);
   blobs.set(normalized, blob);
-  void cacheAsset(normalized, blob);
+  diskBackedPaths.delete(normalized);
+  if (options?.cache === false) return;
+  const projectId = tryGetActiveProjectId();
+  if (projectId) {
+    void cacheAsset(projectId, normalized, blob);
+  }
+}
+
+export function vfsRegisterDiskPath(path: string): void {
+  diskBackedPaths.add(normalizePath(path));
+}
+
+export function vfsRegisterDiskPaths(paths: string[]): void {
+  for (const path of paths) {
+    vfsRegisterDiskPath(path);
+  }
 }
 
 export function vfsGet(path: string): Blob | undefined {
@@ -33,14 +55,33 @@ export function vfsGetObjectUrl(path: string): string | undefined {
 }
 
 export function vfsHas(path: string): boolean {
-  return blobs.has(normalizePath(path));
+  const normalized = normalizePath(path);
+  return blobs.has(normalized) || diskBackedPaths.has(normalized);
 }
 
 export function vfsRemove(path: string): void {
   const normalized = normalizePath(path);
   revokeUrl(normalized);
   blobs.delete(normalized);
-  void removeCachedAsset(normalized);
+  const projectId = tryGetActiveProjectId();
+  if (projectId) {
+    void removeCachedAsset(projectId, normalized);
+  }
+}
+
+/** Load blobs from the persisted Cache API into the in-memory VFS. */
+export async function hydrateVfsFromProjectCache(
+  projectId: string,
+  paths: string[],
+): Promise<void> {
+  await Promise.all(
+    paths.map(async (path) => {
+      const normalized = normalizePath(path);
+      if (blobs.has(normalized)) return;
+      const blob = await getCachedAsset(projectId, normalized);
+      if (blob) blobs.set(normalized, blob);
+    }),
+  );
 }
 
 export function vfsClear(): void {
@@ -48,6 +89,7 @@ export function vfsClear(): void {
     revokeUrl(path);
   }
   blobs.clear();
+  diskBackedPaths.clear();
 }
 
 export function vfsAllPaths(): string[] {

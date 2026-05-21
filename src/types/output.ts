@@ -20,6 +20,7 @@ export interface OutputLayer {
 
 export interface OutputState {
   revision: number;
+  projectId: string;
   layers: OutputLayer[];
 }
 

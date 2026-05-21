@@ -1,35 +1,55 @@
+import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
-import Box from "@mui/material/Box";
 import ButtonBase from "@mui/material/ButtonBase";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { useRef, useState } from "react";
+import { openProjectSnapshot } from "../lib/open-project";
 import { downloadProject, parseProjectFile } from "../lib/project-io";
+import { BUNDLE_EXTENSION } from "../lib/project-paths";
+import { getPlatform } from "../platform";
+import {
+  exportProjectBundle,
+  importProjectBundle,
+  openProject,
+} from "../platform/project-storage";
 import { useProjectStore } from "../stores/project";
+import { projectDisplayName, useProjectLocationStore } from "../stores/project-location";
 import { useUiStore } from "../stores/ui";
+
+const isTauri = getPlatform() === "tauri";
 
 export function BrandFileMenu() {
   const getSnapshot = useProjectStore((s) => s.getSnapshot);
-  const loadSnapshot = useProjectStore((s) => s.loadSnapshot);
+  const rootDir = useProjectLocationStore((s) => s.rootDir);
   const showMode = useUiStore((s) => s.showMode);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const jsonRef = useRef<HTMLInputElement>(null);
+  const bundleRef = useRef<HTMLInputElement>(null);
   const open = Boolean(anchorEl);
 
   const close = () => setAnchorEl(null);
 
-  const handleSave = () => {
+  const handleSaveJson = () => {
     downloadProject(getSnapshot());
     close();
   };
 
-  const handleOpenClick = () => {
+  const handleExportBundle = async () => {
     close();
-    fileRef.current?.click();
+    const { missing } = await exportProjectBundle();
+    if (missing.length > 0) {
+      console.warn("Export missing assets:", missing);
+      window.alert(
+        `Exported, but ${missing.length} asset(s) were missing from storage.`,
+      );
+    }
   };
+
+  const projectFolderLabel = projectDisplayName(rootDir);
 
   return (
     <>
@@ -39,29 +59,18 @@ export function BrandFileMenu() {
         aria-expanded={open}
         aria-label="File menu"
         sx={{
-          display: "flex",
-          alignItems: "baseline",
-          gap: 1,
           flexShrink: 0,
           borderRadius: 1,
           px: 1,
           py: 0.5,
-          textAlign: "left",
+          fontWeight: 700,
+          fontSize: 13,
+          letterSpacing: "0.06em",
+          color: "primary.main",
           "&:hover": { bgcolor: "action.hover" },
         }}
       >
-        <Box
-          component="span"
-          sx={{ fontWeight: 600, fontSize: 13, letterSpacing: "0.02em" }}
-        >
-          Grantler Stage Control
-        </Box>
-        <Box
-          component="span"
-          sx={{ fontSize: 11, color: "primary.main", fontWeight: 700 }}
-        >
-          GSC
-        </Box>
+        GSC
       </ButtonBase>
 
       <Menu
@@ -71,29 +80,93 @@ export function BrandFileMenu() {
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         transformOrigin={{ vertical: "top", horizontal: "left" }}
       >
-        <MenuItem onClick={handleSave}>
+        {isTauri ? (
+          <MenuItem
+            disabled={showMode}
+            onClick={() => {
+              close();
+              void openProject();
+            }}
+          >
+            <ListItemIcon>
+              <FolderOpenOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Open…"
+              secondary={
+                showMode
+                  ? "Disabled in show mode"
+                  : projectFolderLabel
+                    ? `Saving to ${projectFolderLabel}`
+                    : "Saves automatically to the project folder"
+              }
+            />
+          </MenuItem>
+        ) : (
+          <MenuItem
+            disabled={showMode}
+            onClick={() => {
+              close();
+              jsonRef.current?.click();
+            }}
+          >
+            <ListItemIcon>
+              <FolderOpenOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Open project (JSON)…"
+              secondary={showMode ? "Disabled in show mode" : undefined}
+            />
+          </MenuItem>
+        )}
+
+        {!isTauri ? (
+          <MenuItem onClick={handleSaveJson}>
+            <ListItemIcon>
+              <SaveOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Save project (JSON)…"
+              secondary="Cues only, no media files"
+            />
+          </MenuItem>
+        ) : null}
+
+        <MenuItem disabled={showMode} onClick={() => void handleExportBundle()}>
           <ListItemIcon>
-            <SaveOutlinedIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Save project…</ListItemText>
-        </MenuItem>
-        <MenuItem
-          disabled={showMode}
-          onClick={handleOpenClick}
-          title={showMode ? "Disabled in show mode" : undefined}
-        >
-          <ListItemIcon>
-            <FolderOpenOutlinedIcon fontSize="small" />
+            <ArchiveOutlinedIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText
-            primary="Open project…"
-            secondary={showMode ? "Disabled in show mode" : undefined}
+            primary="Export project bundle…"
+            secondary={
+              showMode
+                ? "Disabled in show mode"
+                : `Includes all assets (${BUNDLE_EXTENSION})`
+            }
           />
         </MenuItem>
+
+        {!isTauri ? (
+          <MenuItem
+            disabled={showMode}
+            onClick={() => {
+              close();
+              bundleRef.current?.click();
+            }}
+          >
+            <ListItemIcon>
+              <ArchiveOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Import project bundle…"
+              secondary={showMode ? "Disabled in show mode" : undefined}
+            />
+          </MenuItem>
+        ) : null}
       </Menu>
 
       <input
-        ref={fileRef}
+        ref={jsonRef}
         type="file"
         accept=".gsc,application/json"
         hidden
@@ -101,7 +174,20 @@ export function BrandFileMenu() {
           const file = e.target.files?.[0];
           if (!file) return;
           const text = await file.text();
-          loadSnapshot(parseProjectFile(text));
+          void openProjectSnapshot(parseProjectFile(text));
+          e.target.value = "";
+        }}
+      />
+
+      <input
+        ref={bundleRef}
+        type="file"
+        accept=".zip,.gsc.zip,application/zip"
+        hidden
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          await importProjectBundle(file);
           e.target.value = "";
         }}
       />

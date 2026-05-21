@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { buildOutputState } from "../lib/output-state";
 import { useFadeStore } from "../stores/fade";
 import { usePlaybackStore } from "../stores/playback";
@@ -16,9 +16,17 @@ export function useVisualOutputLayers(): OutputLayer[] {
   );
   const byCueId = usePlaybackStore((s) => s.byCueId);
   const frameMs = useFadeStore((s) => s.frameMs);
+  const [layers, setLayers] = useState<OutputLayer[]>([]);
 
-  return useMemo(
-    () => buildOutputState(0).layers,
-    [activeCueIds, cues, byCueId, frameMs],
-  );
+  useEffect(() => {
+    let cancelled = false;
+    void buildOutputState(0).then((state) => {
+      if (!cancelled) setLayers(state.layers);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCueIds, cues, byCueId, frameMs]);
+
+  return layers;
 }

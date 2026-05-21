@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getStopTarget } from "../lib/cues";
 import { getVideoThumbnailDataUrl } from "../lib/video-thumbnail";
 import type { Cue } from "../types/cue";
-import { vfsGetObjectUrl } from "../vfs/engine";
+import { useAssetObjectUrl } from "../hooks/useAssetObjectUrl";
 
 const THUMB_SIZE = 48;
 
@@ -13,16 +13,19 @@ interface TransportCueThumbnailProps {
 }
 
 function useMediaThumbnail(cue: Cue): string | null {
+  const imageUrl = useAssetObjectUrl(
+    cue.type === "image" ? cue.assetPath : undefined,
+  );
   const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!cue.assetPath) {
-      setSrc(null);
+    if (cue.type === "image") {
+      setSrc(imageUrl);
       return;
     }
 
-    if (cue.type === "image") {
-      setSrc(vfsGetObjectUrl(cue.assetPath) ?? null);
+    if (!cue.assetPath) {
+      setSrc(null);
       return;
     }
 
@@ -39,9 +42,9 @@ function useMediaThumbnail(cue: Cue): string | null {
     }
 
     setSrc(null);
-  }, [cue.assetPath, cue.inTime, cue.type]);
+  }, [cue.assetPath, cue.inTime, cue.type, imageUrl]);
 
-  return src;
+  return cue.type === "image" ? imageUrl : src;
 }
 
 export function TransportCueThumbnail({

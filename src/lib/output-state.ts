@@ -6,6 +6,7 @@ import type { OutputLayer, OutputState } from "../types/output";
 import { usePlaybackStore } from "../stores/playback";
 import { useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
+import { resolveAssetBlob } from "../platform/vfs-asset";
 import { vfsGetObjectUrl } from "../vfs/engine";
 import { getMediaDurationSec } from "./media-duration";
 
@@ -13,11 +14,15 @@ function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
-function buildLayer(cue: Cue, goAtMs: number): OutputLayer | undefined {
+async function buildLayer(
+  cue: Cue,
+  goAtMs: number,
+): Promise<OutputLayer | undefined> {
   if ((cue.type !== "video" && cue.type !== "image") || !cue.assetPath) {
     return undefined;
   }
 
+  await resolveAssetBlob(cue.assetPath);
   const objectUrl = vfsGetObjectUrl(cue.assetPath);
   if (!objectUrl) return undefined;
 
@@ -44,7 +49,7 @@ function buildLayer(cue: Cue, goAtMs: number): OutputLayer | undefined {
 }
 
 /** Build the current visual output snapshot from live stores. */
-export function buildOutputState(revision: number): OutputState {
+export async function buildOutputState(revision: number): Promise<OutputState> {
   const { activeCueIds, cueStartedAtMs } = useTransportStore.getState();
   const { cueLists, activeCueListId } = useProjectStore.getState();
   const progressByCueId = usePlaybackStore.getState().byCueId;
@@ -64,9 +69,11 @@ export function buildOutputState(revision: number): OutputState {
       cueStartedAtMs[cueId] ??
       (progress ? now - progress.elapsedSec * 1000 : now);
 
-    const layer = buildLayer(cue, goAtMs);
+    const layer = await buildLayer(cue, goAtMs);
     if (layer) layers.push(layer);
   }
 
-  return { revision, layers };
+  const { id: projectId } = useProjectStore.getState();
+
+  return { revision, projectId, layers };
 }

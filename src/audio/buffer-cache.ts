@@ -1,4 +1,5 @@
 import { setMediaDurationSec } from "../lib/media-duration";
+import { resolveAssetBlob } from "../platform/vfs-asset";
 import { vfsGet } from "../vfs/engine";
 
 const buffers = new Map<string, AudioBuffer>();
@@ -23,7 +24,7 @@ export async function loadAudioBuffer(
   const cached = buffers.get(assetPath);
   if (cached) return cached;
 
-  const blob = vfsGet(assetPath);
+  const blob = (await resolveAssetBlob(assetPath)) ?? vfsGet(assetPath);
   if (!blob) return null;
 
   const buffer = await ctx.decodeAudioData(await blob.arrayBuffer());

@@ -1,5 +1,6 @@
 import { getDecodeAudioContext, loadAudioBuffer } from "../audio/buffer-cache";
-import { vfsGet } from "../vfs/engine";
+import { resolveAssetBlob } from "../platform/vfs-asset";
+import { vfsHas } from "../vfs/engine";
 import { assetKindFromPath } from "../vfs/import";
 
 const cache = new Map<string, number>();
@@ -23,13 +24,13 @@ export function clearMediaDuration(assetPath: string): void {
 }
 
 async function probeAudioDurationSec(assetPath: string): Promise<number | undefined> {
-  if (!vfsGet(assetPath)) return undefined;
+  if (!vfsHas(assetPath)) return undefined;
   const buffer = await loadAudioBuffer(assetPath, getDecodeAudioContext());
   return buffer?.duration;
 }
 
 async function probeVideoDurationSec(assetPath: string): Promise<number | undefined> {
-  const blob = vfsGet(assetPath);
+  const blob = await resolveAssetBlob(assetPath);
   if (!blob) return undefined;
 
   const url = URL.createObjectURL(blob);

@@ -9,6 +9,34 @@
     "core:window:allow-show",
     "core:window:allow-set-focus",
     "core:webview:allow-create-webview-window",
-    "opener:default"
+    "opener:default",
+    "dialog:default",
+    "fs:default",
+    "fs:allow-exists",
+    "fs:allow-mkdir",
+    "fs:allow-read-dir",
+    "fs:allow-read-file",
+    "fs:allow-read-text-file",
+    "fs:allow-remove",
+    "fs:allow-write-file",
+    "fs:allow-write-text-file",
+    "fs:allow-home-read-recursive",
+    "fs:allow-home-write-recursive",
+    "fs:allow-document-read-recursive",
+    "fs:allow-document-write-recursive",
+    "fs:allow-desktop-read-recursive",
+    "fs:allow-desktop-write-recursive",
+    "fs:allow-download-read-recursive",
+    "fs:allow-download-write-recursive",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$DOCUMENT/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "/Volumes/**" }
+      ]
+    }
   ]
 }

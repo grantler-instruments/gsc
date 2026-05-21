@@ -3,6 +3,7 @@ import { resolveEffectiveVolume } from "../stores/fade";
 import { getMediaDurationSec } from "../lib/media-duration";
 import type { Cue } from "../types/cue";
 import { getCachedAudioBuffer, loadAudioBuffer } from "./buffer-cache";
+import { resolveAssetBlob } from "../platform/vfs-asset";
 import {
   startVideoVoice,
   stopVideoVoice,
@@ -210,6 +211,11 @@ export class AudioEngine {
           }
           this.stopVideoVoice(cueId);
         }
+
+        if (cue.assetPath) {
+          await resolveAssetBlob(cue.assetPath);
+        }
+        if (generation !== this.syncGeneration) return;
 
         const voice = startVideoVoice(
           cue,

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { resolveEffectiveOpacity } from "../stores/fade";
 import { useFadeStore } from "../stores/fade";
-import { vfsGetObjectUrl } from "../vfs/engine";
+import { useAssetObjectUrl } from "../hooks/useAssetObjectUrl";
 import type { Cue } from "../types/cue";
 
 interface CueAssetPreviewProps {
@@ -13,12 +13,12 @@ interface CueAssetPreviewProps {
 export function CueAssetPreview({ cue, className }: CueAssetPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const frameMs = useFadeStore((s) => s.frameMs);
+  const objectUrl = useAssetObjectUrl(cue.assetPath);
 
   if (!cue.assetPath || (cue.type !== "video" && cue.type !== "image")) {
     return null;
   }
 
-  const objectUrl = vfsGetObjectUrl(cue.assetPath);
   if (!objectUrl) {
     return (
       <div className={["cue-asset-preview", "cue-asset-preview-missing", className]

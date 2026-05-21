@@ -99,3 +99,31 @@ export function assetKindFromPath(path: string): AssetKind {
   const name = path.split("/").pop() ?? path;
   return assetKindFromFilename(name) ?? "audio";
 }
+
+const MIME_BY_EXT: Record<string, string> = {
+  wav: "audio/wav",
+  mp3: "audio/mpeg",
+  ogg: "audio/ogg",
+  m4a: "audio/mp4",
+  aac: "audio/aac",
+  flac: "audio/flac",
+  aiff: "audio/aiff",
+  aif: "audio/aiff",
+  mp4: "video/mp4",
+  webm: "video/webm",
+  mov: "video/quicktime",
+  mkv: "video/x-matroska",
+  m4v: "video/mp4",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  bmp: "image/bmp",
+  svg: "image/svg+xml",
+};
+
+export function mimeTypeFromPath(path: string): string {
+  const ext = path.split(".").pop()?.toLowerCase() ?? "";
+  return MIME_BY_EXT[ext] ?? "";
+}

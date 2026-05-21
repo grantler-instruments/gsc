@@ -12,7 +12,11 @@ import { VisualStage } from "./VisualStage";
 
 /** Full-screen output window — subscribes to cross-window state. */
 export function OutputApp() {
-  const [state, setState] = useState<OutputState>({ revision: 0, layers: [] });
+  const [state, setState] = useState<OutputState>({
+    revision: 0,
+    projectId: "",
+    layers: [],
+  });
   const layers = useResolvedOutputLayers(state);
   const channelRef = useRef<BroadcastChannel | null>(null);
 

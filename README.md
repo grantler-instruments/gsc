@@ -48,4 +48,19 @@ src/
 
 ## .gsc projects
 
-Project files are JSON with virtual asset paths (e.g. `/project/audio/intro.wav`). Re-import assets in the browser after opening a project; Tauri will later resolve real disk paths via the platform adapter.
+### JSON (legacy / cues only)
+
+Single `.gsc` JSON file with virtual asset paths (e.g. `/project/audio/intro.wav`). Does not include media bytes.
+
+### Project bundle (`.gsc.zip`)
+
+Portable zip used to move a show between web and desktop:
+
+```
+MyShow.gsc.zip
+├── project.json    # ProjectSnapshotV2
+└── project/        # media files
+```
+
+- **Web:** File → Export / Import project bundle
+- **Tauri:** File → **Open…** (project folder or `.gsc.zip` bundle). Bundles are extracted to an **empty** folder you choose. Changes autosave to that folder; new projects prompt for an empty folder on first edit.

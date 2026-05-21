@@ -30,6 +30,7 @@ import {
   prepareCuePaste,
   setCueClipboard,
 } from "../lib/cue-clipboard";
+import { setActiveProjectId } from "../lib/active-project-id";
 import { cueListsToSnapshot, snapshotToCueLists } from "../lib/project-snapshot";
 import { canEditProject } from "../lib/show-mode";
 import { defaultMidiCueData } from "../lib/midi";
@@ -71,12 +72,15 @@ function patchActiveList(
 }
 
 const initialList = createCueList("Main");
+const initialProjectId = crypto.randomUUID();
+setActiveProjectId(initialProjectId);
 
 function firstCueOrStub(list: CueList, name: string, type: CueType): Cue {
   return list.cues[0] ?? { id: "", number: "0", name, type };
 }
 
 interface ProjectState {
+  id: string;
   name: string;
   cueLists: CueList[];
   activeCueListId: string;
@@ -123,6 +127,7 @@ interface ProjectState {
 export const useProjectStore = create<ProjectState>()(
   devtools(
     (set, get) => ({
+      id: initialProjectId,
       name: "Untitled Show",
       cueLists: [initialList],
       activeCueListId: initialList.id,
@@ -589,12 +594,13 @@ export const useProjectStore = create<ProjectState>()(
       loadSnapshot: (snap) => {
         if (!canEditProject()) return;
         const loaded = snapshotToCueLists(snap);
+        setActiveProjectId(loaded.id);
         set(loaded);
       },
 
       getSnapshot: () => {
-        const { name, cueLists, activeCueListId } = get();
-        return cueListsToSnapshot(name, cueLists, activeCueListId);
+        const { id, name, cueLists, activeCueListId } = get();
+        return cueListsToSnapshot(id, name, cueLists, activeCueListId);
       },
     }),
     { name: "ProjectStore" },

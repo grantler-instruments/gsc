@@ -1,5 +1,5 @@
 import { getMediaDurationSec } from "./media-duration";
-import { vfsGet } from "../vfs/engine";
+import { resolveAssetBlob } from "../platform/vfs-asset";
 
 const videoByPath = new Map<string, HTMLVideoElement>();
 const urlByPath = new Map<string, string>();
@@ -22,7 +22,7 @@ async function ensureVideo(assetPath: string): Promise<HTMLVideoElement | null> 
   const existing = videoByPath.get(assetPath);
   if (existing && existing.readyState >= 2) return existing;
 
-  const blob = vfsGet(assetPath);
+  const blob = await resolveAssetBlob(assetPath);
   if (!blob) return null;
 
   let url = urlByPath.get(assetPath);

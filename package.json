@@ -17,7 +17,10 @@
     "@mui/icons-material": "^9.0.1",
     "@mui/material": "^9.0.1",
     "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-fs": "^2.5.1",
     "@tauri-apps/plugin-opener": "^2",
+    "fflate": "^0.8.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zustand": "^5.0.12"
