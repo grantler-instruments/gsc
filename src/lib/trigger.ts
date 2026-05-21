@@ -1,0 +1,88 @@
+import {
+  getChildCues,
+  getStopTarget,
+  isFadeCue,
+  isParallelGroup,
+  isSequenceGroup,
+  isStopCue,
+  resolveParallelGoIds,
+  resolveStopCueIds,
+} from "./cues";
+import { cancelAllSequences, runSequence } from "./sequence-runner";
+import { triggerFadeCue } from "./trigger-fade";
+import type { Cue } from "../types/cue";
+
+type GoMany = (ids: string[]) => void;
+type GoOne = (id: string) => void;
+type StopMany = (ids: string[]) => void;
+
+function triggerParallelGroup(
+  cue: Cue,
+  cues: Cue[],
+  actions: { goMany: GoMany; stopMany: StopMany },
+): string[] {
+  const leafIds: string[] = [];
+
+  for (const child of getChildCues(cues, cue.id)) {
+    if (isStopCue(child)) {
+      const target = getStopTarget(child, cues);
+      if (target) triggerStopCue(target, cues, actions.stopMany);
+    } else if (isFadeCue(child)) {
+      triggerFadeCue(child, cues);
+    } else if (isSequenceGroup(child)) {
+      runSequence(child, cues);
+    } else if (isParallelGroup(child)) {
+      leafIds.push(...resolveParallelGoIds(child, cues));
+    } else {
+      leafIds.push(child.id);
+    }
+  }
+
+  if (leafIds.length > 0) actions.goMany(leafIds);
+  return leafIds;
+}
+
+export function triggerGo(
+  cue: Cue,
+  cues: Cue[],
+  actions: { goMany: GoMany; go: GoOne; stopMany: StopMany },
+): { triggered: string[]; emptyContainer: boolean } {
+  if (isStopCue(cue)) {
+    const target = getStopTarget(cue, cues);
+    if (target) triggerStopCue(target, cues, actions.stopMany);
+    return { triggered: [], emptyContainer: !target };
+  }
+
+  if (isFadeCue(cue)) {
+    const ok = triggerFadeCue(cue, cues);
+    return { triggered: [], emptyContainer: !ok };
+  }
+
+  if (isSequenceGroup(cue)) {
+    const { started } = runSequence(cue, cues);
+    return { triggered: [], emptyContainer: !started };
+  }
+
+  if (isParallelGroup(cue)) {
+    const ids = triggerParallelGroup(cue, cues, actions);
+    const hasChildren = getChildCues(cues, cue.id).length > 0;
+    return {
+      triggered: ids,
+      emptyContainer: !hasChildren,
+    };
+  }
+
+  actions.go(cue.id);
+  return { triggered: [cue.id], emptyContainer: false };
+}
+
+export function triggerStopCue(
+  cue: Cue,
+  cues: Cue[],
+  stopMany: StopMany,
+): void {
+  if (isSequenceGroup(cue)) {
+    cancelAllSequences();
+  }
+  stopMany(resolveStopCueIds(cue, cues));
+}

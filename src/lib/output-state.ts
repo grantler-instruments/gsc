@@ -1,0 +1,72 @@
+import { getLoopPlayCount } from "./loop";
+import { getPlaybackSliceSec } from "./playback-slice";
+import { resolveEffectiveOpacity } from "../stores/fade";
+import type { Cue } from "../types/cue";
+import type { OutputLayer, OutputState } from "../types/output";
+import { usePlaybackStore } from "../stores/playback";
+import { useProjectStore } from "../stores/project";
+import { useTransportStore } from "../stores/transport";
+import { vfsGetObjectUrl } from "../vfs/engine";
+import { getMediaDurationSec } from "./media-duration";
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function buildLayer(cue: Cue, goAtMs: number): OutputLayer | undefined {
+  if ((cue.type !== "video" && cue.type !== "image") || !cue.assetPath) {
+    return undefined;
+  }
+
+  const objectUrl = vfsGetObjectUrl(cue.assetPath);
+  if (!objectUrl) return undefined;
+
+  const sourceDurationSec =
+    cue.type === "video" ? getMediaDurationSec(cue.assetPath) : undefined;
+  const sliceSec = getPlaybackSliceSec(cue, sourceDurationSec);
+  const inTime = cue.inTime ?? 0;
+  const loopCount = cue.type === "video" ? getLoopPlayCount(cue) : 1;
+
+  return {
+    cueId: cue.id,
+    type: cue.type,
+    assetPath: cue.assetPath,
+    objectUrl,
+    opacity: resolveEffectiveOpacity(cue.id, clamp01(cue.opacity ?? 1)),
+    volume: clamp01(cue.volume ?? 1),
+    inTime,
+    outTime: cue.outTime,
+    sliceSec,
+    goAtMs,
+    loop: loopCount !== 1,
+    loopCount,
+  };
+}
+
+/** Build the current visual output snapshot from live stores. */
+export function buildOutputState(revision: number): OutputState {
+  const { activeCueIds, cueStartedAtMs } = useTransportStore.getState();
+  const { cueLists, activeCueListId } = useProjectStore.getState();
+  const progressByCueId = usePlaybackStore.getState().byCueId;
+
+  const list =
+    cueLists.find((l) => l.id === activeCueListId) ?? cueLists[0];
+  const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
+  const now = performance.now();
+
+  const layers: OutputLayer[] = [];
+  for (const cueId of activeCueIds) {
+    const cue = cueById.get(cueId);
+    if (!cue) continue;
+
+    const progress = progressByCueId[cueId];
+    const goAtMs =
+      cueStartedAtMs[cueId] ??
+      (progress ? now - progress.elapsedSec * 1000 : now);
+
+    const layer = buildLayer(cue, goAtMs);
+    if (layer) layers.push(layer);
+  }
+
+  return { revision, layers };
+}
