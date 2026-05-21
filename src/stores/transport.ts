@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { clearSequenceTimers } from "../lib/sequence-timers";
+import { useFadeStore } from "./fade";
 
 export interface RunningSequence {
   rootId: string;
@@ -45,7 +46,8 @@ export const useTransportStore = create<TransportState>()(
       runningSequence: null,
       masterVolume: 1,
 
-      go: (cueId) =>
+      go: (cueId) => {
+        useFadeStore.getState().clearFade(cueId);
         set((s) => {
           const now = performance.now();
           const activeCueIds = mergeActiveIds(
@@ -58,9 +60,11 @@ export const useTransportStore = create<TransportState>()(
             activeCueIds,
             cueStartedAtMs: { ...s.cueStartedAtMs, [cueId]: now },
           };
-        }),
+        });
+      },
 
-      goMany: (cueIds) =>
+      goMany: (cueIds) => {
+        useFadeStore.getState().clearFades(cueIds);
         set((s) => {
           if (cueIds.length === 0) return s;
           const now = performance.now();
@@ -75,7 +79,8 @@ export const useTransportStore = create<TransportState>()(
             activeCueIds,
             cueStartedAtMs,
           };
-        }),
+        });
+      },
 
       setRunningSequence: (runningSequence) => set({ runningSequence }),
 

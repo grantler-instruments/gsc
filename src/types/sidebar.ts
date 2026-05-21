@@ -1,5 +1,7 @@
 export type SidebarTabId = "assets" | "active";
 
+export const SIDEBAR_WIDTH = 280;
+
 export interface SidebarTab {
   id: SidebarTabId;
   label: string;

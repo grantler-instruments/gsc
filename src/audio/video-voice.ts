@@ -1,48 +1,17 @@
 import { getLoopPlayCount } from "../lib/loop";
+import { resolveEffectiveVolume } from "../stores/fade";
+import {
+  isVideoLooping,
+  isVideoPlaybackComplete,
+  shouldWrapVideoAtSliceEnd,
+  videoPlaybackWindow,
+  videoTargetTime,
+} from "../lib/video-playback";
 import type { Cue } from "../types/cue";
 import { vfsGetObjectUrl } from "../vfs/engine";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
-}
-
-function playbackWindow(cue: Cue, mediaDuration: number) {
-  const inT = Math.max(0, cue.inTime ?? 0);
-  const endSec =
-    cue.outTime !== undefined
-      ? Math.min(mediaDuration, Math.max(inT, cue.outTime))
-      : mediaDuration;
-  return {
-    offsetSec: inT,
-    durationSec: Math.max(0.01, endSec - inT),
-  };
-}
-
-function elapsedSecSinceGo(goAtMs: number): number {
-  return Math.max(0, (performance.now() - goAtMs) / 1000);
-}
-
-function positionForGo(cue: Cue, mediaDuration: number, goAtMs: number): number {
-  const { offsetSec, durationSec } = playbackWindow(cue, mediaDuration);
-  const loopPlayCount = getLoopPlayCount(cue);
-  const elapsed = elapsedSecSinceGo(goAtMs);
-
-  if (loopPlayCount === "inf") {
-    const inSlice = durationSec > 0 ? elapsed % durationSec : 0;
-    return offsetSec + inSlice;
-  }
-
-  const totalRun = durationSec * loopPlayCount;
-  const clamped = Math.min(elapsed, totalRun);
-  const inSlice = durationSec > 0 ? clamped % durationSec : 0;
-  return offsetSec + inSlice;
-}
-
-function isPlaybackComplete(cue: Cue, mediaDuration: number, goAtMs: number): boolean {
-  const loopPlayCount = getLoopPlayCount(cue);
-  if (loopPlayCount === "inf") return false;
-  const { durationSec } = playbackWindow(cue, mediaDuration);
-  return elapsedSecSinceGo(goAtMs) >= durationSec * loopPlayCount;
 }
 
 export interface VideoVoice {
@@ -75,7 +44,9 @@ export function startVideoVoice(
 
   const source = ctx.createMediaElementSource(video);
   const gain = ctx.createGain();
-  gain.gain.value = clamp01(cue.volume ?? 1) * clamp01(masterVolume);
+  gain.gain.value =
+    clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) *
+    clamp01(masterVolume);
   source.connect(gain);
   gain.connect(ctx.destination);
 
@@ -89,41 +60,51 @@ export function startVideoVoice(
   };
 
   const loopPlayCount = getLoopPlayCount(cue);
+  const looping = isVideoLooping(cue);
 
-  const seekAndPlay = () => {
+  const seekToClock = () => {
     if (!Number.isFinite(video.duration)) return;
 
-    if (isPlaybackComplete(cue, video.duration, goAtMs)) {
+    if (isVideoPlaybackComplete(cue, video.duration, goAtMs)) {
       onEnded(cue.id);
       return;
     }
 
-    const target = positionForGo(cue, video.duration, goAtMs);
+    const target = videoTargetTime(cue, video.duration, goAtMs);
     try {
       video.currentTime = target;
     } catch {
       /* not seekable yet */
     }
+  };
 
+  const seekAndPlay = () => {
+    seekToClock();
     void video.play().catch((err) => {
-      console.warn("[audio] Video voice play blocked — interact with the page first", err);
+      console.warn(
+        "[audio] Video voice play blocked — interact with the page first",
+        err,
+      );
     });
   };
 
-  const handleTimeUpdate = () => {
+  const wrapLoopIfNeeded = () => {
     if (!Number.isFinite(video.duration)) return;
 
-    const { offsetSec, durationSec } = playbackWindow(cue, video.duration);
+    const { offsetSec, durationSec } = videoPlaybackWindow(cue, video.duration);
     const endSec = offsetSec + durationSec;
 
-    if (loopPlayCount === "inf") {
-      if (video.currentTime >= endSec - 0.05) {
-        video.currentTime = offsetSec;
-      }
-      return;
-    }
+    if (!looping) return;
 
-    if (video.currentTime >= endSec - 0.05) {
+    if (shouldWrapVideoAtSliceEnd(video.currentTime, endSec)) {
+      if (loopPlayCount === "inf") {
+        video.currentTime = videoTargetTime(cue, video.duration, goAtMs);
+        if (video.paused) {
+          void video.play().catch(() => {});
+        }
+        return;
+      }
+
       voice.loopIteration += 1;
       if (voice.loopIteration >= loopPlayCount) {
         video.pause();
@@ -134,14 +115,31 @@ export function startVideoVoice(
     }
   };
 
+  const handleTimeUpdate = () => {
+    wrapLoopIfNeeded();
+  };
+
   const handleEnded = () => {
-    if (loopPlayCount === "inf") return;
+    if (!Number.isFinite(video.duration)) return;
+
+    const { offsetSec } = videoPlaybackWindow(cue, video.duration);
+
+    if (loopPlayCount === "inf") {
+      video.currentTime = videoTargetTime(cue, video.duration, goAtMs);
+      void video.play().catch(() => {});
+      return;
+    }
+
+    if (!looping) {
+      onEnded(cue.id);
+      return;
+    }
+
     voice.loopIteration += 1;
     if (voice.loopIteration >= loopPlayCount) {
       onEnded(cue.id);
       return;
     }
-    const { offsetSec } = playbackWindow(cue, video.duration);
     video.currentTime = offsetSec;
     void video.play().catch(() => {});
   };
@@ -162,7 +160,9 @@ export function updateVideoVoiceGain(
   cue: Cue,
   masterVolume: number,
 ): void {
-  voice.gain.gain.value = clamp01(cue.volume ?? 1) * clamp01(masterVolume);
+  voice.gain.gain.value =
+    clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) *
+    clamp01(masterVolume);
 }
 
 export function stopVideoVoice(voice: VideoVoice): void {

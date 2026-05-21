@@ -157,7 +157,7 @@ export const useProjectStore = create<ProjectState>()(
       addGroupCue: (opts = {}) => {
         const active = getActiveList(get());
         if (!canEditProject()) {
-          return firstCueOrStub(active, opts.name ?? "Parallel", "group");
+          return firstCueOrStub(active, opts.name ?? "group", "group");
         }
         let parentId = opts.parentId;
         if (parentId) {
@@ -167,7 +167,7 @@ export const useProjectStore = create<ProjectState>()(
         const cue: Cue = {
           id: crypto.randomUUID(),
           number: "0",
-          name: opts.name ?? "Parallel",
+          name: opts.name ?? "group",
           type: "group",
           parentId,
         };
@@ -185,7 +185,7 @@ export const useProjectStore = create<ProjectState>()(
       addSequenceCue: (opts = {}) => {
         const active = getActiveList(get());
         if (!canEditProject()) {
-          return firstCueOrStub(active, opts.name ?? "Sequence", "sequence");
+          return firstCueOrStub(active, opts.name ?? "group", "sequence");
         }
         let parentId = opts.parentId;
         if (parentId) {
@@ -195,7 +195,7 @@ export const useProjectStore = create<ProjectState>()(
         const cue: Cue = {
           id: crypto.randomUUID(),
           number: "0",
-          name: opts.name ?? "Sequence",
+          name: opts.name ?? "group",
           type: "sequence",
           parentId,
         };

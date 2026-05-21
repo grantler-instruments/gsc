@@ -29,6 +29,7 @@ function playbackWindow(cue: Cue, bufferDuration: number) {
 interface ActiveVoice {
   source: AudioBufferSourceNode;
   gain: GainNode;
+  goAtMs: number;
 }
 
 type VoiceEndedHandler = (cueId: string) => void;
@@ -92,6 +93,7 @@ export class AudioEngine {
     buffer: AudioBuffer,
     ctx: AudioContext,
     masterVolume: number,
+    goAtMs: number,
   ): void {
     const { offsetSec, durationSec } = playbackWindow(cue, buffer.duration);
     const loopPlayCount = getLoopPlayCount(cue);
@@ -130,7 +132,7 @@ export class AudioEngine {
       }
     };
 
-    this.voices.set(cue.id, { source, gain });
+    this.voices.set(cue.id, { source, gain, goAtMs });
   }
 
   private updateVoiceGain(
@@ -151,6 +153,12 @@ export class AudioEngine {
       const cue = cues.find((c) => c.id === cueId);
       if (cue) {
         this.updateVoiceGain(cueId, cue, masterVolume);
+      }
+    }
+    for (const voice of this.videoVoices.values()) {
+      const cue = cues.find((c) => c.id === voice.cueId);
+      if (cue) {
+        updateVideoVoiceGain(voice, cue, masterVolume);
       }
     }
   }
@@ -192,13 +200,17 @@ export class AudioEngine {
 
       for (const cueId of targetVideo) {
         const cue = cueById.get(cueId)!;
+        const goAtMs = cueStartedAtMs[cueId] ?? performance.now();
 
         if (this.videoVoices.has(cueId)) {
-          updateVideoVoiceGain(this.videoVoices.get(cueId)!, cue, masterVolume);
-          continue;
+          const existing = this.videoVoices.get(cueId)!;
+          if (existing.goAtMs === goAtMs) {
+            updateVideoVoiceGain(existing, cue, masterVolume);
+            continue;
+          }
+          this.stopVideoVoice(cueId);
         }
 
-        const goAtMs = cueStartedAtMs[cueId] ?? performance.now();
         const voice = startVideoVoice(
           cue,
           ctx,
@@ -228,10 +240,15 @@ export class AudioEngine {
       for (const cueId of targetAudio) {
         const cue = cueById.get(cueId)!;
         const assetPath = cue.assetPath!;
+        const goAtMs = cueStartedAtMs[cueId] ?? performance.now();
 
         if (this.voices.has(cueId)) {
-          this.updateVoiceGain(cueId, cue, masterVolume);
-          continue;
+          const existing = this.voices.get(cueId)!;
+          if (existing.goAtMs === goAtMs) {
+            this.updateVoiceGain(cueId, cue, masterVolume);
+            continue;
+          }
+          this.stopVoice(cueId);
         }
 
         let buffer = getCachedAudioBuffer(assetPath);
@@ -251,7 +268,7 @@ export class AudioEngine {
         if (generation !== this.syncGeneration) return;
 
         try {
-          this.startVoice(cue, buffer, ctx, masterVolume);
+          this.startVoice(cue, buffer, ctx, masterVolume, goAtMs);
         } catch (err) {
           console.warn(`[audio] Could not play ${assetPath}`, err);
         }

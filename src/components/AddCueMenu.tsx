@@ -47,9 +47,9 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
 
   const handleAddCue = (type: (typeof ADD_CUE_TYPES)[number]) => {
     if (type === "group") {
-      addGroupCue({ name: "Parallel" });
+      addGroupCue();
     } else if (type === "sequence") {
-      addSequenceCue({ name: "Sequence" });
+      addSequenceCue();
     } else if (type === "volumeFade" || type === "opacityFade") {
       addFadeCue(type);
     } else {

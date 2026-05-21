@@ -9,12 +9,10 @@ import { useTransportStore } from "../stores/transport";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
 import { getCueDisplayName } from "../lib/cues";
 import { triggerGoSelected } from "../lib/transport-actions";
-import { useUiStore } from "../stores/ui";
-import { AddCueMenu } from "./AddCueMenu";
+import { SIDEBAR_WIDTH } from "../types/sidebar";
 import { CueTypeBadge } from "./CueTypeIcon";
 
 export function TransportBar() {
-  const showMode = useUiStore((s) => s.showMode);
   const cueLists = useProjectStore((s) => s.cueLists);
   const activeList = useActiveCueList();
   const selectedCueIds = activeList.selectedCueIds;
@@ -23,7 +21,6 @@ export function TransportBar() {
   const isPlaying = useTransportStore((s) => s.isPlaying);
   const activeCueId = useTransportStore((s) => s.activeCueId);
   const masterVolume = useTransportStore((s) => s.masterVolume);
-  const stop = useTransportStore((s) => s.stop);
   const panic = useTransportStore((s) => s.panic);
   const setMasterVolume = useTransportStore((s) => s.setMasterVolume);
   const selectedCue = cues.find((c) => c.id === selectedCueId);
@@ -39,10 +36,7 @@ export function TransportBar() {
       component="footer"
       sx={{
         display: "flex",
-        alignItems: "center",
-        gap: 2,
-        px: 2,
-        py: 1.25,
+        alignItems: "stretch",
         borderTop: 1,
         borderColor: "divider",
         bgcolor: "background.paper",
@@ -51,26 +45,42 @@ export function TransportBar() {
     >
       <Stack
         direction="row"
-        sx={{ alignItems: "center", gap: 1, flexShrink: 0 }}
+        sx={{
+          width: SIDEBAR_WIDTH,
+          flexShrink: 0,
+          px: 1.5,
+          py: 1.25,
+          gap: 1,
+          alignItems: "center",
+          borderRight: 1,
+          borderColor: "divider",
+          "& .MuiButton-root": { flex: 1, minWidth: 0 },
+        }}
       >
         <Button
           variant="contained"
-          color="primary"
+          color="success"
           onClick={triggerGoSelected}
           disabled={cues.length === 0}
         >
           GO
         </Button>
-        <Button variant="outlined" onClick={stop} disabled={!isPlaying}>
-          Stop
-        </Button>
         <Button variant="outlined" color="error" onClick={panic}>
           Panic
         </Button>
-        {!showMode && <AddCueMenu />}
       </Stack>
 
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1, minWidth: 0 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+          flex: 1,
+          minWidth: 0,
+          px: 2,
+          py: 1.25,
+        }}
+      >
         {selectedCue ? (
           <Stack sx={{ flex: 1, minWidth: 0, gap: 0.5 }}>
             <Stack
@@ -172,6 +182,8 @@ export function TransportBar() {
           fontSize: 12,
           color: "text.secondary",
           flexShrink: 0,
+          px: 2,
+          py: 1.25,
         }}
       >
         <Typography variant="caption" color="inherit">

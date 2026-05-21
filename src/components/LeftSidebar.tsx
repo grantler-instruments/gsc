@@ -8,7 +8,7 @@ import Tabs from "@mui/material/Tabs";
 import Typography from "@mui/material/Typography";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
-import { SIDEBAR_TABS, type SidebarTabId } from "../types/sidebar";
+import { SIDEBAR_TABS, SIDEBAR_WIDTH, type SidebarTabId } from "../types/sidebar";
 import { ActiveCuesPanel } from "./ActiveCuesPanel";
 import { AssetsPanel } from "./AssetsPanel";
 
@@ -18,7 +18,7 @@ const TAB_ICONS: Record<SidebarTabId, React.ReactNode> = {
 };
 
 const sidebarShellSx = {
-  width: 280,
+  width: SIDEBAR_WIDTH,
   flexShrink: 0,
   borderRight: 1,
   borderColor: "divider",

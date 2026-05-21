@@ -245,6 +245,41 @@
   color: var(--text-muted);
 }
 
+.audio-waveform-scrub {
+  cursor: crosshair;
+}
+
+.media-waveform-thumbnail {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  z-index: 4;
+  transform: translateX(-50%);
+  pointer-events: none;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.media-waveform-thumbnail img {
+  display: block;
+  width: 160px;
+  height: auto;
+  max-height: 90px;
+  object-fit: cover;
+}
+
+.media-waveform-thumbnail-time {
+  display: block;
+  padding: 3px 6px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+
 .badge {
   font-size: 11px;
   background: var(--bg);

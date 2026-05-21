@@ -10,7 +10,7 @@ interface PlaybackRangeFieldsProps {
 
 /**
  * In / Out points within a media file (QLab-style playback range).
- * Audio cues use the waveform; video/image keep numeric fields.
+ * Audio and video cues use the waveform; images keep numeric fields.
  */
 export function PlaybackRangeFields({
   cue,
@@ -20,8 +20,9 @@ export function PlaybackRangeFields({
   const inTime = cue.inTime ?? 0;
   const outTime = cue.outTime;
   const isImage = cue.type === "image";
-  const isAudio = cue.type === "audio";
-  const hasWaveform = isAudio && !!cue.assetPath;
+  const isVideo = cue.type === "video";
+  const hasWaveform =
+    (cue.type === "audio" || isVideo) && !!cue.assetPath;
   const effectiveOutLabel =
     outTime !== undefined ? formatTime(outTime) : "End of file";
   const sliceSec =
@@ -48,7 +49,9 @@ export function PlaybackRangeFields({
       <legend className="inspector-group-legend">Playback range</legend>
       <p className="inspector-group-hint">
         {hasWaveform
-          ? "Drag the markers on the waveform to set In and Out. Drag Out to the end to play through."
+          ? isVideo
+            ? "Drag the markers to set In and Out. Hover the waveform for a frame preview."
+            : "Drag the markers on the waveform to set In and Out. Drag Out to the end to play through."
           : isImage
             ? "How long the image stays on screen. In is always 0."
             : "In and Out are positions within the file (seconds). Leave Out empty to play to the end."}
@@ -60,9 +63,11 @@ export function PlaybackRangeFields({
             assetPath={cue.assetPath!}
             inTime={cue.inTime}
             outTime={cue.outTime}
-            height={80}
+            height={isVideo ? 88 : 80}
             editable={!readOnly}
             onRangeChange={onChange}
+            mediaKind={isVideo ? "video" : "audio"}
+            hoverPreview={isVideo && !readOnly}
           />
           <p className="inspector-waveform-range-summary">
             In {formatTime(inTime)} · Out {effectiveOutLabel}

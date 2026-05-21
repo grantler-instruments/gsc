@@ -1,6 +1,6 @@
 import { getLoopPlayCount } from "./loop";
 import { getPlaybackSliceSec } from "./playback-slice";
-import { resolveEffectiveOpacity } from "../stores/fade";
+import { resolveEffectiveOpacity, resolveEffectiveVolume } from "../stores/fade";
 import type { Cue } from "../types/cue";
 import type { OutputLayer, OutputState } from "../types/output";
 import { usePlaybackStore } from "../stores/playback";
@@ -33,7 +33,7 @@ function buildLayer(cue: Cue, goAtMs: number): OutputLayer | undefined {
     assetPath: cue.assetPath,
     objectUrl,
     opacity: resolveEffectiveOpacity(cue.id, clamp01(cue.opacity ?? 1)),
-    volume: clamp01(cue.volume ?? 1),
+    volume: resolveEffectiveVolume(cue.id, clamp01(cue.volume ?? 1)),
     inTime,
     outTime: cue.outTime,
     sliceSec,

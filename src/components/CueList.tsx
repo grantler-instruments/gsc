@@ -25,6 +25,8 @@ import {
   isAssetDrag,
   isCueDrag,
   readCueDragData,
+  readCueDragId,
+  setActiveCueDrag,
   setCueDragData,
 } from "../lib/drag";
 import { pointerLeftElement } from "../lib/dom";
@@ -203,11 +205,13 @@ export function CueList() {
       if (!canEdit) return;
 
       const cuePayload = readCueDragData(e.dataTransfer);
-      if (isCueDrag(e.dataTransfer) && cuePayload) {
+      const draggedCueId = cuePayload?.cueId ?? readCueDragId(e.dataTransfer);
+      if (draggedCueId) {
         // Cue reorder is handled on rows; only unparent when dropped on empty list.
         if (e.target === e.currentTarget) {
-          moveCueToGroup(cuePayload.cueId, null);
+          moveCueToGroup(draggedCueId, null);
         }
+        setActiveCueDrag(null);
         return;
       }
 
@@ -502,24 +506,27 @@ function CueRow({
           ? (e) => {
               e.stopPropagation();
               setCueDragData(e.dataTransfer, { cueId: cue.id });
+              setActiveCueDrag(cue.id);
             }
           : undefined
       }
+      onDragEnd={() => setActiveCueDrag(null)}
       onClick={(e) => onSelect(e)}
       onDoubleClick={onGo}
       onDragOver={(e) => {
         if (!canEdit) return;
-        const cuePayload = readCueDragData(e.dataTransfer);
-        const draggingCue = isCueDrag(e.dataTransfer) && !!cuePayload;
+        const draggedCueId = readCueDragId(e.dataTransfer);
+        const draggingCue = draggedCueId !== null;
         const draggingAsset =
-          isAssetDrag(e.dataTransfer) || isExternalFileDrag(e.dataTransfer);
+          !draggingCue &&
+          (isAssetDrag(e.dataTransfer) || isExternalFileDrag(e.dataTransfer));
         if (!draggingCue && !draggingAsset) return;
 
         e.preventDefault();
         e.stopPropagation();
 
-        if (draggingCue && cuePayload.cueId !== cue.id) {
-          const dragged = allCues.find((c) => c.id === cuePayload.cueId);
+        if (draggingCue && draggedCueId !== cue.id) {
+          const dragged = allCues.find((c) => c.id === draggedCueId);
           if (dragged && isContainer) {
             e.dataTransfer.dropEffect = "move";
             insertPlaceRef.current = null;
@@ -563,16 +570,24 @@ function CueRow({
         insertPlaceRef.current = null;
         setInsertPlace(null);
 
-        const cuePayload = readCueDragData(e.dataTransfer);
-        if (isCueDrag(e.dataTransfer) && cuePayload) {
-          if (place && cuePayload.cueId !== cue.id) {
-            onCueReorder(cuePayload.cueId, cue.id, place);
+        const draggedCueId = readCueDragId(e.dataTransfer);
+        if (draggedCueId) {
+          if (place && draggedCueId !== cue.id) {
+            onCueReorder(draggedCueId, cue.id, place);
+            setActiveCueDrag(null);
             return;
           }
-          if (isContainer && cuePayload.cueId !== cue.id) {
-            onCueDrop(cuePayload.cueId);
+          if (isContainer && draggedCueId !== cue.id) {
+            onCueDrop(draggedCueId);
+            setActiveCueDrag(null);
             return;
           }
+          setActiveCueDrag(null);
+          return;
+        }
+
+        if (isCueDrag(e.dataTransfer)) {
+          setActiveCueDrag(null);
           return;
         }
 

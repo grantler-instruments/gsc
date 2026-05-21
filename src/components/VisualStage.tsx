@@ -1,33 +1,16 @@
 import { useCallback, useEffect, useRef } from "react";
+import {
+  isOutputLayerLooping,
+  isOutputLayerPlaybackComplete,
+  outputLayerTargetTime,
+  shouldWrapVideoAtSliceEnd,
+  sliceEndSec,
+} from "../lib/video-playback";
 import { useTransportStore } from "../stores/transport";
 import type { OutputLayer } from "../types/output";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
-}
-
-function elapsedInSlice(layer: OutputLayer): number {
-  const elapsedSec = Math.max(0, (performance.now() - layer.goAtMs) / 1000);
-  if (layer.loopCount === "inf") {
-    return layer.sliceSec > 0 ? elapsedSec % layer.sliceSec : 0;
-  }
-  const totalSec = layer.sliceSec * layer.loopCount;
-  return Math.min(elapsedSec, totalSec);
-}
-
-function positionInSource(layer: OutputLayer): number {
-  const inSlice = elapsedInSlice(layer);
-  if (layer.loopCount === "inf") {
-    return layer.inTime + inSlice;
-  }
-  const within = layer.sliceSec > 0 ? inSlice % layer.sliceSec : 0;
-  return layer.inTime + within;
-}
-
-function isPlaybackComplete(layer: OutputLayer): boolean {
-  if (layer.loopCount === "inf") return false;
-  const elapsedSec = Math.max(0, (performance.now() - layer.goAtMs) / 1000);
-  return elapsedSec >= layer.sliceSec * layer.loopCount;
 }
 
 interface VideoLayerProps {
@@ -60,8 +43,14 @@ function VideoLayer({ layer, onEnded }: VideoLayerProps) {
       const current = layerRef.current;
       if (video.readyState < 1) return;
 
-      const target = positionInSource(current);
-      if (Number.isFinite(target) && Math.abs(video.currentTime - target) > 0.04) {
+      const target = outputLayerTargetTime(current);
+      if (!Number.isFinite(target)) return;
+
+      const endSec = sliceEndSec(current.inTime, current.sliceSec);
+      const looping = isOutputLayerLooping(current);
+      const needsLoopWrap = looping && shouldWrapVideoAtSliceEnd(video.currentTime, endSec);
+
+      if (needsLoopWrap || Math.abs(video.currentTime - target) > 0.04) {
         try {
           video.currentTime = target;
         } catch {
@@ -72,7 +61,7 @@ function VideoLayer({ layer, onEnded }: VideoLayerProps) {
       if (
         !completedRef.current &&
         current.loopCount !== "inf" &&
-        isPlaybackComplete(current)
+        isOutputLayerPlaybackComplete(current)
       ) {
         completedRef.current = true;
         onEnded?.(current.cueId);
@@ -94,11 +83,24 @@ function VideoLayer({ layer, onEnded }: VideoLayerProps) {
       }
     };
 
+    const onVideoEnded = () => {
+      const current = layerRef.current;
+      if (!isOutputLayerLooping(current)) return;
+
+      const target = outputLayerTargetTime(current);
+      try {
+        video.currentTime = target;
+      } catch {
+        /* seek not ready */
+      }
+    };
+
     const onError = () => {
       console.warn("[video] Could not load", layer.objectUrl);
     };
 
     video.addEventListener("loadedmetadata", onLoadedMetadata);
+    video.addEventListener("ended", onVideoEnded);
     video.addEventListener("error", onError);
 
     if (video.readyState >= 1) {
@@ -110,6 +112,7 @@ function VideoLayer({ layer, onEnded }: VideoLayerProps) {
     return () => {
       cancelAnimationFrame(rafId);
       video.removeEventListener("loadedmetadata", onLoadedMetadata);
+      video.removeEventListener("ended", onVideoEnded);
       video.removeEventListener("error", onError);
       video.pause();
       video.removeAttribute("src");

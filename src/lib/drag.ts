@@ -73,3 +73,19 @@ export function readCueDragData(
 export function isCueDrag(dataTransfer: DataTransfer): boolean {
   return dataTransfer.types.includes(GSC_CUE_DRAG_TYPE);
 }
+
+/** Cue id for the in-flight list reorder drag (getData is empty until drop). */
+let activeCueDragId: string | null = null;
+
+export function setActiveCueDrag(cueId: string | null): void {
+  activeCueDragId = cueId;
+}
+
+export function getActiveCueDragId(): string | null {
+  return activeCueDragId;
+}
+
+/** Resolve cue id during drag or on drop. */
+export function readCueDragId(dataTransfer: DataTransfer): string | null {
+  return readCueDragData(dataTransfer)?.cueId ?? activeCueDragId;
+}

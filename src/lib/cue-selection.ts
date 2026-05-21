@@ -84,7 +84,7 @@ export function canGroupSelectedCues(
 export function buildParallelGroupFromSelection(
   selectedIds: string[],
   cues: Cue[],
-  groupName = "Parallel",
+  groupName = "group",
 ): Cue[] | null {
   const check = canGroupSelectedCues(selectedIds, cues);
   if (!check.ok) return null;

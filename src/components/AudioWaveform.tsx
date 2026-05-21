@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useAudioWaveform } from "../hooks/useAudioWaveform";
-import { normalizePlaybackRange } from "../lib/time";
+import {
+  useMediaWaveform,
+  type MediaWaveformKind,
+} from "../hooks/useMediaWaveform";
+import { getVideoThumbnailDataUrl } from "../lib/video-thumbnail";
+import { formatTime, normalizePlaybackRange } from "../lib/time";
 
 export interface AudioWaveformProps {
   assetPath: string;
@@ -13,6 +17,9 @@ export interface AudioWaveformProps {
   /** Allow dragging In / Out markers (inspector). */
   editable?: boolean;
   onRangeChange?: (patch: { inTime?: number; outTime?: number }) => void;
+  mediaKind?: MediaWaveformKind;
+  /** Video only — show frame thumbnail while hovering/scrubbing. */
+  hoverPreview?: boolean;
 }
 
 const END_SNAP_SEC = 0.05;
@@ -31,6 +38,7 @@ function readWaveformColors(canvas: HTMLCanvasElement) {
     wave: styles.getPropertyValue("--success").trim() || "#4caf50",
     slice: styles.getPropertyValue("--accent").trim() || "#c9a227",
     playhead: styles.getPropertyValue("--accent").trim() || "#c9a227",
+    scrub: styles.getPropertyValue("--text-muted").trim() || "#888",
   };
 }
 
@@ -42,6 +50,7 @@ function drawWaveform(
     inTime: number;
     outTime: number | undefined;
     positionSec: number | undefined;
+    hoverSec: number | undefined;
     height: number;
   },
 ) {
@@ -105,6 +114,22 @@ function drawWaveform(
   }
 
   if (
+    opts.hoverSec !== undefined &&
+    durationSec > 0 &&
+    Number.isFinite(opts.hoverSec)
+  ) {
+    const x = (opts.hoverSec / durationSec) * width;
+    ctx.strokeStyle = colors.scrub;
+    ctx.globalAlpha = 0.75;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + 0.5, 0);
+    ctx.lineTo(x + 0.5, height);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  if (
     opts.positionSec !== undefined &&
     durationSec > 0 &&
     Number.isFinite(opts.positionSec)
@@ -128,11 +153,17 @@ export function AudioWaveform({
   className,
   editable = false,
   onRangeChange,
+  mediaKind = "audio",
+  hoverPreview = false,
 }: AudioWaveformProps) {
-  const { data, loading, missing } = useAudioWaveform(assetPath);
+  const { data, loading, missing } = useMediaWaveform(assetPath, mediaKind);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<"in" | "out" | null>(null);
+  const [hoverSec, setHoverSec] = useState<number | null>(null);
+  const [hoverPct, setHoverPct] = useState(0);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const thumbRequestRef = useRef(0);
 
   const timeFromClientX = useCallback(
     (clientX: number): number => {
@@ -178,6 +209,35 @@ export function AudioWaveform({
     [data, inTime, onRangeChange, outTime, timeFromClientX],
   );
 
+  const updateHover = useCallback(
+    (clientX: number) => {
+      if (!data || !hoverPreview || dragging) return;
+
+      const wrap = wrapRef.current;
+      if (!wrap) return;
+      const rect = wrap.getBoundingClientRect();
+      if (rect.width <= 0) return;
+
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const t = snapTime(ratio * data.durationSec);
+      setHoverSec(t);
+      setHoverPct(ratio * 100);
+
+      const requestId = ++thumbRequestRef.current;
+      void getVideoThumbnailDataUrl(assetPath, t).then((url) => {
+        if (thumbRequestRef.current !== requestId) return;
+        setThumbnailUrl(url);
+      });
+    },
+    [assetPath, data, dragging, hoverPreview],
+  );
+
+  const clearHover = useCallback(() => {
+    thumbRequestRef.current++;
+    setHoverSec(null);
+    setThumbnailUrl(null);
+  }, []);
+
   const paint = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || !data) return;
@@ -185,9 +245,10 @@ export function AudioWaveform({
       inTime: inTime ?? 0,
       outTime,
       positionSec,
+      hoverSec: dragging ? undefined : (hoverSec ?? undefined),
       height,
     });
-  }, [data, inTime, outTime, positionSec, height]);
+  }, [data, dragging, height, hoverSec, inTime, outTime, positionSec]);
 
   useEffect(() => {
     paint();
@@ -211,10 +272,15 @@ export function AudioWaveform({
   const inPct = durationSec > 0 ? (effectiveIn / durationSec) * 100 : 0;
   const outPct = durationSec > 0 ? (effectiveOut / durationSec) * 100 : 100;
   const showHandles = editable && !!data && !!onRangeChange;
+  const showThumbnail =
+    hoverPreview && hoverSec !== null && !dragging && thumbnailUrl;
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!dragging) return;
-    applyDrag(dragging, e.clientX);
+    if (dragging) {
+      applyDrag(dragging, e.clientX);
+      return;
+    }
+    updateHover(e.clientX);
   };
 
   const endDrag = (e: React.PointerEvent) => {
@@ -230,6 +296,7 @@ export function AudioWaveform({
       className={[
         "audio-waveform",
         editable && "audio-waveform-editable",
+        hoverPreview && "audio-waveform-scrub",
         dragging && "audio-waveform-dragging",
         className,
       ]
@@ -237,9 +304,13 @@ export function AudioWaveform({
         .join(" ")}
       style={{ height }}
       title={label}
+      onPointerMove={hoverPreview ? handlePointerMove : undefined}
+      onPointerLeave={hoverPreview ? clearHover : undefined}
     >
       {loading && (
-        <span className="audio-waveform-status">Loading waveform…</span>
+        <span className="audio-waveform-status">
+          {mediaKind === "video" ? "Loading video…" : "Loading waveform…"}
+        </span>
       )}
       {missing && !loading && (
         <span className="audio-waveform-status">
@@ -249,6 +320,17 @@ export function AudioWaveform({
       {data && (
         <>
           <canvas ref={canvasRef} className="audio-waveform-canvas" aria-hidden />
+          {showThumbnail && (
+            <div
+              className="media-waveform-thumbnail"
+              style={{ left: `${hoverPct}%` }}
+            >
+              <img src={thumbnailUrl} alt="" draggable={false} />
+              <span className="media-waveform-thumbnail-time">
+                {formatTime(hoverSec!)}
+              </span>
+            </div>
+          )}
           {showHandles && (
             <div className="audio-waveform-handles">
               <div
@@ -261,6 +343,8 @@ export function AudioWaveform({
                 aria-valuenow={Math.round(effectiveIn * 100) / 100}
                 onPointerDown={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
+                  clearHover();
                   e.currentTarget.setPointerCapture(e.pointerId);
                   setDragging("in");
                 }}
@@ -278,6 +362,8 @@ export function AudioWaveform({
                 aria-valuenow={Math.round(effectiveOut * 100) / 100}
                 onPointerDown={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
+                  clearHover();
                   e.currentTarget.setPointerCapture(e.pointerId);
                   setDragging("out");
                 }}

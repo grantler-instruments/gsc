@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { useProjectStore } from "./project";
 
 type FadeCueCompleteHandler = (fadeCueId: string) => void;
 let fadeCueCompleteHandler: FadeCueCompleteHandler | null = null;
@@ -46,6 +45,7 @@ interface FadeState {
   frameMs: number;
   startFade: (fade: ActivePropertyFade) => void;
   clearFade: (targetId: string) => void;
+  clearFades: (targetIds: string[]) => void;
   tick: (nowMs: number) => void;
 }
 
@@ -69,23 +69,31 @@ export const useFadeStore = create<FadeState>()(
           return { fadesByTargetId: next };
         }),
 
+      clearFades: (targetIds) =>
+        set((s) => {
+          if (targetIds.length === 0) return s;
+          const next = { ...s.fadesByTargetId };
+          let changed = false;
+          for (const id of targetIds) {
+            if (next[id]) {
+              delete next[id];
+              changed = true;
+            }
+          }
+          return changed ? { fadesByTargetId: next } : s;
+        }),
+
       tick: (nowMs) => {
         const fades = get().fadesByTargetId;
         const ids = Object.keys(fades);
         if (ids.length === 0) return;
 
-        const updateCue = useProjectStore.getState().updateCue;
         const next = { ...fades };
 
         for (const id of ids) {
           const fade = fades[id];
           if (!isFadeComplete(fade, nowMs)) continue;
 
-          if (fade.property === "opacity") {
-            updateCue(fade.targetId, { opacity: clamp01(fade.to) });
-          } else {
-            updateCue(fade.targetId, { volume: clamp01(fade.to) });
-          }
           delete next[id];
 
           if (fade.sourceFadeCueId) {
