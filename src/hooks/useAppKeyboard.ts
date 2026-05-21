@@ -4,6 +4,7 @@ import {
   selectAdjacentVisibleCue,
 } from "../lib/cue-navigation";
 import { isEditableKeyboardTarget } from "../lib/keyboard";
+import { openSettings } from "../lib/open-settings";
 import { startNewProject } from "../lib/new-project";
 import { canEditProject } from "../lib/show-mode";
 import { triggerGoSelected } from "../lib/transport-actions";
@@ -29,6 +30,17 @@ export function useAppKeyboard(): void {
       ) {
         e.preventDefault();
         void startNewProject();
+        return;
+      }
+
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.key === "," &&
+        !e.shiftKey &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        openSettings();
         return;
       }
 

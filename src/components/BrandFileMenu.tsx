@@ -1,12 +1,14 @@
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ButtonBase from "@mui/material/ButtonBase";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { useRef, useState } from "react";
+import { openSettings } from "../lib/open-settings";
 import { openProjectSnapshot } from "../lib/open-project";
 import { downloadProject, parseProjectFile } from "../lib/project-io";
 import { BUNDLE_EXTENSION } from "../lib/project-paths";
@@ -80,6 +82,18 @@ export function BrandFileMenu() {
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         transformOrigin={{ vertical: "top", horizontal: "left" }}
       >
+        <MenuItem
+          onClick={() => {
+            close();
+            openSettings();
+          }}
+        >
+          <ListItemIcon>
+            <SettingsOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Settings…" secondary="⌘," />
+        </MenuItem>
+
         {isTauri ? (
           <MenuItem
             disabled={showMode}

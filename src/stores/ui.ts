@@ -7,11 +7,13 @@ interface UiState {
   darkMode: boolean;
   /** When true, the show is locked for playback — no cue/project edits. */
   showMode: boolean;
+  settingsDialogOpen: boolean;
   /** Collapsed parallel/sequence groups in the cue list (session only). */
   collapsedCueGroupIds: string[];
   setSidebarTab: (tab: SidebarTabId) => void;
   setDarkMode: (dark: boolean) => void;
   setShowMode: (showMode: boolean) => void;
+  setSettingsDialogOpen: (open: boolean) => void;
   toggleShowMode: () => void;
   toggleCueGroupCollapsed: (groupId: string) => void;
 }
@@ -23,9 +25,11 @@ export const useUiStore = create<UiState>()(
         sidebarTab: "assets",
         darkMode: true,
         showMode: false,
+        settingsDialogOpen: false,
         collapsedCueGroupIds: [],
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
         setDarkMode: (darkMode) => set({ darkMode }),
+        setSettingsDialogOpen: (settingsDialogOpen) => set({ settingsDialogOpen }),
         setShowMode: (showMode) =>
           set({
             showMode,

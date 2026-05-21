@@ -1,3 +1,6 @@
+mod devices;
+
+use devices::{list_audio_output_devices, list_midi_ports};
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::Emitter;
 
@@ -7,10 +10,20 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![
+            list_audio_output_devices,
+            list_midi_ports,
+        ])
         .setup(setup_app_menu)
         .on_menu_event(|app, event| {
-            if event.id().as_ref() == "new_project" {
-                let _ = app.emit("gsc://new-project", ());
+            match event.id().as_ref() {
+                "new_project" => {
+                    let _ = app.emit("gsc://new-project", ());
+                }
+                "open_settings" => {
+                    let _ = app.emit("gsc://open-settings", ());
+                }
+                _ => {}
             }
         })
         .run(tauri::generate_context!())
@@ -27,7 +40,14 @@ fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
 
     let new_project =
         MenuItem::with_id(handle, "new_project", "New Project", true, Some("CmdOrCtrl+N"))?;
-    let file_submenu = Submenu::with_items(handle, "File", true, &[&new_project])?;
+    let settings =
+        MenuItem::with_id(handle, "open_settings", "Settings…", true, Some("CmdOrCtrl+,"))?;
+    let file_submenu = Submenu::with_items(
+        handle,
+        "File",
+        true,
+        &[&new_project, &settings],
+    )?;
 
     let undo = PredefinedMenuItem::undo(handle, None)?;
     let redo = PredefinedMenuItem::redo(handle, None)?;
@@ -53,8 +73,12 @@ fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
                 .product_name
                 .clone()
                 .unwrap_or_else(|| "Grantler Stage Control".to_string());
-            let app_submenu =
-                Submenu::with_items(handle, &app_name, true, &[&about, &quit])?;
+            let app_submenu = Submenu::with_items(
+                handle,
+                &app_name,
+                true,
+                &[&about, &settings, &quit],
+            )?;
             Menu::with_items(handle, &[&app_submenu, &file_submenu, &edit_submenu])?
         }
         #[cfg(not(target_os = "macos"))]

@@ -5,6 +5,7 @@
   "windows": ["main", "output"],
   "permissions": [
     "core:default",
+    "gsc-devices",
     "core:window:allow-create",
     "core:window:allow-show",
     "core:window:allow-set-focus",

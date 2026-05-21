@@ -3,6 +3,7 @@ import { CueInspector } from "./components/CueInspector";
 import { CueList } from "./components/CueList";
 import { LeftSidebar } from "./components/LeftSidebar";
 import { ProjectToolbar } from "./components/ProjectToolbar";
+import { SettingsDialog } from "./components/SettingsDialog";
 import { TransportBar } from "./components/TransportBar";
 import { useAppKeyboard } from "./hooks/useAppKeyboard";
 import { useAudioEngine } from "./hooks/useAudioEngine";
@@ -63,6 +64,7 @@ function App() {
       </Box>
 
       <TransportBar />
+      <SettingsDialog />
     </Box>
   );
 }

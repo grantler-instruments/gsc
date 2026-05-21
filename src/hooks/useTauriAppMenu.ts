@@ -1,22 +1,30 @@
 import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react";
+import { openSettings } from "../lib/open-settings";
 import { startNewProject } from "../lib/new-project";
 import { getPlatform } from "../platform";
 
-/** Wire native File → New Project (⌘N) on Tauri desktop. */
+/** Wire native menu shortcuts on Tauri desktop. */
 export function useTauriAppMenu(): void {
   useEffect(() => {
     if (getPlatform() !== "tauri") return;
 
-    let unlisten: (() => void) | undefined;
+    const unlisteners: Array<() => void> = [];
+
     void listen("gsc://new-project", () => {
       void startNewProject();
     }).then((fn) => {
-      unlisten = fn;
+      unlisteners.push(fn);
+    });
+
+    void listen("gsc://open-settings", () => {
+      openSettings();
+    }).then((fn) => {
+      unlisteners.push(fn);
     });
 
     return () => {
-      unlisten?.();
+      for (const unlisten of unlisteners) unlisten();
     };
   }, []);
 }
