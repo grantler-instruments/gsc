@@ -19,6 +19,16 @@ import { LoopFields } from "./LoopFields";
 import { PlaybackRangeFields } from "./PlaybackRangeFields";
 import { CueAssetPreview } from "./CueAssetPreview";
 import { PanelHeader } from "./layout/PanelHeader";
+import {
+  inspectorFieldLabelSx,
+  inspectorFieldSx,
+  inspectorFieldsSx,
+  inspectorGroupHintSx,
+  inspectorHintSx,
+  inspectorPanelEmptySx,
+  inspectorPanelSx,
+  inspectorReadonlySx,
+} from "./inspectorSx";
 
 export function CueInspector() {
   const activeList = useActiveCueList();
@@ -32,18 +42,7 @@ export function CueInspector() {
 
   if (!cue) {
     return (
-      <Box
-        component="aside"
-        className="cue-inspector cue-inspector-empty"
-        sx={{
-          width: 320,
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          p: 2,
-        }}
-      >
+      <Box component="aside" sx={inspectorPanelEmptySx}>
         <Typography variant="caption" color="text.secondary" sx={{ m: 0 }}>
           Select a cue to edit its properties.
         </Typography>
@@ -57,33 +56,24 @@ export function CueInspector() {
   };
 
   return (
-    <Box
-      component="aside"
-      className={["cue-inspector", showMode && "cue-inspector-show-mode"]
-        .filter(Boolean)
-        .join(" ")}
-      sx={{
-        width: 320,
-        flexShrink: 0,
-        display: "flex",
-        flexDirection: "column",
-        minHeight: 0,
-        bgcolor: "background.paper",
-      }}
-    >
+    <Box component="aside" sx={inspectorPanelSx}>
       <PanelHeader title={showMode ? "Inspector (view)" : "Inspector"}>
         <CueTypeBadge type={cue.type} />
       </PanelHeader>
 
-      <Box className="inspector-fields" sx={{ flex: 1, overflow: "auto", p: 1.5 }}>
+      <Box sx={inspectorFieldsSx}>
         {isStopCue(cue) || isFadeCue(cue) ? (
-          <div className="inspector-field">
-            <span className="inspector-field-label">Display name</span>
-            <p className="inspector-readonly">{getCueDisplayName(cue, cues)}</p>
-            <p className="inspector-group-hint">
+          <Box component="label" sx={inspectorFieldSx}>
+            <Typography component="span" sx={inspectorFieldLabelSx}>
+              Display name
+            </Typography>
+            <Typography component="p" sx={inspectorReadonlySx}>
+              {getCueDisplayName(cue, cues)}
+            </Typography>
+            <Typography component="p" sx={inspectorGroupHintSx}>
               Always follows the target cue&apos;s name when that cue is renamed.
-            </p>
-          </div>
+            </Typography>
+          </Box>
         ) : (
           <TextField
             label="Name"
@@ -115,7 +105,7 @@ export function CueInspector() {
 
         {cue.type === "midi" && cue.midi && (
           <>
-            <label className="inspector-field">
+            <Box component="label" sx={inspectorFieldSx}>
               Channel
               <input
                 type="number"
@@ -129,9 +119,9 @@ export function CueInspector() {
                   })
                 }
               />
-            </label>
+            </Box>
 
-            <label className="inspector-field">
+            <Box component="label" sx={inspectorFieldSx}>
               Message
               <select
                 value={cue.midi.kind}
@@ -146,11 +136,11 @@ export function CueInspector() {
                   </option>
                 ))}
               </select>
-            </label>
+            </Box>
 
             {(cue.midi.kind === "note-on" || cue.midi.kind === "note-off") && (
               <>
-                <label className="inspector-field">
+                <Box component="label" sx={inspectorFieldSx}>
                   Note
                   <input
                     type="number"
@@ -164,9 +154,9 @@ export function CueInspector() {
                       })
                     }
                   />
-                </label>
+                </Box>
                 {cue.midi.kind === "note-on" && (
-                  <label className="inspector-field">
+                  <Box component="label" sx={inspectorFieldSx}>
                     Velocity
                     <input
                       type="number"
@@ -182,14 +172,14 @@ export function CueInspector() {
                         })
                       }
                     />
-                  </label>
+                  </Box>
                 )}
               </>
             )}
 
             {cue.midi.kind === "control-change" && (
               <>
-                <label className="inspector-field">
+                <Box component="label" sx={inspectorFieldSx}>
                   Controller
                   <input
                     type="number"
@@ -205,8 +195,8 @@ export function CueInspector() {
                       })
                     }
                   />
-                </label>
-                <label className="inspector-field">
+                </Box>
+                <Box component="label" sx={inspectorFieldSx}>
                   Value
                   <input
                     type="number"
@@ -220,12 +210,12 @@ export function CueInspector() {
                       })
                     }
                   />
-                </label>
+                </Box>
               </>
             )}
 
             {cue.midi.kind === "program-change" && (
-              <label className="inspector-field">
+              <Box component="label" sx={inspectorFieldSx}>
                 Program
                 <input
                   type="number"
@@ -239,16 +229,18 @@ export function CueInspector() {
                     })
                   }
                 />
-              </label>
+              </Box>
             )}
           </>
         )}
 
         {(cue.type === "video" || cue.type === "image") && cue.assetPath && (
-          <div className="inspector-field">
-            <span className="inspector-field-label">Preview</span>
+          <Box sx={inspectorFieldSx}>
+            <Typography component="span" sx={inspectorFieldLabelSx}>
+              Preview
+            </Typography>
             <CueAssetPreview cue={cue} />
-          </div>
+          </Box>
         )}
 
         {(cue.type === "audio" ||
@@ -268,7 +260,7 @@ export function CueInspector() {
               readOnly={readOnly}
               onChange={(patch) => updateCue(cue.id, patch)}
             />
-            <label className="inspector-field">
+            <Box component="label" sx={inspectorFieldSx}>
               Fade in (s)
               <input
                 type="number"
@@ -282,8 +274,8 @@ export function CueInspector() {
                   })
                 }
               />
-            </label>
-            <label className="inspector-field">
+            </Box>
+            <Box component="label" sx={inspectorFieldSx}>
               Fade out (s)
               <input
                 type="number"
@@ -297,8 +289,8 @@ export function CueInspector() {
                   })
                 }
               />
-            </label>
-            <label className="inspector-field">
+            </Box>
+            <Box component="label" sx={inspectorFieldSx}>
               Volume
               <input
                 type="range"
@@ -311,12 +303,12 @@ export function CueInspector() {
                   updateCue(cue.id, { volume: Number(e.currentTarget.value) })
                 }
               />
-            </label>
+            </Box>
           </>
         )}
 
         {(cue.type === "video" || cue.type === "image") && (
-          <label className="inspector-field">
+          <Box component="label" sx={inspectorFieldSx}>
             Opacity
             <input
               type="range"
@@ -329,20 +321,20 @@ export function CueInspector() {
                 updateCue(cue.id, { opacity: Number(e.currentTarget.value) })
               }
             />
-          </label>
+          </Box>
         )}
 
         {cue.assetPath && (
-          <label className="inspector-field">
+          <Box component="label" sx={inspectorFieldSx}>
             Asset
             <input type="text" value={cue.assetPath} readOnly />
-          </label>
+          </Box>
         )}
 
         {cue.type === "image" && !cue.assetPath && (
-          <p className="inspector-hint">
+          <Typography component="p" sx={inspectorHintSx}>
             Drag an image from Assets onto this cue, or onto the cue list.
-          </p>
+          </Typography>
         )}
       </Box>
     </Box>

@@ -1,3 +1,4 @@
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
@@ -10,6 +11,20 @@ import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue } from "../types/cue";
 import { CueTypeBadge } from "./CueTypeIcon";
+import {
+  groupChildItemSx,
+  groupChildNameSx,
+  groupChildNumberSx,
+  groupChildSelectSx,
+  groupChildStepSx,
+  groupChildrenListSx,
+  inspectorFieldLabelSx,
+  inspectorFieldSx,
+  inspectorGroupHintSx,
+  inspectorGroupLegendSx,
+  inspectorGroupSx,
+  inspectorHintSx,
+} from "./inspectorSx";
 
 interface ContainerInspectorFieldsProps {
   container: Cue;
@@ -35,12 +50,12 @@ export function ContainerInspectorFields({
     !children.some((c) => c.id === selectedCueId);
 
   return (
-    <fieldset className="inspector-group">
-      <legend className="inspector-group-legend">
+    <Box component="fieldset" sx={inspectorGroupSx}>
+      <Box component="legend" sx={inspectorGroupLegendSx}>
         {isSequence ? "Sequence" : "Parallel group"}
-      </legend>
-      <Stack className="inspector-field" sx={{ gap: 0.75 }}>
-        <Typography component="span" variant="caption" className="inspector-field-label">
+      </Box>
+      <Stack sx={{ ...inspectorFieldSx, gap: 0.75 }}>
+        <Typography component="span" sx={inspectorFieldLabelSx}>
           Playback
         </Typography>
         <ToggleButtonGroup
@@ -60,7 +75,7 @@ export function ContainerInspectorFields({
         </ToggleButtonGroup>
       </Stack>
 
-      <Typography component="p" className="inspector-group-hint" variant="caption">
+      <Typography component="p" sx={inspectorGroupHintSx}>
         {isSequence
           ? "Child cues run one after another when you GO this sequence. Each cue starts when the previous finishes (using In/Out duration until playback is wired up)."
           : "Child cues run at the same time when you GO this group. Drag cues onto the row in the list, or add the selected cue below."}
@@ -76,26 +91,33 @@ export function ContainerInspectorFields({
         </Button>
       )}
 
-      <ul className="group-children-list">
+      <Box component="ul" sx={groupChildrenListSx}>
         {children.length === 0 && (
-          <li className="inspector-hint">
+          <Box component="li" sx={inspectorHintSx}>
             No cues in this {isSequence ? "sequence" : "group"} yet.
-          </li>
+          </Box>
         )}
         {children.map((child, index) => (
-          <li key={child.id} className="group-child-item">
+          <Box component="li" key={child.id} sx={groupChildItemSx}>
             {isSequence && (
-              <span className="group-child-step">{index + 1}</span>
+              <Box component="span" sx={groupChildStepSx}>
+                {index + 1}
+              </Box>
             )}
-            <button
+            <Box
+              component="button"
               type="button"
-              className="group-child-select"
+              sx={groupChildSelectSx}
               onClick={() => selectCue(child.id)}
             >
               <CueTypeBadge type={child.type} showLabel={false} />
-              <span className="group-child-number">{child.number}</span>
-              <span className="group-child-name">{child.name}</span>
-            </button>
+              <Box component="span" sx={groupChildNumberSx}>
+                {child.number}
+              </Box>
+              <Box component="span" sx={groupChildNameSx}>
+                {child.name}
+              </Box>
+            </Box>
             {canEdit && (
               <IconButton
                 size="small"
@@ -105,9 +127,9 @@ export function ContainerInspectorFields({
                 ↑
               </IconButton>
             )}
-          </li>
+          </Box>
         ))}
-      </ul>
-    </fieldset>
+      </Box>
+    </Box>
   );
 }

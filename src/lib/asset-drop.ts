@@ -1,13 +1,27 @@
+import { assetKindFromFilename } from "../vfs/import";
 import { isProjectBundlePath } from "./project-paths";
 import { filesFromDataTransfer } from "../platform/files.web";
 import { getPlatform } from "../platform";
-import { openDroppedProjectBundle } from "../platform/project-storage";
+import {
+  openDroppedProjectBundle,
+  openDroppedProjectBundleFile,
+} from "../platform/project-storage";
 import { useVfsStore } from "../stores/vfs";
 import {
   isAssetDrag,
   readAssetDragData,
   type AssetDragPayload,
 } from "./drag";
+
+/** True if any path looks like a media file (folders are treated as possible media). */
+export function diskPathsMayHaveMedia(paths: string[]): boolean {
+  return paths.some((p) => {
+    if (isProjectBundlePath(p)) return false;
+    const name = p.replace(/^.*[/\\]/, "");
+    if (!name.includes(".")) return true;
+    return assetKindFromFilename(name) !== null;
+  });
+}
 
 export function isExternalFileDrag(dataTransfer: DataTransfer): boolean {
   return Array.from(dataTransfer.types).some(
@@ -41,6 +55,8 @@ export async function resolveAssetDropPayloads(
       const path = (bundleFile as File & { path?: string }).path;
       if (path) {
         void openDroppedProjectBundle(path);
+      } else {
+        void openDroppedProjectBundleFile(bundleFile);
       }
       return [];
     }
@@ -48,4 +64,31 @@ export async function resolveAssetDropPayloads(
 
   const imported = await useVfsStore.getState().importFromFileList(files);
   return imported.map(({ path, name, kind }) => ({ path, name, kind }));
+}
+
+/** Tauri: import dropped disk paths into the VFS and return cue payloads. */
+export async function resolveAssetDropFromDiskPaths(
+  paths: string[],
+): Promise<AssetDragPayload[]> {
+  if (getPlatform() !== "tauri") return [];
+
+  const { importAssetsFromDiskPaths } = await import(
+    "../platform/import-assets.tauri"
+  );
+  const imported = await importAssetsFromDiskPaths(paths);
+  return imported.map(({ path, name, kind }) => ({ path, name, kind }));
+}
+
+export async function handleTauriMediaDrop(
+  paths: string[],
+  position: { x: number; y: number },
+): Promise<void> {
+  const { dropTargetAtPhysicalPosition, applyAssetDropPayloads } =
+    await import("./tauri-drop");
+  const [target, payloads] = await Promise.all([
+    dropTargetAtPhysicalPosition(position),
+    resolveAssetDropFromDiskPaths(paths),
+  ]);
+  if (!payloads.length) return;
+  applyAssetDropPayloads(payloads, target);
 }

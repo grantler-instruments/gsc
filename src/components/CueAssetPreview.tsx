@@ -1,8 +1,14 @@
+import Box from "@mui/material/Box";
 import { useEffect, useRef } from "react";
 import { resolveEffectiveOpacity } from "../stores/fade";
 import { useFadeStore } from "../stores/fade";
 import { useAssetObjectUrl } from "../hooks/useAssetObjectUrl";
 import type { Cue } from "../types/cue";
+import {
+  cueAssetPreviewMediaSx,
+  cueAssetPreviewMissingSx,
+  cueAssetPreviewSx,
+} from "./cueAssetPreviewSx";
 
 interface CueAssetPreviewProps {
   cue: Cue;
@@ -21,12 +27,12 @@ export function CueAssetPreview({ cue, className }: CueAssetPreviewProps) {
 
   if (!objectUrl) {
     return (
-      <div className={["cue-asset-preview", "cue-asset-preview-missing", className]
-        .filter(Boolean)
-        .join(" ")}
+      <Box
+        className={className}
+        sx={{ ...cueAssetPreviewSx, ...cueAssetPreviewMissingSx }}
       >
         Asset not loaded — re-import after opening a project.
-      </div>
+      </Box>
     );
   }
 
@@ -35,14 +41,15 @@ export function CueAssetPreview({ cue, className }: CueAssetPreviewProps) {
 
   if (cue.type === "image") {
     return (
-      <div className={["cue-asset-preview", className].filter(Boolean).join(" ")}>
-        <img
-          className="cue-asset-preview-media"
+      <Box className={className} sx={cueAssetPreviewSx}>
+        <Box
+          component="img"
           src={objectUrl}
           alt=""
+          sx={cueAssetPreviewMediaSx}
           style={{ opacity }}
         />
-      </div>
+      </Box>
     );
   }
 
@@ -98,14 +105,15 @@ function VideoAssetPreview({
   }, [objectUrl, inTime, videoRef]);
 
   return (
-    <div className={["cue-asset-preview", className].filter(Boolean).join(" ")}>
-      <video
+    <Box className={className} sx={cueAssetPreviewSx}>
+      <Box
+        component="video"
         ref={videoRef}
-        className="cue-asset-preview-media"
         playsInline
         muted
+        sx={cueAssetPreviewMediaSx}
         style={{ opacity }}
       />
-    </div>
+    </Box>
   );
 }

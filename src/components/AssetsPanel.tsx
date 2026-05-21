@@ -6,7 +6,11 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useRef, useState } from "react";
 import { isExternalFileDrag } from "../lib/asset-drop";
 import { pointerLeftElement } from "../lib/dom";
-import { isAssetDrag, setAssetDragData } from "../lib/drag";
+import {
+  isAssetDrag,
+  setActiveAssetDrag,
+  setAssetDragData,
+} from "../lib/drag";
 import { cueListDropActiveSx } from "../theme/cueStyles";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
@@ -89,6 +93,7 @@ export function AssetsPanel() {
 
   return (
     <Box
+      data-gsc-drop-zone="assets"
       onDropCapture={onDrop}
       onDragOverCapture={onDragOver}
       onDragLeaveCapture={onDragLeave}
@@ -163,6 +168,7 @@ export function AssetsPanel() {
             onDragStart={
               canEdit ? (e) => onAssetDragStart(e, entry) : undefined
             }
+            onDragEnd={canEdit ? () => setActiveAssetDrag(null) : undefined}
             sx={{
               display: "flex",
               alignItems: "center",

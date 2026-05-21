@@ -63,4 +63,4 @@ MyShow.gsc.zip
 ```
 
 - **Web:** File → Export / Import project bundle
-- **Tauri:** File → **Open…** (project folder or `.gsc.zip` bundle). Bundles are extracted to an **empty** folder you choose. Changes autosave to that folder; new projects prompt for an empty folder on first edit.
+- **Tauri:** File → **Open…** (project folder or `.gsc.zip` bundle). **New Project** (⌘N) and first save use a **save dialog** (pick location + folder name); GSC creates that directory and autosaves there.

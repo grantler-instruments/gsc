@@ -1,5 +1,16 @@
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { isInfiniteLoop, parseLoopIterationsInput } from "../lib/loop";
 import type { Cue } from "../types/cue";
+import {
+  inspectorFieldCheckboxSx,
+  inspectorFieldSx,
+  inspectorGroupCompactSx,
+  inspectorGroupHintSx,
+  inspectorGroupLegendSx,
+  inspectorGroupSx,
+  inspectorLoopIterationsSx,
+} from "./inspectorSx";
 
 interface LoopFieldsProps {
   cue: Cue;
@@ -25,10 +36,15 @@ export function LoopFields({
   };
 
   return (
-    <fieldset className="inspector-group inspector-group-compact">
-      <legend className="inspector-group-legend">Loop</legend>
+    <Box
+      component="fieldset"
+      sx={{ ...inspectorGroupSx, ...inspectorGroupCompactSx }}
+    >
+      <Box component="legend" sx={inspectorGroupLegendSx}>
+        Loop
+      </Box>
 
-      <label className="inspector-field inspector-field-checkbox">
+      <Box component="label" sx={inspectorFieldCheckboxSx}>
         <input
           type="checkbox"
           checked={loop}
@@ -47,31 +63,33 @@ export function LoopFields({
           }}
         />
         Loop playback
-      </label>
+      </Box>
 
       {loop && (
         <>
-          <label className="inspector-field">
+          <Box
+            component="label"
+            sx={{ ...inspectorFieldSx, "& input": inspectorLoopIterationsSx }}
+          >
             Iterations
             <input
               type="text"
               inputMode="numeric"
-              className="inspector-loop-iterations"
               value={infinite ? "" : String(cue.loopCount ?? "")}
               placeholder="∞"
               disabled={readOnly}
               onChange={(e) => applyIterations(e.currentTarget.value)}
               onBlur={(e) => applyIterations(e.currentTarget.value)}
             />
-          </label>
+          </Box>
 
-          <p className="inspector-group-hint">
+          <Typography component="p" sx={inspectorGroupHintSx}>
             {infinite
               ? "Repeats the In/Out slice until stopped. Enter a number (min 2) for a fixed count."
               : `Plays the In/Out slice ${cue.loopCount} times in a row. Clear for ∞.`}
-          </p>
+          </Typography>
         </>
       )}
-    </fieldset>
+    </Box>
   );
 }

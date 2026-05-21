@@ -12,7 +12,7 @@ import { useOutputPublisher } from "./hooks/useOutputPublisher";
 import { usePlaybackProgress } from "./hooks/usePlaybackProgress";
 import { useProjectSession } from "./hooks/useProjectSession";
 import { usePreventBrowserFileDrop } from "./hooks/usePreventBrowserFileDrop";
-import { useTauriProjectBundleDrop } from "./hooks/useTauriProjectBundleDrop";
+import { useTauriAppMenu } from "./hooks/useTauriAppMenu";
 import { useUiStore } from "./stores/ui";
 
 function App() {
@@ -24,7 +24,7 @@ function App() {
   useOutputPublisher();
   usePlaybackProgress();
   usePreventBrowserFileDrop();
-  useTauriProjectBundleDrop();
+  useTauriAppMenu();
   const showMode = useUiStore((s) => s.showMode);
 
   if (!sessionReady) {

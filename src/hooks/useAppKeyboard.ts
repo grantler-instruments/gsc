@@ -4,6 +4,7 @@ import {
   selectAdjacentVisibleCue,
 } from "../lib/cue-navigation";
 import { isEditableKeyboardTarget } from "../lib/keyboard";
+import { startNewProject } from "../lib/new-project";
 import { canEditProject } from "../lib/show-mode";
 import { triggerGoSelected } from "../lib/transport-actions";
 import { useProjectStore } from "../stores/project";
@@ -20,6 +21,17 @@ export function useAppKeyboard(): void {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.key.toLowerCase() === "n" &&
+        !e.shiftKey &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        void startNewProject();
+        return;
+      }
+
       if (isEditableKeyboardTarget(e.target)) return;
 
       if (e.code === "Space") {
@@ -103,7 +115,7 @@ export function useAppKeyboard(): void {
       }
     };
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [copySelectedCues, duplicateSelectedCues, groupSelectedCues, panic, pasteSelectedCues, toggleShowMode]);
 }

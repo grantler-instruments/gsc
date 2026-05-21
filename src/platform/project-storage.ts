@@ -22,13 +22,22 @@ export async function openProject(): Promise<boolean> {
   return pickAndOpenProject();
 }
 
-/** Tauri: open a .gsc.zip from an OS file path (e.g. drag-and-drop). */
+/** Tauri: open a .gsc.zip from an OS file path (e.g. native drag-and-drop). */
 export async function openDroppedProjectBundle(
   bundlePath: string,
 ): Promise<boolean> {
   if (getPlatform() !== "tauri") return false;
   const { openProjectBundleFromPath } = await import("./project-storage.tauri");
   return openProjectBundleFromPath(bundlePath);
+}
+
+/** Tauri: open a .gsc.zip from an HTML5 File drop. */
+export async function openDroppedProjectBundleFile(
+  file: File,
+): Promise<boolean> {
+  if (getPlatform() !== "tauri") return false;
+  const { openProjectBundleFromFile } = await import("./project-storage.tauri");
+  return openProjectBundleFromFile(file);
 }
 
 export async function restorePlatformProject(): Promise<boolean> {
@@ -39,6 +48,22 @@ export async function restorePlatformProject(): Promise<boolean> {
   const { restoreProjectSessionOnce } = await import("../lib/project-session");
   await restoreProjectSessionOnce();
   return false;
+}
+
+/** Tauri: save dialog to pick parent path + folder name; creates the directory. */
+export async function promptProjectFolder(
+  title: string,
+  defaultName: string,
+): Promise<string | null> {
+  if (getPlatform() !== "tauri") return null;
+  const { promptTauriProjectFolder } = await import("./project-storage.tauri");
+  try {
+    return await promptTauriProjectFolder(title, defaultName);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    window.alert(message);
+    return null;
+  }
 }
 
 export async function persistPlatformProject(): Promise<void> {

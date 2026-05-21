@@ -1,3 +1,6 @@
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import {
   canOpacityFadeTarget,
   canVolumeFadeTarget,
@@ -15,6 +18,16 @@ import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue, FadeCueType } from "../types/cue";
 import { CueTypeBadge } from "./CueTypeIcon";
+import {
+  inspectorFieldLabelSx,
+  inspectorFieldSx,
+  inspectorGroupHintSx,
+  inspectorGroupLegendSx,
+  inspectorGroupSx,
+  inspectorHintWarningSx,
+  inspectorReadonlySx,
+  inspectorTargetLinkSx,
+} from "./inspectorSx";
 
 interface FadeInspectorFieldsProps {
   fadeCue: Cue;
@@ -38,15 +51,17 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
   const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
   return (
-    <fieldset className="inspector-group">
-      <legend className="inspector-group-legend">{fadeCueLabel(fadeType)}</legend>
-      <p className="inspector-group-hint">
+    <Box component="fieldset" sx={inspectorGroupSx}>
+      <Box component="legend" sx={inspectorGroupLegendSx}>
+        {fadeCueLabel(fadeType)}
+      </Box>
+      <Typography component="p" sx={inspectorGroupHintSx}>
         When triggered (GO), fades the target cue&apos;s{" "}
         {fadeType === "volumeFade" ? "volume" : "opacity"} from its current
         level at that moment to the end level over the given duration.
-      </p>
+      </Typography>
 
-      <label className="inspector-field">
+      <Box component="label" sx={inspectorFieldSx}>
         Target cue
         <select
           value={fadeCue.fadeTargetId ?? ""}
@@ -64,9 +79,9 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
             </option>
           ))}
         </select>
-      </label>
+      </Box>
 
-      <label className="inspector-field">
+      <Box component="label" sx={inspectorFieldSx}>
         Duration (s)
         <input
           type="number"
@@ -80,21 +95,23 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
             })
           }
         />
-      </label>
+      </Box>
 
       {target ? (
-        <div className="inspector-field">
-          <span className="inspector-field-label">Starts from (at GO)</span>
-          <p className="inspector-readonly">
+        <Box sx={inspectorFieldSx}>
+          <Typography component="span" sx={inspectorFieldLabelSx}>
+            Starts from (at GO)
+          </Typography>
+          <Typography component="p" sx={inspectorReadonlySx}>
             {resolveFadeFromLevel(fadeCue, target).toFixed(2)}
             {isVolumeFadeCue(fadeCue)
               ? " — target cue volume now"
               : " — target cue opacity now"}
-          </p>
-        </div>
+          </Typography>
+        </Box>
       ) : null}
 
-      <label className="inspector-field">
+      <Box component="label" sx={inspectorFieldSx}>
         To
         <input
           type="number"
@@ -109,23 +126,24 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
             })
           }
         />
-      </label>
+      </Box>
 
       {target ? (
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm inspector-target-link"
+        <Button
+          variant="text"
+          size="small"
           onClick={() => selectCue(target.id)}
+          sx={inspectorTargetLinkSx}
         >
           <CueTypeBadge type={target.type} showLabel={false} />
           Go to target: {formatStopTargetLabel(target)}
-        </button>
+        </Button>
       ) : (
-        <p className="inspector-hint cue-row-warning-text">
+        <Typography component="p" sx={inspectorHintWarningSx}>
           Target missing or invalid — choose an{" "}
           {fadeType === "volumeFade" ? "audio/video" : "video/image"} cue.
-        </p>
+        </Typography>
       )}
-    </fieldset>
+    </Box>
   );
 }

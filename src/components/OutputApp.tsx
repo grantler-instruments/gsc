@@ -75,13 +75,13 @@ export function OutputApp() {
           height: "100vh",
           bgcolor: "#000",
           overflow: "hidden",
-          "& .visual-stage": {
-            minHeight: "100%",
-            height: "100%",
-          },
         }}
       >
-        <VisualStage layers={layers} role="output" />
+        <VisualStage
+          layers={layers}
+          role="output"
+          sx={{ minHeight: "100%", height: "100%" }}
+        />
       </Box>
     </>
   );

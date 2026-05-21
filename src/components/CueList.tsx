@@ -26,6 +26,7 @@ import {
   isCueDrag,
   readCueDragData,
   readCueDragId,
+  setActiveAssetDrag,
   setActiveCueDrag,
   setCueDragData,
 } from "../lib/drag";
@@ -287,9 +288,13 @@ export function CueList() {
       }
 
       void (async () => {
-        const payloads = await resolveAssetDropPayloads(e.dataTransfer);
-        for (const payload of payloads) {
-          addCueFromAsset(payload);
+        try {
+          const payloads = await resolveAssetDropPayloads(e.dataTransfer);
+          for (const payload of payloads) {
+            addCueFromAsset(payload);
+          }
+        } finally {
+          setActiveAssetDrag(null);
         }
       })();
     },
@@ -376,7 +381,9 @@ export function CueList() {
 
       <Box
         component="ul"
+        data-gsc-drop-zone="cue-list"
         onDragOver={onListDragOver}
+        onDragOverCapture={onListDragOver}
         onDragLeave={onListDragLeave}
         onDrop={onListDrop}
         sx={{
@@ -565,6 +572,8 @@ function CueRow({
   return (
     <Box
       component="li"
+      data-gsc-drop-zone="cue-row"
+      data-cue-id={cue.id}
       sx={{
         ...cueRowSx(rowStyleState),
         pl: `${12 + depth * 16}px`,
@@ -672,14 +681,18 @@ function CueRow({
         }
 
         void (async () => {
-          const payloads = await resolveAssetDropPayloads(e.dataTransfer);
-          if (!payloads.length) return;
-          if (isContainer) {
-            for (const payload of payloads) {
-              onAssetDrop(payload);
+          try {
+            const payloads = await resolveAssetDropPayloads(e.dataTransfer);
+            if (!payloads.length) return;
+            if (isContainer) {
+              for (const payload of payloads) {
+                onAssetDrop(payload);
+              }
+            } else {
+              onAssetDrop(payloads[0]);
             }
-          } else {
-            onAssetDrop(payloads[0]);
+          } finally {
+            setActiveAssetDrag(null);
           }
         })();
       }}

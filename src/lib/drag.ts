@@ -10,19 +10,27 @@ export interface AssetDragPayload {
   kind: AssetKind;
 }
 
+/** In-flight asset drag (WKWebView/Tauri may not expose custom getData on drop). */
+let activeAssetDrag: AssetDragPayload | null = null;
+
+export function setActiveAssetDrag(payload: AssetDragPayload | null): void {
+  activeAssetDrag = payload;
+}
+
+export function getActiveAssetDrag(): AssetDragPayload | null {
+  return activeAssetDrag;
+}
+
 export function setAssetDragData(
   dataTransfer: DataTransfer,
   payload: AssetDragPayload,
 ): void {
+  activeAssetDrag = payload;
   dataTransfer.setData(GSC_ASSET_DRAG_TYPE, JSON.stringify(payload));
   dataTransfer.effectAllowed = "copy";
 }
 
-export function readAssetDragData(
-  dataTransfer: DataTransfer,
-): AssetDragPayload | null {
-  const raw = dataTransfer.getData(GSC_ASSET_DRAG_TYPE);
-  if (!raw) return null;
+function parseAssetDragPayload(raw: string): AssetDragPayload | null {
   try {
     const data = JSON.parse(raw) as AssetDragPayload;
     if (
@@ -38,8 +46,21 @@ export function readAssetDragData(
   return null;
 }
 
+export function readAssetDragData(
+  dataTransfer: DataTransfer,
+): AssetDragPayload | null {
+  const raw = dataTransfer.getData(GSC_ASSET_DRAG_TYPE);
+  if (raw) {
+    const parsed = parseAssetDragPayload(raw);
+    if (parsed) return parsed;
+  }
+  return activeAssetDrag;
+}
+
 export function isAssetDrag(dataTransfer: DataTransfer): boolean {
-  return dataTransfer.types.includes(GSC_ASSET_DRAG_TYPE);
+  return (
+    dataTransfer.types.includes(GSC_ASSET_DRAG_TYPE) || activeAssetDrag !== null
+  );
 }
 
 export const GSC_CUE_DRAG_TYPE = "application/x-gsc-cue";

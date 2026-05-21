@@ -1,3 +1,5 @@
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   useMediaWaveform,
@@ -5,6 +7,19 @@ import {
 } from "../hooks/useMediaWaveform";
 import { getVideoThumbnailDataUrl } from "../lib/video-thumbnail";
 import { formatTime, normalizePlaybackRange } from "../lib/time";
+import {
+  waveformCanvasSx,
+  waveformDraggingSx,
+  waveformEditableSx,
+  waveformHandleInSx,
+  waveformHandleOutSx,
+  waveformHandlesSx,
+  waveformRootSx,
+  waveformScrubSx,
+  waveformStatusSx,
+  waveformThumbnailSx,
+  waveformThumbnailTimeSx,
+} from "./audioWaveformSx";
 
 export interface AudioWaveformProps {
   assetPath: string;
@@ -291,51 +306,56 @@ export function AudioWaveform({
   };
 
   return (
-    <div
+    <Box
       ref={wrapRef}
-      className={[
-        "audio-waveform",
-        editable && "audio-waveform-editable",
-        hoverPreview && "audio-waveform-scrub",
-        dragging && "audio-waveform-dragging",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      style={{ height }}
+      className={className}
       title={label}
+      sx={{
+        ...waveformRootSx,
+        height,
+        ...(editable && waveformEditableSx),
+        ...(hoverPreview && waveformScrubSx),
+        ...(dragging && waveformDraggingSx),
+      }}
       onPointerMove={hoverPreview ? handlePointerMove : undefined}
       onPointerLeave={hoverPreview ? clearHover : undefined}
     >
       {loading && (
-        <span className="audio-waveform-status">
+        <Typography component="span" sx={waveformStatusSx}>
           {mediaKind === "video" ? "Loading video…" : "Loading waveform…"}
-        </span>
+        </Typography>
       )}
       {missing && !loading && (
-        <span className="audio-waveform-status">
+        <Typography component="span" sx={waveformStatusSx}>
           Asset not loaded — import the file in Assets.
-        </span>
+        </Typography>
       )}
       {data && (
         <>
-          <canvas ref={canvasRef} className="audio-waveform-canvas" aria-hidden />
+          <Box
+            component="canvas"
+            ref={canvasRef}
+            aria-hidden
+            sx={waveformCanvasSx}
+          />
           {showThumbnail && (
-            <div
-              className="media-waveform-thumbnail"
-              style={{ left: `${hoverPct}%` }}
-            >
-              <img src={thumbnailUrl} alt="" draggable={false} />
-              <span className="media-waveform-thumbnail-time">
+            <Box sx={{ ...waveformThumbnailSx, left: `${hoverPct}%` }}>
+              <Box
+                component="img"
+                src={thumbnailUrl}
+                alt=""
+                draggable={false}
+              />
+              <Typography component="span" sx={waveformThumbnailTimeSx}>
                 {formatTime(hoverSec!)}
-              </span>
-            </div>
+              </Typography>
+            </Box>
           )}
           {showHandles && (
-            <div className="audio-waveform-handles">
-              <div
-                className="audio-waveform-handle audio-waveform-handle-in"
-                style={{ left: `${inPct}%` }}
+            <Box sx={waveformHandlesSx}>
+              <Box
+                data-waveform-handle
+                sx={{ ...waveformHandleInSx, left: `${inPct}%` }}
                 role="slider"
                 aria-label="In point"
                 aria-valuemin={0}
@@ -352,9 +372,9 @@ export function AudioWaveform({
                 onPointerUp={endDrag}
                 onPointerCancel={endDrag}
               />
-              <div
-                className="audio-waveform-handle audio-waveform-handle-out"
-                style={{ left: `${outPct}%` }}
+              <Box
+                data-waveform-handle
+                sx={{ ...waveformHandleOutSx, left: `${outPct}%` }}
                 role="slider"
                 aria-label="Out point"
                 aria-valuemin={Math.round((effectiveIn + MIN_SLICE_SEC) * 100) / 100}
@@ -371,10 +391,10 @@ export function AudioWaveform({
                 onPointerUp={endDrag}
                 onPointerCancel={endDrag}
               />
-            </div>
+            </Box>
           )}
         </>
       )}
-    </div>
+    </Box>
   );
 }

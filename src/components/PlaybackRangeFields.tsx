@@ -1,6 +1,20 @@
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { formatTime, normalizePlaybackRange } from "../lib/time";
 import type { Cue } from "../types/cue";
 import { AudioWaveform } from "./AudioWaveform";
+import {
+  inspectorDerivedSx,
+  inspectorFieldSx,
+  inspectorGroupHintSx,
+  inspectorGroupLegendSx,
+  inspectorGroupSx,
+  inspectorInfiniteBtnSx,
+  inspectorTimeFormattedSx,
+  inspectorTimeRowSx,
+  inspectorWaveformFieldSx,
+  inspectorWaveformRangeSummarySx,
+} from "./inspectorSx";
 
 interface PlaybackRangeFieldsProps {
   cue: Cue;
@@ -45,9 +59,11 @@ export function PlaybackRangeFields({
   };
 
   return (
-    <fieldset className="inspector-group">
-      <legend className="inspector-group-legend">Playback range</legend>
-      <p className="inspector-group-hint">
+    <Box component="fieldset" sx={inspectorGroupSx}>
+      <Box component="legend" sx={inspectorGroupLegendSx}>
+        Playback range
+      </Box>
+      <Typography component="p" sx={inspectorGroupHintSx}>
         {hasWaveform
           ? isVideo
             ? "Drag the markers to set In and Out. Hover the waveform for a frame preview."
@@ -55,10 +71,10 @@ export function PlaybackRangeFields({
           : isImage
             ? "Clear duration or click ∞ to hold until a stop cue. Set seconds to auto-hide."
             : "In and Out are positions within the file (seconds). Leave Out empty to play to the end."}
-      </p>
+      </Typography>
 
       {hasWaveform && (
-        <div className="inspector-waveform-field">
+        <Box sx={inspectorWaveformFieldSx}>
           <AudioWaveform
             assetPath={cue.assetPath!}
             inTime={cue.inTime}
@@ -69,17 +85,17 @@ export function PlaybackRangeFields({
             mediaKind={isVideo ? "video" : "audio"}
             hoverPreview={isVideo && !readOnly}
           />
-          <p className="inspector-waveform-range-summary">
+          <Typography component="p" sx={inspectorWaveformRangeSummarySx}>
             In {formatTime(inTime)} · Out {effectiveOutLabel}
             {sliceSec !== null && ` · ${formatTime(sliceSec)} slice`}
-          </p>
-        </div>
+          </Typography>
+        </Box>
       )}
 
       {!hasWaveform && !isImage && (
-        <label className="inspector-field">
+        <Box component="label" sx={inspectorFieldSx}>
           In
-          <div className="inspector-time-row">
+          <Box sx={inspectorTimeRowSx}>
             <input
               type="number"
               min={0}
@@ -88,15 +104,17 @@ export function PlaybackRangeFields({
               disabled={readOnly}
               onChange={(e) => patchIn(Number(e.currentTarget.value))}
             />
-            <span className="inspector-time-formatted">{formatTime(inTime)}</span>
-          </div>
-        </label>
+            <Box component="span" sx={inspectorTimeFormattedSx}>
+              {formatTime(inTime)}
+            </Box>
+          </Box>
+        </Box>
       )}
 
       {!hasWaveform && (
-        <label className="inspector-field">
+        <Box component="label" sx={inspectorFieldSx}>
           {isImage ? "Duration (seconds)" : "Out"}
-          <div className="inspector-time-row">
+          <Box sx={inspectorTimeRowSx}>
             <input
               type="number"
               min={0}
@@ -115,36 +133,37 @@ export function PlaybackRangeFields({
             />
             {isImage ? (
               <>
-                <span className="inspector-time-formatted">
+                <Box component="span" sx={inspectorTimeFormattedSx}>
                   {outTime !== undefined ? formatTime(outTime) : "∞"}
-                </span>
+                </Box>
                 {!readOnly && outTime !== undefined && (
-                  <button
+                  <Box
+                    component="button"
                     type="button"
-                    className="inspector-infinite-btn"
+                    sx={inspectorInfiniteBtnSx}
                     title="Hold until stop cue"
                     onClick={() => patchOut(undefined)}
                   >
                     ∞
-                  </button>
+                  </Box>
                 )}
               </>
             ) : (
               outTime !== undefined && (
-                <span className="inspector-time-formatted">
+                <Box component="span" sx={inspectorTimeFormattedSx}>
                   {formatTime(outTime)}
-                </span>
+                </Box>
               )
             )}
-          </div>
-        </label>
+          </Box>
+        </Box>
       )}
 
       {!hasWaveform && !isImage && sliceSec !== null && (
-        <p className="inspector-derived">
+        <Typography component="p" sx={inspectorDerivedSx}>
           Slice length: {formatTime(sliceSec)}
-        </p>
+        </Typography>
       )}
-    </fieldset>
+    </Box>
   );
 }

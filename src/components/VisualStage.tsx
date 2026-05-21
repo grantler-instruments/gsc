@@ -1,4 +1,5 @@
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { useCallback, useEffect, useRef } from "react";
 import {
@@ -10,6 +11,11 @@ import {
 } from "../lib/video-playback";
 import { useTransportStore } from "../stores/transport";
 import type { OutputLayer } from "../types/output";
+import {
+  visualLayerSx,
+  visualLayerWrapSx,
+  visualStageEmptySx,
+} from "./visualStageSx";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
@@ -129,9 +135,10 @@ function VideoLayer({ layer, onEnded }: VideoLayerProps) {
   }, [layer.opacity]);
 
   return (
-    <video
+    <Box
+      component="video"
       ref={ref}
-      className="visual-layer visual-layer-video"
+      sx={visualLayerSx}
       playsInline
       muted
     />
@@ -144,10 +151,11 @@ interface ImageLayerProps {
 
 function ImageLayer({ layer }: ImageLayerProps) {
   return (
-    <img
-      className="visual-layer visual-layer-image"
+    <Box
+      component="img"
       src={layer.objectUrl}
       alt=""
+      sx={visualLayerSx}
       style={{ opacity: clamp01(layer.opacity) }}
     />
   );
@@ -175,11 +183,9 @@ export function VisualStage({ layers, role, className, sx }: VisualStageProps) {
     [role, stopCue],
   );
 
-  const classes = ["visual-stage", className].filter(Boolean).join(" ");
-
   return (
     <Box
-      className={classes}
+      className={className}
       sx={{
         position: "relative",
         width: "100%",
@@ -190,11 +196,15 @@ export function VisualStage({ layers, role, className, sx }: VisualStageProps) {
         ...sx,
       }}
     >
+      {layers.length === 0 && role === "control" && (
+        <Typography component="span" sx={visualStageEmptySx}>
+          No active video or image cues
+        </Typography>
+      )}
       {layers.map((layer, index) => (
-        <div
+        <Box
           key={layer.cueId}
-          className="visual-layer-wrap"
-          style={{ zIndex: index + 1 }}
+          sx={{ ...visualLayerWrapSx, zIndex: index + 1 }}
         >
           {layer.type === "video" ? (
             <VideoLayer
@@ -204,7 +214,7 @@ export function VisualStage({ layers, role, className, sx }: VisualStageProps) {
           ) : (
             <ImageLayer layer={layer} />
           )}
-        </div>
+        </Box>
       ))}
     </Box>
   );

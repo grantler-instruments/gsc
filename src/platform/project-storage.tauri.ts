@@ -13,6 +13,7 @@ import { join } from "@tauri-apps/api/path";
 import { setActiveProjectId } from "../lib/active-project-id";
 import {
   buildProjectBundleZip,
+  parseProjectBundleZip,
   projectBundleDiskFiles,
 } from "../lib/project-bundle";
 import {
@@ -46,26 +47,53 @@ function showError(err: unknown): void {
   window.alert(message);
 }
 
-async function assertDirectoryEmpty(dir: string): Promise<void> {
-  if (!(await exists(dir))) return;
-  const entries = await readDir(dir);
-  const blocking = entries.filter((e) => !IGNORED_DIR_ENTRIES.has(e.name));
-  if (blocking.length > 0) {
-    throw new Error(
-      "That folder is not empty. Choose an empty folder.",
-    );
-  }
+function projectDirNameFromShowName(name: string): string {
+  const sanitized = name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "");
+  return sanitized || "Untitled_Show";
 }
 
-async function pickEmptyProjectFolder(title: string): Promise<string | null> {
-  const selected = await open({
-    directory: true,
-    multiple: false,
+async function isDirectoryEmpty(dir: string): Promise<boolean> {
+  if (!(await exists(dir))) return true;
+  const entries = await readDir(dir);
+  return (
+    entries.filter((e) => !IGNORED_DIR_ENTRIES.has(e.name)).length === 0
+  );
+}
+
+/** Turn a save-dialog path into a project directory (strip accidental file extensions). */
+function projectRootFromSavePath(savePath: string): string {
+  return savePath
+    .replace(/[/\\]+$/, "")
+    .replace(/\.(gsc\.zip|gsc|zip)$/i, "");
+}
+
+/**
+ * Save dialog: user picks location and folder name; GSC creates that directory.
+ */
+export async function promptTauriProjectFolder(
+  title: string,
+  defaultName: string,
+): Promise<string | null> {
+  const selected = await save({
     title,
+    defaultPath: projectDirNameFromShowName(defaultName),
+    canCreateDirectories: true,
   });
   if (!selected || typeof selected !== "string") return null;
-  await assertDirectoryEmpty(selected);
-  return selected;
+
+  const rootDir = projectRootFromSavePath(selected);
+
+  if (await exists(rootDir)) {
+    if (!(await isDirectoryEmpty(rootDir))) {
+      throw new Error(
+        `“${rootDir}” already exists and is not empty. Choose another name or location.`,
+      );
+    }
+    return rootDir;
+  }
+
+  await mkdir(rootDir, { recursive: true });
+  return rootDir;
 }
 
 async function writeBundleFilesToFolder(
@@ -192,8 +220,10 @@ export async function saveProjectToFolder(rootDir: string): Promise<void> {
 async function openProjectBundleFromZipData(
   zipData: Uint8Array,
 ): Promise<boolean> {
-  const destDir = await pickEmptyProjectFolder(
-    "Choose an empty folder for this project",
+  const { snapshot } = parseProjectBundleZip(zipData);
+  const destDir = await promptTauriProjectFolder(
+    "Save project as",
+    snapshot.name,
   );
   if (!destDir) return false;
 
@@ -202,7 +232,7 @@ async function openProjectBundleFromZipData(
   return true;
 }
 
-/** Extract a dropped or chosen bundle into an empty folder and load it. */
+/** Extract a dropped or chosen bundle into a new project folder and load it. */
 export async function openProjectBundleFromPath(
   bundlePath: string,
 ): Promise<boolean> {
@@ -219,11 +249,26 @@ export async function openProjectBundleFromPath(
   }
 }
 
+/** HTML5 file drop (no OS path) — read bundle bytes from the File object. */
+export async function openProjectBundleFromFile(file: File): Promise<boolean> {
+  if (bundleOpenInProgress) return false;
+  bundleOpenInProgress = true;
+  try {
+    const zipData = new Uint8Array(await file.arrayBuffer());
+    return await openProjectBundleFromZipData(zipData);
+  } catch (err) {
+    showError(err);
+    return false;
+  } finally {
+    bundleOpenInProgress = false;
+  }
+}
+
 async function openProjectFromBundleFile(bundlePath: string): Promise<boolean> {
   return openProjectBundleFromPath(bundlePath);
 }
 
-/** Open an on-disk project folder or a .gsc.zip bundle (extracted to an empty folder). */
+/** Open an on-disk project folder or a .gsc.zip bundle (extracted into a new folder). */
 export async function pickAndOpenProject(): Promise<boolean> {
   const folderPath = await open({
     directory: true,
@@ -261,9 +306,8 @@ async function ensureProjectRootDirForSave(): Promise<string | null> {
 
   if (!bindFolderPromise) {
     bindFolderPromise = (async () => {
-      const folder = await pickEmptyProjectFolder(
-        "Choose an empty folder for this project",
-      );
+      const showName = useProjectStore.getState().name;
+      const folder = await promptTauriProjectFolder("Save project as", showName);
       if (!folder) return null;
       useProjectLocationStore.getState().setRootDir(folder);
       localStorage.setItem(LAST_ROOT_KEY, folder);
@@ -305,10 +349,7 @@ export async function persistTauriProject(): Promise<void> {
     await saveProjectToFolder(rootDir);
   } catch (err) {
     console.warn("[tauri] Could not autosave project", err);
-    if (
-      err instanceof Error &&
-      err.message.includes("not empty")
-    ) {
+    if (err instanceof Error && err.message.includes("already exists")) {
       showError(err);
     }
   }
