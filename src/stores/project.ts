@@ -34,6 +34,7 @@ import { setActiveProjectId } from "../lib/active-project-id";
 import { cueListsToSnapshot, snapshotToCueLists } from "../lib/project-snapshot";
 import { canEditProject } from "../lib/show-mode";
 import { defaultMidiCueData } from "../lib/midi";
+import { buildNoteToCueMappings } from "../lib/midi-mapping";
 import type {
   Cue,
   CueType,
@@ -41,6 +42,7 @@ import type {
   MidiCueData,
   ProjectSnapshot,
 } from "../types/cue";
+import type { MidiMapping } from "../types/midi-mapping";
 
 function isMediaCueType(type: CueType): boolean {
   return type === "audio" || type === "video" || type === "image";
@@ -84,6 +86,7 @@ interface ProjectState {
   name: string;
   cueLists: CueList[];
   activeCueListId: string;
+  midiMappings: MidiMapping[];
   addCue: (opts: {
     name: string;
     type: CueType;
@@ -120,6 +123,11 @@ interface ProjectState {
   renameCueList: (listId: string, name: string) => void;
   setActiveCueList: (listId: string) => void;
   setName: (name: string) => void;
+  addMidiMapping: (mapping: Omit<MidiMapping, "id">) => MidiMapping;
+  removeMidiMapping: (id: string) => void;
+  updateMidiMapping: (id: string, patch: Partial<MidiMapping>) => void;
+  setMidiMappings: (mappings: MidiMapping[]) => void;
+  autoMapNotesToCues: (startNote?: number) => void;
   loadSnapshot: (snap: ProjectSnapshot) => void;
   getSnapshot: () => ProjectSnapshot;
 }
@@ -131,6 +139,7 @@ export const useProjectStore = create<ProjectState>()(
       name: "Untitled Show",
       cueLists: [initialList],
       activeCueListId: initialList.id,
+      midiMappings: [],
 
       addCue: ({ name, type, assetPath, midi, parentId }) => {
         if (!canEditProject()) {
@@ -591,6 +600,33 @@ export const useProjectStore = create<ProjectState>()(
         set({ name });
       },
 
+      addMidiMapping: (mapping) => {
+        const entry: MidiMapping = { ...mapping, id: crypto.randomUUID() };
+        set((s) => ({ midiMappings: [...s.midiMappings, entry] }));
+        return entry;
+      },
+
+      removeMidiMapping: (id) =>
+        set((s) => ({
+          midiMappings: s.midiMappings.filter((m) => m.id !== id),
+        })),
+
+      updateMidiMapping: (id, patch) =>
+        set((s) => ({
+          midiMappings: s.midiMappings.map((m) =>
+            m.id === id ? { ...m, ...patch } : m,
+          ),
+        })),
+
+      setMidiMappings: (midiMappings) => set({ midiMappings }),
+
+      autoMapNotesToCues: (startNote = 36) => {
+        const active = getActiveList(get());
+        set({
+          midiMappings: buildNoteToCueMappings(active.cues, startNote),
+        });
+      },
+
       loadSnapshot: (snap) => {
         if (!canEditProject()) return;
         const loaded = snapshotToCueLists(snap);
@@ -599,8 +635,14 @@ export const useProjectStore = create<ProjectState>()(
       },
 
       getSnapshot: () => {
-        const { id, name, cueLists, activeCueListId } = get();
-        return cueListsToSnapshot(id, name, cueLists, activeCueListId);
+        const { id, name, cueLists, activeCueListId, midiMappings } = get();
+        return cueListsToSnapshot(
+          id,
+          name,
+          cueLists,
+          activeCueListId,
+          midiMappings,
+        );
       },
     }),
     { name: "ProjectStore" },

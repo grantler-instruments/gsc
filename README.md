@@ -44,7 +44,7 @@ src/
 | **Audio** | Drag/import WAV, MP3, etc. |
 | **Video** | Drag/import MP4, WebM, etc. |
 | **Image** | Drag/import PNG, JPG, WebP, etc. |
-| **MIDI** | Created from **+ Cue → MIDI**; edit channel/message in the Inspector; GO sends the message to the MIDI interface in Settings |
+| **MIDI** | **Out:** **+ Cue → MIDI**, GO sends to **Settings → MIDI output**. **In:** **Settings → MIDI map** to bind incoming notes/CCs to GO, select cue, panic, etc. |
 
 ## .gsc projects
 

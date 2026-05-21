@@ -33,6 +33,8 @@ export interface MidiCueData {
   program?: number;
 }
 
+import type { MidiMapping } from "./midi-mapping";
+
 export interface Cue {
   id: string;
   number: string;
@@ -91,6 +93,8 @@ export interface ProjectSnapshotV2 {
   name: string;
   cueLists: CueListSnapshot[];
   activeCueListId: string;
+  /** MIDI input → action bindings for this show. */
+  midiMappings?: MidiMapping[];
 }
 
 export type ProjectSnapshot = ProjectSnapshotV1 | ProjectSnapshotV2;

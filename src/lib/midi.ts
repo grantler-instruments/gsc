@@ -1,4 +1,5 @@
 import type { MidiCueData, MidiMessageKind } from "../types/cue";
+import type { MidiMatch } from "../types/midi-mapping";
 
 export const MIDI_MESSAGE_KINDS: MidiMessageKind[] = [
   "note-on",
@@ -45,6 +46,67 @@ export function clampMidiByte(v: number): number {
 
 export function clampMidiChannel(v: number): number {
   return Math.max(1, Math.min(16, Math.round(v)));
+}
+
+/** Parse a short MIDI message into match fields. */
+export function parseMidiMessage(bytes: number[]): MidiMatch | null {
+  if (bytes.length < 1) return null;
+  const status = bytes[0]!;
+  const channel = (status & 0x0f) + 1;
+  const hi = status & 0xf0;
+
+  if (hi === 0x90 && bytes.length >= 3) {
+    return {
+      channel,
+      kind: "note-on",
+      note: bytes[1],
+      velocity: bytes[2],
+    };
+  }
+  if (hi === 0x80 && bytes.length >= 3) {
+    return {
+      channel,
+      kind: "note-off",
+      note: bytes[1],
+      velocity: bytes[2],
+    };
+  }
+  if (hi === 0xb0 && bytes.length >= 3) {
+    return {
+      channel,
+      kind: "control-change",
+      controller: bytes[1],
+      value: bytes[2],
+    };
+  }
+  if (hi === 0xc0 && bytes.length >= 2) {
+    return {
+      channel,
+      kind: "program-change",
+      program: bytes[1],
+    };
+  }
+  return null;
+}
+
+export function midiMatches(mapping: MidiMatch, incoming: MidiMatch): boolean {
+  if (mapping.channel !== incoming.channel || mapping.kind !== incoming.kind) {
+    return false;
+  }
+  switch (mapping.kind) {
+    case "note-on":
+    case "note-off":
+      return (mapping.note ?? 60) === (incoming.note ?? 60);
+    case "control-change":
+      return (
+        (mapping.controller ?? 0) === (incoming.controller ?? 0) &&
+        (mapping.value ?? 0) === (incoming.value ?? 0)
+      );
+    case "program-change":
+      return (mapping.program ?? 0) === (incoming.program ?? 0);
+    default:
+      return false;
+  }
 }
 
 /** Encode cue data as a standard short MIDI message (1–3 bytes). */

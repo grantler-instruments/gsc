@@ -1,6 +1,7 @@
 import { createCueList, type CueList } from "./cue-lists";
 import { defaultMidiCueData } from "./midi";
 import type { Cue, ProjectSnapshot, ProjectSnapshotV2 } from "../types/cue";
+import type { MidiMapping } from "../types/midi-mapping";
 
 function projectIdFromSnapshot(snap: ProjectSnapshot): string {
   if (snap.version === 2 && snap.id) return snap.id;
@@ -18,6 +19,7 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   name: string;
   cueLists: CueList[];
   activeCueListId: string;
+  midiMappings: MidiMapping[];
 } {
   const id = projectIdFromSnapshot(snap);
 
@@ -36,6 +38,7 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
       name: snap.name,
       cueLists,
       activeCueListId: active.id,
+      midiMappings: snap.midiMappings ?? [],
     };
   }
 
@@ -45,7 +48,13 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
     main.selectedCueIds = [main.cues[0].id];
     main.selectionAnchorId = main.cues[0].id;
   }
-  return { id, name: snap.name, cueLists: [main], activeCueListId: main.id };
+  return {
+    id,
+    name: snap.name,
+    cueLists: [main],
+    activeCueListId: main.id,
+    midiMappings: [],
+  };
 }
 
 export function cueListsToSnapshot(
@@ -53,6 +62,7 @@ export function cueListsToSnapshot(
   name: string,
   cueLists: CueList[],
   activeCueListId: string,
+  midiMappings: MidiMapping[] = [],
 ): ProjectSnapshotV2 {
   return {
     version: 2,
@@ -64,5 +74,6 @@ export function cueListsToSnapshot(
       name: list.name,
       cues: list.cues,
     })),
+    midiMappings,
   };
 }

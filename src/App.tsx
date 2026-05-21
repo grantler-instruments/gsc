@@ -8,6 +8,7 @@ import { TransportBar } from "./components/TransportBar";
 import { useAppKeyboard } from "./hooks/useAppKeyboard";
 import { useAudioEngine } from "./hooks/useAudioEngine";
 import { useMidiEngine } from "./hooks/useMidiEngine";
+import { useMidiInput } from "./hooks/useMidiInput";
 import { useSequenceFadeBridge } from "./hooks/useSequenceFadeBridge";
 import { useFadeAnimation } from "./hooks/useFadeAnimation";
 import { useOutputPublisher } from "./hooks/useOutputPublisher";
@@ -22,6 +23,7 @@ function App() {
   useAppKeyboard();
   useAudioEngine();
   useMidiEngine();
+  useMidiInput();
   useFadeAnimation();
   useSequenceFadeBridge();
   useOutputPublisher();

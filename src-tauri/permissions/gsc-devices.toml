@@ -1,4 +1,11 @@
 [[permission]]
 identifier = "gsc-devices"
 description = "Enumerate audio output and MIDI devices"
-commands.allow = ["list_audio_output_devices", "list_midi_ports", "send_midi"]
+commands.allow = [
+  "list_audio_output_devices",
+  "list_midi_ports",
+  "send_midi",
+  "list_midi_input_ports",
+  "start_midi_input",
+  "stop_midi_input",
+]

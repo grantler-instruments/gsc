@@ -1,12 +1,19 @@
 mod devices;
+mod midi_input;
+
+use std::sync::Mutex;
 
 use devices::{list_audio_output_devices, list_midi_ports, send_midi};
+use midi_input::{
+    list_midi_input_ports, start_midi_input, stop_midi_input, MidiInputState,
+};
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::Emitter;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(MidiInputState(Mutex::new(None)))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
@@ -14,6 +21,9 @@ pub fn run() {
             list_audio_output_devices,
             list_midi_ports,
             send_midi,
+            list_midi_input_ports,
+            start_midi_input,
+            stop_midi_input,
         ])
         .setup(setup_app_menu)
         .on_menu_event(|app, event| {

@@ -1,0 +1,105 @@
+import { midiMatches, parseMidiMessage } from "./midi";
+import { triggerGoAndAdvance, triggerGoSelected } from "./transport-actions";
+import type { Cue } from "../types/cue";
+import type { MidiAction, MidiMapping, MidiMatch } from "../types/midi-mapping";
+import { useProjectStore } from "../stores/project";
+import { useTransportStore } from "../stores/transport";
+
+const DEBOUNCE_MS = 50;
+
+let lastFireKey = "";
+let lastFireAt = 0;
+
+function shouldDebounce(match: MidiMatch): boolean {
+  const key = `${match.channel}:${match.kind}:${match.note ?? ""}:${match.controller ?? ""}`;
+  const now = performance.now();
+  if (key === lastFireKey && now - lastFireAt < DEBOUNCE_MS) {
+    return true;
+  }
+  lastFireKey = key;
+  lastFireAt = now;
+  return false;
+}
+
+function findCueInActiveList(cueId: string): Cue | undefined {
+  const { cueLists, activeCueListId } = useProjectStore.getState();
+  const list =
+    cueLists.find((l) => l.id === activeCueListId) ?? cueLists[0];
+  return list?.cues.find((c) => c.id === cueId);
+}
+
+export function dispatchMidiAction(action: MidiAction): void {
+  switch (action.type) {
+    case "go-selected":
+      triggerGoSelected();
+      break;
+    case "go-cue": {
+      const cue = findCueInActiveList(action.cueId);
+      if (cue) triggerGoAndAdvance(cue);
+      break;
+    }
+    case "select-cue":
+      useProjectStore.getState().selectCue(action.cueId);
+      break;
+    case "panic":
+      useTransportStore.getState().panic();
+      break;
+  }
+}
+
+export function handleIncomingMidi(
+  data: number[],
+  mappings: MidiMapping[],
+): void {
+  const incoming = parseMidiMessage(data);
+  if (!incoming) return;
+
+  if (incoming.kind === "note-on" && (incoming.velocity ?? 0) === 0) {
+    return;
+  }
+
+  if (shouldDebounce(incoming)) return;
+
+  for (const mapping of mappings) {
+    if (mapping.enabled === false) continue;
+    if (midiMatches(mapping.match, incoming)) {
+      dispatchMidiAction(mapping.action);
+      return;
+    }
+  }
+}
+
+export function buildNoteToCueMappings(
+  cues: Cue[],
+  startNote = 36,
+): MidiMapping[] {
+  const topLevel = cues.filter((c) => !c.parentId);
+  return topLevel.map((cue, i) => ({
+    id: crypto.randomUUID(),
+    match: {
+      channel: 1,
+      kind: "note-on",
+      note: startNote + i,
+      velocity: 127,
+    },
+    action: { type: "go-cue", cueId: cue.id },
+  }));
+}
+
+export function formatMidiActionLabel(
+  action: MidiAction,
+  cues: Cue[],
+): string {
+  switch (action.type) {
+    case "go-selected":
+      return "GO (selected cue)";
+    case "panic":
+      return "Panic";
+    case "go-cue":
+    case "select-cue": {
+      const cue = cues.find((c) => c.id === action.cueId);
+      const prefix = action.type === "go-cue" ? "GO" : "Select";
+      return cue ? `${prefix} ${cue.number} — ${cue.name}` : `${prefix} (missing cue)`;
+    }
+  }
+}
