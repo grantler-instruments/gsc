@@ -4,9 +4,16 @@ import {
   buildCueTree,
   expandSequenceSteps,
   getChildCues,
+  getCueDisplayName,
+  getFadeTarget,
+  getStopTarget,
+  getTopLevelCues,
+  isCueActive,
+  isUtilityCue,
   renumberCueList,
   reorderSiblingCues,
   resolveParallelGoIds,
+  resolveStopCueIds,
 } from "./cues";
 import { testCue } from "../test/fixtures/cues";
 
@@ -159,5 +166,120 @@ describe("getChildCues", () => {
       testCue("c", "C", "audio"),
     ];
     expect(getChildCues(cues, "g").map((c) => c.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("getStopTarget", () => {
+  it("returns the referenced cue for a stop cue", () => {
+    const cues = [
+      testCue("a", "A", "audio"),
+      testCue("stop", "Stop", "stop", { stopTargetId: "a" }),
+    ];
+    expect(getStopTarget(cues[1], cues)?.id).toBe("a");
+  });
+
+  it("returns undefined when target is missing", () => {
+    const stop = testCue("stop", "Stop", "stop");
+    expect(getStopTarget(stop, [stop])).toBeUndefined();
+  });
+});
+
+describe("getFadeTarget", () => {
+  it("returns a valid volume fade target", () => {
+    const cues = [
+      testCue("a", "A", "audio"),
+      testCue("fade", "Fade", "volumeFade", { fadeTargetId: "a" }),
+    ];
+    expect(getFadeTarget(cues[1], cues)?.id).toBe("a");
+  });
+
+  it("rejects invalid fade targets", () => {
+    const cues = [
+      testCue("w", "Wait", "wait"),
+      testCue("fade", "Fade", "volumeFade", { fadeTargetId: "w" }),
+      testCue("bad", "Bad", "volumeFade", { fadeTargetId: "missing" }),
+    ];
+    expect(getFadeTarget(cues[1], cues)).toBeUndefined();
+    expect(getFadeTarget(cues[2], cues)).toBeUndefined();
+  });
+});
+
+describe("getCueDisplayName", () => {
+  it("labels utility cues from their targets", () => {
+    const cues = [
+      testCue("a", "Intro", "audio", { number: "1" }),
+      testCue("stop", "Stop", "stop", { stopTargetId: "a" }),
+      testCue("fade", "Fade", "volumeFade", { fadeTargetId: "a" }),
+      testCue("w", "Wait", "wait", { waitDurationSec: 2 }),
+    ];
+    expect(getCueDisplayName(cues[0], cues)).toBe("Intro");
+    expect(getCueDisplayName(cues[1], cues)).toBe("Stop 1 Intro");
+    expect(getCueDisplayName(cues[2], cues)).toBe("Volume fade Intro");
+    expect(getCueDisplayName(cues[3], cues)).toBe("Wait · 2s");
+  });
+});
+
+describe("resolveStopCueIds", () => {
+  it("returns a single id for leaf cues", () => {
+    const cue = testCue("a", "A", "audio");
+    expect(resolveStopCueIds(cue, [cue])).toEqual(["a"]);
+  });
+
+  it("includes all descendants for containers", () => {
+    const cues = [
+      testCue("par", "Par", "group"),
+      testCue("a", "A", "audio", { parentId: "par" }),
+      testCue("seq", "Seq", "sequence", { parentId: "par" }),
+      testCue("b", "B", "audio", { parentId: "seq" }),
+    ];
+    expect(resolveStopCueIds(cues[0], cues)).toEqual(["par", "a", "seq", "b"]);
+  });
+});
+
+describe("isCueActive", () => {
+  const cues = [
+    testCue("par", "Par", "group"),
+    testCue("a", "A", "audio", { parentId: "par" }),
+    testCue("b", "B", "audio", { parentId: "par" }),
+    testCue("seq", "Seq", "sequence"),
+    testCue("w", "Wait", "wait", { parentId: "seq" }),
+  ];
+
+  it("detects directly active cues", () => {
+    expect(isCueActive(cues[1], cues, ["a"], null)).toBe(true);
+    expect(isCueActive(cues[2], cues, ["a"], null)).toBe(false);
+  });
+
+  it("detects running sequence root and step cues", () => {
+    const running = { rootId: "seq", stepCueIds: ["w"] };
+    expect(isCueActive(cues[3], cues, [], running)).toBe(true);
+    expect(isCueActive(cues[4], cues, [], running)).toBe(true);
+  });
+
+  it("treats parallel groups as active when all leaf children are active", () => {
+    expect(isCueActive(cues[0], cues, ["a", "b"], null)).toBe(true);
+    expect(isCueActive(cues[0], cues, ["a"], null)).toBe(false);
+  });
+});
+
+describe("isUtilityCue", () => {
+  it("includes stop, wait, and fade cues", () => {
+    expect(isUtilityCue(testCue("a", "A", "audio"))).toBe(false);
+    expect(isUtilityCue(testCue("s", "Stop", "stop"))).toBe(true);
+    expect(isUtilityCue(testCue("w", "Wait", "wait"))).toBe(true);
+    expect(
+      isUtilityCue(testCue("f", "Fade", "volumeFade", { fadeTargetId: "a" })),
+    ).toBe(true);
+  });
+});
+
+describe("getTopLevelCues", () => {
+  it("returns cues without a parent", () => {
+    const cues = [
+      testCue("g", "Group", "group"),
+      testCue("a", "A", "audio", { parentId: "g" }),
+      testCue("b", "B", "audio"),
+    ];
+    expect(getTopLevelCues(cues).map((c) => c.id)).toEqual(["g", "b"]);
   });
 });
