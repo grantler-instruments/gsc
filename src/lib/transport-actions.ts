@@ -2,19 +2,11 @@ import { selectNextCueAfterGo } from "./cue-navigation";
 import { getPrimarySelectedCueId } from "./cue-selection";
 import { triggerGo } from "./trigger";
 import type { Cue } from "../types/cue";
-import { useProjectStore } from "../stores/project";
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 
-function getActiveListFromStore() {
-  const state = useProjectStore.getState();
-  return (
-    state.cueLists.find((l) => l.id === state.activeCueListId) ??
-    state.cueLists[0]
-  );
-}
-
 export function triggerGoAndAdvance(cue: Cue): void {
-  const list = getActiveListFromStore();
+  const list = getActiveCueListFromState(useProjectStore.getState());
   const transport = useTransportStore.getState();
   triggerGo(cue, list.cues, {
     go: transport.go,
@@ -26,7 +18,7 @@ export function triggerGoAndAdvance(cue: Cue): void {
 
 /** GO the selected cue, or the first top-level cue if none selected. */
 export function triggerGoSelected(): void {
-  const list = getActiveListFromStore();
+  const list = getActiveCueListFromState(useProjectStore.getState());
   const selectedCueId = getPrimarySelectedCueId(list.selectedCueIds);
   const targetId =
     selectedCueId ?? list.cues.find((c) => !c.parentId)?.id;

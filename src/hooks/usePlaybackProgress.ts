@@ -16,7 +16,7 @@ import {
 } from "../lib/playback-slice";
 import type { CuePlaybackProgress } from "../stores/playback";
 import { usePlaybackStore } from "../stores/playback";
-import { useProjectStore } from "../stores/project";
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 
 interface PlaybackSession {
@@ -60,9 +60,7 @@ export function usePlaybackProgress(): void {
 
   const syncSessions = (activeCueIds: string[]) => {
     const now = performance.now();
-    const { cueLists, activeCueListId } = useProjectStore.getState();
-    const list =
-      cueLists.find((l) => l.id === activeCueListId) ?? cueLists[0];
+    const list = getActiveCueListFromState(useProjectStore.getState());
     const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
 
     for (const id of activeCueIds) {
@@ -113,9 +111,7 @@ export function usePlaybackProgress(): void {
 
     const tick = () => {
       const { activeCueIds } = useTransportStore.getState();
-      const { cueLists, activeCueListId } = useProjectStore.getState();
-      const list =
-        cueLists.find((l) => l.id === activeCueListId) ?? cueLists[0];
+      const list = getActiveCueListFromState(useProjectStore.getState());
       const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
       const now = performance.now();
       const entries: CuePlaybackProgress[] = [];

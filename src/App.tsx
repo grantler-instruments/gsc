@@ -18,6 +18,7 @@ import { useProjectSession } from "./hooks/useProjectSession";
 import { usePreventBrowserFileDrop } from "./hooks/usePreventBrowserFileDrop";
 import { useTauriAppMenu } from "./hooks/useTauriAppMenu";
 import { getPrimarySelectedCueId } from "./lib/cue-selection";
+import { AppSnackbar } from "./components/AppSnackbar";
 import { useActiveCueList } from "./stores/project";
 import { useUiStore } from "./stores/ui";
 
@@ -76,6 +77,7 @@ function App() {
 
       <TransportBar />
       <SettingsDialog />
+      <AppSnackbar />
     </Box>
   );
 }

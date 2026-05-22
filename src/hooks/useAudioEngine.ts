@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { audioEngine } from "../audio/engine";
 import { useFadeStore } from "../stores/fade";
-import { useProjectStore } from "../stores/project";
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 
 /** Bridges transport state to the audio engine. */
@@ -25,9 +25,7 @@ export function useAudioEngine(): void {
         void audioEngine.stopAll();
         return;
       }
-      const { cueLists, activeCueListId } = useProjectStore.getState();
-      const list =
-        cueLists.find((l) => l.id === activeCueListId) ?? cueLists[0];
+      const list = getActiveCueListFromState(useProjectStore.getState());
       if (!list) return;
       void audioEngine.sync(
         activeCueIds,
@@ -40,11 +38,8 @@ export function useAudioEngine(): void {
     const unsubTransport = useTransportStore.subscribe(() => runSync());
 
     const unsubProject = useProjectStore.subscribe((s, prev) => {
-      const list =
-        s.cueLists.find((l) => l.id === s.activeCueListId) ?? s.cueLists[0];
-      const prevList =
-        prev.cueLists.find((l) => l.id === prev.activeCueListId) ??
-        prev.cueLists[0];
+      const list = getActiveCueListFromState(s);
+      const prevList = getActiveCueListFromState(prev);
       if (list?.cues !== prevList?.cues) {
         runSync();
       }
@@ -58,9 +53,7 @@ export function useAudioEngine(): void {
 
       const { activeCueIds, masterVolume } = useTransportStore.getState();
       if (activeCueIds.length === 0) return;
-      const { cueLists, activeCueListId } = useProjectStore.getState();
-      const list =
-        cueLists.find((l) => l.id === activeCueListId) ?? cueLists[0];
+      const list = getActiveCueListFromState(useProjectStore.getState());
       if (!list) return;
       audioEngine.updateActiveVoiceLevels(list.cues, masterVolume);
     });

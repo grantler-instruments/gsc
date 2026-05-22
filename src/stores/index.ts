@@ -8,4 +8,5 @@ export { usePlaybackStore } from "./playback";
 export { useTransportStore } from "./transport";
 export { usePreferencesStore } from "./preferences";
 export { useUiStore } from "./ui";
+export { useNotificationsStore } from "./notifications";
 export { useVfsStore } from "./vfs";

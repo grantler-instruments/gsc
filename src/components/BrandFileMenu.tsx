@@ -8,6 +8,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { useRef, useState } from "react";
+import { notifyWarning } from "../lib/notifications";
 import { openSettings } from "../lib/open-settings";
 import { openProjectSnapshot } from "../lib/open-project";
 import { downloadProject, parseProjectFile } from "../lib/project-io";
@@ -45,7 +46,7 @@ export function BrandFileMenu() {
     const { missing } = await exportProjectBundle();
     if (missing.length > 0) {
       console.warn("Export missing assets:", missing);
-      window.alert(
+      notifyWarning(
         `Exported, but ${missing.length} asset(s) were missing from storage.`,
       );
     }

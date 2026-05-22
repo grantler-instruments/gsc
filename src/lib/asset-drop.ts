@@ -7,6 +7,12 @@ import {
   openDroppedProjectBundleFile,
 } from "../platform/project-storage";
 import { useVfsStore } from "../stores/vfs";
+import { isContainerCue } from "./cues";
+import { canEditProject } from "./show-mode";
+import {
+  getActiveCueListFromState,
+  useProjectStore,
+} from "../stores/project";
 import {
   isAssetDrag,
   readAssetDragData,
@@ -64,6 +70,65 @@ export async function resolveAssetDropPayloads(
 
   const imported = await useVfsStore.getState().importFromFileList(files);
   return imported.map(({ path, name, kind }) => ({ path, name, kind }));
+}
+
+export type AssetDropTarget =
+  | { kind: "list" }
+  | { kind: "row"; cueId: string };
+
+/** Apply resolved asset payloads to the cue list or a specific row. */
+export function applyAssetPayloads(
+  payloads: AssetDragPayload[],
+  target: AssetDropTarget,
+): void {
+  if (!payloads.length || !canEditProject()) return;
+
+  const state = useProjectStore.getState();
+  const { addCue, updateCue, selectCue } = state;
+  const cues = getActiveCueListFromState(state)?.cues ?? [];
+
+  if (target.kind === "row") {
+    const cue = cues.find((c) => c.id === target.cueId);
+    if (!cue) {
+      for (const payload of payloads) {
+        addCue({
+          name: payload.name,
+          type: payload.kind,
+          assetPath: payload.path,
+        });
+      }
+      return;
+    }
+
+    if (isContainerCue(cue)) {
+      for (const payload of payloads) {
+        addCue({
+          name: payload.name,
+          type: payload.kind,
+          assetPath: payload.path,
+          parentId: cue.id,
+        });
+      }
+    } else {
+      const payload = payloads[0];
+      updateCue(cue.id, {
+        assetPath: payload.path,
+        name: payload.name,
+        type: payload.kind,
+        midi: undefined,
+      });
+      selectCue(cue.id);
+    }
+    return;
+  }
+
+  for (const payload of payloads) {
+    addCue({
+      name: payload.name,
+      type: payload.kind,
+      assetPath: payload.path,
+    });
+  }
 }
 
 /** Tauri: import dropped disk paths into the VFS and return cue payloads. */

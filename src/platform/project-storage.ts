@@ -1,3 +1,4 @@
+import { notifyErrorFromUnknown } from "../lib/notifications";
 import { getPlatform } from "./index";
 
 export async function exportProjectBundle(): Promise<{ missing: string[] }> {
@@ -60,8 +61,7 @@ export async function promptProjectFolder(
   try {
     return await promptTauriProjectFolder(title, defaultName);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    window.alert(message);
+    notifyErrorFromUnknown(err);
     return null;
   }
 }

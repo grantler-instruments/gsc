@@ -13,7 +13,7 @@ import { triggerStopCue } from "../lib/trigger";
 import { formatPlaybackRangeLabel } from "../lib/time";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
 import { findCueInLists } from "../lib/cue-lists";
-import { findProjectCue, useProjectStore } from "../stores/project";
+import { findProjectCue, getActiveCueListFromState, useProjectStore } from "../stores/project";
 import {
   resolveEffectiveOpacity,
   resolveEffectiveVolume,
@@ -101,9 +101,7 @@ function ActiveCueLevelControl({
 export function ActiveCuesPanel() {
   const tokens = useGscTokens();
   const cueLists = useProjectStore((s) => s.cueLists);
-  const activeList = useProjectStore((s) =>
-    s.cueLists.find((l) => l.id === s.activeCueListId) ?? s.cueLists[0],
-  );
+  const activeList = useProjectStore((s) => getActiveCueListFromState(s));
   const selectedCueId = getPrimarySelectedCueId(activeList.selectedCueIds);
   const selectCue = useProjectStore((s) => s.selectCue);
   const updateCue = useProjectStore((s) => s.updateCue);

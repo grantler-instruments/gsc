@@ -28,6 +28,7 @@ import { prefetchMediaDurations } from "../lib/media-duration";
 import { collectSessionAssetPaths } from "../lib/project-session";
 import { snapshotToCueLists } from "../lib/project-snapshot";
 import { BUNDLE_EXTENSION, PROJECT_JSON } from "../lib/project-paths";
+import { notifyErrorFromUnknown } from "../lib/notifications";
 import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
 import { useVfsStore } from "../stores/vfs";
@@ -43,8 +44,7 @@ let bindFolderPromise: Promise<string | null> | undefined;
 let bundleOpenInProgress = false;
 
 function showError(err: unknown): void {
-  const message = err instanceof Error ? err.message : String(err);
-  window.alert(message);
+  notifyErrorFromUnknown(err);
 }
 
 function projectDirNameFromShowName(name: string): string {

@@ -2,7 +2,7 @@ import { midiMatches, parseMidiMessage } from "./midi";
 import { triggerGoAndAdvance, triggerGoSelected } from "./transport-actions";
 import type { Cue } from "../types/cue";
 import type { MidiAction, MidiMapping, MidiMatch } from "../types/midi-mapping";
-import { useProjectStore } from "../stores/project";
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 
 const DEBOUNCE_MS = 50;
@@ -22,9 +22,7 @@ function shouldDebounce(match: MidiMatch): boolean {
 }
 
 function findCueInActiveList(cueId: string): Cue | undefined {
-  const { cueLists, activeCueListId } = useProjectStore.getState();
-  const list =
-    cueLists.find((l) => l.id === activeCueListId) ?? cueLists[0];
+  const list = getActiveCueListFromState(useProjectStore.getState());
   return list?.cues.find((c) => c.id === cueId);
 }
 

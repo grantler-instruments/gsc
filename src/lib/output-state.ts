@@ -4,7 +4,7 @@ import { resolveEffectiveOpacity, resolveEffectiveVolume } from "../stores/fade"
 import type { Cue } from "../types/cue";
 import type { OutputLayer, OutputState } from "../types/output";
 import { usePlaybackStore } from "../stores/playback";
-import { useProjectStore } from "../stores/project";
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { vfsGetObjectUrl } from "../vfs/engine";
@@ -51,11 +51,9 @@ async function buildLayer(
 /** Build the current visual output snapshot from live stores. */
 export async function buildOutputState(revision: number): Promise<OutputState> {
   const { activeCueIds, cueStartedAtMs } = useTransportStore.getState();
-  const { cueLists, activeCueListId } = useProjectStore.getState();
   const progressByCueId = usePlaybackStore.getState().byCueId;
 
-  const list =
-    cueLists.find((l) => l.id === activeCueListId) ?? cueLists[0];
+  const list = getActiveCueListFromState(useProjectStore.getState());
   const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
   const now = performance.now();
 

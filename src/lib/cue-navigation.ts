@@ -5,20 +5,12 @@ import {
 } from "./cue-selection";
 import { isContainerCue } from "./cues";
 import { canEditProject } from "./show-mode";
-import { useProjectStore } from "../stores/project";
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
-
-function getActiveListFromStore() {
-  const state = useProjectStore.getState();
-  return (
-    state.cueLists.find((l) => l.id === state.activeCueListId) ??
-    state.cueLists[0]
-  );
-}
 
 /** Select next/previous cue in visible list order (respects collapsed groups). */
 export function selectAdjacentVisibleCue(direction: 1 | -1): void {
-  const list = getActiveListFromStore();
+  const list = getActiveCueListFromState(useProjectStore.getState());
   const collapsed = new Set(useUiStore.getState().collapsedCueGroupIds);
   const order = flattenVisibleCueIds(list.cues, collapsed);
   if (order.length === 0) return;
@@ -40,7 +32,7 @@ export function selectAdjacentVisibleCue(direction: 1 | -1): void {
  * their visible children so the cursor lands on the cue after the group.
  */
 export function selectNextCueAfterGo(triggeredCueId: string): void {
-  const list = getActiveListFromStore();
+  const list = getActiveCueListFromState(useProjectStore.getState());
   const collapsed = new Set(useUiStore.getState().collapsedCueGroupIds);
   const order = flattenVisibleCueIds(list.cues, collapsed);
   const cues = list.cues;
@@ -68,7 +60,7 @@ export function selectNextCueAfterGo(triggeredCueId: string): void {
 /** Delete the primary selected cue and select a neighbor in the list when possible. */
 export function deletePrimarySelectedCue(): void {
   if (!canEditProject()) return;
-  const list = getActiveListFromStore();
+  const list = getActiveCueListFromState(useProjectStore.getState());
   const removeCue = useProjectStore.getState().removeCue;
   const selectCue = useProjectStore.getState().selectCue;
   const id = getPrimarySelectedCueId(list.selectedCueIds);

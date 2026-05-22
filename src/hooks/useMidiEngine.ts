@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { encodeMidiMessage } from "../lib/midi";
 import { sendMidiMessage } from "../platform/send-midi";
 import { usePreferencesStore } from "../stores/preferences";
-import { useProjectStore } from "../stores/project";
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
 
@@ -21,9 +21,7 @@ export function useMidiEngine(): void {
   useEffect(() => {
     const sync = () => {
       const { activeCueIds, cueStartedAtMs } = useTransportStore.getState();
-      const { cueLists, activeCueListId } = useProjectStore.getState();
-      const list =
-        cueLists.find((l) => l.id === activeCueListId) ?? cueLists[0];
+      const list = getActiveCueListFromState(useProjectStore.getState());
       if (!list) return;
 
       const cueById = new Map(list.cues.map((c) => [c.id, c]));

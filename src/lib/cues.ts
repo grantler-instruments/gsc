@@ -101,6 +101,18 @@ export function cuesShareParent(a: Cue, b: Cue): boolean {
   return (a.parentId ?? null) === (b.parentId ?? null);
 }
 
+/** Last cue among siblings of `cueId` (same parentId), in list order. */
+export function getLastSiblingOfCue(
+  cues: Cue[],
+  cueId: string,
+): Cue | undefined {
+  const cue = cues.find((c) => c.id === cueId);
+  if (!cue) return undefined;
+  const parentKey = cue.parentId ?? null;
+  const siblings = cues.filter((c) => (c.parentId ?? null) === parentKey);
+  return siblings[siblings.length - 1];
+}
+
 /** Reorder among siblings (same parentId). Returns null if invalid. */
 export function reorderSiblingCues(
   cues: Cue[],

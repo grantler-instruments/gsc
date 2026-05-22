@@ -6,7 +6,7 @@ import {
   isOutputMessage,
   postOutputState,
 } from "../lib/output-channel";
-import { useProjectStore } from "../stores/project";
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import { usePlaybackStore } from "../stores/playback";
 import { useFadeStore } from "../stores/fade";
@@ -69,11 +69,8 @@ export function useOutputPublisher(): void {
     });
 
     const unsubProject = useProjectStore.subscribe((s, prev) => {
-      const list =
-        s.cueLists.find((l) => l.id === s.activeCueListId) ?? s.cueLists[0];
-      const prevList =
-        prev.cueLists.find((l) => l.id === prev.activeCueListId) ??
-        prev.cueLists[0];
+      const list = getActiveCueListFromState(s);
+      const prevList = getActiveCueListFromState(prev);
       if (list?.cues !== prevList?.cues) {
         publish();
       }

@@ -1,7 +1,6 @@
 import type { AssetDragPayload } from "./drag";
-import { isContainerCue } from "./cues";
+import { applyAssetPayloads } from "./asset-drop";
 import { canEditProject } from "./show-mode";
-import { useProjectStore } from "../stores/project";
 
 export const GSC_DROP_ZONE = "data-gsc-drop-zone";
 export const GSC_CUE_ID = "data-cue-id";
@@ -138,7 +137,7 @@ export function effectiveDropTarget(target: TauriDropTarget): TauriDropTarget {
   return target;
 }
 
-/** Mirror CueList / CueRow asset-drop handling for native Tauri file drops. */
+/** Native Tauri file drops — maps DOM target to shared asset-drop handler. */
 export function applyAssetDropPayloads(
   payloads: AssetDragPayload[],
   target: TauriDropTarget,
@@ -148,53 +147,10 @@ export function applyAssetDropPayloads(
   const resolved = effectiveDropTarget(target);
   if (resolved.kind === "assets") return;
 
-  const state = useProjectStore.getState();
-  const { addCue, updateCue, selectCue } = state;
-  const activeList =
-    state.cueLists.find((l) => l.id === state.activeCueListId) ??
-    state.cueLists[0];
-  const cues = activeList?.cues ?? [];
-
   if (resolved.kind === "cue-row") {
-    const cue = cues.find((c) => c.id === resolved.cueId);
-    if (!cue) {
-      for (const payload of payloads) {
-        addCue({
-          name: payload.name,
-          type: payload.kind,
-          assetPath: payload.path,
-        });
-      }
-      return;
-    }
-
-    if (isContainerCue(cue)) {
-      for (const payload of payloads) {
-        addCue({
-          name: payload.name,
-          type: payload.kind,
-          assetPath: payload.path,
-          parentId: cue.id,
-        });
-      }
-    } else {
-      const payload = payloads[0];
-      updateCue(cue.id, {
-        assetPath: payload.path,
-        name: payload.name,
-        type: payload.kind,
-        midi: undefined,
-      });
-      selectCue(cue.id);
-    }
+    applyAssetPayloads(payloads, { kind: "row", cueId: resolved.cueId });
     return;
   }
 
-  for (const payload of payloads) {
-    addCue({
-      name: payload.name,
-      type: payload.kind,
-      assetPath: payload.path,
-    });
-  }
+  applyAssetPayloads(payloads, { kind: "list" });
 }

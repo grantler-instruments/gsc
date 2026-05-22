@@ -54,7 +54,7 @@ function applyRenumber(cues: Cue[]): Cue[] {
   return renumberCueList(cues);
 }
 
-function getActiveList(state: {
+function getActiveCueListFromState(state: {
   cueLists: CueList[];
   activeCueListId: string;
 }): CueList {
@@ -63,6 +63,8 @@ function getActiveList(state: {
     state.cueLists[0]
   );
 }
+
+export { getActiveCueListFromState };
 
 function patchActiveList(
   state: { cueLists: CueList[]; activeCueListId: string },
@@ -146,9 +148,9 @@ export const useProjectStore = create<ProjectState>()(
 
       addCue: ({ name, type, assetPath, midi, osc, parentId }) => {
         if (!canEditProject()) {
-          return firstCueOrStub(getActiveList(get()), name, type);
+          return firstCueOrStub(getActiveCueListFromState(get()), name, type);
         }
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         let cues = active.cues;
         if (parentId) {
           const parent = cues.find((c) => c.id === parentId);
@@ -184,7 +186,7 @@ export const useProjectStore = create<ProjectState>()(
       },
 
       addGroupCue: (opts = {}) => {
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         if (!canEditProject()) {
           return firstCueOrStub(active, opts.name ?? "group", "group");
         }
@@ -212,7 +214,7 @@ export const useProjectStore = create<ProjectState>()(
       },
 
       addSequenceCue: (opts = {}) => {
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         if (!canEditProject()) {
           return firstCueOrStub(active, opts.name ?? "group", "sequence");
         }
@@ -241,7 +243,7 @@ export const useProjectStore = create<ProjectState>()(
 
       addStopCueForTarget: (targetId) => {
         if (!canEditProject()) return null;
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         const { cues } = active;
         const target = cues.find((c) => c.id === targetId);
         if (!target || isStopCue(target)) return null;
@@ -270,7 +272,7 @@ export const useProjectStore = create<ProjectState>()(
       },
 
       addFadeCue: (fadeType) => {
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         if (!canEditProject()) {
           return firstCueOrStub(active, fadeCueLabel(fadeType), fadeType);
         }
@@ -294,7 +296,7 @@ export const useProjectStore = create<ProjectState>()(
 
       addFadeCueForTarget: (targetId, fadeType) => {
         if (!canEditProject()) return null;
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         const { cues } = active;
         const target = cues.find((c) => c.id === targetId);
         if (!target || !isValidFadeTarget(fadeType, target)) return null;
@@ -336,7 +338,7 @@ export const useProjectStore = create<ProjectState>()(
 
       removeCue: (id) => {
         if (!canEditProject()) return;
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         const { cues } = active;
         const toRemove = new Set<string>([id]);
         const collect = (cueId: string) => {
@@ -374,7 +376,7 @@ export const useProjectStore = create<ProjectState>()(
 
       moveCueToGroup: (cueId, groupId) => {
         if (!canEditProject()) return;
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         const { cues } = active;
         const cue = cues.find((c) => c.id === cueId);
         if (!cue) return;
@@ -406,7 +408,7 @@ export const useProjectStore = create<ProjectState>()(
       },
 
       addSelectedCueToGroup: (groupId) => {
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         const primaryId = getPrimarySelectedCueId(active.selectedCueIds);
         if (!primaryId || primaryId === groupId) return;
         get().moveCueToGroup(primaryId, groupId);
@@ -414,7 +416,7 @@ export const useProjectStore = create<ProjectState>()(
 
       reorderCueRelative: (draggedId, targetId, place) => {
         if (!canEditProject()) return;
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         const next = reorderSiblingCues(
           active.cues,
           draggedId,
@@ -449,7 +451,7 @@ export const useProjectStore = create<ProjectState>()(
         })),
 
       selectCueRange: (id, visibleOrder) => {
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         const anchor =
           active.selectionAnchorId ?? active.selectedCueIds[0] ?? id;
         const a = visibleOrder.indexOf(anchor);
@@ -474,7 +476,7 @@ export const useProjectStore = create<ProjectState>()(
 
       groupSelectedCues: () => {
         if (!canEditProject()) return null;
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         const next = buildParallelGroupFromSelection(
           active.selectedCueIds,
           active.cues,
@@ -501,7 +503,7 @@ export const useProjectStore = create<ProjectState>()(
 
       copySelectedCues: () => {
         if (!canEditProject()) return false;
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         const collected = collectCuesForCopy(
           active.selectedCueIds,
           active.cues,
@@ -516,7 +518,7 @@ export const useProjectStore = create<ProjectState>()(
         const clipboard = getCueClipboard();
         if (!clipboard?.length) return false;
 
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         const anchorId = getPrimarySelectedCueId(active.selectedCueIds);
         const prepared = prepareCuePaste(clipboard, active.cues, anchorId);
         if (!prepared) return false;
@@ -535,7 +537,7 @@ export const useProjectStore = create<ProjectState>()(
 
       duplicateSelectedCues: () => {
         if (!canEditProject()) return false;
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         if (active.selectedCueIds.length === 0) return false;
 
         const collected = collectCuesForCopy(
@@ -561,7 +563,7 @@ export const useProjectStore = create<ProjectState>()(
       },
 
       addCueList: (name) => {
-        if (!canEditProject()) return getActiveList(get());
+        if (!canEditProject()) return getActiveCueListFromState(get());
         const list = createCueList(name ?? nextCueListName(get().cueLists));
         set((s) => ({
           cueLists: [...s.cueLists, list],
@@ -627,7 +629,7 @@ export const useProjectStore = create<ProjectState>()(
       setMidiMappings: (midiMappings) => set({ midiMappings }),
 
       autoMapNotesToCues: (startNote = 36) => {
-        const active = getActiveList(get());
+        const active = getActiveCueListFromState(get());
         set({
           midiMappings: buildNoteToCueMappings(active.cues, startNote),
         });
@@ -656,11 +658,11 @@ export const useProjectStore = create<ProjectState>()(
 );
 
 export function useActiveCueList(): CueList {
-  return useProjectStore((s) => getActiveList(s));
+  return useProjectStore((s) => getActiveCueListFromState(s));
 }
 
 export function useProjectCues(): Cue[] {
-  return useProjectStore((s) => getActiveList(s).cues);
+  return useProjectStore((s) => getActiveCueListFromState(s).cues);
 }
 
 export function findProjectCue(
