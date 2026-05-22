@@ -10,7 +10,6 @@ import { useAudioEngine } from "./hooks/useAudioEngine";
 import { useMidiEngine } from "./hooks/useMidiEngine";
 import { useOscEngine } from "./hooks/useOscEngine";
 import { useMidiInput } from "./hooks/useMidiInput";
-import { useSequenceFadeBridge } from "./hooks/useSequenceFadeBridge";
 import { useFadeAnimation } from "./hooks/useFadeAnimation";
 import { useOutputPublisher } from "./hooks/useOutputPublisher";
 import { usePlaybackProgress } from "./hooks/usePlaybackProgress";
@@ -30,7 +29,6 @@ function App() {
   useOscEngine();
   useMidiInput();
   useFadeAnimation();
-  useSequenceFadeBridge();
   useOutputPublisher();
   usePlaybackProgress();
   usePreventBrowserFileDrop();

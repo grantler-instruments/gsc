@@ -1,14 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-
-type FadeCueCompleteHandler = (fadeCueId: string) => void;
-let fadeCueCompleteHandler: FadeCueCompleteHandler | null = null;
-
-export function setFadeCueCompleteHandler(
-  handler: FadeCueCompleteHandler | null,
-): void {
-  fadeCueCompleteHandler = handler;
-}
+import { handleSequenceFadeCueCompleted } from "../lib/sequence-runner";
 
 export type FadeProperty = "opacity" | "volume";
 
@@ -89,6 +81,7 @@ export const useFadeStore = create<FadeState>()(
         if (ids.length === 0) return;
 
         const next = { ...fades };
+        const completedFadeCueIds: string[] = [];
 
         for (const id of ids) {
           const fade = fades[id];
@@ -97,8 +90,12 @@ export const useFadeStore = create<FadeState>()(
           delete next[id];
 
           if (fade.sourceFadeCueId) {
-            fadeCueCompleteHandler?.(fade.sourceFadeCueId);
+            completedFadeCueIds.push(fade.sourceFadeCueId);
           }
+        }
+
+        for (const fadeCueId of completedFadeCueIds) {
+          handleSequenceFadeCueCompleted(fadeCueId);
         }
 
         set({ fadesByTargetId: next, frameMs: nowMs });

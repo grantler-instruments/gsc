@@ -4,6 +4,27 @@ import { useFadeStore } from "../stores/fade";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 
+const selectAudioSyncState = (s: {
+  activeCueIds: string[];
+  masterVolume: number;
+  cueStartedAtMs: Record<string, number>;
+}) => ({
+  activeCueIds: s.activeCueIds,
+  masterVolume: s.masterVolume,
+  cueStartedAtMs: s.cueStartedAtMs,
+});
+
+function audioSyncStateChanged(
+  prev: ReturnType<typeof selectAudioSyncState>,
+  next: ReturnType<typeof selectAudioSyncState>,
+): boolean {
+  return (
+    prev.activeCueIds !== next.activeCueIds ||
+    prev.masterVolume !== next.masterVolume ||
+    prev.cueStartedAtMs !== next.cueStartedAtMs
+  );
+}
+
 /** Bridges transport state to the audio engine. */
 export function useAudioEngine(): void {
   useEffect(() => {
@@ -35,7 +56,17 @@ export function useAudioEngine(): void {
       );
     };
 
-    const unsubTransport = useTransportStore.subscribe(() => runSync());
+    runSync();
+    const unsubTransport = useTransportStore.subscribe((state, prev) => {
+      if (
+        audioSyncStateChanged(
+          selectAudioSyncState(prev),
+          selectAudioSyncState(state),
+        )
+      ) {
+        runSync();
+      }
+    });
 
     const unsubProject = useProjectStore.subscribe((s, prev) => {
       const list = getActiveCueListFromState(s);

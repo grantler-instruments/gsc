@@ -3,6 +3,7 @@ import { estimateStepDurationMs } from "./cue-duration";
 import { expandSequenceSteps, isFadeCue } from "./cues";
 import { fireStepCues, playbackCueIdsInStep } from "./fire-step-cues";
 import { clearSequenceTimers, scheduleSequenceStep } from "./sequence-timers";
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 
 export function cancelAllSequences(): void {
@@ -117,4 +118,10 @@ export function notifyFadeCueComplete(fadeCueId: string, cues: Cue[]): void {
   if (stepIsFadeOnly) {
     advanceRunningSequence(cues);
   }
+}
+
+/** Called when a property fade tied to a fade utility cue finishes. */
+export function handleSequenceFadeCueCompleted(fadeCueId: string): void {
+  const cues = getActiveCueListFromState(useProjectStore.getState())?.cues ?? [];
+  notifyFadeCueComplete(fadeCueId, cues);
 }
