@@ -2,8 +2,8 @@
 
 Web-based show playback for audio and video cues. Same codebase runs in the browser and as a Tauri desktop app.
 
-**Live site (GitHub Pages):** https://grantler-instruments.github.io/gsc-app/  
-**Web app:** https://grantler-instruments.github.io/gsc-app/app/
+**Live site (GitHub Pages):** https://grantler-instruments.github.io/gsc/  
+**Web app:** https://grantler-instruments.github.io/gsc/app/
 
 ## Stack
 
@@ -20,8 +20,8 @@ npm run dev
 
 | URL | What |
 |-----|------|
-| http://localhost:1421/gsc-app/ | Marketing website (no app stores / MIDI init) |
-| http://localhost:1421/gsc-app/app/ | Show control app |
+| http://localhost:1421/gsc/ | Marketing website (no app stores / MIDI init) |
+| http://localhost:1421/gsc/app/ | Show control app |
 
 ## Tauri (desktop)
 
@@ -29,19 +29,19 @@ npm run dev
 npm run tauri dev
 ```
 
-Opens **http://localhost:1421/gsc-app/app/** (port **1421**; enomiga uses 1420).
+Opens **http://localhost:1421/gsc/app/** (port **1421**; enomiga uses 1420).
 
 ## Build
 
 ```bash
 npm run build          # dist/ for Tauri (base /)
-npm run build:pages    # dist/ for GitHub Pages (base /gsc-app/ locally; CI uses repo name)
+npm run build:pages    # dist/ for GitHub Pages (base /gsc/)
 npm run preview:pages  # preview the Pages build locally
 ```
 
 ## Deploy to GitHub Pages
 
-Published URL: `https://grantler-instruments.github.io/<repo-name>/` (this repo: **`gsc-app`**).
+Published URL: `https://grantler-instruments.github.io/gsc/`.
 
 ### One-time setup (fixes deploy `404 Not Found`)
 
@@ -56,9 +56,9 @@ If your org restricts Pages, an admin must allow Pages for this repository under
 
 ### Deploy
 
-Push to `main` or run **Deploy to GitHub Pages** manually. The workflow builds with `VITE_BASE=/<repo-name>/` and publishes `dist/`.
+Push to `main` or run **Deploy to GitHub Pages** manually. The workflow builds with `VITE_BASE=/gsc/` and publishes `dist/`.
 
-To use the shorter path `https://grantler-instruments.github.io/gsc/`, rename the GitHub repository to **`gsc`** (Settings → General → Repository name). The workflow will pick up the new base path automatically.
+The GitHub repository should be named **`gsc`** so Pages serves at that path (Settings → General → Repository name).
 
 ## Project layout
 

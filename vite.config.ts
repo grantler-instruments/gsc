@@ -2,12 +2,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { trailingSlashRedirectPlugin } from "./vite-trailing-slash-redirect";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// GitHub Pages project site: https://grantler-instruments.github.io/<repo-name>/
-// Match your GitHub repo name (e.g. gsc-app). CI sets VITE_BASE from github.event.repository.name.
-export const SITE_BASENAME = "gsc-app";
+// GitHub Pages project site: https://grantler-instruments.github.io/gsc/
+export const SITE_BASENAME = "gsc";
 
 /** Vite `base` — trailing slash required. Override with VITE_BASE (e.g. `/` for Tauri). */
 const base = process.env.VITE_BASE ?? `/${SITE_BASENAME}/`;
@@ -17,7 +17,7 @@ const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig({
   base,
-  plugins: [react()],
+  plugins: [trailingSlashRedirectPlugin(base), react()],
   resolve: {
     alias: {
       "@brand": path.resolve(__dirname, "src/brand"),

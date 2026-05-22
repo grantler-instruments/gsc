@@ -27,11 +27,11 @@ jobs:
 
       - run: npm ci
 
-      # Project Pages URL is /{repo-name}/ — e.g. grantler-instruments.github.io/gsc-app/
+      # Project Pages URL: grantler-instruments.github.io/gsc/
       - name: Build for GitHub Pages
         run: npm run build:pages
         env:
-          VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_BASE: /gsc/
 
       - uses: actions/upload-pages-artifact@v3
         with:
