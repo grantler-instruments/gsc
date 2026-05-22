@@ -1,13 +1,35 @@
-import { defineConfig } from "vite";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// GitHub Pages project site: https://grantler-instruments.github.io/gsc/
+export const SITE_BASENAME = "gsc";
+
+/** Vite `base` — trailing slash required. Override with VITE_BASE (e.g. `/` for Tauri). */
+const base = process.env.VITE_BASE ?? `/${SITE_BASENAME}/`;
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
-// https://vite.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig({
+  base,
   plugins: [react()],
-
+  resolve: {
+    alias: {
+      "@brand": path.resolve(__dirname, "src/brand"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        website: path.resolve(__dirname, "index.html"),
+        app: path.resolve(__dirname, "app/index.html"),
+      },
+    },
+  },
   clearScreen: false,
   server: {
     port: 1421,
@@ -24,4 +46,4 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
-}));
+});

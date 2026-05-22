@@ -2,20 +2,26 @@
 
 Web-based show playback for audio and video cues. Same codebase runs in the browser and as a Tauri desktop app.
 
+**Live site (GitHub Pages):** https://grantler-instruments.github.io/gsc/  
+**Web app:** https://grantler-instruments.github.io/gsc/app/
+
 ## Stack
 
-- **Frontend:** React, TypeScript, Vite, Zustand
+- **Frontend:** React, TypeScript, Vite, Zustand, MUI
 - **Desktop:** Tauri 2
 - **Browser:** Virtual filesystem (drag-and-drop assets), `.gsc` project files
 
-## Development (web-first)
+## Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://localhost:1421](http://localhost:1421). This is the primary workflow while building features.
+| URL | What |
+|-----|------|
+| http://localhost:1421/gsc/ | Marketing website (no app stores / MIDI init) |
+| http://localhost:1421/gsc/app/ | Show control app |
 
 ## Tauri (desktop)
 
@@ -23,18 +29,40 @@ Open [http://localhost:1421](http://localhost:1421). This is the primary workflo
 npm run tauri dev
 ```
 
-Uses port **1421** (enomiga uses 1420).
+Opens **http://localhost:1421/gsc/app/** (port **1421**; enomiga uses 1420).
+
+## Build
+
+```bash
+npm run build          # dist/ for Tauri (base /)
+npm run build:pages    # dist/ for GitHub Pages (base /gsc/)
+npm run preview:pages  # preview the Pages build locally
+```
+
+## Deploy to GitHub Pages
+
+Repo must be named **`gsc`** under `grantler-instruments` for `https://grantler-instruments.github.io/gsc/`.
+
+1. **Settings → Pages → Build and deployment:** GitHub Actions
+2. Push to `main` (or run **Deploy to GitHub Pages** manually)
+
+The workflow runs `npm run build:pages` and publishes `dist/` (website + app).
 
 ## Project layout
 
 ```
+index.html           # website entry (/)
+app/index.html       # show control entry (/app/)
 src/
-├── components/     # UI (cue list, assets, transport)
-├── lib/            # .gsc save/load
-├── platform/       # web vs tauri adapters
-├── stores/         # Zustand (project, vfs, transport, ui)
-├── types/          # cue & project types
-└── vfs/            # in-memory virtual filesystem
+├── website/         # marketing site only
+├── app/main.tsx     # app bootstrap (stores, MIDI, audio)
+├── brand/           # shared logo (GscLogo)
+├── components/      # app UI
+├── lib/
+├── platform/
+├── stores/
+├── types/
+└── vfs/
 ```
 
 ## Cue types

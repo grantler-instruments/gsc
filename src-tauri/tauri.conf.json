@@ -5,14 +5,16 @@
   "identifier": "com.grantler-instruments.gsc",
   "build": {
     "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:1421",
+    "devUrl": "http://localhost:1421/gsc/",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Grantler Stage Control",
+        "url": "app/index.html",
         "width": 1280,
         "height": 800,
         "dragDropEnabled": false
