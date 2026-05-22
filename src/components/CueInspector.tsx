@@ -6,9 +6,14 @@ import {
   clampMidiChannel,
   MIDI_MESSAGE_KINDS,
 } from "../lib/midi";
+import {
+  clampOscPort,
+} from "../lib/osc";
+import { OscArgsField } from "./OscArgsField";
+import { getPlatform } from "../platform";
 import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
-import type { MidiCueData, MidiMessageKind } from "../types/cue";
+import type { MidiCueData, MidiMessageKind, OscCueData } from "../types/cue";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
 import { getCueAssetWarning } from "../lib/cue-asset";
 import { CueAssetAssign } from "./CueAssetAssign";
@@ -44,6 +49,8 @@ export function CueInspector() {
   const updateCue = useProjectStore((s) => s.updateCue);
   const showMode = useUiStore((s) => s.showMode);
   const readOnly = showMode;
+  const oscDisabled = getPlatform() !== "tauri";
+  const oscReadOnly = readOnly || oscDisabled;
 
   const selectedCueId = getPrimarySelectedCueId(activeList.selectedCueIds);
   const cue = cues.find((c) => c.id === selectedCueId);
@@ -63,6 +70,11 @@ export function CueInspector() {
   const patchMidi = (midiPatch: Partial<MidiCueData>) => {
     if (readOnly || cue.type !== "midi" || !cue.midi) return;
     updateCue(cue.id, { midi: { ...cue.midi, ...midiPatch } });
+  };
+
+  const patchOsc = (oscPatch: Partial<OscCueData>) => {
+    if (oscReadOnly || cue.type !== "osc" || !cue.osc) return;
+    updateCue(cue.id, { osc: { ...cue.osc, ...oscPatch } });
   };
 
   return (
@@ -247,6 +259,60 @@ export function CueInspector() {
                 />
               </Box>
             )}
+          </>
+        )}
+
+        {cue.type === "osc" && cue.osc && (
+          <>
+            {oscDisabled && (
+              <Typography component="p" sx={inspectorGroupHintSx}>
+                OSC sending requires the desktop app.
+              </Typography>
+            )}
+
+            <Box component="label" sx={inspectorFieldSx}>
+              Host
+              <input
+                type="text"
+                value={cue.osc.host}
+                disabled={oscReadOnly}
+                onChange={(e) => patchOsc({ host: e.currentTarget.value })}
+              />
+            </Box>
+
+            <Box component="label" sx={inspectorFieldSx}>
+              Port
+              <input
+                type="number"
+                min={1}
+                max={65535}
+                value={cue.osc.port}
+                disabled={oscReadOnly}
+                onChange={(e) =>
+                  patchOsc({
+                    port: clampOscPort(Number(e.currentTarget.value)),
+                  })
+                }
+              />
+            </Box>
+
+            <Box component="label" sx={inspectorFieldSx}>
+              Address
+              <input
+                type="text"
+                value={cue.osc.address}
+                disabled={oscReadOnly}
+                placeholder="/cue/1/start"
+                onChange={(e) => patchOsc({ address: e.currentTarget.value })}
+              />
+            </Box>
+
+            <OscArgsField
+              cueId={cue.id}
+              args={cue.osc.args}
+              readOnly={oscReadOnly}
+              onChange={(args) => patchOsc({ args })}
+            />
           </>
         )}
 

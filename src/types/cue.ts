@@ -3,6 +3,7 @@ export type CueType =
   | "video"
   | "image"
   | "midi"
+  | "osc"
   | "group"
   | "sequence"
   | "stop"
@@ -12,10 +13,17 @@ export type CueType =
 
 export type FadeCueType = "volumeFade" | "opacityFade";
 
-/** Media file cues (not MIDI). */
+/** Media file cues (not MIDI/OSC). */
 export type AssetKind = Exclude<
   CueType,
-  "midi" | "group" | "sequence" | "stop" | "wait" | "volumeFade" | "opacityFade"
+  | "midi"
+  | "osc"
+  | "group"
+  | "sequence"
+  | "stop"
+  | "wait"
+  | "volumeFade"
+  | "opacityFade"
 >;
 
 export type MidiMessageKind =
@@ -34,6 +42,19 @@ export interface MidiCueData {
   program?: number;
 }
 
+export type OscArg =
+  | { type: "int"; value: number }
+  | { type: "float"; value: number }
+  | { type: "string"; value: string }
+  | { type: "bool"; value: boolean };
+
+export interface OscCueData {
+  host: string;
+  port: number;
+  address: string;
+  args: OscArg[];
+}
+
 import type { MidiMapping } from "./midi-mapping";
 
 export interface Cue {
@@ -45,6 +66,7 @@ export interface Cue {
   parentId?: string;
   assetPath?: string;
   midi?: MidiCueData;
+  osc?: OscCueData;
   /** Seconds into the source media where playback begins (In point). */
   inTime?: number;
   /** Seconds into the source media where playback stops (Out point). Omit to play to end. */

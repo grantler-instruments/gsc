@@ -17,6 +17,7 @@ export const CUE_TYPE_COLORS: Record<
   video: { color: "#a78bfa", bgcolor: "#2a2540" },
   image: { color: "#e8b86d", bgcolor: "#3a2e1e" },
   midi: { color: "#7eb8da", bgcolor: "#1e2a3a" },
+  osc: { color: "#8ad4c4", bgcolor: "#1e3a34" },
   group: { color: "#c9a227", bgcolor: "#2a2818" },
   sequence: { color: "#9eb8ff", bgcolor: "#1e2438" },
   stop: { color: "#e88a8a", bgcolor: "#3a1e1e" },
@@ -27,6 +28,7 @@ export const CUE_TYPE_COLORS: Record<
 
 export const ADD_CUE_ICON_COLORS: Partial<Record<CueType, string>> = {
   midi: "#7eb8da",
+  osc: "#8ad4c4",
   audio: "#6fcf97",
   video: "#a78bfa",
   image: "#e8b86d",

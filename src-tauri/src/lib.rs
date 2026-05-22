@@ -1,5 +1,6 @@
 mod devices;
 mod midi_input;
+mod osc;
 
 use std::sync::Mutex;
 
@@ -7,6 +8,7 @@ use devices::{list_audio_output_devices, list_midi_ports, send_midi};
 use midi_input::{
     list_midi_input_ports, start_midi_input, stop_midi_input, MidiInputState,
 };
+use osc::send_osc;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::Emitter;
 
@@ -21,6 +23,7 @@ pub fn run() {
             list_audio_output_devices,
             list_midi_ports,
             send_midi,
+            send_osc,
             list_midi_input_ports,
             start_midi_input,
             stop_midi_input,

@@ -26,7 +26,12 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npm run build:pages
+
+      # Project Pages URL is /{repo-name}/ — e.g. grantler-instruments.github.io/gsc-app/
+      - name: Build for GitHub Pages
+        run: npm run build:pages
+        env:
+          VITE_BASE: /${{ github.event.repository.name }}/
 
       - uses: actions/upload-pages-artifact@v3
         with:

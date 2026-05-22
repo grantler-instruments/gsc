@@ -4,6 +4,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { isContainerCue, isStopCue, isWaitCue } from "../lib/cues";
 import { formatMidiCue } from "../lib/midi";
+import { formatOscCue } from "../lib/osc";
 import { triggerStopCue } from "../lib/trigger";
 import { formatPlaybackRangeLabel } from "../lib/time";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
@@ -98,7 +99,7 @@ export function ActiveCuesPanel() {
           const selected = cue.id === selectedCueId;
           const playback = progressByCueId[cue.id];
           const rangeLabel =
-            cue.type !== "midi"
+            cue.type !== "midi" && cue.type !== "osc"
               ? formatPlaybackRangeLabel(
                   cue.inTime,
                   cue.outTime,
@@ -159,6 +160,15 @@ export function ActiveCuesPanel() {
                     sx={{ fontSize: 11, color: "text.secondary" }}
                   >
                     {formatMidiCue(cue.midi)}
+                  </Typography>
+                )}
+                {cue.type === "osc" && cue.osc && (
+                  <Typography
+                    component="span"
+                    noWrap
+                    sx={{ fontSize: 11, color: "text.secondary" }}
+                  >
+                    {formatOscCue(cue.osc)}
                   </Typography>
                 )}
                 {cue.type === "audio" && cue.assetPath && (

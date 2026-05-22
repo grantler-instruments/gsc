@@ -5,8 +5,9 @@ import { defineConfig } from "vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// GitHub Pages project site: https://grantler-instruments.github.io/gsc/
-export const SITE_BASENAME = "gsc";
+// GitHub Pages project site: https://grantler-instruments.github.io/<repo-name>/
+// Match your GitHub repo name (e.g. gsc-app). CI sets VITE_BASE from github.event.repository.name.
+export const SITE_BASENAME = "gsc-app";
 
 /** Vite `base` — trailing slash required. Override with VITE_BASE (e.g. `/` for Tauri). */
 const base = process.env.VITE_BASE ?? `/${SITE_BASENAME}/`;

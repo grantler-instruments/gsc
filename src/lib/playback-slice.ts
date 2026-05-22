@@ -4,6 +4,7 @@ import type { Cue } from "../types/cue";
 
 const DEFAULT_MEDIA_SEC = 5;
 const DEFAULT_MIDI_SEC = 0.15;
+const DEFAULT_OSC_SEC = 0.15;
 
 /** Image cues without a duration stay on screen until a stop cue. */
 export function isImageInfiniteHold(cue: Cue): boolean {
@@ -17,7 +18,8 @@ export function cueShowsPlaybackProgress(cue: Cue): boolean {
     cue.type === "audio" ||
     cue.type === "video" ||
     cue.type === "image" ||
-    cue.type === "midi"
+    cue.type === "midi" ||
+    cue.type === "osc"
   );
 }
 
@@ -28,6 +30,10 @@ export function getPlaybackSliceSec(
 ): number {
   if (cue.type === "midi") {
     return DEFAULT_MIDI_SEC;
+  }
+
+  if (cue.type === "osc") {
+    return DEFAULT_OSC_SEC;
   }
 
   if (cue.type === "image") {

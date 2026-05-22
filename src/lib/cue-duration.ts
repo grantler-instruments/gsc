@@ -58,7 +58,7 @@ function leafDurationMs(cue: Cue): number {
   const fadeIn = (cue.fadeIn ?? 0) * 1000;
   const fadeOut = (cue.fadeOut ?? 0) * 1000;
 
-  if (cue.type === "midi") {
+  if (cue.type === "midi" || cue.type === "osc") {
     return Math.max(MIN_STEP_SEC * 1000, DEFAULT_MIDI_SEC * 1000);
   }
 

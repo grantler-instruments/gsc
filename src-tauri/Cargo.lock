@@ -1500,6 +1500,7 @@ version = "0.1.0"
 dependencies = [
  "cpal",
  "midir",
+ "rosc",
  "serde",
  "serde_json",
  "tauri",
@@ -3067,6 +3068,16 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "windows-sys 0.60.2",
+]
+
+[[package]]
+name = "rosc"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2e63d9e6b0d090be1485cf159b1e04c3973d2d3e1614963544ea2ff47a4a981"
+dependencies = [
+ "byteorder",
+ "nom",
 ]
 
 [[package]]

@@ -58,6 +58,7 @@ import {
   resolveFadeFromLevel,
 } from "../lib/fade";
 import { formatMidiCue } from "../lib/midi";
+import { formatOscCue } from "../lib/osc";
 import { formatWaitDurationLabel } from "../lib/wait";
 import { formatLoopLabel } from "../lib/loop";
 import { formatPlaybackRangeLabel } from "../lib/time";
@@ -537,7 +538,7 @@ function CueRow({
       ? runningSequence
       : null;
   const rangeLabel =
-    !isContainer && !isUtility && cue.type !== "midi"
+    !isContainer && !isUtility && cue.type !== "midi" && cue.type !== "osc"
       ? formatPlaybackRangeLabel(cue.inTime, cue.outTime, cue.type === "image")
       : null;
   const loopLabel =
@@ -803,6 +804,11 @@ function CueRow({
         {cue.type === "midi" && cue.midi && (
           <Typography component="span" sx={cueDetailSx}>
             {formatMidiCue(cue.midi)}
+          </Typography>
+        )}
+        {cue.type === "osc" && cue.osc && (
+          <Typography component="span" sx={cueDetailSx}>
+            {formatOscCue(cue.osc)}
           </Typography>
         )}
         {rangeLabel && (

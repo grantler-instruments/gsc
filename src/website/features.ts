@@ -41,6 +41,12 @@ export const featureCategories: FeatureCategory[] = [
           "Send note, control change, and program change messages on GO to your MIDI gear.",
       },
       {
+        cueType: "osc",
+        title: "OSC",
+        description:
+          "Send Open Sound Control messages on GO — each cue carries its own destination, address, and arguments. Available in the desktop app only; not available in the web.",
+      },
+      {
         cueType: "wait",
         title: "Wait",
         description:
@@ -119,7 +125,7 @@ export const featureCategories: FeatureCategory[] = [
     ],
   },
   {
-    name: "Output, MIDI & projects",
+    name: "Output, MIDI, OSC & projects",
     features: [
       {
         title: "Drive a second screen",
@@ -127,9 +133,9 @@ export const featureCategories: FeatureCategory[] = [
           "Open a dedicated output window for audience video and images on another display.",
       },
       {
-        title: "Control with MIDI",
+        title: "Control with MIDI & OSC",
         description:
-          "Send MIDI from cues and map hardware to GO, cue select, and panic.",
+          "Send MIDI and OSC from cues and map hardware to GO, cue select, and panic. OSC requires the desktop app — it is not available in the web.",
       },
       {
         title: "Take shows anywhere",

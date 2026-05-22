@@ -5,7 +5,7 @@
   "identifier": "com.grantler-instruments.gsc",
   "build": {
     "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:1421/gsc/",
+    "devUrl": "http://localhost:1421/gsc-app/",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },

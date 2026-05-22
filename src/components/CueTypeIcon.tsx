@@ -1,4 +1,5 @@
 import AudiotrackIcon from "@mui/icons-material/Audiotrack";
+import HubIcon from "@mui/icons-material/Hub";
 import ImageIcon from "@mui/icons-material/Image";
 import LayersIcon from "@mui/icons-material/Layers";
 import OpacityIcon from "@mui/icons-material/Opacity";
@@ -20,6 +21,7 @@ const CUE_TYPE_ICONS: Record<CueType, ElementType<SvgIconProps>> = {
   video: VideocamIcon,
   image: ImageIcon,
   midi: PianoIcon,
+  osc: HubIcon,
   group: LayersIcon,
   sequence: PlaylistPlayIcon,
   stop: StopCircleOutlinedIcon,
@@ -33,6 +35,7 @@ const CUE_TYPE_LABELS: Record<CueType, string> = {
   video: "Video",
   image: "Image",
   midi: "MIDI",
+  osc: "OSC",
   group: "Parallel",
   sequence: "Sequence",
   stop: "Stop",

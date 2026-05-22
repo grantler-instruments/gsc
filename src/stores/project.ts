@@ -34,12 +34,14 @@ import { setActiveProjectId } from "../lib/active-project-id";
 import { cueListsToSnapshot, snapshotToCueLists } from "../lib/project-snapshot";
 import { canEditProject } from "../lib/show-mode";
 import { defaultMidiCueData } from "../lib/midi";
+import { defaultOscCueData } from "../lib/osc";
 import { buildNoteToCueMappings } from "../lib/midi-mapping";
 import type {
   Cue,
   CueType,
   FadeCueType,
   MidiCueData,
+  OscCueData,
   ProjectSnapshot,
 } from "../types/cue";
 import type { MidiMapping } from "../types/midi-mapping";
@@ -92,6 +94,7 @@ interface ProjectState {
     type: CueType;
     assetPath?: string;
     midi?: MidiCueData;
+    osc?: OscCueData;
     parentId?: string;
   }) => Cue;
   addGroupCue: (opts?: { name?: string; parentId?: string }) => Cue;
@@ -141,7 +144,7 @@ export const useProjectStore = create<ProjectState>()(
       activeCueListId: initialList.id,
       midiMappings: [],
 
-      addCue: ({ name, type, assetPath, midi, parentId }) => {
+      addCue: ({ name, type, assetPath, midi, osc, parentId }) => {
         if (!canEditProject()) {
           return firstCueOrStub(getActiveList(get()), name, type);
         }
@@ -160,6 +163,7 @@ export const useProjectStore = create<ProjectState>()(
           parentId,
           assetPath: isMediaCueType(type) ? assetPath : undefined,
           midi: type === "midi" ? (midi ?? defaultMidiCueData()) : undefined,
+          osc: type === "osc" ? (osc ?? defaultOscCueData()) : undefined,
           volume: isMediaCueType(type) ? 1 : undefined,
           opacity: type === "video" || type === "image" ? 1 : undefined,
           fadeIn: type === "audio" || type === "video" ? 0 : undefined,

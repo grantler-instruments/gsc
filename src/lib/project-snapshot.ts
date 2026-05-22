@@ -1,5 +1,6 @@
 import { createCueList, type CueList } from "./cue-lists";
 import { defaultMidiCueData } from "./midi";
+import { defaultOscCueData, normalizeOscArgs } from "./osc";
 import type { Cue, ProjectSnapshot, ProjectSnapshotV2 } from "../types/cue";
 import type { MidiMapping } from "../types/midi-mapping";
 
@@ -9,9 +10,18 @@ function projectIdFromSnapshot(snap: ProjectSnapshot): string {
 }
 
 function normalizeCues(cues: Cue[]): Cue[] {
-  return cues.map((c) =>
-    c.type === "midi" && !c.midi ? { ...c, midi: defaultMidiCueData() } : c,
-  );
+  return cues.map((c) => {
+    if (c.type === "midi" && !c.midi) {
+      return { ...c, midi: defaultMidiCueData() };
+    }
+    if (c.type === "osc" && !c.osc) {
+      return { ...c, osc: defaultOscCueData() };
+    }
+    if (c.type === "osc" && c.osc) {
+      return { ...c, osc: { ...c.osc, args: normalizeOscArgs(c.osc.args) } };
+    }
+    return c;
+  });
 }
 
 export function snapshotToCueLists(snap: ProjectSnapshot): {
