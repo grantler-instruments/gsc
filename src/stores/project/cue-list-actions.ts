@@ -1,0 +1,67 @@
+import { createCueList, nextCueListName } from "../../lib/cue-lists";
+import { canEditProject } from "../../lib/show-mode";
+import type { StoreApi } from "zustand";
+import type { ProjectState } from "./types";
+import { getActiveCueListFromState } from "./helpers";
+
+type ProjectStore = StoreApi<ProjectState>;
+
+export function createCueListActions(
+  set: ProjectStore["setState"],
+  get: ProjectStore["getState"],
+): Pick<
+  ProjectState,
+  | "addCueList"
+  | "removeCueList"
+  | "renameCueList"
+  | "setActiveCueList"
+  | "setName"
+> {
+  return {
+    addCueList: (name) => {
+      if (!canEditProject()) return getActiveCueListFromState(get());
+      const list = createCueList(name ?? nextCueListName(get().cueLists));
+      set((s) => ({
+        cueLists: [...s.cueLists, list],
+        activeCueListId: list.id,
+      }));
+      return list;
+    },
+
+    removeCueList: (listId) => {
+      if (!canEditProject()) return;
+      const { cueLists } = get();
+      if (cueLists.length <= 1) return;
+      const nextLists = cueLists.filter((l) => l.id !== listId);
+      set((s) => ({
+        cueLists: nextLists,
+        activeCueListId:
+          s.activeCueListId === listId
+            ? nextLists[0].id
+            : s.activeCueListId,
+      }));
+    },
+
+    renameCueList: (listId, name) => {
+      if (!canEditProject()) return;
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      set((s) => ({
+        cueLists: s.cueLists.map((l) =>
+          l.id === listId ? { ...l, name: trimmed } : l,
+        ),
+      }));
+    },
+
+    setActiveCueList: (listId) => {
+      if (get().cueLists.some((l) => l.id === listId)) {
+        set({ activeCueListId: listId });
+      }
+    },
+
+    setName: (name) => {
+      if (!canEditProject()) return;
+      set({ name });
+    },
+  };
+}
