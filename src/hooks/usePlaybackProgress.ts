@@ -17,7 +17,10 @@ import {
 import type { CuePlaybackProgress } from "../stores/playback";
 import { usePlaybackStore } from "../stores/playback";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
-import { useTransportStore } from "../stores/transport";
+import {
+  useTransportStore,
+  type RunningSequence,
+} from "../stores/transport";
 
 interface PlaybackSession {
   /** Wall-clock when the cue entered activeCueIds — not when bounds were resolved. */
@@ -25,99 +28,115 @@ interface PlaybackSession {
   bounds: PlaybackBounds;
 }
 
+function runningSequenceHasWaitProgress(
+  runningSequence: RunningSequence | null,
+): boolean {
+  if (!runningSequence) return false;
+  const list = getActiveCueListFromState(useProjectStore.getState());
+  const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
+  return runningSequence.stepCueIds.some((id) => {
+    const cue = cueById.get(id);
+    return cue !== undefined && isWaitCue(cue);
+  });
+}
+
+function needsProgressUpdates(
+  activeCueIds: string[],
+  runningSequence: RunningSequence | null,
+): boolean {
+  return activeCueIds.length > 0 || runningSequenceHasWaitProgress(runningSequence);
+}
+
 export function usePlaybackProgress(): void {
   const sessionsRef = useRef(new Map<string, PlaybackSession>());
   const goAtByCueIdRef = useRef(new Map<string, number>());
   const probedPathsRef = useRef(new Set<string>());
-
-  const tryStartSession = (cueId: string, cue: Cue, activeCueIds: string[]) => {
-    if (sessionsRef.current.has(cueId)) return;
-
-    const sourceDurationSec = cue.assetPath
-      ? getMediaDurationSec(cue.assetPath)
-      : undefined;
-
-    if (cueNeedsKnownDuration(cue) && sourceDurationSec === undefined) {
-      if (cue.assetPath && !probedPathsRef.current.has(cue.assetPath)) {
-        probedPathsRef.current.add(cue.assetPath);
-        prefetchMediaDurations([cue.assetPath]);
-      }
-      void ensureMediaDurationSec(cue.assetPath!).then(() => {
-        const stillActive =
-          useTransportStore.getState().activeCueIds.includes(cueId);
-        if (stillActive) {
-          tryStartSession(cueId, cue, activeCueIds);
-        }
-      });
-      return;
-    }
-
-    sessionsRef.current.set(cueId, {
-      goAtMs: goAtByCueIdRef.current.get(cueId) ?? performance.now(),
-      bounds: createPlaybackBounds(cue, sourceDurationSec),
-    });
-  };
-
-  const syncSessions = (activeCueIds: string[]) => {
-    const now = performance.now();
-    const list = getActiveCueListFromState(useProjectStore.getState());
-    const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
-
-    for (const id of activeCueIds) {
-      if (!goAtByCueIdRef.current.has(id)) {
-        goAtByCueIdRef.current.set(id, now);
-      }
-      const cue = cueById.get(id);
-      if (cue && cueShowsPlaybackProgress(cue)) {
-        tryStartSession(id, cue, activeCueIds);
-      }
-    }
-
-    for (const id of [...sessionsRef.current.keys()]) {
-      if (!activeCueIds.includes(id)) {
-        sessionsRef.current.delete(id);
-      }
-    }
-
-    for (const id of [...goAtByCueIdRef.current.keys()]) {
-      if (!activeCueIds.includes(id)) {
-        goAtByCueIdRef.current.delete(id);
-      }
-    }
-  };
+  const ensureTickLoopRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    syncSessions(useTransportStore.getState().activeCueIds);
+    let rafId = 0;
+    let ticking = false;
 
-    const unsub = useTransportStore.subscribe((state) => {
-      syncSessions(state.activeCueIds);
-      if (state.activeCueIds.length === 0) {
-        sessionsRef.current.clear();
-        goAtByCueIdRef.current.clear();
-        usePlaybackStore.getState().clear();
+    const stopTickLoop = () => {
+      ticking = false;
+      if (rafId !== 0) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
       }
-    });
+    };
 
-    return () => {
-      unsub();
+    const clearIdleState = () => {
       sessionsRef.current.clear();
       goAtByCueIdRef.current.clear();
       usePlaybackStore.getState().clear();
     };
-  }, []);
 
-  useEffect(() => {
-    let rafId = 0;
+    const tryStartSession = (cueId: string, cue: Cue) => {
+      if (sessionsRef.current.has(cueId)) return;
+
+      const sourceDurationSec = cue.assetPath
+        ? getMediaDurationSec(cue.assetPath)
+        : undefined;
+
+      if (cueNeedsKnownDuration(cue) && sourceDurationSec === undefined) {
+        if (cue.assetPath && !probedPathsRef.current.has(cue.assetPath)) {
+          probedPathsRef.current.add(cue.assetPath);
+          prefetchMediaDurations([cue.assetPath]);
+        }
+        void ensureMediaDurationSec(cue.assetPath!).then(() => {
+          const { activeCueIds: currentActive } = useTransportStore.getState();
+          if (currentActive.includes(cueId)) {
+            tryStartSession(cueId, cue);
+            ensureTickLoopRef.current?.();
+          }
+        });
+        return;
+      }
+
+      sessionsRef.current.set(cueId, {
+        goAtMs: goAtByCueIdRef.current.get(cueId) ?? performance.now(),
+        bounds: createPlaybackBounds(cue, sourceDurationSec),
+      });
+    };
+
+    const syncSessions = (activeCueIds: string[]) => {
+      const now = performance.now();
+      const list = getActiveCueListFromState(useProjectStore.getState());
+      const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
+
+      for (const id of activeCueIds) {
+        if (!goAtByCueIdRef.current.has(id)) {
+          goAtByCueIdRef.current.set(id, now);
+        }
+        const cue = cueById.get(id);
+        if (cue && cueShowsPlaybackProgress(cue)) {
+          tryStartSession(id, cue);
+        }
+      }
+
+      for (const id of [...sessionsRef.current.keys()]) {
+        if (!activeCueIds.includes(id)) {
+          sessionsRef.current.delete(id);
+        }
+      }
+
+      for (const id of [...goAtByCueIdRef.current.keys()]) {
+        if (!activeCueIds.includes(id)) {
+          goAtByCueIdRef.current.delete(id);
+        }
+      }
+    };
 
     const tick = () => {
-      const { activeCueIds } = useTransportStore.getState();
+      if (!ticking) return;
+
+      const { activeCueIds, runningSequence } = useTransportStore.getState();
       const list = getActiveCueListFromState(useProjectStore.getState());
       const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
       const now = performance.now();
       const entries: CuePlaybackProgress[] = [];
       const completedCueIds: string[] = [];
 
-      const { runningSequence } = useTransportStore.getState();
       if (runningSequence) {
         const stepElapsedSec =
           (now - runningSequence.stepStartedAtMs) / 1000;
@@ -189,7 +208,7 @@ export function usePlaybackProgress(): void {
 
       if (entries.length > 0) {
         usePlaybackStore.getState().setProgress(entries);
-      } else if (activeCueIds.length === 0) {
+      } else if (!needsProgressUpdates(activeCueIds, runningSequence)) {
         usePlaybackStore.getState().clear();
       }
 
@@ -197,10 +216,49 @@ export function usePlaybackProgress(): void {
         useTransportStore.getState().stopMany(completedCueIds);
       }
 
-      rafId = requestAnimationFrame(tick);
+      const transport = useTransportStore.getState();
+      if (needsProgressUpdates(transport.activeCueIds, transport.runningSequence)) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        stopTickLoop();
+        clearIdleState();
+      }
     };
 
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+    const ensureTickLoop = () => {
+      const { activeCueIds, runningSequence } = useTransportStore.getState();
+      syncSessions(activeCueIds);
+
+      if (needsProgressUpdates(activeCueIds, runningSequence)) {
+        if (!ticking) {
+          ticking = true;
+          rafId = requestAnimationFrame(tick);
+        }
+      } else {
+        stopTickLoop();
+        clearIdleState();
+      }
+    };
+
+    ensureTickLoopRef.current = ensureTickLoop;
+
+    ensureTickLoop();
+
+    const unsub = useTransportStore.subscribe((state, prev) => {
+      if (
+        state.activeCueIds === prev.activeCueIds &&
+        state.runningSequence === prev.runningSequence
+      ) {
+        return;
+      }
+      ensureTickLoop();
+    });
+
+    return () => {
+      ensureTickLoopRef.current = null;
+      unsub();
+      stopTickLoop();
+      clearIdleState();
+    };
   }, []);
 }
