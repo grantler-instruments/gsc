@@ -1,7 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import { trailingSlashRedirectPlugin } from "./vite-trailing-slash-redirect";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -32,6 +32,10 @@ export default defineConfig({
     },
   },
   clearScreen: false,
+  test: {
+    environment: "node",
+    include: ["src/**/*.test.ts"],
+  },
   server: {
     port: 1421,
     strictPort: true,
