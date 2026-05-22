@@ -2,8 +2,8 @@
 
 Web-based show playback for audio and video cues. Same codebase runs in the browser and as a Tauri desktop app.
 
-**Live site (GitHub Pages):** https://grantler-instruments.github.io/gsc/  
-**Web app:** https://grantler-instruments.github.io/gsc/app/
+**Live site (GitHub Pages):** https://grantler-instruments.github.io/gsc-app/  
+**Web app:** https://grantler-instruments.github.io/gsc-app/app/
 
 ## Stack
 
@@ -20,8 +20,8 @@ npm run dev
 
 | URL | What |
 |-----|------|
-| http://localhost:1421/gsc/ | Marketing website (no app stores / MIDI init) |
-| http://localhost:1421/gsc/app/ | Show control app |
+| http://localhost:1421/gsc-app/ | Marketing website (no app stores / MIDI init) |
+| http://localhost:1421/gsc-app/app/ | Show control app |
 
 ## Tauri (desktop)
 
@@ -29,24 +29,36 @@ npm run dev
 npm run tauri dev
 ```
 
-Opens **http://localhost:1421/gsc/app/** (port **1421**; enomiga uses 1420).
+Opens **http://localhost:1421/gsc-app/app/** (port **1421**; enomiga uses 1420).
 
 ## Build
 
 ```bash
 npm run build          # dist/ for Tauri (base /)
-npm run build:pages    # dist/ for GitHub Pages (base /gsc/)
+npm run build:pages    # dist/ for GitHub Pages (base /gsc-app/ locally; CI uses repo name)
 npm run preview:pages  # preview the Pages build locally
 ```
 
 ## Deploy to GitHub Pages
 
-Repo must be named **`gsc`** under `grantler-instruments` for `https://grantler-instruments.github.io/gsc/`.
+Published URL: `https://grantler-instruments.github.io/<repo-name>/` (this repo: **`gsc-app`**).
 
-1. **Settings → Pages → Build and deployment:** GitHub Actions
-2. Push to `main` (or run **Deploy to GitHub Pages** manually)
+### One-time setup (fixes deploy `404 Not Found`)
 
-The workflow runs `npm run build:pages` and publishes `dist/` (website + app).
+**Visibility:** On the free GitHub plan, Pages only works for **public** repositories (or keep the repo private with a paid plan). To publish the site:
+
+1. **[Settings → General → Danger zone](https://github.com/grantler-instruments/gsc-app/settings)** → **Change repository visibility** → **Public**
+2. **[Settings → Pages](https://github.com/grantler-instruments/gsc-app/settings/pages)** → under **Build and deployment**, set **Source** to **GitHub Actions** (not “Deploy from a branch”) → Save
+
+The `github-pages` environment is created when Pages is enabled.
+
+If your org restricts Pages, an admin must allow Pages for this repository under **Organization → Settings → Pages**.
+
+### Deploy
+
+Push to `main` or run **Deploy to GitHub Pages** manually. The workflow builds with `VITE_BASE=/<repo-name>/` and publishes `dist/`.
+
+To use the shorter path `https://grantler-instruments.github.io/gsc/`, rename the GitHub repository to **`gsc`** (Settings → General → Repository name). The workflow will pick up the new base path automatically.
 
 ## Project layout
 
@@ -93,3 +105,21 @@ MyShow.gsc.zip
 
 - **Web:** File → Export / Import project bundle
 - **Tauri:** File → **Open…** (project folder or `.gsc.zip` bundle). **New Project** (⌘N) and first save use a **save dialog** (pick location + folder name); GSC creates that directory and autosaves there.
+
+## Contributing
+
+Bug reports and pull requests are welcome.
+
+1. Open an issue for bugs or ideas, or discuss before a large change.
+2. Fork the repo, create a branch, and run `npm install` / `npm run dev` locally.
+3. Open a pull request against `main` with a clear description of the change.
+
+By contributing, you agree that your contributions will be licensed under the same terms as this project ([AGPL-3.0-or-later](LICENSE)).
+
+## License
+
+Copyright © 2026 Grantler Instruments.
+
+This project is licensed under the **GNU Affero General Public License v3.0 or later** ([AGPL-3.0](LICENSE)). You may use, modify, and distribute it under those terms.
+
+If you distribute this software or run a modified version as a network service, you must make the corresponding source available under the same license. See [LICENSE](LICENSE) for the full text.
