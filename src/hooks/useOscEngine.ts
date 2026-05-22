@@ -3,6 +3,10 @@ import { sendOscMessage } from "../platform/send-osc";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
+import {
+  cueTriggerTransportStateChanged,
+  selectCueTriggerTransportState,
+} from "./transport-cue-sync";
 
 function fireOscCue(cue: Cue): void {
   if (cue.type !== "osc" || !cue.osc) return;
@@ -42,6 +46,15 @@ export function useOscEngine(): void {
     };
 
     sync();
-    return useTransportStore.subscribe(sync);
+    return useTransportStore.subscribe((state, prev) => {
+      if (
+        cueTriggerTransportStateChanged(
+          selectCueTriggerTransportState(prev),
+          selectCueTriggerTransportState(state),
+        )
+      ) {
+        sync();
+      }
+    });
   }, []);
 }

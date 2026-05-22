@@ -12,6 +12,24 @@ import { usePlaybackStore } from "../stores/playback";
 import { useFadeStore } from "../stores/fade";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 
+const selectOutputTransportState = (s: {
+  activeCueIds: string[];
+  cueStartedAtMs: Record<string, number>;
+}) => ({
+  activeCueIds: s.activeCueIds,
+  cueStartedAtMs: s.cueStartedAtMs,
+});
+
+function outputTransportChanged(
+  prev: ReturnType<typeof selectOutputTransportState>,
+  next: ReturnType<typeof selectOutputTransportState>,
+): boolean {
+  return (
+    prev.activeCueIds !== next.activeCueIds ||
+    prev.cueStartedAtMs !== next.cueStartedAtMs
+  );
+}
+
 /** Publishes visual output state to the output window via BroadcastChannel. */
 export function useOutputPublisher(): void {
   const channelRef = useRef<BroadcastChannel | null>(null);
@@ -21,41 +39,76 @@ export function useOutputPublisher(): void {
     const channel = createOutputChannel();
     channelRef.current = channel;
 
-    const publish = () => {
+    let rafId = 0;
+    let inFlight = false;
+    let pending = false;
+
+    const runPublish = () => {
+      if (inFlight) {
+        pending = true;
+        return;
+      }
+      inFlight = true;
+
       void (async () => {
-        revisionRef.current += 1;
-        const state = await buildOutputState(revisionRef.current);
+        try {
+          revisionRef.current += 1;
+          const state = await buildOutputState(revisionRef.current);
 
-        await Promise.all(
-          state.layers.map(async (layer) => {
-            const blob = await resolveAssetBlob(layer.assetPath);
-            if (blob) {
-              await cacheAsset(state.projectId, layer.assetPath, blob);
-            }
-          }),
-        );
+          await Promise.all(
+            state.layers.map(async (layer) => {
+              const blob = await resolveAssetBlob(layer.assetPath);
+              if (blob) {
+                await cacheAsset(state.projectId, layer.assetPath, blob);
+              }
+            }),
+          );
 
-        postOutputState(channel, state);
+          postOutputState(channel, state);
+        } finally {
+          inFlight = false;
+          if (pending) {
+            pending = false;
+            runPublish();
+          }
+        }
       })();
+    };
+
+    const schedulePublish = () => {
+      if (rafId !== 0) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        runPublish();
+      });
     };
 
     channel.onmessage = (event: MessageEvent) => {
       if (!isOutputMessage(event.data)) return;
       if (event.data.type === "request-state") {
-        publish();
+        schedulePublish();
       }
     };
 
-    publish();
+    schedulePublish();
 
-    const unsubTransport = useTransportStore.subscribe(publish);
+    const unsubTransport = useTransportStore.subscribe((state, prev) => {
+      if (
+        outputTransportChanged(
+          selectOutputTransportState(prev),
+          selectOutputTransportState(state),
+        )
+      ) {
+        schedulePublish();
+      }
+    });
 
     let prevProgressKeys = "";
     const unsubPlayback = usePlaybackStore.subscribe((s) => {
       const keys = Object.keys(s.byCueId).sort().join(",");
       if (keys !== prevProgressKeys) {
         prevProgressKeys = keys;
-        publish();
+        schedulePublish();
       }
     });
 
@@ -64,7 +117,7 @@ export function useOutputPublisher(): void {
       if (Object.keys(s.fadesByTargetId).length === 0) return;
       if (s.frameMs !== prevFrameMs) {
         prevFrameMs = s.frameMs;
-        publish();
+        schedulePublish();
       }
     });
 
@@ -72,11 +125,12 @@ export function useOutputPublisher(): void {
       const list = getActiveCueListFromState(s);
       const prevList = getActiveCueListFromState(prev);
       if (list?.cues !== prevList?.cues) {
-        publish();
+        schedulePublish();
       }
     });
 
     return () => {
+      if (rafId !== 0) cancelAnimationFrame(rafId);
       unsubTransport();
       unsubPlayback();
       unsubFade();

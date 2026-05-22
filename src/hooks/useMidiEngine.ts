@@ -5,6 +5,10 @@ import { usePreferencesStore } from "../stores/preferences";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
+import {
+  cueTriggerTransportStateChanged,
+  selectCueTriggerTransportState,
+} from "./transport-cue-sync";
 
 function fireMidiCue(cue: Cue): void {
   if (cue.type !== "midi" || !cue.midi) return;
@@ -47,6 +51,15 @@ export function useMidiEngine(): void {
     };
 
     sync();
-    return useTransportStore.subscribe(sync);
+    return useTransportStore.subscribe((state, prev) => {
+      if (
+        cueTriggerTransportStateChanged(
+          selectCueTriggerTransportState(prev),
+          selectCueTriggerTransportState(state),
+        )
+      ) {
+        sync();
+      }
+    });
   }, []);
 }

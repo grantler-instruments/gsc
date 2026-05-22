@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { persistPlatformProject, restorePlatformProject } from "../platform/project-storage";
+import {
+  projectPersistStateChanged,
+  vfsPersistStateChanged,
+} from "../lib/project-persist";
 import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
 import { useVfsStore } from "../stores/vfs";
@@ -37,9 +41,21 @@ export function useProjectSession(): boolean {
       } finally {
         if (cancelled) return;
         unsubs.push(
-          useProjectStore.subscribe(scheduleSave),
-          useVfsStore.subscribe(scheduleSave),
-          useProjectLocationStore.subscribe(scheduleSave),
+          useProjectStore.subscribe((state, prev) => {
+            if (projectPersistStateChanged(prev, state)) {
+              scheduleSave();
+            }
+          }),
+          useVfsStore.subscribe((state, prev) => {
+            if (vfsPersistStateChanged(prev, state)) {
+              scheduleSave();
+            }
+          }),
+          useProjectLocationStore.subscribe((state, prev) => {
+            if (state.rootDir !== prev.rootDir) {
+              scheduleSave();
+            }
+          }),
         );
         setReady(true);
       }
