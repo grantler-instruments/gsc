@@ -2,6 +2,10 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import {
+  canOpacityFadeTarget,
+  canVolumeFadeTarget,
+} from "../lib/fade";
 import { isContainerCue, isStopCue, isWaitCue } from "../lib/cues";
 import { formatMidiCue } from "../lib/midi";
 import { formatOscCue } from "../lib/osc";
@@ -10,6 +14,11 @@ import { formatPlaybackRangeLabel } from "../lib/time";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
 import { findCueInLists } from "../lib/cue-lists";
 import { findProjectCue, useProjectStore } from "../stores/project";
+import {
+  resolveEffectiveOpacity,
+  resolveEffectiveVolume,
+  useFadeStore,
+} from "../stores/fade";
 import { useTransportStore } from "../stores/transport";
 import { useGscTokens } from "../theme/useGscTokens";
 import { AudioWaveform } from "./AudioWaveform";
@@ -25,6 +34,70 @@ const emptyListSx = {
   fontSize: 13,
 } as const;
 
+const activeCueLevelSx = {
+  display: "flex",
+  alignItems: "center",
+  gap: 1,
+  mt: 0.5,
+  fontSize: 10,
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
+  color: "text.secondary",
+  cursor: "default",
+  "& input[type='range']": {
+    flex: 1,
+    minWidth: 0,
+    height: 4,
+    accentColor: "var(--accent)",
+  },
+} as const;
+
+interface ActiveCueLevelControlProps {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}
+
+function ActiveCueLevelControl({
+  label,
+  value,
+  onChange,
+}: ActiveCueLevelControlProps) {
+  return (
+    <Box
+      component="label"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      sx={activeCueLevelSx}
+    >
+      <Box component="span" sx={{ width: 28, flexShrink: 0 }}>
+        {label}
+      </Box>
+      <Box
+        component="input"
+        type="range"
+        min={0}
+        max={1}
+        step={0.01}
+        value={value}
+        onChange={(e) => onChange(Number(e.currentTarget.value))}
+      />
+      <Box
+        component="span"
+        sx={{
+          width: 32,
+          flexShrink: 0,
+          textAlign: "right",
+          fontVariantNumeric: "tabular-nums",
+        }}
+      >
+        {Math.round(value * 100)}%
+      </Box>
+    </Box>
+  );
+}
+
 export function ActiveCuesPanel() {
   const tokens = useGscTokens();
   const cueLists = useProjectStore((s) => s.cueLists);
@@ -33,6 +106,9 @@ export function ActiveCuesPanel() {
   );
   const selectedCueId = getPrimarySelectedCueId(activeList.selectedCueIds);
   const selectCue = useProjectStore((s) => s.selectCue);
+  const updateCue = useProjectStore((s) => s.updateCue);
+  const clearFade = useFadeStore((s) => s.clearFade);
+  const frameMs = useFadeStore((s) => s.frameMs);
   const activeCueIds = useTransportStore((s) => s.activeCueIds);
   const activeCueId = useTransportStore((s) => s.activeCueId);
   const stopMany = useTransportStore((s) => s.stopMany);
@@ -193,6 +269,38 @@ export function ActiveCuesPanel() {
                 )}
                 {playback && cueShowsPlaybackProgress(cue) && (
                   <PlaybackProgress progress={playback} />
+                )}
+                {canVolumeFadeTarget(cue) && (
+                  <ActiveCueLevelControl
+                    label="Vol"
+                    value={resolveEffectiveVolume(
+                      cue.id,
+                      cue.volume ?? 1,
+                      frameMs,
+                    )}
+                    onChange={(volume) => {
+                      const fade =
+                        useFadeStore.getState().fadesByTargetId[cue.id];
+                      if (fade?.property === "volume") clearFade(cue.id);
+                      updateCue(cue.id, { volume });
+                    }}
+                  />
+                )}
+                {canOpacityFadeTarget(cue) && (
+                  <ActiveCueLevelControl
+                    label="Opac"
+                    value={resolveEffectiveOpacity(
+                      cue.id,
+                      cue.opacity ?? 1,
+                      frameMs,
+                    )}
+                    onChange={(opacity) => {
+                      const fade =
+                        useFadeStore.getState().fadesByTargetId[cue.id];
+                      if (fade?.property === "opacity") clearFade(cue.id);
+                      updateCue(cue.id, { opacity });
+                    }}
+                  />
                 )}
               </Box>
               {isPrimary && (
