@@ -91,8 +91,8 @@ export default function WebsiteApp() {
                 <Stack
                   direction="row"
                   spacing={2}
-                  alignItems="center"
                   sx={{
+                    alignItems: "center",
                     alignSelf: { xs: "flex-start", sm: "center" },
                     maxWidth: "100%",
                   }}
@@ -210,8 +210,7 @@ export default function WebsiteApp() {
                           <Stack
                             direction="row"
                             spacing={1}
-                            alignItems="center"
-                            sx={{ mb: 1 }}
+                            sx={{ alignItems: "center", mb: 1 }}
                           >
                             {feature.cueType && (
                               <CueTypeBadge type={feature.cueType} compact />
