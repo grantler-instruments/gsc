@@ -3,6 +3,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import VolumeDownIcon from "@mui/icons-material/VolumeDown";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
   useCallback,
   useMemo,
@@ -91,7 +92,7 @@ import {
   cueRowFadeActionSx,
   cueRowStopActionSx,
   cueRowSx,
-  cueWarningSx,
+  cueRowWarningIconSx,
 } from "../theme/cueStyles";
 
 export function CueList() {
@@ -545,6 +546,13 @@ function CueRow({
       : null;
   const hasWarning =
     missingAsset || stopTargetMissing || fadeTargetMissing;
+  const warningTitle = fadeTargetMissing
+    ? "Fade target missing"
+    : stopTargetMissing
+      ? "Stop target missing"
+      : assetWarning
+        ? `${assetWarning.title} — drag from Assets onto this cue or the list`
+        : "Warning";
   const rowStyleState = {
     tokens,
     selected: selected && !primarySelected,
@@ -692,6 +700,13 @@ function CueRow({
         })();
       }}
     >
+      {hasWarning ? (
+        <WarningAmberIcon
+          fontSize="inherit"
+          sx={cueRowWarningIconSx}
+          titleAccess={warningTitle}
+        />
+      ) : null}
       {isContainer ? (
         <IconButton
           size="small"
@@ -857,23 +872,6 @@ function CueRow({
         <Typography component="span" noWrap title={cue.assetPath} sx={cueAssetSx}>
           {cue.assetPath.split("/").pop()}
         </Typography>
-      )}
-      {hasWarning && (
-        <Box
-          component="span"
-          sx={cueWarningSx}
-          title={
-            fadeTargetMissing
-                ? "Fade target missing"
-                : stopTargetMissing
-                  ? "Stop target missing"
-                  : assetWarning
-                    ? `${assetWarning.title} — drag from Assets onto this cue or the list`
-                    : "Warning"
-          }
-        >
-          !
-        </Box>
       )}
       {canEdit && (
         <IconButton

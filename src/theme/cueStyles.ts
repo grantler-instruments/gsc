@@ -228,9 +228,11 @@ export const cueAssetSx: SxProps<Theme> = {
   flexShrink: 0,
 };
 
-export const cueWarningSx: SxProps<Theme> = {
+export const cueRowWarningIconSx: SxProps<Theme> = {
   color: CUE_NAME_TINT.warning,
-  fontWeight: 700,
+  flexShrink: 0,
+  fontSize: 18,
+  opacity: 0.95,
 };
 
 export const cueRenameInputSx = (

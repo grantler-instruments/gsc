@@ -57,7 +57,7 @@ export function getCueDisplayName(cue: Cue, cues: Cue[]): string {
   if (isStopCue(cue)) {
     const target = getStopTarget(cue, cues);
     if (!target) return "Stop (no target)";
-    return `Stop ${target.name}`;
+    return `Stop ${formatStopTargetLabel(target)}`;
   }
   if (isFadeCue(cue)) {
     const target = getFadeTarget(cue, cues);

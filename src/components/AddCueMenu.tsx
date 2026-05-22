@@ -1,35 +1,47 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
 import ListItemIcon from "@mui/material/ListItemIcon";
+import ListSubheader from "@mui/material/ListSubheader";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import { ADD_CUE_ICON_COLORS } from "../theme/cueStyles";
 import type { CueType } from "../types/cue";
 import { CueTypeIcon } from "./CueTypeIcon";
 
-const ADD_CUE_TYPES = [
-  "audio",
-  "video",
-  "image",
-  "midi",
-  "group",
-  "sequence",
-  "wait",
-  "volumeFade",
-  "opacityFade",
-] as const satisfies readonly CueType[];
+type AddCueMenuType = Extract<
+  CueType,
+  | "audio"
+  | "video"
+  | "image"
+  | "midi"
+  | "group"
+  | "sequence"
+  | "stop"
+  | "wait"
+  | "volumeFade"
+  | "opacityFade"
+>;
 
-const ADD_CUE_LABELS: Record<(typeof ADD_CUE_TYPES)[number], string> = {
+const ADD_CUE_SECTIONS: { subheader?: string; types: readonly AddCueMenuType[] }[] =
+  [
+    { types: ["audio", "video", "image", "midi"] },
+    { subheader: "Group", types: ["sequence", "group"] },
+    { subheader: "Utility", types: ["wait", "stop", "volumeFade", "opacityFade"] },
+  ];
+
+const ADD_CUE_LABELS: Record<AddCueMenuType, string> = {
   audio: "Audio",
   video: "Video",
   image: "Image",
   midi: "MIDI",
   group: "Parallel",
-  sequence: "Sequence",
+  sequence: "Sequential",
   wait: "Wait",
+  stop: "Stop",
   volumeFade: "Volume fade",
   opacityFade: "Opacity fade",
 };
@@ -49,7 +61,7 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const handleAddCue = (type: (typeof ADD_CUE_TYPES)[number]) => {
+  const handleAddCue = (type: AddCueMenuType) => {
     if (type === "group") {
       addGroupCue();
     } else if (type === "sequence") {
@@ -58,6 +70,8 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
       addFadeCue(type);
     } else if (type === "wait") {
       addCue({ name: "Wait", type: "wait" });
+    } else if (type === "stop") {
+      addCue({ name: "Stop", type: "stop" });
     } else {
       const labels = {
         audio: "Audio cue",
@@ -96,19 +110,38 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
           horizontal: "left",
         }}
       >
-        {ADD_CUE_TYPES.map((type) => (
-          <MenuItem key={type} onClick={() => handleAddCue(type)}>
-            <ListItemIcon
-              sx={{
-                minWidth: 28,
-                color: ADD_CUE_ICON_COLORS[type] ?? "inherit",
-                "& .MuiSvgIcon-root": { fontSize: 20, opacity: 0.9 },
-              }}
-            >
-              <CueTypeIcon type={type} />
-            </ListItemIcon>
-            {ADD_CUE_LABELS[type]}
-          </MenuItem>
+        {ADD_CUE_SECTIONS.map((section, sectionIndex) => (
+          <Fragment key={section.subheader ?? section.types.join("-")}>
+            {sectionIndex > 0 ? <Divider /> : null}
+            {section.subheader ? (
+              <ListSubheader
+                disableSticky
+                sx={{
+                  bgcolor: "background.paper",
+                  lineHeight: "32px",
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  color: "text.secondary",
+                }}
+              >
+                {section.subheader}
+              </ListSubheader>
+            ) : null}
+            {section.types.map((type) => (
+              <MenuItem key={type} onClick={() => handleAddCue(type)}>
+                <ListItemIcon
+                  sx={{
+                    minWidth: 28,
+                    color: ADD_CUE_ICON_COLORS[type] ?? "inherit",
+                    "& .MuiSvgIcon-root": { fontSize: 20, opacity: 0.9 },
+                  }}
+                >
+                  <CueTypeIcon type={type} />
+                </ListItemIcon>
+                {ADD_CUE_LABELS[type]}
+              </MenuItem>
+            ))}
+          </Fragment>
         ))}
       </Menu>
     </Box>
