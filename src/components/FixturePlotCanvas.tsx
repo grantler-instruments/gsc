@@ -8,6 +8,7 @@ import { FixturePlotGlyph } from "./FixturePlotGlyph";
 
 interface FixturePlotCanvasProps {
   editMode: boolean;
+  expanded?: boolean;
   selectedFixtureId: string | null;
   onSelectFixture: (fixtureId: string | null) => void;
   onMoveEntry: (fixtureId: string, x: number, y: number) => void;
@@ -29,6 +30,7 @@ function clientToPlotCoords(
 
 export function FixturePlotCanvas({
   editMode,
+  expanded = false,
   selectedFixtureId,
   onSelectFixture,
   onMoveEntry,
@@ -40,6 +42,8 @@ export function FixturePlotCanvas({
   const dragRef = useRef<{
     fixtureId: string;
     pointerId: number;
+    offsetX: number;
+    offsetY: number;
   } | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
@@ -52,7 +56,11 @@ export function FixturePlotCanvas({
       const svg = svgRef.current;
       if (!drag || !svg || event.pointerId !== drag.pointerId) return;
       const { x, y } = clientToPlotCoords(svg, event.clientX, event.clientY);
-      onMoveEntry(drag.fixtureId, x, y);
+      onMoveEntry(
+        drag.fixtureId,
+        x + drag.offsetX,
+        y + drag.offsetY,
+      );
     },
     [onMoveEntry],
   );
@@ -67,13 +75,19 @@ export function FixturePlotCanvas({
   }, []);
 
   const startDrag = useCallback(
-    (entry: FixturePlotEntry, event: React.PointerEvent<HTMLDivElement>) => {
+    (entry: FixturePlotEntry, event: React.PointerEvent<SVGCircleElement>) => {
       if (!editMode) return;
       event.stopPropagation();
       const svg = svgRef.current;
       if (!svg) return;
+      const { x, y } = clientToPlotCoords(svg, event.clientX, event.clientY);
       svg.setPointerCapture(event.pointerId);
-      dragRef.current = { fixtureId: entry.fixtureId, pointerId: event.pointerId };
+      dragRef.current = {
+        fixtureId: entry.fixtureId,
+        pointerId: event.pointerId,
+        offsetX: entry.x - x,
+        offsetY: entry.y - y,
+      };
       setDraggingId(entry.fixtureId);
       onSelectFixture(entry.fixtureId);
     },
@@ -89,7 +103,8 @@ export function FixturePlotCanvas({
       sx={{
         position: "relative",
         width: "100%",
-        aspectRatio: "16 / 9",
+        aspectRatio: expanded ? "2 / 1" : "16 / 9",
+        minHeight: expanded ? 200 : undefined,
         bgcolor: "#111",
         color: "primary.main",
         overflow: "hidden",
@@ -100,6 +115,7 @@ export function FixturePlotCanvas({
         ref={svgRef}
         viewBox="0 0 1 1"
         preserveAspectRatio="xMidYMid meet"
+        overflow="visible"
         sx={{
           display: "block",
           width: "100%",

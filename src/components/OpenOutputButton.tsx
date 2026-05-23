@@ -24,6 +24,7 @@ export function OpenOutputButton() {
         startIcon={<OpenInNewIcon fontSize="small" />}
         onClick={handleOpen}
         title="Open audience output window"
+        sx={{ minWidth: 148 }}
       >
         Output
       </Button>

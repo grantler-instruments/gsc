@@ -9,6 +9,7 @@ import { useGscTokens } from "../../theme/useGscTokens";
 import { AddCueMenu } from "../AddCueMenu";
 import { CueContextMenu } from "../CueContextMenu";
 import { CueListTabs } from "../CueListTabs";
+import { FixturePlotMonitor } from "../FixturePlotMonitor";
 import { CueListActionsProvider } from "./cueListActionsContext";
 import { CueListBody } from "./CueListBody";
 import { CueListTree } from "./CueListTree";
@@ -21,6 +22,8 @@ import { useCueListStopHighlights } from "./useCueListStopHighlights";
 export function CueList() {
   const tokens = useGscTokens();
   const showMode = useUiStore((s) => s.showMode);
+  const fixturePlotExpanded = useUiStore((s) => s.fixturePlotExpanded);
+  const fixtures = useProjectStore((s) => s.fixtures);
   const activeList = useActiveCueList();
   const cues = activeList.cues;
   const canEdit = !showMode;
@@ -68,6 +71,10 @@ export function CueList() {
         borderColor: "divider",
       }}
     >
+      {fixturePlotExpanded && fixtures.length > 0 && (
+        <FixturePlotMonitor expanded />
+      )}
+
       <CueListTabs />
 
       <CueListActionsProvider

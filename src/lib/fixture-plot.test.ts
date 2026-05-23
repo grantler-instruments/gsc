@@ -97,7 +97,7 @@ describe("fixture plot", () => {
       fixtureId: "rgb",
       x: 0.5,
       y: 0.5,
-      size: 0.08,
+      size: 0.12,
       render: "rgb",
       channelMap: { red: 0, green: 1, blue: 2 },
     });

@@ -1,6 +1,10 @@
+import CloseFullscreenIcon from "@mui/icons-material/CloseFullscreen";
+import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
 import { useProjectStore } from "../stores/project";
@@ -9,16 +13,20 @@ import { FixturePlotCanvas } from "./FixturePlotCanvas";
 
 interface FixturePlotMonitorProps {
   editMode?: boolean;
+  expanded?: boolean;
   onEditModeChange?: (open: boolean) => void;
 }
 
 export function FixturePlotMonitor({
   editMode: editModeProp,
+  expanded = false,
   onEditModeChange,
 }: FixturePlotMonitorProps) {
   const showMode = useUiStore((s) => s.showMode);
   const fixturePlotEditMode = useUiStore((s) => s.fixturePlotEditMode);
   const setFixturePlotEditMode = useUiStore((s) => s.setFixturePlotEditMode);
+  const fixturePlotExpanded = useUiStore((s) => s.fixturePlotExpanded);
+  const toggleFixturePlotExpanded = useUiStore((s) => s.toggleFixturePlotExpanded);
   const syncFixturePlot = useProjectStore((s) => s.syncFixturePlot);
   const moveFixturePlotEntry = useProjectStore((s) => s.moveFixturePlotEntry);
   const fixtures = useProjectStore((s) => s.fixtures);
@@ -89,31 +97,62 @@ export function FixturePlotMonitor({
         <Typography variant="caption" color="text.secondary" sx={{ m: 0 }}>
           Fixture preview
         </Typography>
-        {editMode ? (
-          <Button
-            size="small"
-            variant="text"
-            onClick={() => setEditMode(false)}
-            sx={{ minWidth: 0, py: 0, px: 0.5, fontSize: 12 }}
-          >
-            Done
-          </Button>
-        ) : (
-          !showMode && (
+        <Stack direction="row" sx={{ alignItems: "center", gap: 0.25 }}>
+          {editMode ? (
             <Button
               size="small"
               variant="text"
-              onClick={() => setEditMode(true)}
+              onClick={() => setEditMode(false)}
               sx={{ minWidth: 0, py: 0, px: 0.5, fontSize: 12 }}
             >
-              Edit
+              Done
             </Button>
-          )
-        )}
+          ) : (
+            !showMode && (
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => setEditMode(true)}
+                sx={{ minWidth: 0, py: 0, px: 0.5, fontSize: 12 }}
+              >
+                Edit
+              </Button>
+            )
+          )}
+          {!expanded && (
+            <Tooltip title={fixturePlotExpanded ? "Collapse" : "Expand above cue list"}>
+              <IconButton
+                size="small"
+                aria-label={fixturePlotExpanded ? "Collapse fixture preview" : "Expand fixture preview"}
+                onClick={toggleFixturePlotExpanded}
+                sx={{ p: 0.25 }}
+              >
+                {fixturePlotExpanded ? (
+                  <CloseFullscreenIcon sx={{ fontSize: 16 }} />
+                ) : (
+                  <OpenInFullIcon sx={{ fontSize: 16 }} />
+                )}
+              </IconButton>
+            </Tooltip>
+          )}
+          {expanded && (
+            <Tooltip title="Collapse">
+              <IconButton
+                size="small"
+                aria-label="Collapse fixture preview"
+                onClick={toggleFixturePlotExpanded}
+                sx={{ p: 0.25 }}
+              >
+                <CloseFullscreenIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
       </Stack>
 
       <FixturePlotCanvas
         editMode={editMode}
+        expanded={expanded}
         selectedFixtureId={selectedFixtureId}
         onSelectFixture={setSelectedFixtureId}
         onMoveEntry={handleMoveEntry}

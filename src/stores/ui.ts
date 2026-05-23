@@ -19,6 +19,8 @@ interface UiState {
   dmxPreviewCueIds: string[];
   /** When true, the fixture plot is in reposition edit mode. */
   fixturePlotEditMode: boolean;
+  /** When true, a larger fixture plot is shown above the cue list. */
+  fixturePlotExpanded: boolean;
   setSidebarTab: (tab: SidebarTabId) => void;
   setRightSidebarTab: (tab: RightSidebarTabId) => void;
   setDarkMode: (dark: boolean) => void;
@@ -28,6 +30,8 @@ interface UiState {
   toggleShowMode: () => void;
   toggleCueGroupCollapsed: (groupId: string) => void;
   setFixturePlotEditMode: (open: boolean) => void;
+  setFixturePlotExpanded: (expanded: boolean) => void;
+  toggleFixturePlotExpanded: () => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -43,6 +47,7 @@ export const useUiStore = create<UiState>()(
         collapsedCueGroupIds: [],
         dmxPreviewCueIds: [],
         fixturePlotEditMode: false,
+        fixturePlotExpanded: false,
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
         setRightSidebarTab: (rightSidebarTab) => set({ rightSidebarTab }),
         setDarkMode: (darkMode) => set({ darkMode }),
@@ -70,6 +75,10 @@ export const useUiStore = create<UiState>()(
           }),
         setFixturePlotEditMode: (fixturePlotEditMode) =>
           set({ fixturePlotEditMode }),
+        setFixturePlotExpanded: (fixturePlotExpanded) =>
+          set({ fixturePlotExpanded }),
+        toggleFixturePlotExpanded: () =>
+          set((s) => ({ fixturePlotExpanded: !s.fixturePlotExpanded })),
       }),
       {
         name: "gsc-ui",

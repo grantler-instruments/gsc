@@ -18,10 +18,10 @@ interface FixturePlotGlyphProps {
   selected: boolean;
   editMode: boolean;
   disableTooltip?: boolean;
-  onPointerDown?: (event: PointerEvent<HTMLDivElement>) => void;
+  onPointerDown?: (event: PointerEvent<SVGCircleElement>) => void;
 }
 
-const LABEL_OFFSET = 0.012;
+const LABEL_OFFSET = 0.016;
 
 function FixturePlotTooltipContent({
   fixture,
@@ -131,41 +131,49 @@ export function FixturePlotGlyph({
       {render === "abstract" && (
         <AbstractBars channels={visual.channels} radius={radius} />
       )}
-      <foreignObject
-        x={-radius}
-        y={-radius}
-        width={size}
-        height={size}
-        style={{ overflow: "visible" }}
-      >
-        <div style={{ width: "100%", height: "100%" }}>
-          <Tooltip
-            title={tooltipTitle}
-            arrow
-            placement="top"
-            enterDelay={250}
-            disableHoverListener={disableTooltip}
-            disableFocusListener
-            describeChild
-          >
-            <div
-              role="img"
-              aria-label={fixture.name}
-              style={{
-                width: "100%",
-                height: "100%",
-                borderRadius: "50%",
-                cursor: editMode ? "grab" : "default",
-              }}
-              onPointerDown={onPointerDown}
-            />
-          </Tooltip>
-        </div>
-      </foreignObject>
+      {editMode && (
+        <circle
+          r={radius}
+          fill="transparent"
+          style={{ pointerEvents: "all", cursor: "grab" }}
+          onPointerDown={onPointerDown}
+        />
+      )}
+      {!editMode && (
+        <foreignObject
+          x={-radius}
+          y={-radius}
+          width={size}
+          height={size}
+          style={{ overflow: "visible" }}
+        >
+          <div style={{ width: "100%", height: "100%" }}>
+            <Tooltip
+              title={tooltipTitle}
+              arrow
+              placement="top"
+              enterDelay={250}
+              disableHoverListener={disableTooltip}
+              disableFocusListener
+              describeChild
+            >
+              <div
+                role="img"
+                aria-label={fixture.name}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "50%",
+                }}
+              />
+            </Tooltip>
+          </div>
+        </foreignObject>
+      )}
       <text
         y={radius + LABEL_OFFSET}
         textAnchor="middle"
-        fontSize={0.022}
+        fontSize={0.028}
         fill="currentColor"
         fillOpacity={0.75}
         style={{ pointerEvents: "none", userSelect: "none" }}

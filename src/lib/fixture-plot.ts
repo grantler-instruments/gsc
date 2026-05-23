@@ -7,9 +7,10 @@ import type {
   FixtureRenderKind,
 } from "../types/fixture-plot";
 
-export const DEFAULT_PLOT_ENTRY_SIZE = 0.08;
-export const MIN_PLOT_ENTRY_SIZE = 0.04;
-export const MAX_PLOT_ENTRY_SIZE = 0.2;
+export const DEFAULT_PLOT_ENTRY_SIZE = 0.12;
+export const LEGACY_PLOT_ENTRY_SIZE = 0.08;
+export const MIN_PLOT_ENTRY_SIZE = 0.06;
+export const MAX_PLOT_ENTRY_SIZE = 0.24;
 
 export interface FixtureVisualState {
   opacity: number;
@@ -23,7 +24,9 @@ function clamp01(value: number): number {
 }
 
 function clampPlotSize(value: number | undefined): number {
-  const size = value ?? DEFAULT_PLOT_ENTRY_SIZE;
+  const raw = value ?? DEFAULT_PLOT_ENTRY_SIZE;
+  const size =
+    raw === LEGACY_PLOT_ENTRY_SIZE ? DEFAULT_PLOT_ENTRY_SIZE : raw;
   return Math.max(MIN_PLOT_ENTRY_SIZE, Math.min(MAX_PLOT_ENTRY_SIZE, size));
 }
 
