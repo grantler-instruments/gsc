@@ -16,6 +16,7 @@ import { CueListActionsProvider } from "./cueListActionsContext";
 import { useCueListContextMenu } from "./useCueListContextMenu";
 import { useCueListDrop } from "./useCueListDrop";
 import { useCueListRename } from "./useCueListRename";
+import { useCueListScrollIntoView } from "./useCueListScrollIntoView";
 import { useCueListSelection } from "./useCueListSelection";
 import { useCueListStopHighlights } from "./useCueListStopHighlights";
 
@@ -35,6 +36,7 @@ export function CueList() {
   const duplicateSelectedCues = useProjectStore((s) => s.duplicateSelectedCues);
 
   const selection = useCueListSelection(cues, collapsedGroups);
+  useCueListScrollIntoView(selection.primarySelectedId);
   const rename = useCueListRename(cues);
   const contextMenu = useCueListContextMenu(
     cues,

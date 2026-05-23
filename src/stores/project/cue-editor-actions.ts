@@ -240,7 +240,10 @@ export function createCueEditorActions(
     },
 
     updateCue: (id, patch) => {
-      if (!canEditProject()) return;
+      const isRuntimeLevelPatch =
+        Object.keys(patch).length > 0 &&
+        Object.keys(patch).every((key) => key === "volume" || key === "opacity");
+      if (!canEditProject() && !isRuntimeLevelPatch) return;
       set((s) => ({
         ...patchActiveList(s, (list) => ({
           cues: applyRenumber(list.cues.map((c) => (c.id === id ? { ...c, ...patch } : c))),

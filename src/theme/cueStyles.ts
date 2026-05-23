@@ -73,6 +73,10 @@ export function cueTypeBadgeSx(type: CueType | AssetKind, compact = false): SxPr
   };
 }
 
+function accentRowTint(tokens: GscTokenSet, accentPercent: number, base = tokens.bgElevated): string {
+  return `color-mix(in srgb, ${tokens.accent} ${accentPercent}%, ${base})`;
+}
+
 export interface CueRowStyleState {
   tokens: GscTokenSet;
   selected: boolean;
@@ -102,20 +106,20 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
   let boxShadow: string | undefined;
 
   if (state.active && state.primarySelected) {
-    bgcolor = `color-mix(in srgb, ${tokens.rowActive} 55%, ${tokens.rowPrimarySelected})`;
-    boxShadow = `inset 4px 0 0 ${tokens.accent}, inset 0 0 0 1px color-mix(in srgb, ${tokens.success} 45%, transparent)`;
+    bgcolor = `color-mix(in srgb, ${tokens.success} 40%, ${accentRowTint(tokens, 20)})`;
+    boxShadow = `inset 4px 0 0 ${tokens.accent}, inset 0 0 0 1px color-mix(in srgb, ${tokens.accent} 50%, transparent)`;
   } else if (state.active && state.selected) {
-    bgcolor = `color-mix(in srgb, ${tokens.rowActive} 55%, ${tokens.rowSelected})`;
-    boxShadow = `inset 4px 0 0 ${tokens.accent}, inset 0 0 0 1px color-mix(in srgb, ${tokens.success} 45%, transparent)`;
+    bgcolor = `color-mix(in srgb, ${tokens.success} 40%, ${accentRowTint(tokens, 12)})`;
+    boxShadow = `inset 4px 0 0 color-mix(in srgb, ${tokens.accent} 75%, transparent), inset 0 0 0 1px color-mix(in srgb, ${tokens.success} 45%, transparent)`;
   } else if (state.active) {
     bgcolor = tokens.rowActive;
     boxShadow = `inset 3px 0 0 ${tokens.success}`;
   } else if (state.primarySelected) {
-    bgcolor = tokens.rowPrimarySelected;
-    boxShadow = `inset 4px 0 0 ${tokens.accent}, inset 0 0 0 1px color-mix(in srgb, ${tokens.accent} 28%, transparent)`;
+    bgcolor = accentRowTint(tokens, 22);
+    boxShadow = `inset 4px 0 0 ${tokens.accent}, inset 0 0 0 1px color-mix(in srgb, ${tokens.accent} 45%, transparent)`;
   } else if (state.selected) {
-    bgcolor = tokens.rowSelected;
-    boxShadow = `inset 4px 0 0 ${tokens.accent}`;
+    bgcolor = accentRowTint(tokens, 12);
+    boxShadow = `inset 3px 0 0 color-mix(in srgb, ${tokens.accent} 70%, transparent)`;
   }
 
   if (state.dropActive) {
@@ -179,13 +183,16 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
   };
 }
 
-export function cueNumberSx(tokens: GscTokenSet): SxProps<Theme> {
+export function cueNumberSx(tokens: GscTokenSet, primarySelected = false): SxProps<Theme> {
   return {
     fontVariantNumeric: "tabular-nums",
-    fontWeight: 600,
+    fontWeight: primarySelected ? 700 : 600,
     minWidth: "2.5ch",
     color: tokens.accent,
     flexShrink: 0,
+    ...(primarySelected && {
+      textShadow: `0 0 10px color-mix(in srgb, ${tokens.accent} 45%, transparent)`,
+    }),
   };
 }
 
@@ -215,8 +222,11 @@ export function cueNameSx(
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
-    ...(state.primarySelected && { fontWeight: 600 }),
-    ...(cueNameColor && { color: cueNameColor }),
+    ...(state.primarySelected && {
+      fontWeight: 600,
+      color: cueNameColor ?? "text.primary",
+    }),
+    ...(cueNameColor && !state.primarySelected && { color: cueNameColor }),
   };
 }
 

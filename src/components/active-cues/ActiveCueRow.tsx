@@ -66,8 +66,8 @@ export const ActiveCueRow = memo(function ActiveCueRow({
         cursor: "pointer",
         "&:hover": { bgcolor: tokens.bgHover },
         ...(selected && {
-          bgcolor: tokens.rowSelected,
-          boxShadow: `inset 4px 0 0 ${tokens.accent}`,
+          bgcolor: `color-mix(in srgb, ${tokens.accent} 22%, ${tokens.bgElevated})`,
+          boxShadow: `inset 4px 0 0 ${tokens.accent}, inset 0 0 0 1px color-mix(in srgb, ${tokens.accent} 45%, transparent)`,
         }),
         ...(isPrimary && { bgcolor: tokens.rowActive }),
       }}

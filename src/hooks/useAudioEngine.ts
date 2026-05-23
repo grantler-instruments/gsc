@@ -66,10 +66,13 @@ export function useAudioEngine(): void {
     });
 
     let prevFadeFrame = 0;
+    let hadActiveFades = false;
     const unsubFade = useFadeStore.subscribe((s) => {
-      if (Object.keys(s.fadesByTargetId).length === 0) return;
+      const hasActiveFades = Object.keys(s.fadesByTargetId).length > 0;
+      if (!hasActiveFades && !hadActiveFades) return;
       if (s.frameMs === prevFadeFrame) return;
       prevFadeFrame = s.frameMs;
+      hadActiveFades = hasActiveFades;
 
       const { activeCueIds, masterVolume } = useTransportStore.getState();
       if (activeCueIds.length === 0) return;

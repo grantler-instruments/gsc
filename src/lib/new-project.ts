@@ -50,6 +50,7 @@ export async function startNewProject(): Promise<void> {
   useFadeStore.setState({
     fadesByTargetId: {},
     dmxFadesByFadeCueId: {},
+    runtimeLevelsByTargetId: {},
     frameMs: 0,
   });
 

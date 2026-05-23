@@ -50,6 +50,7 @@ export const useTransportStore = create<TransportState>()(
 
       go: (cueId) => {
         useFadeStore.getState().clearFade(cueId);
+        useFadeStore.getState().clearRuntimeLevels([cueId]);
         useFadeStore.getState().clearDmxFade(cueId);
         set((s) => {
           const now = performance.now();
@@ -68,6 +69,7 @@ export const useTransportStore = create<TransportState>()(
 
       goMany: (cueIds) => {
         useFadeStore.getState().clearFades(cueIds);
+        useFadeStore.getState().clearRuntimeLevels(cueIds);
         for (const id of cueIds) {
           useFadeStore.getState().clearDmxFade(id);
         }

@@ -246,7 +246,7 @@ export const CueRow = memo(function CueRow({
       ) : (
         <Box component="span" sx={{ width: 24, flexShrink: 0 }} />
       )}
-      <Box component="span" sx={cueNumberSx(tokens)}>
+      <Box component="span" sx={cueNumberSx(tokens, primarySelected)}>
         {cue.number}
       </Box>
       <CueTypeBadge type={cue.type} showLabel={false} compact />

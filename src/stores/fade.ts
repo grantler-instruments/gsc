@@ -6,6 +6,8 @@ import type { DmxCueData } from "../types/cue";
 
 export type FadeProperty = "opacity" | "volume";
 
+export type RuntimePropertyLevels = Partial<Record<FadeProperty, number>>;
+
 export interface ActivePropertyFade {
   targetId: string;
   property: FadeProperty;
@@ -54,13 +56,17 @@ export function isDmxFadeComplete(fade: ActiveDmxFade, nowMs: number): boolean {
 interface FadeState {
   fadesByTargetId: Record<string, ActivePropertyFade>;
   dmxFadesByFadeCueId: Record<string, ActiveDmxFade>;
+  /** Playback-only volume/opacity after a fade completes (cleared on re-GO). */
+  runtimeLevelsByTargetId: Record<string, RuntimePropertyLevels>;
   /** Bumped each animation frame while fades are running (drives UI refresh). */
   frameMs: number;
   startFade: (fade: ActivePropertyFade) => void;
   startDmxFade: (fade: ActiveDmxFade) => void;
+  setRuntimeLevel: (targetId: string, property: FadeProperty, level: number) => void;
   clearFade: (targetId: string) => void;
   clearDmxFade: (fadeCueId: string) => void;
   clearFades: (targetIds: string[]) => void;
+  clearRuntimeLevels: (targetIds: string[]) => void;
   clearAllFades: () => void;
   tick: (nowMs: number) => void;
   completeDmxFade: (fadeCueId: string, nowMs: number) => void;
@@ -71,6 +77,7 @@ export const useFadeStore = create<FadeState>()(
     (set, get) => ({
       fadesByTargetId: {},
       dmxFadesByFadeCueId: {},
+      runtimeLevelsByTargetId: {},
       frameMs: 0,
 
       startFade: (fade) =>
@@ -86,6 +93,17 @@ export const useFadeStore = create<FadeState>()(
             [fade.fadeCueId]: fade,
           },
           frameMs: performance.now(),
+        })),
+
+      setRuntimeLevel: (targetId, property, level) =>
+        set((s) => ({
+          runtimeLevelsByTargetId: {
+            ...s.runtimeLevelsByTargetId,
+            [targetId]: {
+              ...s.runtimeLevelsByTargetId[targetId],
+              [property]: clamp01(level),
+            },
+          },
         })),
 
       clearFade: (targetId) =>
@@ -118,7 +136,27 @@ export const useFadeStore = create<FadeState>()(
           return changed ? { fadesByTargetId: next } : s;
         }),
 
-      clearAllFades: () => set({ fadesByTargetId: {}, dmxFadesByFadeCueId: {}, frameMs: 0 }),
+      clearRuntimeLevels: (targetIds) =>
+        set((s) => {
+          if (targetIds.length === 0) return s;
+          const next = { ...s.runtimeLevelsByTargetId };
+          let changed = false;
+          for (const id of targetIds) {
+            if (next[id]) {
+              delete next[id];
+              changed = true;
+            }
+          }
+          return changed ? { runtimeLevelsByTargetId: next } : s;
+        }),
+
+      clearAllFades: () =>
+        set({
+          fadesByTargetId: {},
+          dmxFadesByFadeCueId: {},
+          runtimeLevelsByTargetId: {},
+          frameMs: 0,
+        }),
 
       completeDmxFade: (fadeCueId, nowMs) => {
         const fade = get().dmxFadesByFadeCueId[fadeCueId];
@@ -143,6 +181,7 @@ export const useFadeStore = create<FadeState>()(
           const fade = fades[id];
           if (!isFadeComplete(fade, nowMs)) continue;
 
+          get().setRuntimeLevel(fade.targetId, fade.property, fade.to);
           delete next[id];
 
           if (fade.sourceFadeCueId) {
@@ -167,10 +206,14 @@ export function resolveEffectiveOpacity(
   nowMs = performance.now(),
 ): number {
   const fade = useFadeStore.getState().fadesByTargetId[cueId];
-  if (!fade || fade.property !== "opacity") {
-    return clamp01(storedOpacity);
+  if (fade?.property === "opacity") {
+    return clamp01(getFadeLevel(fade, nowMs));
   }
-  return clamp01(getFadeLevel(fade, nowMs));
+  const runtime = useFadeStore.getState().runtimeLevelsByTargetId[cueId]?.opacity;
+  if (runtime !== undefined) {
+    return clamp01(runtime);
+  }
+  return clamp01(storedOpacity);
 }
 
 export function resolveEffectiveVolume(
@@ -179,8 +222,12 @@ export function resolveEffectiveVolume(
   nowMs = performance.now(),
 ): number {
   const fade = useFadeStore.getState().fadesByTargetId[cueId];
-  if (!fade || fade.property !== "volume") {
-    return clamp01(storedVolume);
+  if (fade?.property === "volume") {
+    return clamp01(getFadeLevel(fade, nowMs));
   }
-  return clamp01(getFadeLevel(fade, nowMs));
+  const runtime = useFadeStore.getState().runtimeLevelsByTargetId[cueId]?.volume;
+  if (runtime !== undefined) {
+    return clamp01(runtime);
+  }
+  return clamp01(storedVolume);
 }

@@ -103,12 +103,14 @@ export function useOutputPublisher(): void {
     });
 
     let prevFrameMs = 0;
+    let hadActiveFades = false;
     const unsubFade = useFadeStore.subscribe((s) => {
-      if (Object.keys(s.fadesByTargetId).length === 0) return;
-      if (s.frameMs !== prevFrameMs) {
-        prevFrameMs = s.frameMs;
-        schedulePublish();
-      }
+      const hasActiveFades = Object.keys(s.fadesByTargetId).length > 0;
+      if (!hasActiveFades && !hadActiveFades) return;
+      if (s.frameMs === prevFrameMs) return;
+      prevFrameMs = s.frameMs;
+      hadActiveFades = hasActiveFades;
+      schedulePublish();
     });
 
     const unsubProject = useProjectStore.subscribe((s, prev) => {
