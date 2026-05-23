@@ -12,7 +12,7 @@ import {
 } from "@tauri-apps/plugin-fs";
 import { setActiveProjectId } from "../lib/active-project-id";
 import { prefetchMediaDurations } from "../lib/media-duration";
-import { notifyWarning, notifyWarningDeduped } from "../lib/notifications";
+import { notifyErrorFromUnknown, notifyWarning, notifyWarningDeduped } from "../lib/notifications";
 import {
   buildProjectBundleZip,
   parseProjectBundleZip,

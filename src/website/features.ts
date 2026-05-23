@@ -61,14 +61,12 @@ export const featureCategories: FeatureCategory[] = [
       {
         cueType: "volumeFade",
         title: "Volume fade",
-        description:
-          "Automate audio level changes over time with a dedicated fade cue.",
+        description: "Automate audio level changes over time with a dedicated fade cue.",
       },
       {
         cueType: "opacityFade",
         title: "Opacity fade",
-        description:
-          "Automate visual opacity over time for video and image cues.",
+        description: "Automate visual opacity over time for video and image cues.",
       },
       {
         cueType: "group",
@@ -89,8 +87,7 @@ export const featureCategories: FeatureCategory[] = [
     features: [
       {
         title: "Organize with cue lists",
-        description:
-          "Split long productions into multiple tabbed lists within a single project.",
+        description: "Split long productions into multiple tabbed lists within a single project.",
       },
       {
         title: "Import media by drag-and-drop",
@@ -99,8 +96,7 @@ export const featureCategories: FeatureCategory[] = [
       },
       {
         title: "Trim with waveforms",
-        description:
-          "Set precise in and out points on audio and video with a visual editor.",
+        description: "Set precise in and out points on audio and video with a visual editor.",
       },
     ],
   },
@@ -119,8 +115,7 @@ export const featureCategories: FeatureCategory[] = [
       },
       {
         title: "Lock in show mode",
-        description:
-          "Hide editing chrome and focus on firing cues during the performance.",
+        description: "Hide editing chrome and focus on firing cues during the performance.",
       },
     ],
   },
@@ -139,8 +134,7 @@ export const featureCategories: FeatureCategory[] = [
       },
       {
         title: "Take shows anywhere",
-        description:
-          "Export portable .gsc.zip bundles with media included for web or desktop.",
+        description: "Export portable .gsc.zip bundles with media included for web or desktop.",
       },
     ],
   },

@@ -52,11 +52,7 @@ export default function WebsiteApp() {
       >
         <Toolbar>
           <GscLogo size={28} aria-label="GSC" />
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{ flexGrow: 1, fontWeight: 600, ml: 1.5 }}
-          >
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600, ml: 1.5 }}>
             GSC
           </Typography>
           <Button color="inherit" href="#contact" sx={{ color: "text.primary" }}>
@@ -138,8 +134,8 @@ export default function WebsiteApp() {
                   color="text.secondary"
                   sx={{ fontWeight: 400, maxWidth: 640 }}
                 >
-                  Cue-based stage control software — run it in the browser or install
-                  the desktop app.
+                  Cue-based stage control software — run it in the browser or install the desktop
+                  app.
                 </Typography>
               </Stack>
 
@@ -207,19 +203,9 @@ export default function WebsiteApp() {
                             bgcolor: "background.default",
                           }}
                         >
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            sx={{ alignItems: "center", mb: 1 }}
-                          >
-                            {feature.cueType && (
-                              <CueTypeBadge type={feature.cueType} compact />
-                            )}
-                            <Typography
-                              variant="subtitle1"
-                              component="h4"
-                              sx={{ fontWeight: 600 }}
-                            >
+                          <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
+                            {feature.cueType && <CueTypeBadge type={feature.cueType} compact />}
+                            <Typography variant="subtitle1" component="h4" sx={{ fontWeight: 600 }}>
                               {feature.title}
                             </Typography>
                           </Stack>
@@ -250,11 +236,7 @@ export default function WebsiteApp() {
         <Container>
           <Typography variant="body2" color="text.secondary">
             © {new Date().getFullYear()} Grantler Instruments.{" "}
-            <Link
-              href="mailto:info@example.com"
-              color="text.primary"
-              underline="hover"
-            >
+            <Link href="mailto:info@example.com" color="text.primary" underline="hover">
               info@example.com
             </Link>
           </Typography>

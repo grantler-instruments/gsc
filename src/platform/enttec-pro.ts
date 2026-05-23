@@ -1,5 +1,5 @@
 import type { DmxUniverseFrame } from "../lib/dmx";
-import { notifyErrorFromUnknown, notifyWarningDeduped } from "../lib/notifications";
+import { notifyErrorFromUnknown } from "../lib/notifications";
 import { getPlatform } from "./index";
 
 export async function connectEnttecPro(portId: string | null): Promise<boolean> {

@@ -73,7 +73,11 @@ export function cueTypeBadgeSx(type: CueType | AssetKind, compact = false): SxPr
   };
 }
 
-function accentRowTint(tokens: GscTokenSet, accentPercent: number, base = tokens.bgElevated): string {
+function accentRowTint(
+  tokens: GscTokenSet,
+  accentPercent: number,
+  base = tokens.bgElevated,
+): string {
   return `color-mix(in srgb, ${tokens.accent} ${accentPercent}%, ${base})`;
 }
 
