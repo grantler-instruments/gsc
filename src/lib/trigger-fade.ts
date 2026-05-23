@@ -1,10 +1,11 @@
 import { buildDmxFadePlan } from "./dmx-fade";
-import { applyDmxCueToBuffers, normalizeDmxCueData } from "./dmx";
+import { applyDmxCueToBuffers } from "./dmx";
 import { getFadeTarget } from "./cues";
 import {
   isLightFadeCue,
   isOpacityFadeCue,
   isVolumeFadeCue,
+  resolveLightFadeEndDmx,
 } from "./fade";
 import {
   resolveEffectiveOpacity,
@@ -29,11 +30,11 @@ function resolveFadeFromLevel(fadeCue: Cue, target: Cue): number {
   return clamp01(fadeCue.fadeFrom ?? 1);
 }
 
-function triggerLightFadeCue(fadeCue: Cue): boolean {
-  if (!fadeCue.dmx) return false;
-
+function triggerLightFadeCue(fadeCue: Cue, cues: Cue[]): boolean {
   const fixtures = useProjectStore.getState().fixtures;
-  const endDmx = normalizeDmxCueData(fadeCue.dmx, fixtures);
+  const endDmx = resolveLightFadeEndDmx(fadeCue, cues, fixtures);
+  if (!endDmx) return false;
+
   const plan = buildDmxFadePlan(endDmx, fixtures);
   if (!plan) return false;
 
@@ -52,7 +53,7 @@ function triggerLightFadeCue(fadeCue: Cue): boolean {
 /** Start a timed fade on the target cue's volume, opacity, or light levels. */
 export function triggerFadeCue(fadeCue: Cue, cues: Cue[]): boolean {
   if (isLightFadeCue(fadeCue)) {
-    return triggerLightFadeCue(fadeCue);
+    return triggerLightFadeCue(fadeCue, cues);
   }
 
   const target = getFadeTarget(fadeCue, cues);

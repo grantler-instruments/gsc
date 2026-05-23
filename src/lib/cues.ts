@@ -40,7 +40,7 @@ export function getFadeTarget(
   fadeCue: Cue,
   cues: Cue[],
 ): Cue | undefined {
-  if (!isFadeCue(fadeCue) || isLightFadeCue(fadeCue) || !fadeCue.fadeTargetId) {
+  if (!isFadeCue(fadeCue) || !fadeCue.fadeTargetId) {
     return undefined;
   }
   const target = cues.find((c) => c.id === fadeCue.fadeTargetId);
@@ -62,7 +62,12 @@ export function getCueDisplayName(cue: Cue, cues: Cue[]): string {
     return `Stop ${formatStopTargetLabel(target)}`;
   }
   if (isFadeCue(cue)) {
-    if (isLightFadeCue(cue)) return cue.name;
+    if (isLightFadeCue(cue)) {
+      const target = getFadeTarget(cue, cues);
+      const label = fadeCueLabel(cue.type as FadeCueType);
+      if (target) return `${label} ${target.name}`;
+      return cue.name;
+    }
     const target = getFadeTarget(cue, cues);
     const label = fadeCueLabel(cue.type as FadeCueType);
     if (!target) return `${label} (no target)`;

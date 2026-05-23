@@ -13,7 +13,7 @@ import {
   isWaitCue,
 } from "../../lib/cues";
 import { getParallelGroupOrderConflict } from "../../lib/parallel-group-fire";
-import { resolveFadeFromLevel, isLightFadeCue, isLightFadeReady } from "../../lib/fade";
+import { resolveFadeFromLevel, isLightFadeCue, isLightFadeReady, resolveLightFadeEndDmx } from "../../lib/fade";
 import { formatDmxCue } from "../../lib/dmx";
 import { formatMidiCue } from "../../lib/midi";
 import { formatOscCue } from "../../lib/osc";
@@ -53,13 +53,22 @@ export function CueRowDetails({
   const isWait = isWaitCue(cue);
   const isUtility = isUtilityCue(cue);
   const stopTarget = isStop ? getStopTarget(cue, allCues) : undefined;
-  const fadeTarget = isFade && !isLightFadeCue(cue) ? getFadeTarget(cue, allCues) : undefined;
+  const fadeTarget = isFade ? getFadeTarget(cue, allCues) : undefined;
   const stopTargetMissing = isStop && !stopTarget;
   const fadeTargetMissing = isFade && !isLightFadeCue(cue) && !fadeTarget;
-  const lightFadeMissing = isLightFadeCue(cue) && !isLightFadeReady(cue, fixtures);
+  const lightFadeTargetMissing =
+    isLightFadeCue(cue) && Boolean(cue.fadeTargetId) && !fadeTarget;
+  const lightFadeMissing =
+    isLightFadeCue(cue) &&
+    !lightFadeTargetMissing &&
+    !isLightFadeReady(cue, fixtures, allCues);
+  const lightFadeEndDmx =
+    isLightFadeCue(cue) && cue.dmx
+      ? resolveLightFadeEndDmx(cue, allCues, fixtures)
+      : null;
   const fadeDetail =
-    isFade && isLightFadeCue(cue) && cue.dmx
-      ? `${formatDmxCue(cue.dmx, fixtures)} · ${cue.fadeDuration ?? 2}s`
+    isFade && isLightFadeCue(cue) && lightFadeEndDmx
+      ? `${formatDmxCue(lightFadeEndDmx, fixtures)} · ${cue.fadeDuration ?? 2}s`
       : isFade && fadeTarget
         ? `${resolveFadeFromLevel(cue, fadeTarget).toFixed(2)} → ${cue.fadeTo ?? 0} · ${cue.fadeDuration ?? 2}s`
         : null;
@@ -115,6 +124,11 @@ export function CueRowDetails({
       {fadeTargetMissing && (
         <Typography component="span" sx={cueDetailSx}>
           Fade target missing
+        </Typography>
+      )}
+      {lightFadeTargetMissing && (
+        <Typography component="span" sx={cueDetailSx}>
+          Reference cue missing
         </Typography>
       )}
       {lightFadeMissing && (

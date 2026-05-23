@@ -285,3 +285,33 @@ export function availableDmxFixtures(
   const used = new Set(data.fixtures.map((entry) => entry.fixtureId));
   return fixtures.filter((fixture) => !used.has(fixture.id));
 }
+
+/** Merge a referenced light cue's fixture list with editable fade target values. */
+export function resolveLightFadeDmx(
+  fadeDmx: DmxCueData,
+  targetDmx: DmxCueData,
+  fixtures: Fixture[],
+): DmxCueData {
+  const normalizedTarget = normalizeDmxCueData(targetDmx, fixtures);
+  const normalizedFade = normalizeDmxCueData(fadeDmx, fixtures);
+  const fadeValuesById = new Map(
+    normalizedFade.fixtures.map((entry) => [entry.fixtureId, entry.values]),
+  );
+
+  return {
+    mode: normalizedTarget.mode,
+    fixtures: normalizedTarget.fixtures.map((entry) => ({
+      fixtureId: entry.fixtureId,
+      values: fadeValuesById.get(entry.fixtureId) ?? [...entry.values],
+    })),
+  };
+}
+
+/** Copy fixture list and levels from a referenced light cue into a light fade. */
+export function syncLightFadeDmxFromTarget(
+  _fadeDmx: DmxCueData,
+  targetDmx: DmxCueData,
+  fixtures: Fixture[],
+): DmxCueData {
+  return normalizeDmxCueData(targetDmx, fixtures);
+}

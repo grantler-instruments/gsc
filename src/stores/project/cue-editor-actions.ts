@@ -222,6 +222,7 @@ export function createCueEditorActions(
         ...defaultFadeCueFields(fadeType),
         ...(fadeType === "lightFade"
           ? {
+              fadeTargetId: targetId,
               dmx:
                 target.type === "dmx" && target.dmx
                   ? normalizeDmxCueData(target.dmx, get().fixtures)

@@ -12,6 +12,7 @@ import {
   isVolumeFadeCue,
   isLightFadeReady,
   resolveFadeFromLevel,
+  resolveLightFadeEndDmx,
 } from "./fade";
 import { testCue } from "../test/fixtures/cues";
 
@@ -158,6 +159,31 @@ describe("isLightFadeReady", () => {
         ],
       ),
     ).toBe(true);
+  });
+
+  it("uses referenced light cue fixtures when fade dmx is sparse", () => {
+    const fixtures = [
+      {
+        id: "f1",
+        name: "Dimmer",
+        universe: 1,
+        startAddress: 1,
+        channelCount: 1,
+      },
+    ];
+    const cues = [
+      testCue("l", "Look", "dmx", {
+        dmx: { mode: "partial", fixtures: [{ fixtureId: "f1", values: [64] }] },
+      }),
+      testCue("f", "Fade", "lightFade", {
+        fadeTargetId: "l",
+        dmx: { mode: "partial", fixtures: [] },
+      }),
+    ];
+    expect(
+      resolveLightFadeEndDmx(cues[1], cues, fixtures)?.fixtures,
+    ).toEqual([{ fixtureId: "f1", values: [64] }]);
+    expect(isLightFadeReady(cues[1], fixtures, cues)).toBe(true);
   });
 });
 

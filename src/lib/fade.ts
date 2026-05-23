@@ -1,6 +1,7 @@
 import type { Cue, FadeCueType } from "../types/cue";
 import type { Fixture } from "../types/fixture";
 import { buildDmxFadePlan } from "./dmx-fade";
+import { normalizeDmxCueData, resolveLightFadeDmx } from "./dmx";
 
 export function isVolumeFadeCue(cue: Cue): boolean {
   return cue.type === "volumeFade";
@@ -64,9 +65,31 @@ export function defaultFadeCueFields(fadeType: FadeCueType): {
   return { fadeDuration: 2, fadeTo: 0 };
 }
 
-export function isLightFadeReady(fadeCue: Cue, fixtures: Fixture[]): boolean {
-  if (!isLightFadeCue(fadeCue) || !fadeCue.dmx) return false;
-  return buildDmxFadePlan(fadeCue.dmx, fixtures) !== null;
+export function resolveLightFadeEndDmx(
+  fadeCue: Cue,
+  cues: Cue[],
+  fixtures: Fixture[],
+) {
+  if (!isLightFadeCue(fadeCue) || !fadeCue.dmx) return null;
+
+  const target = fadeCue.fadeTargetId
+    ? cues.find((cue) => cue.id === fadeCue.fadeTargetId)
+    : undefined;
+  if (target?.type === "dmx" && target.dmx) {
+    return resolveLightFadeDmx(fadeCue.dmx, target.dmx, fixtures);
+  }
+
+  return normalizeDmxCueData(fadeCue.dmx, fixtures);
+}
+
+export function isLightFadeReady(
+  fadeCue: Cue,
+  fixtures: Fixture[],
+  cues: Cue[] = [],
+): boolean {
+  const endDmx = resolveLightFadeEndDmx(fadeCue, cues, fixtures);
+  if (!endDmx) return false;
+  return buildDmxFadePlan(endDmx, fixtures) !== null;
 }
 
 /** Level at GO time — target cue's current volume/opacity, not a stored fadeFrom. */

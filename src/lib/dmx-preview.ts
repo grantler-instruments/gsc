@@ -1,15 +1,19 @@
 import type { Cue } from "../types/cue";
 import type { Fixture } from "../types/fixture";
-import { isLightFadeReady } from "./fade";
+import { isLightFadeReady, resolveLightFadeEndDmx } from "./fade";
 import {
   applyDmxCueToBuffers,
   getDmxUniverseFrame,
   resetDmxOutputBuffers,
 } from "./dmx";
 
-export function isDmxPreviewableCue(cue: Cue, fixtures: Fixture[]): boolean {
+export function isDmxPreviewableCue(
+  cue: Cue,
+  fixtures: Fixture[],
+  cues: Cue[] = [],
+): boolean {
   if (cue.type === "dmx") return Boolean(cue.dmx);
-  if (cue.type === "lightFade") return isLightFadeReady(cue, fixtures);
+  if (cue.type === "lightFade") return isLightFadeReady(cue, fixtures, cues);
   return false;
 }
 
@@ -20,7 +24,7 @@ export function listDmxPreviewCues(
 ): Cue[] {
   const previewSet = new Set(previewCueIds);
   return cues.filter(
-    (cue) => previewSet.has(cue.id) && isDmxPreviewableCue(cue, fixtures),
+    (cue) => previewSet.has(cue.id) && isDmxPreviewableCue(cue, fixtures, cues),
   );
 }
 
@@ -38,8 +42,14 @@ export function buildDmxPreviewFrames(
   resetDmxOutputBuffers();
 
   for (const cue of listDmxPreviewCues(cues, previewCueIds, fixtures)) {
-    if (!cue.dmx) continue;
-    applyDmxCueToBuffers(cue.dmx, fixtures);
+    if (cue.type === "dmx" && cue.dmx) {
+      applyDmxCueToBuffers(cue.dmx, fixtures);
+      continue;
+    }
+    if (cue.type === "lightFade") {
+      const endDmx = resolveLightFadeEndDmx(cue, cues, fixtures);
+      if (endDmx) applyDmxCueToBuffers(endDmx, fixtures);
+    }
   }
 
   return fixtureUniverses(fixtures).map((universe) =>

@@ -8,6 +8,7 @@ import {
   formatDmxCue,
   normalizeDmxCueData,
   resetDmxOutputBuffers,
+  resolveLightFadeDmx,
   setDmxCueMode,
   updateDmxFixtureChannelValue,
 } from "./dmx";
@@ -149,5 +150,27 @@ describe("dmx", () => {
   it("clamps values", () => {
     expect(clampDmxValue(-5)).toBe(0);
     expect(clampDmxValue(999)).toBe(255);
+  });
+
+  it("resolves referenced light fade fixtures with editable overrides", () => {
+    const target = {
+      mode: "partial" as const,
+      fixtures: [
+        { fixtureId: "f1", values: [100, 50] },
+        { fixtureId: "f2", values: [200] },
+      ],
+    };
+    const fade = {
+      mode: "partial" as const,
+      fixtures: [{ fixtureId: "f1", values: [255, 50] }],
+    };
+
+    expect(resolveLightFadeDmx(fade, target, fixtures)).toEqual({
+      mode: "partial",
+      fixtures: [
+        { fixtureId: "f1", values: [255, 50] },
+        { fixtureId: "f2", values: [200] },
+      ],
+    });
   });
 });

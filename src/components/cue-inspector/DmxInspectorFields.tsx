@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { getFadeTarget } from "../../lib/cues";
 import {
   addAllDmxFixturesToCue,
   addDmxFixtureToCue,
@@ -9,6 +10,7 @@ import {
   clampDmxValue,
   fixtureChannelLabel,
   removeDmxFixtureFromCue,
+  resolveLightFadeDmx,
   updateDmxFixtureChannelValue,
 } from "../../lib/dmx";
 import { fixtureChannelAddress } from "../../lib/fixtures";
@@ -20,6 +22,7 @@ import { DmxPreviewField } from "./DmxPreviewField";
 
 interface DmxInspectorFieldsProps {
   cue: Cue;
+  cues: Cue[];
   readOnly: boolean;
   dmxDisabled: boolean;
   onUpdate: (patch: Partial<Cue>) => void;
@@ -27,6 +30,7 @@ interface DmxInspectorFieldsProps {
 
 export function DmxInspectorFields({
   cue,
+  cues,
   readOnly,
   dmxDisabled,
   onUpdate,
@@ -34,6 +38,15 @@ export function DmxInspectorFields({
   const fixtures = useProjectStore((s) => s.fixtures);
 
   if ((cue.type !== "dmx" && cue.type !== "lightFade") || !cue.dmx) return null;
+
+  const isLightFade = cue.type === "lightFade";
+  const referenceTarget = isLightFade ? getFadeTarget(cue, cues) : undefined;
+  const isReferencedLightFade = isLightFade && Boolean(referenceTarget?.dmx);
+  const storedDmx = cue.dmx;
+  const dmx =
+    isReferencedLightFade && referenceTarget?.dmx
+      ? resolveLightFadeDmx(storedDmx, referenceTarget.dmx, fixtures)
+      : storedDmx;
 
   if (fixtures.length === 0) {
     return (
@@ -46,7 +59,6 @@ export function DmxInspectorFields({
     );
   }
 
-  const dmx = cue.dmx;
   const addableFixtures = availableDmxFixtures(dmx, fixtures);
 
   const patchDmx = (next: typeof dmx) => {
@@ -70,24 +82,20 @@ export function DmxInspectorFields({
         flexDirection: "column",
         flex: 1,
         minHeight: 0,
+        overflowY: "auto",
+        gap: 1.5,
+        pt: 1.5,
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 1.5,
-          flexShrink: 0,
-        }}
-      >
-        <DmxPreviewField cue={cue} readOnly={readOnly} dmxDisabled={dmxDisabled} />
+      <DmxPreviewField cue={cue} readOnly={readOnly} dmxDisabled={dmxDisabled} />
 
-        {dmxDisabled && (
-          <Typography component="p" sx={{ m: 0, fontSize: 13, color: "text.secondary" }}>
-            DMX output requires the desktop app.
-          </Typography>
-        )}
+      {dmxDisabled && (
+        <Typography component="p" sx={{ m: 0, fontSize: 13, color: "text.secondary" }}>
+          DMX output requires the desktop app.
+        </Typography>
+      )}
 
+      {!isReferencedLightFade && (
         <AddDmxFixturesMenu
           fullWidth
           addableFixtures={addableFixtures}
@@ -95,32 +103,25 @@ export function DmxInspectorFields({
           onAddAll={handleAddAllFixtures}
           onAdd={handleAddFixture}
         />
+      )}
 
-        <Typography component="p" sx={{ m: 0, fontSize: 12, color: "text.secondary" }}>
-          {cue.type === "lightFade"
-            ? "Fades listed fixtures to these levels. Other channels stay as they are."
-            : "Updates only the fixtures listed below. Other levels are unchanged."}
+      <Typography component="p" sx={{ m: 0, fontSize: 12, color: "text.secondary" }}>
+        {isLightFade
+          ? isReferencedLightFade
+            ? "Fixtures come from the reference cue. Adjust target levels below."
+            : "Fades listed fixtures to these levels. Other channels stay as they are."
+          : "Updates only the fixtures listed below. Other levels are unchanged."}
+      </Typography>
+
+      {dmx.fixtures.length === 0 && (
+        <Typography component="p" sx={{ m: 0, fontSize: 13, color: "text.secondary" }}>
+          {isReferencedLightFade
+            ? "Reference cue has no fixtures."
+            : "Add fixtures to define this cue's levels."}
         </Typography>
-      </Box>
+      )}
 
-      <Box
-        sx={{
-          flex: 1,
-          overflowY: "auto",
-          minHeight: 0,
-          display: "flex",
-          flexDirection: "column",
-          gap: 1.5,
-          py: 1.5,
-        }}
-      >
-        {dmx.fixtures.length === 0 && (
-          <Typography component="p" sx={{ m: 0, fontSize: 13, color: "text.secondary" }}>
-            Add fixtures to define this cue&apos;s levels.
-          </Typography>
-        )}
-
-        {dmx.fixtures.map((entry) => {
+      {dmx.fixtures.map((entry) => {
           const fixture = fixtures.find((item) => item.id === entry.fixtureId);
           if (!fixture) return null;
 
@@ -143,7 +144,7 @@ export function DmxInspectorFields({
                 >
                   {fixture.name}
                 </Typography>
-                {!readOnly && (
+                {!readOnly && !isReferencedLightFade && (
                   <IconButton
                     size="small"
                     title="Remove fixture from cue"
@@ -210,7 +211,6 @@ export function DmxInspectorFields({
             </Box>
           );
         })}
-      </Box>
     </Box>
   );
 }

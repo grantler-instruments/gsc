@@ -202,6 +202,16 @@ describe("getFadeTarget", () => {
     expect(getFadeTarget(cues[1], cues)).toBeUndefined();
     expect(getFadeTarget(cues[2], cues)).toBeUndefined();
   });
+
+  it("returns a valid light fade target", () => {
+    const cues = [
+      testCue("l", "Look", "dmx", {
+        dmx: { mode: "partial", fixtures: [{ fixtureId: "f1", values: [128] }] },
+      }),
+      testCue("fade", "Fade", "lightFade", { fadeTargetId: "l" }),
+    ];
+    expect(getFadeTarget(cues[1], cues)?.id).toBe("l");
+  });
 });
 
 describe("getCueDisplayName", () => {

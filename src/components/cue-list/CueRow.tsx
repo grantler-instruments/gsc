@@ -137,10 +137,16 @@ export const CueRow = memo(function CueRow({
   const isSequence = isSequenceGroup(cue);
   const isParallel = isParallelGroup(cue);
   const stopTarget = isStop ? getStopTarget(cue, allCues) : undefined;
-  const fadeTarget = isFade && !isLightFade ? getFadeTarget(cue, allCues) : undefined;
+  const fadeTarget = isFade ? getFadeTarget(cue, allCues) : undefined;
   const stopTargetMissing = isStop && !stopTarget;
-  const fadeTargetMissing = isFade && !isLightFade && !fadeTarget;
-  const lightFadeMissing = isLightFade && !isLightFadeReady(cue, fixtures);
+  const fadeTargetMissing =
+    isFade &&
+    !isLightFade &&
+    !fadeTarget;
+  const lightFadeTargetMissing =
+    isLightFade && Boolean(cue.fadeTargetId) && !fadeTarget;
+  const lightFadeMissing =
+    isLightFade && !lightFadeTargetMissing && !isLightFadeReady(cue, fixtures, allCues);
   const assetWarning = getCueAssetWarning(cue);
   const parallelConflict = isParallel
     ? getParallelGroupOrderConflict(cue, allCues)
@@ -152,11 +158,14 @@ export const CueRow = memo(function CueRow({
     missingAsset ||
     stopTargetMissing ||
     fadeTargetMissing ||
+    lightFadeTargetMissing ||
     lightFadeMissing ||
     !!parallelConflict;
   const warningTitle = parallelConflict
     ? parallelConflict.tooltip
-    : lightFadeMissing
+    : lightFadeTargetMissing
+      ? "Reference cue missing"
+      : lightFadeMissing
       ? "Add fixtures and levels to this light fade"
       : fadeTargetMissing
       ? "Fade target missing"

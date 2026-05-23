@@ -53,24 +53,47 @@ export function CueInspectorBody({
 
   const isLightInspector = cue.type === "dmx" || cue.type === "lightFade";
 
-  const dmxFields = (
-    <Box
-      sx={
-        isLightInspector
-          ? { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }
-          : undefined
-      }
-    >
-      <DmxInspectorFields
-        cue={cue}
-        readOnly={dmxReadOnly}
-        dmxDisabled={dmxDisabled}
-        onUpdate={onUpdate}
-      />
-    </Box>
-  );
+  if (isLightInspector) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          minHeight: 0,
+        }}
+      >
+        <Box
+          sx={{
+            flexShrink: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: 1.5,
+          }}
+        >
+          <CueInspectorNameFields
+            cue={cue}
+            cues={cues}
+            readOnly={readOnly}
+            onNameChange={(name) => onUpdate({ name })}
+            onNotesChange={(notes) => onUpdate({ notes })}
+          />
 
-  const body = (
+          {isFadeCue(cue) && <FadeInspectorFields fadeCue={cue} />}
+        </Box>
+
+        <DmxInspectorFields
+          cue={cue}
+          cues={cues}
+          readOnly={dmxReadOnly}
+          dmxDisabled={dmxDisabled}
+          onUpdate={onUpdate}
+        />
+      </Box>
+    );
+  }
+
+  return (
     <>
       <CueInspectorNameFields
         cue={cue}
@@ -99,27 +122,7 @@ export function CueInspectorBody({
         onPatch={patchOsc}
       />
 
-      {dmxFields}
-
       <MediaInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
     </>
-  );
-
-  if (!isLightInspector) {
-    return body;
-  }
-
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        flex: 1,
-        minHeight: 0,
-        gap: 1.5,
-      }}
-    >
-      {body}
-    </Box>
   );
 }

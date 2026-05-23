@@ -4,7 +4,7 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { isDmxPreviewableCue } from "../../lib/dmx-preview";
 import { useDmxPreviewSessionStore } from "../../stores/dmx-preview-session";
-import { useProjectStore } from "../../stores/project";
+import { useActiveCueList, useProjectStore } from "../../stores/project";
 import { useUiStore } from "../../stores/ui";
 import type { Cue } from "../../types/cue";
 import { CUE_TYPE_COLORS } from "../../theme/cueStyles";
@@ -31,6 +31,7 @@ export function DmxPreviewField({
   dmxDisabled,
 }: DmxPreviewFieldProps) {
   const fixtures = useProjectStore((s) => s.fixtures);
+  const cues = useActiveCueList().cues;
   const previewActive = useUiStore((s) => s.dmxPreviewCueIds.includes(cue.id));
   const requestActivatePreview = useDmxPreviewSessionStore(
     (s) => s.requestActivatePreview,
@@ -42,7 +43,7 @@ export function DmxPreviewField({
     (s) => s.confirm?.cueId === cue.id,
   );
 
-  const previewable = isDmxPreviewableCue(cue, fixtures);
+  const previewable = isDmxPreviewableCue(cue, fixtures, cues);
   const active = previewActive && previewable;
   const locked = readOnly || dmxDisabled || !previewable || confirmOpen;
 

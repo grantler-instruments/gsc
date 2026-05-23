@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import {
+  canLightFadeTarget,
   canOpacityFadeTarget,
   canVolumeFadeTarget,
   fadeCueLabel,
@@ -16,6 +17,7 @@ import {
   isStopCue,
   isWaitCue,
 } from "../lib/cues";
+import { defaultDmxCueData, syncLightFadeDmxFromTarget } from "../lib/dmx";
 import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue, FadeCueType } from "../types/cue";
@@ -38,6 +40,7 @@ interface FadeInspectorFieldsProps {
 
 export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
   const readOnly = useUiStore((s) => s.showMode);
+  const fixtures = useProjectStore((s) => s.fixtures);
   const cues = useActiveCueList().cues;
   const updateCue = useProjectStore((s) => s.updateCue);
   const selectCue = useProjectStore((s) => s.selectCue);
@@ -54,9 +57,9 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
     ) {
       return false;
     }
-    return fadeType === "volumeFade"
-      ? canVolumeFadeTarget(c)
-      : canOpacityFadeTarget(c);
+    if (fadeType === "volumeFade") return canVolumeFadeTarget(c);
+    if (fadeType === "lightFade") return canLightFadeTarget(c);
+    return canOpacityFadeTarget(c);
   });
 
   const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
@@ -68,9 +71,43 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
           {fadeCueLabel(fadeType)}
         </Box>
         <Typography component="p" sx={inspectorGroupHintSx}>
-          When triggered (GO), fades from the current DMX output to the levels
-          below over the given duration.
+          When triggered (GO), fades from the current DMX output to the target
+          levels below over the given duration.
         </Typography>
+
+        <Box component="label" sx={inspectorFieldSx}>
+          Reference cue
+          <select
+            value={fadeCue.fadeTargetId ?? ""}
+            disabled={readOnly}
+            onChange={(e) => {
+              const nextTargetId = e.currentTarget.value || undefined;
+              const nextTarget = nextTargetId
+                ? cues.find((cue) => cue.id === nextTargetId)
+                : undefined;
+              updateCue(fadeCue.id, {
+                fadeTargetId: nextTargetId,
+                ...(nextTarget?.type === "dmx" && nextTarget.dmx
+                  ? {
+                      dmx: syncLightFadeDmxFromTarget(
+                        fadeCue.dmx ?? defaultDmxCueData(fixtures),
+                        nextTarget.dmx,
+                        fixtures,
+                      ),
+                    }
+                  : {}),
+              });
+            }}
+          >
+            <option value="">— Select cue —</option>
+            {eligibleTargets.map((c) => (
+              <option key={c.id} value={c.id}>
+                {formatStopTargetLabel(c)} ({c.type})
+              </option>
+            ))}
+          </select>
+        </Box>
+
         <Box component="label" sx={inspectorFieldSx}>
           Duration (s)
           <input
@@ -86,6 +123,23 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
             }
           />
         </Box>
+
+        {target ? (
+          <Button
+            variant="text"
+            size="small"
+            onClick={() => selectCue(target.id)}
+            sx={inspectorTargetLinkSx}
+          >
+            <CueTypeBadge type={target.type} showLabel={false} />
+            Go to reference: {formatStopTargetLabel(target)}
+          </Button>
+        ) : (
+          <Typography component="p" sx={inspectorHintWarningSx}>
+            Choose a light cue to load its fixtures, or add fixtures manually
+            below.
+          </Typography>
+        )}
       </Box>
     );
   }
