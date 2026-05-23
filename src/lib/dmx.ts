@@ -107,6 +107,17 @@ export function addDmxFixtureToCue(
   };
 }
 
+export function addAllDmxFixturesToCue(
+  data: DmxCueData,
+  fixtures: Fixture[],
+): DmxCueData {
+  let next = data;
+  for (const fixture of availableDmxFixtures(data, fixtures)) {
+    next = addDmxFixtureToCue(next, fixture);
+  }
+  return next;
+}
+
 export function removeDmxFixtureFromCue(
   data: DmxCueData,
   fixtureId: string,

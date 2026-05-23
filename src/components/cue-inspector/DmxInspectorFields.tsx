@@ -1,24 +1,21 @@
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import {
+  addAllDmxFixturesToCue,
   addDmxFixtureToCue,
   availableDmxFixtures,
   clampDmxValue,
   fixtureChannelLabel,
   removeDmxFixtureFromCue,
-  setDmxCueMode,
   updateDmxFixtureChannelValue,
 } from "../../lib/dmx";
 import { fixtureChannelAddress } from "../../lib/fixtures";
 import { useProjectStore } from "../../stores/project";
-import type { Cue, DmxCueMode } from "../../types/cue";
+import type { Cue } from "../../types/cue";
 import { SliderNumberField } from "../SliderNumberField";
-import { inspectorFieldLabelSx, inspectorFieldSx } from "../inspectorSx";
-import { AddDmxFixtureMenu } from "./AddDmxFixtureMenu";
+import { AddDmxFixturesMenu } from "./AddDmxFixturesMenu";
 import { DmxPreviewField } from "./DmxPreviewField";
 
 interface DmxInspectorFieldsProps {
@@ -27,19 +24,6 @@ interface DmxInspectorFieldsProps {
   dmxDisabled: boolean;
   onUpdate: (patch: Partial<Cue>) => void;
 }
-
-const fixtureListFooterSx = {
-  display: "flex",
-  alignItems: "center",
-  px: 1.5,
-  py: 1,
-  borderTop: 1,
-  borderColor: "divider",
-  flexShrink: 0,
-  bgcolor: "background.default",
-  mx: -1.5,
-  mb: -1.5,
-} as const;
 
 export function DmxInspectorFields({
   cue,
@@ -50,8 +34,6 @@ export function DmxInspectorFields({
   const fixtures = useProjectStore((s) => s.fixtures);
 
   if ((cue.type !== "dmx" && cue.type !== "lightFade") || !cue.dmx) return null;
-
-  const isLightFade = cue.type === "lightFade";
 
   if (fixtures.length === 0) {
     return (
@@ -65,21 +47,20 @@ export function DmxInspectorFields({
   }
 
   const dmx = cue.dmx;
-  const isSnapshot = dmx.mode === "snapshot";
   const addableFixtures = availableDmxFixtures(dmx, fixtures);
 
   const patchDmx = (next: typeof dmx) => {
     onUpdate({ dmx: next });
   };
 
-  const handleModeChange = (mode: DmxCueMode) => {
-    patchDmx(setDmxCueMode(dmx, mode, fixtures));
-  };
-
   const handleAddFixture = (fixtureId: string) => {
     const fixture = fixtures.find((item) => item.id === fixtureId);
     if (!fixture) return;
     patchDmx(addDmxFixtureToCue(dmx, fixture));
+  };
+
+  const handleAddAllFixtures = () => {
+    patchDmx(addAllDmxFixturesToCue(dmx, fixtures));
   };
 
   return (
@@ -107,30 +88,18 @@ export function DmxInspectorFields({
           </Typography>
         )}
 
-        <Box component="label" sx={inspectorFieldSx}>
-          <Typography component="span" sx={inspectorFieldLabelSx}>
-            Mode
-          </Typography>
-          <Select
-            size="small"
-            fullWidth
-            value={dmx.mode}
-            disabled={readOnly}
-            onChange={(event) => handleModeChange(event.target.value as DmxCueMode)}
-          >
-            <MenuItem value="partial">Partial — listed fixtures only</MenuItem>
-            <MenuItem value="snapshot">Scene — full rig snapshot</MenuItem>
-          </Select>
-        </Box>
+        <AddDmxFixturesMenu
+          fullWidth
+          addableFixtures={addableFixtures}
+          readOnly={readOnly}
+          onAddAll={handleAddAllFixtures}
+          onAdd={handleAddFixture}
+        />
 
         <Typography component="p" sx={{ m: 0, fontSize: 12, color: "text.secondary" }}>
-          {isLightFade
-            ? isSnapshot
-              ? "Fades the full rig to these levels. Unlisted channels end at 0."
-              : "Fades listed fixtures to these levels. Other channels stay as they are."
-            : isSnapshot
-              ? "Sets every patched fixture. Unlisted channels are sent at 0."
-              : "Updates only the fixtures listed below. Other levels are unchanged."}
+          {cue.type === "lightFade"
+            ? "Fades listed fixtures to these levels. Other channels stay as they are."
+            : "Updates only the fixtures listed below. Other levels are unchanged."}
         </Typography>
       </Box>
 
@@ -145,9 +114,9 @@ export function DmxInspectorFields({
           py: 1.5,
         }}
       >
-        {!isSnapshot && dmx.fixtures.length === 0 && (
+        {dmx.fixtures.length === 0 && (
           <Typography component="p" sx={{ m: 0, fontSize: 13, color: "text.secondary" }}>
-            Add a fixture to define this cue&apos;s levels.
+            Add fixtures to define this cue&apos;s levels.
           </Typography>
         )}
 
@@ -174,7 +143,7 @@ export function DmxInspectorFields({
                 >
                   {fixture.name}
                 </Typography>
-                {!readOnly && !isSnapshot && (
+                {!readOnly && (
                   <IconButton
                     size="small"
                     title="Remove fixture from cue"
@@ -242,18 +211,6 @@ export function DmxInspectorFields({
           );
         })}
       </Box>
-
-      {!isSnapshot && (
-        <Box component="footer" sx={fixtureListFooterSx}>
-          <AddDmxFixtureMenu
-            dropUp
-            fullWidth
-            fixtures={addableFixtures}
-            readOnly={readOnly}
-            onAdd={handleAddFixture}
-          />
-        </Box>
-      )}
     </Box>
   );
 }

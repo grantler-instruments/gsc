@@ -201,131 +201,132 @@ export function FixturesPanel() {
       </Typography>
 
       <Box
-        component="ul"
         sx={{
-          listStyle: "none",
-          m: 0,
-          py: 0.5,
-          px: 0,
-          overflowY: "auto",
-          flex: selectedFixture ? "0 1 auto" : 1,
+          flex: 1,
           minHeight: 0,
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        {fixtures.length === 0 && (
-          <Box component="li" sx={emptyListSx}>
-            No fixtures yet
-          </Box>
-        )}
-        {fixtures.map((fixture) => {
-          const conflicts = getFixtureConflicts(fixture, fixtures);
-          const selected = fixture.id === selectedId;
-          return (
-            <Box
-              component="li"
-              key={fixture.id}
-              onClick={() => handleSelect(fixture)}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                py: 0.75,
-                px: 1.5,
-                borderBottom: 1,
-                borderColor: "divider",
-                cursor: "pointer",
-                bgcolor: selected ? tokens.bgHover : "transparent",
-                "&:hover": { bgcolor: tokens.bgHover },
-              }}
-            >
+        <Box
+          component="ul"
+          sx={{
+            listStyle: "none",
+            m: 0,
+            py: 0.5,
+            px: 0,
+            flexShrink: 0,
+          }}
+        >
+          {fixtures.length === 0 && (
+            <Box component="li" sx={emptyListSx}>
+              No fixtures yet
+            </Box>
+          )}
+          {fixtures.map((fixture) => {
+            const conflicts = getFixtureConflicts(fixture, fixtures);
+            const selected = fixture.id === selectedId;
+            return (
               <Box
-                component="span"
+                component="li"
+                key={fixture.id}
+                onClick={() => handleSelect(fixture)}
                 sx={{
-                  display: "inline-flex",
+                  display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  width: 24,
-                  height: 24,
-                  borderRadius: 1,
-                  bgcolor: "background.default",
-                  color: "primary.main",
-                  flexShrink: 0,
+                  gap: 1,
+                  py: 0.75,
+                  px: 1.5,
+                  borderBottom: 1,
+                  borderColor: "divider",
+                  cursor: "pointer",
+                  bgcolor: selected ? tokens.bgHover : "transparent",
+                  "&:hover": { bgcolor: tokens.bgHover },
                 }}
               >
-                <LightbulbOutlinedIcon sx={{ fontSize: 16 }} aria-hidden />
-              </Box>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography
+                <Box
                   component="span"
-                  noWrap
-                  title={fixture.name}
-                  sx={{ display: "block", fontSize: 13 }}
-                >
-                  {fixture.name}
-                </Typography>
-                <Typography
-                  component="span"
-                  noWrap
                   sx={{
-                    display: "block",
-                    fontSize: 11,
-                    color: conflicts.length > 0 ? "warning.main" : "text.secondary",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 24,
+                    height: 24,
+                    borderRadius: 1,
+                    bgcolor: "background.default",
+                    color: "primary.main",
+                    flexShrink: 0,
                   }}
                 >
-                  {formatFixtureListDetail(fixture)}
-                  {conflicts.length > 0 ? " · address conflict" : ""}
-                </Typography>
+                  <LightbulbOutlinedIcon sx={{ fontSize: 16 }} aria-hidden />
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    component="span"
+                    noWrap
+                    title={fixture.name}
+                    sx={{ display: "block", fontSize: 13 }}
+                  >
+                    {fixture.name}
+                  </Typography>
+                  <Typography
+                    component="span"
+                    noWrap
+                    sx={{
+                      display: "block",
+                      fontSize: 11,
+                      color: conflicts.length > 0 ? "warning.main" : "text.secondary",
+                    }}
+                  >
+                    {formatFixtureListDetail(fixture)}
+                    {conflicts.length > 0 ? " · address conflict" : ""}
+                  </Typography>
+                </Box>
+                {canEdit && (
+                  <IconButton
+                    size="small"
+                    title="Remove fixture"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleRemove(fixture.id);
+                    }}
+                  >
+                    ×
+                  </IconButton>
+                )}
               </Box>
-              {canEdit && (
-                <IconButton
-                  size="small"
-                  title="Remove fixture"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleRemove(fixture.id);
-                  }}
-                >
-                  ×
-                </IconButton>
-              )}
-            </Box>
-          );
-        })}
-      </Box>
-
-      {selectedFixture && (
-        <FixtureEditor
-          fixture={selectedFixture}
-          fixtures={fixtures}
-          readOnly={!canEdit}
-          onUpdate={(patch) => handleFixtureUpdate(selectedFixture.id, patch)}
-        />
-      )}
-
-      <OflBrowseDialog
-        open={browseDialogOpen}
-        existingPaths={existingOflPaths}
-        onClose={() => setBrowseDialogOpen(false)}
-        onImported={handleBrowseImported}
-      />
-
-      {fixtures.length > 0 && (
-        <Box sx={{ px: 1.5, py: 1, flexShrink: 0, borderTop: 1, borderColor: "divider" }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<GridViewOutlinedIcon />}
-            onClick={() => {
-              if (canEdit) {
-                setFixturePlotEditMode(true);
-              }
-              setSidebarTab("active");
-            }}
-          >
-            {canEdit ? "Edit fixture preview" : "View fixture preview"}
-          </Button>
+            );
+          })}
         </Box>
-      )}
+
+        {selectedFixture && (
+          <FixtureEditor
+            fixture={selectedFixture}
+            fixtures={fixtures}
+            readOnly={!canEdit}
+            onUpdate={(patch) => handleFixtureUpdate(selectedFixture.id, patch)}
+          />
+        )}
+
+        {fixtures.length > 0 && (
+          <Box sx={{ px: 1.5, py: 1, flexShrink: 0, borderTop: 1, borderColor: "divider" }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<GridViewOutlinedIcon />}
+              onClick={() => {
+                if (canEdit) {
+                  setFixturePlotEditMode(true);
+                }
+                setSidebarTab("active");
+              }}
+            >
+              {canEdit ? "Edit fixture preview" : "View fixture preview"}
+            </Button>
+          </Box>
+        )}
+      </Box>
 
       {canEdit && (
         <Box
@@ -351,6 +352,13 @@ export function FixturesPanel() {
           />
         </Box>
       )}
+
+      <OflBrowseDialog
+        open={browseDialogOpen}
+        existingPaths={existingOflPaths}
+        onClose={() => setBrowseDialogOpen(false)}
+        onImported={handleBrowseImported}
+      />
 
       <input
         ref={profileImportRef}
@@ -433,8 +441,8 @@ function FixtureEditor({
         flexDirection: "column",
         gap: 1.25,
         flexShrink: 0,
-        overflowY: "auto",
-        maxHeight: "45%",
+        overflowY: "visible",
+        maxHeight: "none",
       }}
     >
       <Typography

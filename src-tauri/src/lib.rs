@@ -1,5 +1,6 @@
 mod devices;
 mod dmx;
+mod enttec_pro;
 mod midi_input;
 mod osc;
 
@@ -7,6 +8,10 @@ use std::sync::Mutex;
 
 use devices::{list_audio_output_devices, list_midi_ports, send_midi};
 use dmx::send_dmx;
+use enttec_pro::{
+    connect_enttec_pro, disconnect_enttec_pro, is_enttec_pro_connected, list_serial_ports,
+    send_enttec_pro_dmx, EnttecProState,
+};
 use midi_input::{
     list_midi_input_ports, start_midi_input, stop_midi_input, MidiInputState,
 };
@@ -18,6 +23,7 @@ use tauri::Emitter;
 pub fn run() {
     tauri::Builder::default()
         .manage(MidiInputState(Mutex::new(None)))
+        .manage(EnttecProState(Mutex::new(None)))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
@@ -26,6 +32,11 @@ pub fn run() {
             list_midi_ports,
             send_midi,
             send_dmx,
+            list_serial_ports,
+            connect_enttec_pro,
+            disconnect_enttec_pro,
+            is_enttec_pro_connected,
+            send_enttec_pro_dmx,
             send_osc,
             list_midi_input_ports,
             start_midi_input,

@@ -1,6 +1,10 @@
 import { getPlatform } from "./index";
 import type { DmxUniverseFrame } from "../lib/dmx";
-import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx";
+import {
+  DEFAULT_ART_NET_HOST,
+  DEFAULT_ART_NET_PORT,
+} from "../lib/dmx";
+import { usePreferencesStore, resolveDmxOutputBackend } from "../stores/preferences";
 
 export async function sendDmxUniverses(
   frames: DmxUniverseFrame[],
@@ -8,11 +12,22 @@ export async function sendDmxUniverses(
   port = DEFAULT_ART_NET_PORT,
 ): Promise<void> {
   if (frames.length === 0) return;
-  if (getPlatform() === "tauri") {
-    const { sendDmxUniversesTauri } = await import("./send-dmx.tauri");
-    await sendDmxUniversesTauri(frames, host, port);
+
+  const prefs = usePreferencesStore.getState();
+  const backend = resolveDmxOutputBackend(
+    prefs.dmxOutputBackend,
+    getPlatform(),
+  );
+
+  if (backend === "enttec-pro") {
+    const { sendEnttecProUniverses } = await import("./enttec-pro");
+    await sendEnttecProUniverses(frames);
     return;
   }
-  const { sendDmxUniversesWeb } = await import("./send-dmx.web");
-  await sendDmxUniversesWeb(frames, host, port);
+
+  const resolvedHost = prefs.artNetHost.trim() || host;
+  const resolvedPort = prefs.artNetPort || port;
+
+  const { sendDmxUniversesTauri } = await import("./send-dmx.tauri");
+  await sendDmxUniversesTauri(frames, resolvedHost, resolvedPort);
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import {
+  addAllDmxFixturesToCue,
   addDmxFixtureToCue,
   applyDmxCueToBuffers,
   clampDmxValue,
@@ -124,6 +125,17 @@ describe("dmx", () => {
     const snapshot = setDmxCueMode(withFixture, "snapshot", fixtures);
     expect(snapshot.mode).toBe("snapshot");
     expect(snapshot.fixtures).toHaveLength(2);
+  });
+
+  it("adds every patched fixture not already in the cue", () => {
+    const data = addDmxFixtureToCue(defaultDmxCueData(fixtures), fixtures[0]!);
+    expect(addAllDmxFixturesToCue(data, fixtures)).toEqual({
+      mode: "partial",
+      fixtures: [
+        { fixtureId: "f1", values: [0, 0] },
+        { fixtureId: "f2", values: [0] },
+      ],
+    });
   });
 
   it("updates a single channel value", () => {

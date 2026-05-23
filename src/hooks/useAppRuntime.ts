@@ -12,6 +12,7 @@ import { usePlaybackProgress } from "./usePlaybackProgress";
 import { usePreventBrowserFileDrop } from "./usePreventBrowserFileDrop";
 import { useProjectSession } from "./useProjectSession";
 import { useTauriAppMenu } from "./useTauriAppMenu";
+import { useEnttecProConnection } from "./useEnttecProConnection";
 
 /** Side-effect hooks for session restore, engines, and platform integration. */
 export function useAppRuntime(): boolean {
@@ -30,6 +31,7 @@ export function useAppRuntime(): boolean {
   usePlaybackProgress();
   usePreventBrowserFileDrop();
   useTauriAppMenu();
+  useEnttecProConnection();
 
   return sessionReady;
 }
