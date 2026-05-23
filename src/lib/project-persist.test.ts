@@ -19,6 +19,7 @@ function projectState(overrides: Partial<ProjectPersistSlice> = {}): ProjectPers
     cueLists: [list],
     activeCueListId: list.id,
     midiMappings: [],
+    fixtures: [],
     ...overrides,
   };
 }
@@ -59,6 +60,23 @@ describe("projectPersistStateChanged", () => {
     const next = projectState({
       cueLists: [...prev.cueLists, other],
       activeCueListId: other.id,
+    });
+
+    expect(projectPersistStateChanged(prev, next)).toBe(true);
+  });
+
+  it("returns true when fixtures change", () => {
+    const prev = projectState();
+    const next = projectState({
+      fixtures: [
+        {
+          id: "f1",
+          name: "Par 1",
+          universe: 1,
+          startAddress: 1,
+          channelCount: 6,
+        },
+      ],
     });
 
     expect(projectPersistStateChanged(prev, next)).toBe(true);

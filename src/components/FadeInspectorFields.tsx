@@ -6,6 +6,7 @@ import {
   canVolumeFadeTarget,
   fadeCueLabel,
   isFadeCue,
+  isLightFadeCue,
   isVolumeFadeCue,
   resolveFadeFromLevel,
 } from "../lib/fade";
@@ -19,6 +20,7 @@ import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue, FadeCueType } from "../types/cue";
 import { CueTypeBadge } from "./CueTypeIcon";
+import { SliderNumberField } from "./SliderNumberField";
 import {
   inspectorFieldLabelSx,
   inspectorFieldSx,
@@ -41,6 +43,7 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
   const selectCue = useProjectStore((s) => s.selectCue);
 
   const fadeType = fadeCue.type as FadeCueType;
+  const isLightFade = isLightFadeCue(fadeCue);
   const target = getFadeTarget(fadeCue, cues);
   const eligibleTargets = cues.filter((c) => {
     if (
@@ -57,6 +60,35 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
   });
 
   const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+
+  if (isLightFade) {
+    return (
+      <Box component="fieldset" sx={inspectorGroupSx}>
+        <Box component="legend" sx={inspectorGroupLegendSx}>
+          {fadeCueLabel(fadeType)}
+        </Box>
+        <Typography component="p" sx={inspectorGroupHintSx}>
+          When triggered (GO), fades from the current DMX output to the levels
+          below over the given duration.
+        </Typography>
+        <Box component="label" sx={inspectorFieldSx}>
+          Duration (s)
+          <input
+            type="number"
+            min={0.1}
+            step={0.1}
+            value={fadeCue.fadeDuration ?? 2}
+            disabled={readOnly}
+            onChange={(e) =>
+              updateCue(fadeCue.id, {
+                fadeDuration: Math.max(0.1, Number(e.currentTarget.value)),
+              })
+            }
+          />
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box component="fieldset" sx={inspectorGroupSx}>
@@ -119,22 +151,16 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
         </Box>
       ) : null}
 
-      <Box component="label" sx={inspectorFieldSx}>
-        To
-        <input
-          type="number"
-          min={0}
-          max={1}
-          step={0.01}
-          value={fadeCue.fadeTo ?? 0}
-          disabled={readOnly}
-          onChange={(e) =>
-            updateCue(fadeCue.id, {
-              fadeTo: clamp01(Number(e.currentTarget.value)),
-            })
-          }
-        />
-      </Box>
+      <SliderNumberField
+        label="To"
+        value={fadeCue.fadeTo ?? 0}
+        min={0}
+        max={1}
+        step={0.01}
+        readOnly={readOnly}
+        onChange={(fadeTo) => updateCue(fadeCue.id, { fadeTo: clamp01(fadeTo) })}
+        inputWidth={48}
+      />
 
       {target ? (
         <Button
@@ -148,7 +174,7 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
         </Button>
       ) : (
         <Typography component="p" sx={inspectorHintWarningSx}>
-          Target missing or invalid — choose an{" "}
+          Target missing or invalid — choose a{" "}
           {fadeType === "volumeFade" ? "audio/video" : "video/image"} cue.
         </Typography>
       )}

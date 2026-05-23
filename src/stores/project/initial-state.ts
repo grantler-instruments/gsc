@@ -13,4 +13,5 @@ export const initialProjectData = {
   cueLists: [initialList],
   activeCueListId: initialList.id,
   midiMappings: [] as MidiMapping[],
+  fixtures: [],
 };

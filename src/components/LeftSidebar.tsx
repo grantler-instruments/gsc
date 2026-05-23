@@ -1,4 +1,5 @@
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
+import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
@@ -11,9 +12,11 @@ import { useUiStore } from "../stores/ui";
 import { SIDEBAR_TABS, SIDEBAR_WIDTH, type SidebarTabId } from "../types/sidebar";
 import { ActiveCuesPanel } from "./ActiveCuesPanel";
 import { AssetsPanel } from "./AssetsPanel";
+import { FixturesPanel } from "./FixturesPanel";
 
 const TAB_ICONS: Record<SidebarTabId, React.ReactNode> = {
   assets: <FolderOutlinedIcon fontSize="small" />,
+  fixtures: <LightbulbOutlinedIcon fontSize="small" />,
   active: <PlayArrowIcon fontSize="small" />,
 };
 
@@ -114,6 +117,7 @@ export function LeftSidebar() {
         }}
       >
         {sidebarTab === "assets" && <AssetsPanel />}
+        {sidebarTab === "fixtures" && <FixturesPanel />}
         {sidebarTab === "active" && <ActiveCuesPanel />}
       </Box>
     </Box>

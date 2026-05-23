@@ -17,14 +17,9 @@ export function downloadProject(snapshot: ProjectSnapshot): void {
 
 export function parseProjectFile(text: string): ProjectSnapshot {
   const data = JSON.parse(text) as ProjectSnapshot;
-  if (data.version === 1) {
-    if (!Array.isArray(data.cues)) {
-      throw new Error("Invalid .gsc project file");
-    }
-    return data;
-  }
   if (
     data.version === 2 &&
+    typeof data.id === "string" &&
     Array.isArray(data.cueLists) &&
     typeof data.activeCueListId === "string"
   ) {

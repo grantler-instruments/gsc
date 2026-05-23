@@ -5,9 +5,11 @@ import type { Cue } from "../../types/cue";
 import type { CueList } from "../../lib/cue-lists";
 import { createCueEditorActions } from "./cue-editor-actions";
 import { createCueListActions } from "./cue-list-actions";
+import { createFixtureActions } from "./fixture-actions";
 import { createMidiMappingActions } from "./midi-mapping-actions";
 import { createSelectionActions } from "./selection-actions";
 import { createSnapshotActions } from "./snapshot-actions";
+import { registerDmxPreviewProjectAccess } from "../dmx-preview-session";
 import { getActiveCueListFromState } from "./helpers";
 import { initialProjectData } from "./initial-state";
 import type { ProjectState } from "./types";
@@ -19,15 +21,19 @@ export const useProjectStore = create<ProjectState>()(
     (set, get) => ({
       ...initialProjectData,
       midiMappings: [...initialProjectData.midiMappings],
+      fixtures: [...initialProjectData.fixtures],
       ...createCueEditorActions(set, get),
       ...createSelectionActions(set, get),
       ...createCueListActions(set, get),
       ...createMidiMappingActions(set, get),
+      ...createFixtureActions(set, get),
       ...createSnapshotActions(set, get),
     }),
     { name: "ProjectStore" },
   ),
 );
+
+registerDmxPreviewProjectAccess(() => useProjectStore.getState());
 
 export function useActiveCueList(): CueList {
   return useProjectStore((s) => getActiveCueListFromState(s));

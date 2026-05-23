@@ -22,13 +22,14 @@ export function createSnapshotActions(
     },
 
     getSnapshot: () => {
-      const { id, name, cueLists, activeCueListId, midiMappings } = get();
+      const { id, name, cueLists, activeCueListId, midiMappings, fixtures } = get();
       return cueListsToSnapshot(
         id,
         name,
         cueLists,
         activeCueListId,
         midiMappings,
+        fixtures,
       );
     },
   };

@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import { createCueList } from "./cue-lists";
 import { cueListsToSnapshot, snapshotToCueLists } from "./project-snapshot";
 import { testCue } from "../test/fixtures/cues";
+import type { Fixture } from "../types/fixture";
 
 describe("project snapshot round-trip", () => {
-  it("preserves cue lists and midi mappings through v2 snapshot", () => {
+  it("preserves cue lists and midi mappings through snapshot", () => {
     const list = createCueList("Main");
     list.cues = [
       testCue("a", "Intro", "audio", { assetPath: "assets/intro.wav" }),
@@ -39,20 +40,6 @@ describe("project snapshot round-trip", () => {
     expect(loaded.activeCueListId).toBe(list.id);
   });
 
-  it("migrates v1 snapshots into a single main cue list", () => {
-    const loaded = snapshotToCueLists({
-      version: 1,
-      name: "Legacy Show",
-      cues: [testCue("a", "Cue", "audio")],
-    });
-
-    expect(loaded.name).toBe("Legacy Show");
-    expect(loaded.cueLists).toHaveLength(1);
-    expect(loaded.cueLists[0].name).toBe("Main");
-    expect(loaded.cueLists[0].cues).toHaveLength(1);
-    expect(loaded.midiMappings).toEqual([]);
-  });
-
   it("adds default midi data when loading midi cues without payload", () => {
     const list = createCueList("Main");
     list.cues = [testCue("m", "Midi", "midi")];
@@ -61,5 +48,39 @@ describe("project snapshot round-trip", () => {
     const loaded = snapshotToCueLists(snap);
     expect(loaded.cueLists[0].cues[0].midi).toBeDefined();
     expect(loaded.cueLists[0].cues[0].midi?.channel).toBe(1);
+  });
+
+  it("preserves fixtures through snapshot", () => {
+    const list = createCueList("Main");
+    const fixtures: Fixture[] = [
+      {
+        id: "f1",
+        name: "Front wash",
+        universe: 1,
+        startAddress: 1,
+        channelCount: 3,
+        ofl: {
+          filePath: "/project/fixtures/ofl/generic/rgb-par.json",
+          manufacturerKey: "generic",
+          manufacturer: "Generic",
+          fixtureKey: "rgb-par",
+          model: "RGB Par",
+          modeName: "3 Channel RGB",
+          channels: [{ key: "Red" }, { key: "Green" }, { key: "Blue" }],
+        },
+      },
+    ];
+
+    const snap = cueListsToSnapshot(
+      "project-1",
+      "My Show",
+      [list],
+      list.id,
+      [],
+      fixtures,
+    );
+
+    const loaded = snapshotToCueLists(snap);
+    expect(loaded.fixtures).toEqual(fixtures);
   });
 });

@@ -1,11 +1,19 @@
+import { buildDmxFadePlan } from "./dmx-fade";
+import { applyDmxCueToBuffers, normalizeDmxCueData } from "./dmx";
 import { getFadeTarget } from "./cues";
-import { isOpacityFadeCue, isVolumeFadeCue } from "./fade";
+import {
+  isLightFadeCue,
+  isOpacityFadeCue,
+  isVolumeFadeCue,
+} from "./fade";
 import {
   resolveEffectiveOpacity,
   resolveEffectiveVolume,
   useFadeStore,
 } from "../stores/fade";
+import { useProjectStore } from "../stores/project";
 import type { Cue } from "../types/cue";
+import { sendDmxUniverses } from "../platform/send-dmx";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
@@ -21,8 +29,32 @@ function resolveFadeFromLevel(fadeCue: Cue, target: Cue): number {
   return clamp01(fadeCue.fadeFrom ?? 1);
 }
 
-/** Start a timed fade on the target cue's volume or opacity. */
+function triggerLightFadeCue(fadeCue: Cue): boolean {
+  if (!fadeCue.dmx) return false;
+
+  const fixtures = useProjectStore.getState().fixtures;
+  const endDmx = normalizeDmxCueData(fadeCue.dmx, fixtures);
+  const plan = buildDmxFadePlan(endDmx, fixtures);
+  if (!plan) return false;
+
+  const durationSec = Math.max(0.01, fadeCue.fadeDuration ?? 2);
+  useFadeStore.getState().startDmxFade({
+    fadeCueId: fadeCue.id,
+    startedAtMs: performance.now(),
+    durationSec,
+    plan,
+    endDmx,
+    sourceFadeCueId: fadeCue.id,
+  });
+  return true;
+}
+
+/** Start a timed fade on the target cue's volume, opacity, or light levels. */
 export function triggerFadeCue(fadeCue: Cue, cues: Cue[]): boolean {
+  if (isLightFadeCue(fadeCue)) {
+    return triggerLightFadeCue(fadeCue);
+  }
+
   const target = getFadeTarget(fadeCue, cues);
   if (!target) return false;
 
@@ -57,4 +89,12 @@ export function triggerFadeCue(fadeCue: Cue, cues: Cue[]): boolean {
   }
 
   return false;
+}
+
+/** Commit the final light levels when a DMX fade completes. */
+export function finalizeLightFade(endDmx: Cue["dmx"]): void {
+  if (!endDmx) return;
+  const fixtures = useProjectStore.getState().fixtures;
+  const frames = applyDmxCueToBuffers(endDmx, fixtures);
+  void sendDmxUniverses(frames);
 }

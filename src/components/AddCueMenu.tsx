@@ -22,19 +22,24 @@ type AddCueMenuType = Extract<
   | "image"
   | "midi"
   | "osc"
+  | "dmx"
   | "group"
   | "sequence"
   | "stop"
   | "wait"
   | "volumeFade"
   | "opacityFade"
+  | "lightFade"
 >;
 
 const ADD_CUE_SECTIONS: { subheader?: string; types: readonly AddCueMenuType[] }[] =
   [
-    { types: ["audio", "video", "image", "midi", "osc"] },
+    { types: ["audio", "video", "image", "midi", "osc", "dmx"] },
     { subheader: "Group", types: ["sequence", "group"] },
-    { subheader: "Utility", types: ["wait", "stop", "volumeFade", "opacityFade"] },
+    {
+      subheader: "Utility",
+      types: ["wait", "stop", "volumeFade", "opacityFade", "lightFade"],
+    },
   ];
 
 const ADD_CUE_LABELS: Record<AddCueMenuType, string> = {
@@ -43,12 +48,14 @@ const ADD_CUE_LABELS: Record<AddCueMenuType, string> = {
   image: "Image",
   midi: "MIDI",
   osc: "OSC",
+  dmx: "Light",
   group: "Parallel",
   sequence: "Sequential",
   wait: "Wait",
   stop: "Stop",
   volumeFade: "Volume fade",
   opacityFade: "Opacity fade",
+  lightFade: "Light fade",
 };
 
 const WEB_UNAVAILABLE_TOOLTIP = "Not available in the web app";
@@ -74,7 +81,11 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
       addGroupCue();
     } else if (type === "sequence") {
       addSequenceCue();
-    } else if (type === "volumeFade" || type === "opacityFade") {
+    } else if (
+      type === "volumeFade" ||
+      type === "opacityFade" ||
+      type === "lightFade"
+    ) {
       addFadeCue(type);
     } else if (type === "wait") {
       addCue({ name: "Wait", type: "wait" });
@@ -87,6 +98,7 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
         image: "Image cue",
         midi: "MIDI cue",
         osc: "OSC cue",
+        dmx: "Light cue",
       } as const;
       addCue({ name: labels[type], type });
     }
@@ -137,7 +149,9 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
               </ListSubheader>
             ) : null}
             {section.types.map((type) => {
-              const disabledOnWeb = type === "osc" && !isTauri;
+              const disabledOnWeb =
+                (type === "osc" || type === "dmx" || type === "lightFade") &&
+                !isTauri;
               return (
               <MenuItem
                 key={type}

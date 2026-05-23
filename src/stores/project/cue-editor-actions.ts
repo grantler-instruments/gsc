@@ -12,6 +12,7 @@ import {
   fadeCueLabel,
   isValidFadeTarget,
 } from "../../lib/fade";
+import { defaultDmxCueData, normalizeDmxCueData } from "../../lib/dmx";
 import { defaultMidiCueData } from "../../lib/midi";
 import { defaultOscCueData } from "../../lib/osc";
 import { canEditProject } from "../../lib/show-mode";
@@ -46,7 +47,7 @@ export function createCueEditorActions(
   | "reorderCueRelative"
 > {
   return {
-    addCue: ({ name, type, assetPath, midi, osc, parentId }) => {
+    addCue: ({ name, type, assetPath, midi, osc, dmx, parentId }) => {
       if (!canEditProject()) {
         return firstCueOrStub(getActiveCueListFromState(get()), name, type);
       }
@@ -66,6 +67,10 @@ export function createCueEditorActions(
         assetPath: isMediaCueType(type) ? assetPath : undefined,
         midi: type === "midi" ? (midi ?? defaultMidiCueData()) : undefined,
         osc: type === "osc" ? (osc ?? defaultOscCueData()) : undefined,
+        dmx:
+          type === "dmx" || type === "lightFade"
+            ? (dmx ?? defaultDmxCueData(get().fixtures))
+            : undefined,
         volume: isMediaCueType(type) ? 1 : undefined,
         opacity: type === "video" || type === "image" ? 1 : undefined,
         fadeIn: type === "audio" || type === "video" ? 0 : undefined,
@@ -73,6 +78,7 @@ export function createCueEditorActions(
         inTime: isMediaCueType(type) ? 0 : undefined,
         outTime: undefined,
         waitDurationSec: type === "wait" ? 1 : undefined,
+        ...(type === "lightFade" ? defaultFadeCueFields("lightFade") : {}),
       };
       const next = applyRenumber(appendCueInList(active.cues, cue));
       set({
@@ -182,6 +188,9 @@ export function createCueEditorActions(
         name: fadeCueLabel(fadeType),
         type: fadeType,
         ...defaultFadeCueFields(fadeType),
+        ...(fadeType === "lightFade"
+          ? { dmx: defaultDmxCueData(get().fixtures) }
+          : {}),
       };
       const next = applyRenumber(appendCueInList(active.cues, fadeCue));
       set({
@@ -204,11 +213,21 @@ export function createCueEditorActions(
       const fadeCue = {
         id: crypto.randomUUID(),
         number: "0",
-        name: fadeCueLabel(fadeType),
+        name:
+          fadeType === "lightFade"
+            ? `${fadeCueLabel(fadeType)} ${target.name}`
+            : fadeCueLabel(fadeType),
         type: fadeType,
-        fadeTargetId: targetId,
         parentId: target.parentId,
         ...defaultFadeCueFields(fadeType),
+        ...(fadeType === "lightFade"
+          ? {
+              dmx:
+                target.type === "dmx" && target.dmx
+                  ? normalizeDmxCueData(target.dmx, get().fixtures)
+                  : defaultDmxCueData(get().fixtures),
+            }
+          : { fadeTargetId: targetId }),
       };
 
       const idx = cues.findIndex((c) => c.id === targetId);

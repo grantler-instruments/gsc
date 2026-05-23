@@ -29,10 +29,10 @@ export function LoopFields({
   const applyIterations = (raw: string) => {
     const parsed = parseLoopIterationsInput(raw);
     if (parsed === "inf") {
-      onChange({ loopCount: undefined, loopInfinite: undefined });
+      onChange({ loopCount: undefined });
       return;
     }
-    onChange({ loopCount: parsed, loopInfinite: false });
+    onChange({ loopCount: parsed });
   };
 
   return (
@@ -53,12 +53,8 @@ export function LoopFields({
             const enabled = e.currentTarget.checked;
             onChange(
               enabled
-                ? { loop: true, loopCount: undefined, loopInfinite: undefined }
-                : {
-                    loop: false,
-                    loopInfinite: undefined,
-                    loopCount: undefined,
-                  },
+                ? { loop: true, loopCount: undefined }
+                : { loop: false, loopCount: undefined },
             );
           }}
         />

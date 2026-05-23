@@ -1,4 +1,4 @@
-import { fadeCueLabel, isFadeCue, isValidFadeTarget } from "./fade";
+import { fadeCueLabel, isFadeCue, isLightFadeCue, isValidFadeTarget } from "./fade";
 import { formatWaitDurationLabel, isWaitCue } from "./wait";
 import type { Cue, FadeCueType } from "../types/cue";
 
@@ -16,7 +16,7 @@ export function isStopCue(cue: Cue): boolean {
   return cue.type === "stop";
 }
 
-export { isFadeCue, isOpacityFadeCue, isVolumeFadeCue } from "./fade";
+export { isFadeCue, isLightFadeCue, isOpacityFadeCue, isVolumeFadeCue } from "./fade";
 
 /** Stop, wait, or fade utility cues — not fired as playback leaves in parallel groups. */
 export function isUtilityCue(cue: Cue): boolean {
@@ -40,7 +40,9 @@ export function getFadeTarget(
   fadeCue: Cue,
   cues: Cue[],
 ): Cue | undefined {
-  if (!isFadeCue(fadeCue) || !fadeCue.fadeTargetId) return undefined;
+  if (!isFadeCue(fadeCue) || isLightFadeCue(fadeCue) || !fadeCue.fadeTargetId) {
+    return undefined;
+  }
   const target = cues.find((c) => c.id === fadeCue.fadeTargetId);
   if (!target || !isValidFadeTarget(fadeCue.type as FadeCueType, target)) {
     return undefined;
@@ -60,6 +62,7 @@ export function getCueDisplayName(cue: Cue, cues: Cue[]): string {
     return `Stop ${formatStopTargetLabel(target)}`;
   }
   if (isFadeCue(cue)) {
+    if (isLightFadeCue(cue)) return cue.name;
     const target = getFadeTarget(cue, cues);
     const label = fadeCueLabel(cue.type as FadeCueType);
     if (!target) return `${label} (no target)`;

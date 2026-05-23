@@ -1,8 +1,10 @@
+import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import VolumeDownIcon from "@mui/icons-material/VolumeDown";
 import IconButton from "@mui/material/IconButton";
 import {
+  canLightFadeTarget,
   canOpacityFadeTarget,
   canVolumeFadeTarget,
 } from "../../lib/fade";
@@ -16,6 +18,7 @@ interface CueRowActionsProps {
   onCreateStop: () => void;
   onCreateVolumeFade: () => void;
   onCreateOpacityFade: () => void;
+  onCreateLightFade: () => void;
 }
 
 export function CueRowActions({
@@ -24,12 +27,14 @@ export function CueRowActions({
   onCreateStop,
   onCreateVolumeFade,
   onCreateOpacityFade,
+  onCreateLightFade,
 }: CueRowActionsProps) {
   if (!canEdit) return null;
 
   const isUtility = isUtilityCue(cue);
   const showVolumeFadeAction = !isUtility && canVolumeFadeTarget(cue);
   const showOpacityFadeAction = !isUtility && canOpacityFadeTarget(cue);
+  const showLightFadeAction = !isUtility && canLightFadeTarget(cue);
 
   return (
     <>
@@ -59,6 +64,20 @@ export function CueRowActions({
           }}
         >
           <OpacityIcon fontSize="small" />
+        </IconButton>
+      )}
+      {showLightFadeAction && (
+        <IconButton
+          size="small"
+          sx={cueRowFadeActionSx}
+          title={`Create light fade for ${cue.number}`}
+          aria-label={`Create light fade for ${cue.name}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCreateLightFade();
+          }}
+        >
+          <LightbulbOutlinedIcon fontSize="small" />
         </IconButton>
       )}
       {!isUtility && (

@@ -1,5 +1,8 @@
 import { useAppKeyboard } from "./useAppKeyboard";
 import { useAudioEngine } from "./useAudioEngine";
+import { useDmxEngine } from "./useDmxEngine";
+import { useDmxFadeEngine } from "./useDmxFadeEngine";
+import { useCueDmxPreview } from "./useCueDmxPreview";
 import { useFadeAnimation } from "./useFadeAnimation";
 import { useMidiEngine } from "./useMidiEngine";
 import { useMidiInput } from "./useMidiInput";
@@ -18,6 +21,9 @@ export function useAppRuntime(): boolean {
   useAudioEngine();
   useMidiEngine();
   useOscEngine();
+  useDmxEngine();
+  useDmxFadeEngine();
+  useCueDmxPreview();
   useMidiInput();
   useFadeAnimation();
   useOutputPublisher();

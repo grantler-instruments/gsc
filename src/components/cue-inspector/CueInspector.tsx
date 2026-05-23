@@ -20,6 +20,8 @@ export function CueInspector() {
   const readOnly = showMode;
   const oscDisabled = getPlatform() !== "tauri";
   const oscReadOnly = readOnly || oscDisabled;
+  const dmxDisabled = getPlatform() !== "tauri";
+  const dmxReadOnly = readOnly || dmxDisabled;
 
   const selectedCueId = getPrimarySelectedCueId(activeList.selectedCueIds);
   const cue = activeList.cues.find((c) => c.id === selectedCueId);
@@ -34,19 +36,34 @@ export function CueInspector() {
     );
   }
 
+  const isLightInspector = cue.type === "dmx" || cue.type === "lightFade";
+
   return (
     <Box component="aside" sx={inspectorPanelSx}>
       <PanelHeader title={showMode ? "Inspector (view)" : "Inspector"}>
         <CueTypeBadge type={cue.type} />
       </PanelHeader>
 
-      <Box sx={inspectorFieldsSx}>
+      <Box
+        sx={{
+          ...inspectorFieldsSx,
+          flex: 1,
+          minHeight: 0,
+          overflow: isLightInspector ? "hidden" : "auto",
+          ...(isLightInspector && {
+            display: "flex",
+            flexDirection: "column",
+          }),
+        }}
+      >
         <CueInspectorBody
           cue={cue}
           cues={activeList.cues}
           readOnly={readOnly}
           oscReadOnly={oscReadOnly}
           oscDisabled={oscDisabled}
+          dmxReadOnly={dmxReadOnly}
+          dmxDisabled={dmxDisabled}
           onUpdate={(patch) => updateCue(cue.id, patch)}
         />
       </Box>

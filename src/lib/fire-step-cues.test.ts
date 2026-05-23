@@ -26,7 +26,7 @@ function mockActions() {
 describe("fireStepCues", () => {
   beforeEach(() => {
     resetTransport();
-    useFadeStore.setState({ fadesByTargetId: {}, frameMs: 0 });
+    useFadeStore.setState({ fadesByTargetId: {}, dmxFadesByFadeCueId: {}, frameMs: 0 });
   });
 
   it("GOs playback cues in a step", () => {

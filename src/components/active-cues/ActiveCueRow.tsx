@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { memo } from "react";
 import { canOpacityFadeTarget, canVolumeFadeTarget } from "../../lib/fade";
+import { formatDmxCue } from "../../lib/dmx";
 import { formatMidiCue } from "../../lib/midi";
 import { formatOscCue } from "../../lib/osc";
 import { formatPlaybackRangeLabel } from "../../lib/time";
@@ -56,8 +57,9 @@ export const ActiveCueRow = memo(function ActiveCueRow({
     volumeFade || opacityFade ? s.frameMs : 0,
   );
 
+  const fixtures = useProjectStore((s) => s.fixtures);
   const rangeLabel =
-    cue.type !== "midi" && cue.type !== "osc"
+    cue.type !== "midi" && cue.type !== "osc" && cue.type !== "dmx"
       ? formatPlaybackRangeLabel(cue.inTime, cue.outTime, cue.type === "image")
       : null;
 
@@ -122,6 +124,15 @@ export const ActiveCueRow = memo(function ActiveCueRow({
             sx={{ fontSize: 11, color: "text.secondary" }}
           >
             {formatOscCue(cue.osc)}
+          </Typography>
+        )}
+        {cue.type === "dmx" && cue.dmx && (
+          <Typography
+            component="span"
+            noWrap
+            sx={{ fontSize: 11, color: "text.secondary" }}
+          >
+            {formatDmxCue(cue.dmx, fixtures)}
           </Typography>
         )}
         {cue.type === "audio" && cue.assetPath && (

@@ -18,13 +18,17 @@ import {
   getStopTarget,
   isContainerCue,
   isFadeCue,
+  isLightFadeCue,
   isParallelGroup,
   isSequenceGroup,
   isStopCue,
 } from "../../lib/cues";
+import { isLightFadeReady } from "../../lib/fade";
 import { getParallelGroupOrderConflict } from "../../lib/parallel-group-fire";
 import type { Cue } from "../../types/cue";
 import { usePlaybackStore } from "../../stores/playback";
+import { useProjectStore } from "../../stores/project";
+import { useUiStore } from "../../stores/ui";
 import {
   cueAssetSx,
   cueExpandBtnSx,
@@ -113,6 +117,7 @@ export const CueRow = memo(function CueRow({
     onCreateStop,
     onCreateVolumeFade,
     onCreateOpacityFade,
+    onCreateLightFade,
     onAssetDrop,
     onCueDrop,
     onCueReorder,
@@ -123,15 +128,19 @@ export const CueRow = memo(function CueRow({
     active ? s.byCueId[cue.id] : undefined,
   );
 
+  const fixtures = useProjectStore((s) => s.fixtures);
+  const isPreviewing = useUiStore((s) => s.dmxPreviewCueIds.includes(cue.id));
   const isContainer = isContainerCue(cue);
   const isStop = isStopCue(cue);
   const isFade = isFadeCue(cue);
+  const isLightFade = isLightFadeCue(cue);
   const isSequence = isSequenceGroup(cue);
   const isParallel = isParallelGroup(cue);
   const stopTarget = isStop ? getStopTarget(cue, allCues) : undefined;
-  const fadeTarget = isFade ? getFadeTarget(cue, allCues) : undefined;
+  const fadeTarget = isFade && !isLightFade ? getFadeTarget(cue, allCues) : undefined;
   const stopTargetMissing = isStop && !stopTarget;
-  const fadeTargetMissing = isFade && !fadeTarget;
+  const fadeTargetMissing = isFade && !isLightFade && !fadeTarget;
+  const lightFadeMissing = isLightFade && !isLightFadeReady(cue, fixtures);
   const assetWarning = getCueAssetWarning(cue);
   const parallelConflict = isParallel
     ? getParallelGroupOrderConflict(cue, allCues)
@@ -143,10 +152,13 @@ export const CueRow = memo(function CueRow({
     missingAsset ||
     stopTargetMissing ||
     fadeTargetMissing ||
+    lightFadeMissing ||
     !!parallelConflict;
   const warningTitle = parallelConflict
     ? parallelConflict.tooltip
-    : fadeTargetMissing
+    : lightFadeMissing
+      ? "Add fixtures and levels to this light fade"
+      : fadeTargetMissing
       ? "Fade target missing"
       : stopTargetMissing
         ? "Stop target missing"
@@ -174,10 +186,12 @@ export const CueRow = memo(function CueRow({
     isStop,
     isVolumeFade: isFade && cue.type === "volumeFade",
     isOpacityFade: isFade && cue.type === "opacityFade",
+    isLightFade: isFade && cue.type === "lightFade",
     isSequenceStep: isCurrentSequenceStep,
     hasWarning,
     pulseAsStopTarget,
     staticAsStopTarget,
+    isPreviewing,
     dropActive: dropActive && isContainer,
     insertBefore: insertPlace === "before",
     insertAfter: insertPlace === "after",
@@ -281,6 +295,7 @@ export const CueRow = memo(function CueRow({
         onCreateStop={() => onCreateStop(cue.id)}
         onCreateVolumeFade={() => onCreateVolumeFade(cue.id)}
         onCreateOpacityFade={() => onCreateOpacityFade(cue.id)}
+        onCreateLightFade={() => onCreateLightFade(cue.id)}
       />
       {cue.assetPath && (
         <Typography component="span" noWrap title={cue.assetPath} sx={cueAssetSx}>

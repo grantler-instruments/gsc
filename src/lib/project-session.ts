@@ -1,7 +1,8 @@
 import { setActiveProjectId } from "./active-project-id";
+import { collectOflPaths } from "./ofl/import-ofl";
 import { snapshotToCueLists } from "./project-snapshot";
 import { hydrateVfsFromProjectCache, vfsClear, vfsHas } from "../vfs/engine";
-import type { AssetKind, ProjectSnapshotV2 } from "../types/cue";
+import type { AssetKind, ProjectSnapshot } from "../types/cue";
 import { useProjectStore } from "../stores/project";
 import { useVfsStore, type VfsEntry } from "../stores/vfs";
 
@@ -16,13 +17,13 @@ export interface PersistedAssetEntry {
 }
 
 interface ProjectSession {
-  snapshot: ProjectSnapshotV2;
+  snapshot: ProjectSnapshot;
   assets: PersistedAssetEntry[];
 }
 
 let restored = false;
 
-function assetPathsFromSnapshot(snapshot: ProjectSnapshotV2): string[] {
+function assetPathsFromSnapshot(snapshot: ProjectSnapshot): string[] {
   const paths = new Set<string>();
   for (const list of snapshot.cueLists) {
     for (const cue of list.cues) {
@@ -33,12 +34,15 @@ function assetPathsFromSnapshot(snapshot: ProjectSnapshotV2): string[] {
 }
 
 export function collectSessionAssetPaths(
-  snapshot: ProjectSnapshotV2,
+  snapshot: ProjectSnapshot,
   entries: Array<{ path: string }>,
 ): string[] {
   const paths = new Set(assetPathsFromSnapshot(snapshot));
   for (const entry of entries) {
     paths.add(entry.path);
+  }
+  for (const path of collectOflPaths(snapshot.fixtures ?? [])) {
+    paths.add(path);
   }
   return [...paths];
 }

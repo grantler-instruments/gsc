@@ -26,7 +26,7 @@ function mockActions() {
 describe("triggerGo", () => {
   beforeEach(() => {
     resetTransport();
-    useFadeStore.setState({ fadesByTargetId: {}, frameMs: 0 });
+    useFadeStore.setState({ fadesByTargetId: {}, dmxFadesByFadeCueId: {}, frameMs: 0 });
   });
 
   it("GOs a leaf cue", () => {

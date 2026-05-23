@@ -1,4 +1,4 @@
-export type SidebarTabId = "assets" | "active";
+export type SidebarTabId = "assets" | "fixtures" | "active";
 
 export const SIDEBAR_WIDTH = 280;
 
@@ -9,5 +9,6 @@ export interface SidebarTab {
 
 export const SIDEBAR_TABS: SidebarTab[] = [
   { id: "assets", label: "Assets" },
+  { id: "fixtures", label: "Fixtures" },
   { id: "active", label: "Active" },
 ];

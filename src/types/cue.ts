@@ -4,26 +4,30 @@ export type CueType =
   | "image"
   | "midi"
   | "osc"
-  | "group"
-  | "sequence"
-  | "stop"
-  | "wait"
-  | "volumeFade"
-  | "opacityFade";
-
-export type FadeCueType = "volumeFade" | "opacityFade";
-
-/** Media file cues (not MIDI/OSC). */
-export type AssetKind = Exclude<
-  CueType,
-  | "midi"
-  | "osc"
+  | "dmx"
   | "group"
   | "sequence"
   | "stop"
   | "wait"
   | "volumeFade"
   | "opacityFade"
+  | "lightFade";
+
+export type FadeCueType = "volumeFade" | "opacityFade" | "lightFade";
+
+/** Media file cues (not MIDI/OSC). */
+export type AssetKind = Exclude<
+  CueType,
+  | "midi"
+  | "osc"
+  | "dmx"
+  | "group"
+  | "sequence"
+  | "stop"
+  | "wait"
+  | "volumeFade"
+  | "opacityFade"
+  | "lightFade"
 >;
 
 export type MidiMessageKind =
@@ -55,6 +59,21 @@ export interface OscCueData {
   args: OscArg[];
 }
 
+export interface DmxFixtureValues {
+  fixtureId: string;
+  /** 0–255 levels, one per fixture channel. */
+  values: number[];
+}
+
+/** Partial = merge listed fixtures only. Snapshot = full rig state (unlisted at 0). */
+export type DmxCueMode = "partial" | "snapshot";
+
+export interface DmxCueData {
+  mode: DmxCueMode;
+  fixtures: DmxFixtureValues[];
+}
+
+import type { Fixture } from "./fixture";
 import type { MidiMapping } from "./midi-mapping";
 
 export interface Cue {
@@ -67,6 +86,7 @@ export interface Cue {
   assetPath?: string;
   midi?: MidiCueData;
   osc?: OscCueData;
+  dmx?: DmxCueData;
   /** Seconds into the source media where playback begins (In point). */
   inTime?: number;
   /** Seconds into the source media where playback stops (Out point). Omit to play to end. */
@@ -77,8 +97,6 @@ export interface Cue {
   loop?: boolean;
   /** When loop is true and set: how many times to play (minimum 2). Omit for infinite. */
   loopCount?: number;
-  /** @deprecated Use loopCount undefined for infinite. */
-  loopInfinite?: boolean;
   volume?: number;
   /** 0–1 for image/video cues. */
   opacity?: number;
@@ -104,14 +122,7 @@ export interface CueListSnapshot {
   cues: Cue[];
 }
 
-/** @deprecated Use ProjectSnapshotV2 */
-export interface ProjectSnapshotV1 {
-  version: 1;
-  name: string;
-  cues: Cue[];
-}
-
-export interface ProjectSnapshotV2 {
+export interface ProjectSnapshot {
   version: 2;
   /** Stable project identity; assigned on creation, preserved across save/load. */
   id: string;
@@ -120,6 +131,6 @@ export interface ProjectSnapshotV2 {
   activeCueListId: string;
   /** MIDI input → action bindings for this show. */
   midiMappings?: MidiMapping[];
+  /** Patched DMX fixtures for this show. */
+  fixtures?: Fixture[];
 }
-
-export type ProjectSnapshot = ProjectSnapshotV1 | ProjectSnapshotV2;

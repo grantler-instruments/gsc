@@ -8,6 +8,7 @@ import {
   prepareCuePaste,
   setCueClipboard,
 } from "../../lib/cue-clipboard";
+import { guardDmxPreviewSelection } from "../../stores/dmx-preview-session";
 import { canEditProject } from "../../lib/show-mode";
 import type { StoreApi } from "zustand";
 import type { ProjectState } from "./types";
@@ -33,15 +34,23 @@ export function createSelectionActions(
   | "duplicateSelectedCues"
 > {
   return {
-    selectCue: (id) =>
+    selectCue: (id) => {
+      if (!guardDmxPreviewSelection(id)) return;
       set((s) => ({
         ...patchActiveList(s, () => ({
           selectedCueIds: id ? [id] : [],
           selectionAnchorId: id,
         })),
-      })),
+      }));
+    },
 
-    toggleSelectCue: (id) =>
+    toggleSelectCue: (id) => {
+      const active = getActiveCueListFromState(get());
+      const has = active.selectedCueIds.includes(id);
+      const nextPrimary = has
+        ? (active.selectedCueIds.filter((x) => x !== id).slice(-1)[0] ?? null)
+        : id;
+      if (!guardDmxPreviewSelection(nextPrimary)) return;
       set((s) => ({
         ...patchActiveList(s, (list) => {
           const has = list.selectedCueIds.includes(id);
@@ -50,9 +59,11 @@ export function createSelectionActions(
             : [...list.selectedCueIds, id];
           return { selectedCueIds, selectionAnchorId: id };
         }),
-      })),
+      }));
+    },
 
     selectCueRange: (id, visibleOrder) => {
+      if (!guardDmxPreviewSelection(id)) return;
       const active = getActiveCueListFromState(get());
       const anchor =
         active.selectionAnchorId ?? active.selectedCueIds[0] ?? id;

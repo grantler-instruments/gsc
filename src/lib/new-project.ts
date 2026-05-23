@@ -47,7 +47,11 @@ export async function startNewProject(): Promise<void> {
 
   useTransportStore.getState().panic();
   usePlaybackStore.getState().clear();
-  useFadeStore.setState({ fadesByTargetId: {}, frameMs: 0 });
+  useFadeStore.setState({
+    fadesByTargetId: {},
+    dmxFadesByFadeCueId: {},
+    frameMs: 0,
+  });
 
   vfsClear();
   const projectName = rootDir ? showNameFromFolderPath(rootDir) : "Untitled Show";

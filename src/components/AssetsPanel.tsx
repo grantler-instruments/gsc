@@ -106,39 +106,7 @@ export function AssetsPanel() {
         ...(dropActive && cueListDropActiveSx(tokens)),
       }}
     >
-      <Stack
-        direction="row"
-        sx={{
-          justifyContent: "flex-end",
-          px: 1,
-          py: 0.75,
-          borderBottom: 1,
-          borderColor: "divider",
-          flexShrink: 0,
-        }}
-      >
-        <Button
-          variant="text"
-          size="small"
-          disabled={!canEdit}
-          title={canEdit ? undefined : "Disabled in show mode"}
-          onClick={() => inputRef.current?.click()}
-        >
-          Import
-        </Button>
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          hidden
-          // @ts-expect-error webkitdirectory is non-standard but widely supported
-          webkitdirectory=""
-          directory=""
-          onChange={onFileInput}
-        />
-      </Stack>
-
-      <Typography variant="caption" sx={{ px: 1.5, py: 1, m: 0 }}>
+      <Typography variant="caption" sx={{ px: 1.5, py: 1, m: 0, flexShrink: 0 }}>
         {canEdit
           ? "Drop audio, video, or image files here. Drag assets to the cue list to add cues."
           : "Assets are view-only in show mode."}
@@ -153,6 +121,7 @@ export function AssetsPanel() {
           px: 0,
           overflowY: "auto",
           flex: 1,
+          minHeight: 0,
         }}
       >
         {entries.length === 0 && (
@@ -220,6 +189,42 @@ export function AssetsPanel() {
           </Box>
         ))}
       </Box>
+
+      {canEdit && (
+        <Box
+          component="footer"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            px: 1.5,
+            py: 1,
+            borderTop: 1,
+            borderColor: "divider",
+            flexShrink: 0,
+            bgcolor: "background.default",
+          }}
+        >
+          <Button
+            variant="text"
+            fullWidth
+            title={canEdit ? undefined : "Disabled in show mode"}
+            onClick={() => inputRef.current?.click()}
+          >
+            Import
+          </Button>
+        </Box>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        hidden
+        // @ts-expect-error webkitdirectory is non-standard but widely supported
+        webkitdirectory=""
+        directory=""
+        onChange={onFileInput}
+      />
     </Box>
   );
 }

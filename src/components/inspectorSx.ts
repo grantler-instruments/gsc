@@ -47,7 +47,7 @@ export const inspectorFieldSx = {
     py: 0.75,
     px: 1,
     "&:focus": {
-      outline: "2px solid var(--accent-dim)",
+      outline: "none",
       borderColor: "primary.main",
     },
     "&[readonly]": {
@@ -180,6 +180,55 @@ export const inspectorTimeFormattedSx = {
   flexShrink: 0,
   minWidth: "3.5ch",
 };
+
+export const inspectorSliderRowSx = {
+  display: "flex",
+  alignItems: "center",
+  gap: 1,
+  width: "100%",
+  "& input[type='range']": {
+    flex: 1,
+    minWidth: 0,
+    height: 4,
+    accentColor: "var(--accent)",
+    cursor: "pointer",
+    "&:disabled": {
+      cursor: "not-allowed",
+      opacity: 0.5,
+    },
+  },
+};
+
+export const inspectorSliderNumberInputSx = (width = 56) => ({
+  width,
+  flexShrink: 0,
+  font: "inherit",
+  fontSize: 14,
+  fontWeight: 400,
+  textTransform: "none",
+  letterSpacing: "normal",
+  color: "text.primary",
+  bgcolor: "background.default",
+  border: 1,
+  borderStyle: "solid",
+  borderColor: "divider",
+  borderRadius: 1,
+  py: 0.75,
+  px: 0.75,
+  textAlign: "center",
+  fontVariantNumeric: "tabular-nums",
+  "&:focus": {
+    outline: "none",
+    borderColor: "primary.main",
+  },
+  "&[readonly]": {
+    color: "text.secondary",
+    fontSize: 12,
+  },
+  "&:disabled": {
+    opacity: 0.5,
+  },
+});
 
 export const inspectorInfiniteBtnSx = {
   flexShrink: 0,

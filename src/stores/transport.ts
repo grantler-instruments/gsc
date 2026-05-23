@@ -50,6 +50,7 @@ export const useTransportStore = create<TransportState>()(
 
       go: (cueId) => {
         useFadeStore.getState().clearFade(cueId);
+        useFadeStore.getState().clearDmxFade(cueId);
         set((s) => {
           const now = performance.now();
           const activeCueIds = mergeActiveIds(
@@ -67,6 +68,9 @@ export const useTransportStore = create<TransportState>()(
 
       goMany: (cueIds) => {
         useFadeStore.getState().clearFades(cueIds);
+        for (const id of cueIds) {
+          useFadeStore.getState().clearDmxFade(id);
+        }
         set((s) => {
           if (cueIds.length === 0) return s;
           const now = performance.now();
@@ -134,6 +138,7 @@ export const useTransportStore = create<TransportState>()(
 
       panic: () => {
         clearSequenceTimers();
+        useFadeStore.getState().clearAllFades();
         set({
           isPlaying: false,
           activeCueId: null,

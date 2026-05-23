@@ -13,7 +13,8 @@ import {
   isWaitCue,
 } from "../../lib/cues";
 import { getParallelGroupOrderConflict } from "../../lib/parallel-group-fire";
-import { resolveFadeFromLevel } from "../../lib/fade";
+import { resolveFadeFromLevel, isLightFadeCue, isLightFadeReady } from "../../lib/fade";
+import { formatDmxCue } from "../../lib/dmx";
 import { formatMidiCue } from "../../lib/midi";
 import { formatOscCue } from "../../lib/osc";
 import { formatWaitDurationLabel } from "../../lib/wait";
@@ -21,6 +22,7 @@ import { formatLoopLabel } from "../../lib/loop";
 import { formatPlaybackRangeLabel } from "../../lib/time";
 import type { Cue } from "../../types/cue";
 import type { RunningSequence } from "../../stores/transport";
+import { useProjectStore } from "../../stores/project";
 import type { CuePlaybackProgress } from "../../stores/playback";
 import { cueDetailSx } from "../../theme/cueStyles";
 import { PlaybackProgress } from "../PlaybackProgress";
@@ -42,6 +44,7 @@ export function CueRowDetails({
   runningSequence,
   playback,
 }: CueRowDetailsProps) {
+  const fixtures = useProjectStore((s) => s.fixtures);
   const isContainer = isContainerCue(cue);
   const isParallel = isParallelGroup(cue);
   const isSequence = isSequenceGroup(cue);
@@ -50,19 +53,26 @@ export function CueRowDetails({
   const isWait = isWaitCue(cue);
   const isUtility = isUtilityCue(cue);
   const stopTarget = isStop ? getStopTarget(cue, allCues) : undefined;
-  const fadeTarget = isFade ? getFadeTarget(cue, allCues) : undefined;
+  const fadeTarget = isFade && !isLightFadeCue(cue) ? getFadeTarget(cue, allCues) : undefined;
   const stopTargetMissing = isStop && !stopTarget;
-  const fadeTargetMissing = isFade && !fadeTarget;
+  const fadeTargetMissing = isFade && !isLightFadeCue(cue) && !fadeTarget;
+  const lightFadeMissing = isLightFadeCue(cue) && !isLightFadeReady(cue, fixtures);
   const fadeDetail =
-    isFade && fadeTarget
-      ? `${resolveFadeFromLevel(cue, fadeTarget).toFixed(2)} → ${cue.fadeTo ?? 0} · ${cue.fadeDuration ?? 2}s`
-      : null;
+    isFade && isLightFadeCue(cue) && cue.dmx
+      ? `${formatDmxCue(cue.dmx, fixtures)} · ${cue.fadeDuration ?? 2}s`
+      : isFade && fadeTarget
+        ? `${resolveFadeFromLevel(cue, fadeTarget).toFixed(2)} → ${cue.fadeTo ?? 0} · ${cue.fadeDuration ?? 2}s`
+        : null;
   const sequenceProgress =
     isSequence && runningSequence?.rootId === cue.id
       ? runningSequence
       : null;
   const rangeLabel =
-    !isContainer && !isUtility && cue.type !== "midi" && cue.type !== "osc"
+    !isContainer &&
+    !isUtility &&
+    cue.type !== "midi" &&
+    cue.type !== "osc" &&
+    cue.type !== "dmx"
       ? formatPlaybackRangeLabel(cue.inTime, cue.outTime, cue.type === "image")
       : null;
   const loopLabel =
@@ -107,6 +117,11 @@ export function CueRowDetails({
           Fade target missing
         </Typography>
       )}
+      {lightFadeMissing && (
+        <Typography component="span" sx={cueDetailSx}>
+          Add fixtures and channel levels
+        </Typography>
+      )}
       {isWait && (
         <Typography component="span" sx={cueDetailSx}>
           Hold {formatWaitDurationLabel(cue)}
@@ -130,6 +145,11 @@ export function CueRowDetails({
       {cue.type === "osc" && cue.osc && (
         <Typography component="span" sx={cueDetailSx}>
           {formatOscCue(cue.osc)}
+        </Typography>
+      )}
+      {cue.type === "dmx" && cue.dmx && (
+        <Typography component="span" sx={cueDetailSx}>
+          {formatDmxCue(cue.dmx, fixtures)}
         </Typography>
       )}
       {rangeLabel && (

@@ -1,5 +1,5 @@
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from "fflate";
-import type { ProjectSnapshotV2 } from "../types/cue";
+import type { ProjectSnapshot } from "../types/cue";
 import { ASSETS_DIR, PROJECT_JSON, virtualToRelative } from "./project-paths";
 import { vfsPut, normalizePath } from "../vfs/engine";
 
@@ -15,7 +15,7 @@ export interface ProjectBundleAsset {
 }
 
 export async function buildProjectBundleZip(
-  snapshot: ProjectSnapshotV2,
+  snapshot: ProjectSnapshot,
   assetPaths: string[],
   readBlob: (
     path: string,
@@ -42,15 +42,15 @@ export async function buildProjectBundleZip(
 
 export function parseProjectBundleZip(
   data: Uint8Array,
-): { snapshot: ProjectSnapshotV2; assets: ProjectBundleAsset[] } {
+): { snapshot: ProjectSnapshot; assets: ProjectBundleAsset[] } {
   const unzipped = unzipSync(data);
-  let snapshot: ProjectSnapshotV2 | undefined;
+  let snapshot: ProjectSnapshot | undefined;
 
   const assets: ProjectBundleAsset[] = [];
 
   for (const [name, bytes] of Object.entries(unzipped)) {
     if (name === PROJECT_JSON || name.endsWith(`/${PROJECT_JSON}`)) {
-      snapshot = JSON.parse(strFromU8(bytes)) as ProjectSnapshotV2;
+      snapshot = JSON.parse(strFromU8(bytes)) as ProjectSnapshot;
       continue;
     }
     if (name.startsWith(`${ASSETS_DIR}/`) && !name.endsWith("/")) {
@@ -69,7 +69,7 @@ export function parseProjectBundleZip(
 /** Flatten a bundle zip into on-disk paths (project.json + project/*). */
 export function projectBundleDiskFiles(
   data: Uint8Array,
-): { snapshot: ProjectSnapshotV2; files: ProjectBundleDiskFile[] } {
+): { snapshot: ProjectSnapshot; files: ProjectBundleDiskFile[] } {
   const { snapshot, assets } = parseProjectBundleZip(data);
   const files: ProjectBundleDiskFile[] = [
     {

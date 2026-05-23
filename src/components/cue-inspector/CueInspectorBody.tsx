@@ -1,3 +1,4 @@
+import Box from "@mui/material/Box";
 import {
   isContainerCue,
   isFadeCue,
@@ -12,6 +13,7 @@ import { FadeInspectorFields } from "../FadeInspectorFields";
 import { StopInspectorFields } from "../StopInspectorFields";
 import { WaitInspectorFields } from "../WaitInspectorFields";
 import { CueInspectorNameFields } from "./CueInspectorNameFields";
+import { DmxInspectorFields } from "./DmxInspectorFields";
 import { MediaInspectorFields } from "./MediaInspectorFields";
 import { MidiInspectorFields } from "./MidiInspectorFields";
 import { OscInspectorFields } from "./OscInspectorFields";
@@ -22,6 +24,8 @@ interface CueInspectorBodyProps {
   readOnly: boolean;
   oscReadOnly: boolean;
   oscDisabled: boolean;
+  dmxReadOnly: boolean;
+  dmxDisabled: boolean;
   onUpdate: (patch: Partial<Cue>) => void;
 }
 
@@ -31,6 +35,8 @@ export function CueInspectorBody({
   readOnly,
   oscReadOnly,
   oscDisabled,
+  dmxReadOnly,
+  dmxDisabled,
   onUpdate,
 }: CueInspectorBodyProps) {
   const assetWarning = getCueAssetWarning(cue);
@@ -45,7 +51,26 @@ export function CueInspectorBody({
     onUpdate({ osc: { ...cue.osc, ...oscPatch } });
   };
 
-  return (
+  const isLightInspector = cue.type === "dmx" || cue.type === "lightFade";
+
+  const dmxFields = (
+    <Box
+      sx={
+        isLightInspector
+          ? { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }
+          : undefined
+      }
+    >
+      <DmxInspectorFields
+        cue={cue}
+        readOnly={dmxReadOnly}
+        dmxDisabled={dmxDisabled}
+        onUpdate={onUpdate}
+      />
+    </Box>
+  );
+
+  const body = (
     <>
       <CueInspectorNameFields
         cue={cue}
@@ -74,7 +99,27 @@ export function CueInspectorBody({
         onPatch={patchOsc}
       />
 
+      {dmxFields}
+
       <MediaInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
     </>
+  );
+
+  if (!isLightInspector) {
+    return body;
+  }
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        minHeight: 0,
+        gap: 1.5,
+      }}
+    >
+      {body}
+    </Box>
   );
 }

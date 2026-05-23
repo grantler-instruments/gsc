@@ -1,10 +1,12 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import type { SidebarTabId } from "../types/sidebar";
+import type { RightSidebarTabId } from "../types/right-sidebar";
 import type { MidiAction } from "../types/midi-mapping";
 
 interface UiState {
   sidebarTab: SidebarTabId;
+  rightSidebarTab: RightSidebarTabId;
   darkMode: boolean;
   /** When true, the show is locked for playback — no cue/project edits. */
   showMode: boolean;
@@ -13,7 +15,10 @@ interface UiState {
   midiLearnAction: MidiAction | null;
   /** Collapsed parallel/sequence groups in the cue list (session only). */
   collapsedCueGroupIds: string[];
+  /** Light cues checked for live DMX preview in the cue list. */
+  dmxPreviewCueIds: string[];
   setSidebarTab: (tab: SidebarTabId) => void;
+  setRightSidebarTab: (tab: RightSidebarTabId) => void;
   setDarkMode: (dark: boolean) => void;
   setShowMode: (showMode: boolean) => void;
   setSettingsDialogOpen: (open: boolean) => void;
@@ -27,12 +32,15 @@ export const useUiStore = create<UiState>()(
     persist(
       (set) => ({
         sidebarTab: "assets",
+        rightSidebarTab: "cue",
         darkMode: true,
         showMode: false,
         settingsDialogOpen: false,
         midiLearnAction: null,
         collapsedCueGroupIds: [],
+        dmxPreviewCueIds: [],
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
+        setRightSidebarTab: (rightSidebarTab) => set({ rightSidebarTab }),
         setDarkMode: (darkMode) => set({ darkMode }),
         setSettingsDialogOpen: (settingsDialogOpen) => set({ settingsDialogOpen }),
         setMidiLearnAction: (midiLearnAction) => set({ midiLearnAction }),
@@ -61,6 +69,7 @@ export const useUiStore = create<UiState>()(
         name: "gsc-ui",
         partialize: (s) => ({
           sidebarTab: s.sidebarTab,
+          rightSidebarTab: s.rightSidebarTab,
           darkMode: s.darkMode,
         }),
       },

@@ -7,6 +7,16 @@ function cloneCueFields(cue: Cue): Cue {
   return {
     ...cue,
     midi: cue.midi ? { ...cue.midi } : undefined,
+    osc: cue.osc ? { ...cue.osc, args: cue.osc.args.map((arg) => ({ ...arg })) } : undefined,
+    dmx: cue.dmx
+      ? {
+          mode: cue.dmx.mode,
+          fixtures: cue.dmx.fixtures.map((entry) => ({
+            fixtureId: entry.fixtureId,
+            values: [...entry.values],
+          })),
+        }
+      : undefined,
   };
 }
 

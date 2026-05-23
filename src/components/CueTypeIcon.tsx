@@ -1,3 +1,4 @@
+import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import AudiotrackIcon from "@mui/icons-material/Audiotrack";
 import HubIcon from "@mui/icons-material/Hub";
 import ImageIcon from "@mui/icons-material/Image";
@@ -22,12 +23,14 @@ const CUE_TYPE_ICONS: Record<CueType, ElementType<SvgIconProps>> = {
   image: ImageIcon,
   midi: PianoIcon,
   osc: HubIcon,
+  dmx: LightbulbOutlinedIcon,
   group: LayersIcon,
   sequence: PlaylistPlayIcon,
   stop: StopCircleOutlinedIcon,
   wait: HourglassEmptyIcon,
   volumeFade: VolumeDownIcon,
   opacityFade: OpacityIcon,
+  lightFade: LightbulbOutlinedIcon,
 };
 
 const CUE_TYPE_LABELS: Record<CueType, string> = {
@@ -36,12 +39,14 @@ const CUE_TYPE_LABELS: Record<CueType, string> = {
   image: "Image",
   midi: "MIDI",
   osc: "OSC",
+  dmx: "Light",
   group: "Parallel",
   sequence: "Sequence",
   stop: "Stop",
   wait: "Wait",
   volumeFade: "Volume fade",
   opacityFade: "Opacity fade",
+  lightFade: "Light fade",
 };
 
 export function CueTypeIcon({

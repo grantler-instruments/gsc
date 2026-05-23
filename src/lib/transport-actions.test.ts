@@ -35,7 +35,7 @@ describe("triggerGoAndAdvance", () => {
     ]);
     resetTransport();
     useUiStore.setState({ collapsedCueGroupIds: [] });
-    useFadeStore.setState({ fadesByTargetId: {}, frameMs: 0 });
+    useFadeStore.setState({ fadesByTargetId: {}, dmxFadesByFadeCueId: {}, frameMs: 0 });
   });
 
   it("GOs the cue through transport and advances selection", () => {
@@ -74,7 +74,7 @@ describe("triggerGoSelected", () => {
     ]);
     resetTransport();
     useUiStore.setState({ collapsedCueGroupIds: [] });
-    useFadeStore.setState({ fadesByTargetId: {}, frameMs: 0 });
+    useFadeStore.setState({ fadesByTargetId: {}, dmxFadesByFadeCueId: {}, frameMs: 0 });
   });
 
   it("GOs the selected cue and advances selection", () => {

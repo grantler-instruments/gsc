@@ -18,17 +18,20 @@ export const CUE_TYPE_COLORS: Record<
   image: { color: "#e8b86d", bgcolor: "#3a2e1e" },
   midi: { color: "#7eb8da", bgcolor: "#1e2a3a" },
   osc: { color: "#8ad4c4", bgcolor: "#1e3a34" },
+  dmx: { color: "#f2d072", bgcolor: "#3a3218" },
   group: { color: "#c9a227", bgcolor: "#2a2818" },
   sequence: { color: "#9eb8ff", bgcolor: "#1e2438" },
   stop: { color: "#e88a8a", bgcolor: "#3a1e1e" },
   wait: { color: "#e8c86d", bgcolor: "#3a3218" },
   volumeFade: { color: "#8ac4e8", bgcolor: "#1e2e3a" },
   opacityFade: { color: "#c4a8e8", bgcolor: "#2a1e3a" },
+  lightFade: { color: "#f2d072", bgcolor: "#3a3218" },
 };
 
 export const ADD_CUE_ICON_COLORS: Partial<Record<CueType, string>> = {
   midi: "#7eb8da",
   osc: "#8ad4c4",
+  dmx: "#f2d072",
   audio: "#6fcf97",
   video: "#a78bfa",
   image: "#e8b86d",
@@ -37,6 +40,7 @@ export const ADD_CUE_ICON_COLORS: Partial<Record<CueType, string>> = {
   wait: "#e8c86d",
   volumeFade: "#8ac4e8",
   opacityFade: "#c4a8e8",
+  lightFade: "#f2d072",
 };
 
 const CUE_NAME_TINT = {
@@ -44,6 +48,7 @@ const CUE_NAME_TINT = {
   wait: "#e8d4a8",
   volumeFade: "#b4d4e8",
   opacityFade: "#d4b4e8",
+  lightFade: "#f2d072",
   warning: "#e8a87c",
 } as const;
 
@@ -84,10 +89,12 @@ export interface CueRowStyleState {
   isStop: boolean;
   isVolumeFade: boolean;
   isOpacityFade: boolean;
+  isLightFade: boolean;
   isSequenceStep: boolean;
   hasWarning: boolean;
   pulseAsStopTarget: boolean;
   staticAsStopTarget: boolean;
+  isPreviewing: boolean;
   dropActive: boolean;
   insertBefore: boolean;
   insertAfter: boolean;
@@ -172,6 +179,9 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
       bgcolor: "rgba(232, 138, 138, 0.1)",
       boxShadow: "inset 3px 0 0 rgba(232, 138, 138, 0.65)",
     }),
+    ...(state.isPreviewing && {
+      boxShadow: `inset 3px 0 0 ${CUE_TYPE_COLORS.dmx.color}`,
+    }),
   };
 }
 
@@ -187,7 +197,7 @@ export function cueNumberSx(tokens: GscTokenSet): SxProps<Theme> {
 
 export function cueNameSx(state: Pick<
   CueRowStyleState,
-  "primarySelected" | "isStop" | "isVolumeFade" | "isOpacityFade" | "hasWarning"
+  "primarySelected" | "isStop" | "isVolumeFade" | "isOpacityFade" | "isLightFade" | "hasWarning"
 >): SxProps<Theme> {
   const cueNameColor = state.isStop
     ? CUE_NAME_TINT.stop
@@ -195,9 +205,11 @@ export function cueNameSx(state: Pick<
       ? CUE_NAME_TINT.volumeFade
       : state.isOpacityFade
         ? CUE_NAME_TINT.opacityFade
-        : state.hasWarning
-          ? CUE_NAME_TINT.warning
-          : undefined;
+        : state.isLightFade
+          ? CUE_NAME_TINT.lightFade
+          : state.hasWarning
+            ? CUE_NAME_TINT.warning
+            : undefined;
 
   return {
     flex: 1,

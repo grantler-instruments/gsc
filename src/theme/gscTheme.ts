@@ -87,8 +87,6 @@ function buildComponentOverrides(tokens: GscTokenSet) {
             "&:hover fieldset": { borderColor: tokens.textMuted },
             "&.Mui-focused fieldset": {
               borderColor: tokens.accent,
-              outline: `2px solid ${tokens.accentDim}`,
-              outlineOffset: 0,
             },
           },
         },

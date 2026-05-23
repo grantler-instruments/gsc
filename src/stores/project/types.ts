@@ -5,8 +5,10 @@ import type {
   FadeCueType,
   MidiCueData,
   OscCueData,
+  DmxCueData,
   ProjectSnapshot,
 } from "../../types/cue";
+import type { Fixture } from "../../types/fixture";
 import type { MidiMapping } from "../../types/midi-mapping";
 
 export interface ProjectState {
@@ -15,12 +17,14 @@ export interface ProjectState {
   cueLists: CueList[];
   activeCueListId: string;
   midiMappings: MidiMapping[];
+  fixtures: Fixture[];
   addCue: (opts: {
     name: string;
     type: CueType;
     assetPath?: string;
     midi?: MidiCueData;
     osc?: OscCueData;
+    dmx?: DmxCueData;
     parentId?: string;
   }) => Cue;
   addGroupCue: (opts?: { name?: string; parentId?: string }) => Cue;
@@ -57,6 +61,10 @@ export interface ProjectState {
   updateMidiMapping: (id: string, patch: Partial<MidiMapping>) => void;
   setMidiMappings: (mappings: MidiMapping[]) => void;
   autoMapNotesToCues: (startNote?: number) => void;
+  addFixture: (opts?: Partial<Omit<Fixture, "id">>) => Fixture;
+  removeFixture: (id: string) => void;
+  updateFixture: (id: string, patch: Partial<Omit<Fixture, "id">>) => void;
+  appendFixtures: (fixtures: Fixture[]) => void;
   loadSnapshot: (snap: ProjectSnapshot) => void;
   getSnapshot: () => ProjectSnapshot;
 }

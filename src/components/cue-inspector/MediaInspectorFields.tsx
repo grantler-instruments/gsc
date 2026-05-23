@@ -4,6 +4,7 @@ import type { Cue } from "../../types/cue";
 import { CueAssetPreview } from "../CueAssetPreview";
 import { LoopFields } from "../LoopFields";
 import { PlaybackRangeFields } from "../PlaybackRangeFields";
+import { SliderNumberField } from "../SliderNumberField";
 import { inspectorFieldLabelSx, inspectorFieldSx } from "../inspectorSx";
 
 interface MediaInspectorFieldsProps {
@@ -67,38 +68,30 @@ export function MediaInspectorFields({
               }
             />
           </Box>
-          <Box component="label" sx={inspectorFieldSx}>
-            Volume
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={cue.volume ?? 1}
-              disabled={readOnly}
-              onChange={(e) =>
-                onChange({ volume: Number(e.currentTarget.value) })
-              }
-            />
-          </Box>
+          <SliderNumberField
+            label="Volume"
+            value={cue.volume ?? 1}
+            min={0}
+            max={1}
+            step={0.01}
+            readOnly={readOnly}
+            onChange={(volume) => onChange({ volume })}
+            inputWidth={48}
+          />
         </>
       )}
 
       {(cue.type === "video" || cue.type === "image") && (
-        <Box component="label" sx={inspectorFieldSx}>
-          Opacity
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={cue.opacity ?? 1}
-            disabled={readOnly}
-            onChange={(e) =>
-              onChange({ opacity: Number(e.currentTarget.value) })
-            }
-          />
-        </Box>
+        <SliderNumberField
+          label="Opacity"
+          value={cue.opacity ?? 1}
+          min={0}
+          max={1}
+          step={0.01}
+          readOnly={readOnly}
+          onChange={(opacity) => onChange({ opacity })}
+          inputWidth={48}
+        />
       )}
 
       {cue.assetPath && (

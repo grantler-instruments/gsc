@@ -1,15 +1,13 @@
-import { createCueList, type CueList } from "./cue-lists";
+import { type CueList } from "./cue-lists";
+import { normalizeFixtures } from "./fixtures";
 import { defaultMidiCueData } from "./midi";
 import { defaultOscCueData, normalizeOscArgs } from "./osc";
-import type { Cue, ProjectSnapshot, ProjectSnapshotV2 } from "../types/cue";
+import { defaultDmxCueData, normalizeDmxCueData } from "./dmx";
+import type { Cue, ProjectSnapshot } from "../types/cue";
+import type { Fixture } from "../types/fixture";
 import type { MidiMapping } from "../types/midi-mapping";
 
-function projectIdFromSnapshot(snap: ProjectSnapshot): string {
-  if (snap.version === 2 && snap.id) return snap.id;
-  return crypto.randomUUID();
-}
-
-function normalizeCues(cues: Cue[]): Cue[] {
+function normalizeCues(cues: Cue[], fixtures: Fixture[] = []): Cue[] {
   return cues.map((c) => {
     if (c.type === "midi" && !c.midi) {
       return { ...c, midi: defaultMidiCueData() };
@@ -19,6 +17,18 @@ function normalizeCues(cues: Cue[]): Cue[] {
     }
     if (c.type === "osc" && c.osc) {
       return { ...c, osc: { ...c.osc, args: normalizeOscArgs(c.osc.args) } };
+    }
+    if (c.type === "dmx" && !c.dmx) {
+      return { ...c, dmx: defaultDmxCueData(fixtures) };
+    }
+    if (c.type === "dmx" && c.dmx) {
+      return { ...c, dmx: normalizeDmxCueData(c.dmx, fixtures) };
+    }
+    if (c.type === "lightFade" && !c.dmx) {
+      return { ...c, dmx: defaultDmxCueData(fixtures) };
+    }
+    if (c.type === "lightFade" && c.dmx) {
+      return { ...c, dmx: normalizeDmxCueData(c.dmx, fixtures) };
     }
     return c;
   });
@@ -30,40 +40,25 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   cueLists: CueList[];
   activeCueListId: string;
   midiMappings: MidiMapping[];
+  fixtures: Fixture[];
 } {
-  const id = projectIdFromSnapshot(snap);
-
-  if (snap.version === 2) {
-    const cueLists: CueList[] = snap.cueLists.map((list) => ({
-      id: list.id,
-      name: list.name,
-      cues: normalizeCues(list.cues),
-      selectedCueIds: [],
-      selectionAnchorId: null,
-    }));
-    const active =
-      cueLists.find((l) => l.id === snap.activeCueListId) ?? cueLists[0];
-    return {
-      id,
-      name: snap.name,
-      cueLists,
-      activeCueListId: active.id,
-      midiMappings: snap.midiMappings ?? [],
-    };
-  }
-
-  const main = createCueList("Main");
-  main.cues = normalizeCues(snap.cues);
-  if (main.cues[0]) {
-    main.selectedCueIds = [main.cues[0].id];
-    main.selectionAnchorId = main.cues[0].id;
-  }
+  const fixtures = normalizeFixtures(snap.fixtures);
+  const cueLists: CueList[] = snap.cueLists.map((list) => ({
+    id: list.id,
+    name: list.name,
+    cues: normalizeCues(list.cues, fixtures),
+    selectedCueIds: [],
+    selectionAnchorId: null,
+  }));
+  const active =
+    cueLists.find((l) => l.id === snap.activeCueListId) ?? cueLists[0];
   return {
-    id,
+    id: snap.id,
     name: snap.name,
-    cueLists: [main],
-    activeCueListId: main.id,
-    midiMappings: [],
+    cueLists,
+    activeCueListId: active.id,
+    midiMappings: snap.midiMappings ?? [],
+    fixtures,
   };
 }
 
@@ -73,7 +68,8 @@ export function cueListsToSnapshot(
   cueLists: CueList[],
   activeCueListId: string,
   midiMappings: MidiMapping[] = [],
-): ProjectSnapshotV2 {
+  fixtures: Fixture[] = [],
+): ProjectSnapshot {
   return {
     version: 2,
     id,
@@ -85,5 +81,6 @@ export function cueListsToSnapshot(
       cues: list.cues,
     })),
     midiMappings,
+    fixtures,
   };
 }
