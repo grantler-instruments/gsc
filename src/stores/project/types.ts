@@ -9,6 +9,7 @@ import type {
   ProjectSnapshot,
 } from "../../types/cue";
 import type { Fixture } from "../../types/fixture";
+import type { FixturePlot, FixturePlotEntry } from "../../types/fixture-plot";
 import type { MidiMapping } from "../../types/midi-mapping";
 
 export interface ProjectState {
@@ -18,6 +19,7 @@ export interface ProjectState {
   activeCueListId: string;
   midiMappings: MidiMapping[];
   fixtures: Fixture[];
+  fixturePlot: FixturePlot;
   addCue: (opts: {
     name: string;
     type: CueType;
@@ -65,6 +67,13 @@ export interface ProjectState {
   removeFixture: (id: string) => void;
   updateFixture: (id: string, patch: Partial<Omit<Fixture, "id">>) => void;
   appendFixtures: (fixtures: Fixture[]) => void;
+  syncFixturePlot: () => void;
+  setFixturePlot: (plot: FixturePlot) => void;
+  updateFixturePlotEntry: (
+    fixtureId: string,
+    patch: Partial<Omit<FixturePlotEntry, "fixtureId">>,
+  ) => void;
+  moveFixturePlotEntry: (fixtureId: string, x: number, y: number) => void;
   loadSnapshot: (snap: ProjectSnapshot) => void;
   getSnapshot: () => ProjectSnapshot;
 }

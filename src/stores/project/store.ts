@@ -6,6 +6,7 @@ import type { CueList } from "../../lib/cue-lists";
 import { createCueEditorActions } from "./cue-editor-actions";
 import { createCueListActions } from "./cue-list-actions";
 import { createFixtureActions } from "./fixture-actions";
+import { createFixturePlotActions } from "./fixture-plot-actions";
 import { createMidiMappingActions } from "./midi-mapping-actions";
 import { createSelectionActions } from "./selection-actions";
 import { createSnapshotActions } from "./snapshot-actions";
@@ -22,11 +23,13 @@ export const useProjectStore = create<ProjectState>()(
       ...initialProjectData,
       midiMappings: [...initialProjectData.midiMappings],
       fixtures: [...initialProjectData.fixtures],
+      fixturePlot: { ...initialProjectData.fixturePlot, entries: [] },
       ...createCueEditorActions(set, get),
       ...createSelectionActions(set, get),
       ...createCueListActions(set, get),
       ...createMidiMappingActions(set, get),
       ...createFixtureActions(set, get),
+      ...createFixturePlotActions(set, get),
       ...createSnapshotActions(set, get),
     }),
     { name: "ProjectStore" },

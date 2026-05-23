@@ -1,4 +1,5 @@
 import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
+import GridViewOutlinedIcon from "@mui/icons-material/GridViewOutlined";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -55,6 +56,8 @@ const emptyListSx = {
 export function FixturesPanel() {
   const tokens = useGscTokens();
   const showMode = useUiStore((s) => s.showMode);
+  const setSidebarTab = useUiStore((s) => s.setSidebarTab);
+  const setFixturePlotEditMode = useUiStore((s) => s.setFixturePlotEditMode);
   const canEdit = !showMode;
   const fixtures = useProjectStore((s) => s.fixtures);
   const projectName = useProjectStore((s) => s.name);
@@ -305,6 +308,24 @@ export function FixturesPanel() {
         onClose={() => setBrowseDialogOpen(false)}
         onImported={handleBrowseImported}
       />
+
+      {fixtures.length > 0 && (
+        <Box sx={{ px: 1.5, py: 1, flexShrink: 0, borderTop: 1, borderColor: "divider" }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<GridViewOutlinedIcon />}
+            onClick={() => {
+              if (canEdit) {
+                setFixturePlotEditMode(true);
+              }
+              setSidebarTab("active");
+            }}
+          >
+            {canEdit ? "Edit fixture preview" : "View fixture preview"}
+          </Button>
+        </Box>
+      )}
 
       {canEdit && (
         <Box

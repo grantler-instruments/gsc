@@ -1,10 +1,12 @@
 import { type CueList } from "./cue-lists";
 import { normalizeFixtures } from "./fixtures";
+import { normalizeFixturePlot } from "./fixture-plot";
 import { defaultMidiCueData } from "./midi";
 import { defaultOscCueData, normalizeOscArgs } from "./osc";
 import { defaultDmxCueData, normalizeDmxCueData } from "./dmx";
 import type { Cue, ProjectSnapshot } from "../types/cue";
 import type { Fixture } from "../types/fixture";
+import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
 
 function normalizeCues(cues: Cue[], fixtures: Fixture[] = []): Cue[] {
@@ -41,8 +43,10 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   activeCueListId: string;
   midiMappings: MidiMapping[];
   fixtures: Fixture[];
+  fixturePlot: FixturePlot;
 } {
   const fixtures = normalizeFixtures(snap.fixtures);
+  const fixturePlot = normalizeFixturePlot(snap.fixturePlot, fixtures);
   const cueLists: CueList[] = snap.cueLists.map((list) => ({
     id: list.id,
     name: list.name,
@@ -59,6 +63,7 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
     activeCueListId: active.id,
     midiMappings: snap.midiMappings ?? [],
     fixtures,
+    fixturePlot,
   };
 }
 
@@ -69,7 +74,9 @@ export function cueListsToSnapshot(
   activeCueListId: string,
   midiMappings: MidiMapping[] = [],
   fixtures: Fixture[] = [],
+  fixturePlot?: FixturePlot,
 ): ProjectSnapshot {
+  const normalizedFixtures = normalizeFixtures(fixtures);
   return {
     version: 2,
     id,
@@ -81,6 +88,7 @@ export function cueListsToSnapshot(
       cues: list.cues,
     })),
     midiMappings,
-    fixtures,
+    fixtures: normalizedFixtures,
+    fixturePlot: normalizeFixturePlot(fixturePlot, normalizedFixtures),
   };
 }

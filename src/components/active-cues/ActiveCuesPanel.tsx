@@ -8,6 +8,7 @@ import { triggerStopCue } from "../../lib/trigger";
 import { getActiveCueListFromState, useProjectStore } from "../../stores/project";
 import { useTransportStore } from "../../stores/transport";
 import { VisualMonitor } from "../VisualMonitor";
+import { FixturePlotMonitor } from "../FixturePlotMonitor";
 import { ActiveCueRow } from "./ActiveCueRow";
 import { activeCuesEmptyListSx } from "./activeCuesSx";
 import { useActivePlaybackCues } from "./useActivePlaybackCues";
@@ -18,6 +19,7 @@ export function ActiveCuesPanel() {
     getPrimarySelectedCueId(getActiveCueListFromState(s).selectedCueIds),
   );
   const selectCue = useProjectStore((s) => s.selectCue);
+  const fixtures = useProjectStore((s) => s.fixtures);
   const activeCueId = useTransportStore((s) => s.activeCueId);
   const stopMany = useTransportStore((s) => s.stopMany);
   const stop = useTransportStore((s) => s.stop);
@@ -43,6 +45,7 @@ export function ActiveCuesPanel() {
       }}
     >
       <VisualMonitor variant="sidebar" />
+      {fixtures.length > 0 && <FixturePlotMonitor />}
 
       {activeCues.length > 0 && (
         <Stack

@@ -17,6 +17,8 @@ interface UiState {
   collapsedCueGroupIds: string[];
   /** Light cues checked for live DMX preview in the cue list. */
   dmxPreviewCueIds: string[];
+  /** When true, the fixture plot is in reposition edit mode. */
+  fixturePlotEditMode: boolean;
   setSidebarTab: (tab: SidebarTabId) => void;
   setRightSidebarTab: (tab: RightSidebarTabId) => void;
   setDarkMode: (dark: boolean) => void;
@@ -25,6 +27,7 @@ interface UiState {
   setMidiLearnAction: (action: MidiAction | null) => void;
   toggleShowMode: () => void;
   toggleCueGroupCollapsed: (groupId: string) => void;
+  setFixturePlotEditMode: (open: boolean) => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -39,6 +42,7 @@ export const useUiStore = create<UiState>()(
         midiLearnAction: null,
         collapsedCueGroupIds: [],
         dmxPreviewCueIds: [],
+        fixturePlotEditMode: false,
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
         setRightSidebarTab: (rightSidebarTab) => set({ rightSidebarTab }),
         setDarkMode: (darkMode) => set({ darkMode }),
@@ -64,6 +68,8 @@ export const useUiStore = create<UiState>()(
             else collapsed.add(groupId);
             return { collapsedCueGroupIds: [...collapsed] };
           }),
+        setFixturePlotEditMode: (fixturePlotEditMode) =>
+          set({ fixturePlotEditMode }),
       }),
       {
         name: "gsc-ui",

@@ -1,0 +1,81 @@
+import type { FixturePlot, FixturePlotEntry } from "../../types/fixture-plot";
+import {
+  ensureFixturePlot,
+  fixturePlotNeedsSync,
+  normalizeFixturePlot,
+  updateFixturePlotEntryPosition,
+} from "../../lib/fixture-plot";
+import type { StoreApi } from "zustand";
+import type { ProjectState } from "./types";
+
+type ProjectStore = StoreApi<ProjectState>;
+
+export function createFixturePlotActions(
+  set: ProjectStore["setState"],
+  get: ProjectStore["getState"],
+): Pick<
+  ProjectState,
+  | "syncFixturePlot"
+  | "updateFixturePlotEntry"
+  | "setFixturePlot"
+  | "moveFixturePlotEntry"
+> {
+  return {
+    syncFixturePlot: () => {
+      const { fixtures, fixturePlot } = get();
+      if (!fixturePlotNeedsSync(fixturePlot, fixtures)) return;
+      set({ fixturePlot: ensureFixturePlot(fixturePlot, fixtures) });
+    },
+
+    setFixturePlot: (plot: FixturePlot) => {
+      const { fixtures } = get();
+      set({ fixturePlot: normalizeFixturePlot(plot, fixtures) });
+    },
+
+    updateFixturePlotEntry: (
+      fixtureId: string,
+      patch: Partial<Omit<FixturePlotEntry, "fixtureId">>,
+    ) => {
+      set((state) => {
+        const fixture = state.fixtures.find((item) => item.id === fixtureId);
+        if (!fixture) return state;
+
+        const plot = ensureFixturePlot(state.fixturePlot, state.fixtures);
+        const entries = plot.entries.map((entry) => {
+          if (entry.fixtureId !== fixtureId) return entry;
+          return normalizeFixturePlot(
+            {
+              entries: [{ ...entry, ...patch, fixtureId }],
+            },
+            [fixture],
+          ).entries[0]!;
+        });
+
+        return { fixturePlot: { ...plot, entries } };
+      });
+    },
+
+    moveFixturePlotEntry: (fixtureId: string, x: number, y: number) => {
+      applyFixturePlotEntryMove(set, get, fixtureId, x, y);
+    },
+  };
+}
+
+export function applyFixturePlotEntryMove(
+  set: ProjectStore["setState"],
+  get: ProjectStore["getState"],
+  fixtureId: string,
+  x: number,
+  y: number,
+): void {
+  const { fixturePlot, fixtures } = get();
+  set({
+    fixturePlot: updateFixturePlotEntryPosition(
+      ensureFixturePlot(fixturePlot, fixtures),
+      fixtureId,
+      x,
+      y,
+      fixtures,
+    ),
+  });
+}

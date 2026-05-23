@@ -5,6 +5,7 @@ import {
   vfsPersistStateChanged,
   type ProjectPersistSlice,
 } from "./project-persist";
+import { emptyFixturePlot } from "./fixture-plot";
 import { testCue } from "../test/fixtures/cues";
 
 function projectState(overrides: Partial<ProjectPersistSlice> = {}): ProjectPersistSlice {
@@ -20,6 +21,7 @@ function projectState(overrides: Partial<ProjectPersistSlice> = {}): ProjectPers
     activeCueListId: list.id,
     midiMappings: [],
     fixtures: [],
+    fixturePlot: emptyFixturePlot(),
     ...overrides,
   };
 }

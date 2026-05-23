@@ -74,6 +74,7 @@ export interface DmxCueData {
 }
 
 import type { Fixture } from "./fixture";
+import type { FixturePlot } from "./fixture-plot";
 import type { MidiMapping } from "./midi-mapping";
 
 export interface Cue {
@@ -133,4 +134,6 @@ export interface ProjectSnapshot {
   midiMappings?: MidiMapping[];
   /** Patched DMX fixtures for this show. */
   fixtures?: Fixture[];
+  /** Spatial layout for the fixture plot visualizer. */
+  fixturePlot?: FixturePlot;
 }
