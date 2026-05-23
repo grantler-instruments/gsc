@@ -53,13 +53,15 @@ export function CueInspectorNameFields({
       <TextField
         label="Notes"
         multiline
-        minRows={4}
+        minRows={1}
+        maxRows={4}
+        size="small"
         fullWidth
         value={cue.notes ?? ""}
         placeholder="Production notes, lines, reminders…"
         slotProps={{ input: { readOnly } }}
         onChange={(e) => onNotesChange(e.target.value)}
-        sx={{ mb: 1.5 }}
+        sx={{ mb: 1 }}
       />
     </>
   );
