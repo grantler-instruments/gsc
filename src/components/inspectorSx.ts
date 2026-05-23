@@ -110,6 +110,19 @@ export const inspectorGroupLegendSx = {
   p: 0,
 };
 
+export const inspectorToggleGroupSx = {
+  alignSelf: "flex-start",
+  maxWidth: "100%",
+  "& .MuiToggleButton-root": {
+    flex: "none",
+    px: 1,
+    py: 0.25,
+    fontSize: 12,
+    lineHeight: 1.3,
+    whiteSpace: "nowrap",
+  },
+};
+
 export const inspectorGroupHintSx = {
   mt: -0.5,
   mb: 0,

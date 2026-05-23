@@ -5,6 +5,7 @@ import { startNewProject } from "../lib/new-project";
 import { openSettings } from "../lib/open-settings";
 import { canEditProject } from "../lib/show-mode";
 import { triggerGoSelected } from "../lib/transport-actions";
+import { toggleWindowFullscreen } from "../platform/window-fullscreen";
 import { useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
@@ -28,6 +29,12 @@ export function useAppKeyboard(): void {
       if ((e.metaKey || e.ctrlKey) && e.key === "," && !e.shiftKey && !e.altKey) {
         e.preventDefault();
         openSettings();
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f" && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        void toggleWindowFullscreen();
         return;
       }
 

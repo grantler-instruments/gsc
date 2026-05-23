@@ -24,6 +24,7 @@ import {
   inspectorGroupLegendSx,
   inspectorGroupSx,
   inspectorHintSx,
+  inspectorToggleGroupSx,
 } from "./inspectorSx";
 
 interface ContainerInspectorFieldsProps {
@@ -59,8 +60,8 @@ export function ContainerInspectorFields({ container }: ContainerInspectorFields
         </Typography>
         <ToggleButtonGroup
           exclusive
-          fullWidth
           size="small"
+          sx={inspectorToggleGroupSx}
           value={isSequence ? "sequence" : "group"}
           disabled={!canEdit}
           aria-label="Container playback mode"
