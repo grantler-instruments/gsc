@@ -1,7 +1,7 @@
 import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react";
-import { openSettings } from "../lib/open-settings";
 import { startNewProject } from "../lib/new-project";
+import { openSettings } from "../lib/open-settings";
 import { getPlatform } from "../platform";
 
 /** Wire native menu shortcuts on Tauri desktop. */

@@ -1,10 +1,5 @@
 import { alpha, createTheme, type Theme } from "@mui/material/styles";
-import {
-  editTokens,
-  showTokens,
-  tokensToCssVars,
-  type GscTokenSet,
-} from "./tokens";
+import { editTokens, type GscTokenSet, showTokens, tokensToCssVars } from "./tokens";
 
 function buildComponentOverrides(tokens: GscTokenSet) {
   return {

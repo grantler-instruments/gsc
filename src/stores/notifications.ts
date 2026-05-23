@@ -22,10 +22,7 @@ export const useNotificationsStore = create<NotificationsState>()(
 
       push: (message, severity = "info") =>
         set((s) => ({
-          queue: [
-            ...s.queue,
-            { id: crypto.randomUUID(), message, severity },
-          ],
+          queue: [...s.queue, { id: crypto.randomUUID(), message, severity }],
         })),
 
       dismiss: (id) =>

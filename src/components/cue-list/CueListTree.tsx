@@ -1,13 +1,8 @@
 import type { MouseEvent } from "react";
 import { cueMissingAsset } from "../../lib/cue-asset";
-import {
-  getChildCues,
-  isContainerCue,
-  isCueActive,
-  type CueListNode,
-} from "../../lib/cues";
-import type { Cue } from "../../types/cue";
+import { type CueListNode, getChildCues, isContainerCue, isCueActive } from "../../lib/cues";
 import type { RunningSequence } from "../../stores/transport";
+import type { Cue } from "../../types/cue";
 import { CueRow } from "./CueRow";
 
 export interface CueListTreeProps {
@@ -51,9 +46,7 @@ export function CueListTree({
 }: CueListTreeProps) {
   return nodes.flatMap((node) => {
     const expanded = !collapsedGroups.has(node.cue.id);
-    const childCount = isContainerCue(node.cue)
-      ? getChildCues(cues, node.cue.id).length
-      : 0;
+    const childCount = isContainerCue(node.cue) ? getChildCues(cues, node.cue.id).length : 0;
 
     const row = (
       <CueRow

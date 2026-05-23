@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
+import { useGscTokens } from "../../theme/useGscTokens";
 import { useCueListActions } from "./cueListActionsContext";
 import { useCueListTrailingDrop } from "./useCueListTrailingDrop";
-import { useGscTokens } from "../../theme/useGscTokens";
 
 interface CueListTrailingDropProps {
   canEdit: boolean;
@@ -10,8 +10,7 @@ interface CueListTrailingDropProps {
 export function CueListTrailingDrop({ canEdit }: CueListTrailingDropProps) {
   const tokens = useGscTokens();
   const { allCues } = useCueListActions();
-  const { dropActive, onDragOver, onDragLeave, onDrop } =
-    useCueListTrailingDrop(canEdit, allCues);
+  const { dropActive, onDragOver, onDragLeave, onDrop } = useCueListTrailingDrop(canEdit, allCues);
 
   return (
     <Box

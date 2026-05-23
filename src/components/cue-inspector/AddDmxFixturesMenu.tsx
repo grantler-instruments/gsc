@@ -97,10 +97,7 @@ export function AddDmxFixturesMenu({
                 <Box component="span" sx={{ flex: 1 }}>
                   {fixture.name}
                 </Box>
-                <Box
-                  component="span"
-                  sx={{ ml: 1.5, color: "text.secondary", fontSize: 12 }}
-                >
+                <Box component="span" sx={{ ml: 1.5, color: "text.secondary", fontSize: 12 }}>
                   {formatFixturePatch(fixture)}
                 </Box>
               </MenuItem>

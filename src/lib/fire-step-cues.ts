@@ -1,3 +1,4 @@
+import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
 import {
   getStopTarget,
@@ -11,9 +12,8 @@ import {
   resolveStopCueIds,
 } from "./cues";
 import { walkParallelGroupChildren } from "./parallel-group-fire";
-import { triggerFadeCue } from "./trigger-fade";
 import { clearSequenceTimers } from "./sequence-timers";
-import { useTransportStore } from "../stores/transport";
+import { triggerFadeCue } from "./trigger-fade";
 
 export interface StepTransportActions {
   goMany: (cueIds: string[]) => void;
@@ -79,10 +79,7 @@ export function fireStepCues(
 }
 
 /** Playback cue ids in a step — utility/container cues are excluded. */
-export function playbackCueIdsInStep(
-  stepCueIds: string[],
-  cues: Cue[],
-): string[] {
+export function playbackCueIdsInStep(stepCueIds: string[], cues: Cue[]): string[] {
   return stepCueIds.filter((id) => {
     const cue = cues.find((c) => c.id === id);
     return cue !== undefined && !isUtilityCue(cue) && !isContainerCue(cue);

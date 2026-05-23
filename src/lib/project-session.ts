@@ -1,10 +1,11 @@
-import { setActiveProjectId } from "./active-project-id";
-import { collectOflPaths } from "./ofl/import-ofl";
-import { snapshotToCueLists } from "./project-snapshot";
-import { hydrateVfsFromProjectCache, vfsClear, vfsHas } from "../vfs/engine";
-import type { AssetKind, ProjectSnapshot } from "../types/cue";
 import { useProjectStore } from "../stores/project";
 import { useVfsStore, type VfsEntry } from "../stores/vfs";
+import type { AssetKind, ProjectSnapshot } from "../types/cue";
+import { hydrateVfsFromProjectCache, vfsClear, vfsHas } from "../vfs/engine";
+import { setActiveProjectId } from "./active-project-id";
+import { notifyWarningDeduped } from "./notifications";
+import { collectOflPaths } from "./ofl/import-ofl";
+import { snapshotToCueLists } from "./project-snapshot";
 
 const SESSION_KEY = "gsc-project-session";
 
@@ -64,12 +65,11 @@ export function persistProjectSession(): void {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   } catch (err) {
     console.warn("[project-session] Could not persist session", err);
+    notifyWarningDeduped("Could not save the project to browser storage.");
   }
 }
 
-function vfsEntriesFromSession(
-  assets: PersistedAssetEntry[],
-): VfsEntry[] {
+function vfsEntriesFromSession(assets: PersistedAssetEntry[]): VfsEntry[] {
   return assets
     .map((asset) => ({
       ...asset,

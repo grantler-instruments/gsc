@@ -1,18 +1,18 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import type { CueList } from "../../lib/cue-lists";
 import { findCueInLists } from "../../lib/cue-lists";
 import type { Cue } from "../../types/cue";
-import type { CueList } from "../../lib/cue-lists";
+import { registerDmxPreviewProjectAccess } from "../dmx-preview-session";
 import { createCueEditorActions } from "./cue-editor-actions";
 import { createCueListActions } from "./cue-list-actions";
 import { createFixtureActions } from "./fixture-actions";
 import { createFixturePlotActions } from "./fixture-plot-actions";
+import { getActiveCueListFromState } from "./helpers";
+import { initialProjectData } from "./initial-state";
 import { createMidiMappingActions } from "./midi-mapping-actions";
 import { createSelectionActions } from "./selection-actions";
 import { createSnapshotActions } from "./snapshot-actions";
-import { registerDmxPreviewProjectAccess } from "../dmx-preview-session";
-import { getActiveCueListFromState } from "./helpers";
-import { initialProjectData } from "./initial-state";
 import type { ProjectState } from "./types";
 
 export { getActiveCueListFromState } from "./helpers";
@@ -46,9 +46,6 @@ export function useProjectCues(): Cue[] {
   return useProjectStore((s) => getActiveCueListFromState(s).cues);
 }
 
-export function findProjectCue(
-  cueLists: CueList[],
-  cueId: string,
-): Cue | undefined {
+export function findProjectCue(cueLists: CueList[], cueId: string): Cue | undefined {
   return findCueInLists(cueLists, cueId)?.cue;
 }

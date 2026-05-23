@@ -27,10 +27,7 @@ export function MidiMapPanel() {
   const [learnAction, setLearnAction] = useState<MidiAction>(DEFAULT_LEARN_ACTION);
   const [learnCueId, setLearnCueId] = useState<string>("");
 
-  const topLevelCues = useMemo(
-    () => list.cues.filter((c) => !c.parentId),
-    [list.cues],
-  );
+  const topLevelCues = useMemo(() => list.cues.filter((c) => !c.parentId), [list.cues]);
 
   const resolvedLearnAction: MidiAction =
     learnAction.type === "go-cue" || learnAction.type === "select-cue"
@@ -39,8 +36,7 @@ export function MidiMapPanel() {
 
   const startLearn = () => {
     if (
-      (resolvedLearnAction.type === "go-cue" ||
-        resolvedLearnAction.type === "select-cue") &&
+      (resolvedLearnAction.type === "go-cue" || resolvedLearnAction.type === "select-cue") &&
       !resolvedLearnAction.cueId
     ) {
       return;
@@ -51,8 +47,7 @@ export function MidiMapPanel() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <Typography variant="body2" color="text.secondary">
-        Map incoming MIDI to transport actions. Mappings are saved with the
-        project.
+        Map incoming MIDI to transport actions. Mappings are saved with the project.
       </Typography>
 
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
@@ -113,11 +108,7 @@ export function MidiMapPanel() {
           variant={midiLearnAction ? "contained" : "outlined"}
           color={midiLearnAction ? "warning" : "primary"}
           size="small"
-          onClick={() =>
-            midiLearnAction
-              ? setMidiLearnAction(null)
-              : startLearn()
-          }
+          onClick={() => (midiLearnAction ? setMidiLearnAction(null) : startLearn())}
           sx={{ alignSelf: "flex-end" }}
         >
           {midiLearnAction ? "Cancel learn" : "Learn"}
@@ -216,8 +207,7 @@ export function MidiMapPanel() {
                 <MenuItem value="select-cue">Select</MenuItem>
                 <MenuItem value="panic">Panic</MenuItem>
               </Select>
-              {(m.action.type === "go-cue" ||
-                m.action.type === "select-cue") && (
+              {(m.action.type === "go-cue" || m.action.type === "select-cue") && (
                 <Select
                   size="small"
                   value={
@@ -239,11 +229,7 @@ export function MidiMapPanel() {
                   ))}
                 </Select>
               )}
-              <Button
-                size="small"
-                color="inherit"
-                onClick={() => removeMidiMapping(m.id)}
-              >
+              <Button size="small" color="inherit" onClick={() => removeMidiMapping(m.id)}>
                 Remove
               </Button>
             </Box>

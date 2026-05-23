@@ -5,9 +5,6 @@ export function clearSequenceTimers(): void {
   timers = [];
 }
 
-export function scheduleSequenceStep(
-  fn: () => void,
-  delayMs: number,
-): void {
+export function scheduleSequenceStep(fn: () => void, delayMs: number): void {
   timers.push(setTimeout(fn, delayMs));
 }

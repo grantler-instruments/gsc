@@ -1,5 +1,5 @@
-import { getMediaDurationSec } from "./media-duration";
 import { resolveAssetBlob } from "../platform/vfs-asset";
+import { getMediaDurationSec } from "./media-duration";
 
 const videoByPath = new Map<string, HTMLVideoElement>();
 const urlByPath = new Map<string, string>();

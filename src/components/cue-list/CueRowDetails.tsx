@@ -1,6 +1,5 @@
 import Typography from "@mui/material/Typography";
 import { getCueAssetWarning } from "../../lib/cue-asset";
-import { cueShowsPlaybackProgress } from "../../lib/playback-slice";
 import {
   getFadeTarget,
   getStopTarget,
@@ -12,19 +11,25 @@ import {
   isUtilityCue,
   isWaitCue,
 } from "../../lib/cues";
-import { getParallelGroupOrderConflict } from "../../lib/parallel-group-fire";
-import { resolveFadeFromLevel, isLightFadeCue, isLightFadeReady, resolveLightFadeEndDmx } from "../../lib/fade";
 import { formatDmxCue } from "../../lib/dmx";
+import {
+  isLightFadeCue,
+  isLightFadeReady,
+  resolveFadeFromLevel,
+  resolveLightFadeEndDmx,
+} from "../../lib/fade";
+import { formatLoopLabel } from "../../lib/loop";
 import { formatMidiCue } from "../../lib/midi";
 import { formatOscCue } from "../../lib/osc";
-import { formatWaitDurationLabel } from "../../lib/wait";
-import { formatLoopLabel } from "../../lib/loop";
+import { getParallelGroupOrderConflict } from "../../lib/parallel-group-fire";
+import { cueShowsPlaybackProgress } from "../../lib/playback-slice";
 import { formatPlaybackRangeLabel } from "../../lib/time";
-import type { Cue } from "../../types/cue";
-import type { RunningSequence } from "../../stores/transport";
-import { useProjectStore } from "../../stores/project";
+import { formatWaitDurationLabel } from "../../lib/wait";
 import type { CuePlaybackProgress } from "../../stores/playback";
+import { useProjectStore } from "../../stores/project";
+import type { RunningSequence } from "../../stores/transport";
 import { cueDetailSx } from "../../theme/cueStyles";
+import type { Cue } from "../../types/cue";
 import { PlaybackProgress } from "../PlaybackProgress";
 
 interface CueRowDetailsProps {
@@ -56,16 +61,11 @@ export function CueRowDetails({
   const fadeTarget = isFade ? getFadeTarget(cue, allCues) : undefined;
   const stopTargetMissing = isStop && !stopTarget;
   const fadeTargetMissing = isFade && !isLightFadeCue(cue) && !fadeTarget;
-  const lightFadeTargetMissing =
-    isLightFadeCue(cue) && Boolean(cue.fadeTargetId) && !fadeTarget;
+  const lightFadeTargetMissing = isLightFadeCue(cue) && Boolean(cue.fadeTargetId) && !fadeTarget;
   const lightFadeMissing =
-    isLightFadeCue(cue) &&
-    !lightFadeTargetMissing &&
-    !isLightFadeReady(cue, fixtures, allCues);
+    isLightFadeCue(cue) && !lightFadeTargetMissing && !isLightFadeReady(cue, fixtures, allCues);
   const lightFadeEndDmx =
-    isLightFadeCue(cue) && cue.dmx
-      ? resolveLightFadeEndDmx(cue, allCues, fixtures)
-      : null;
+    isLightFadeCue(cue) && cue.dmx ? resolveLightFadeEndDmx(cue, allCues, fixtures) : null;
   const fadeDetail =
     isFade && isLightFadeCue(cue) && lightFadeEndDmx
       ? `${formatDmxCue(lightFadeEndDmx, fixtures)} · ${cue.fadeDuration ?? 2}s`
@@ -73,25 +73,14 @@ export function CueRowDetails({
         ? `${resolveFadeFromLevel(cue, fadeTarget).toFixed(2)} → ${cue.fadeTo ?? 0} · ${cue.fadeDuration ?? 2}s`
         : null;
   const sequenceProgress =
-    isSequence && runningSequence?.rootId === cue.id
-      ? runningSequence
-      : null;
+    isSequence && runningSequence?.rootId === cue.id ? runningSequence : null;
   const rangeLabel =
-    !isContainer &&
-    !isUtility &&
-    cue.type !== "midi" &&
-    cue.type !== "osc" &&
-    cue.type !== "dmx"
+    !isContainer && !isUtility && cue.type !== "midi" && cue.type !== "osc" && cue.type !== "dmx"
       ? formatPlaybackRangeLabel(cue.inTime, cue.outTime, cue.type === "image")
       : null;
-  const loopLabel =
-    cue.type === "audio" || cue.type === "video"
-      ? formatLoopLabel(cue)
-      : null;
+  const loopLabel = cue.type === "audio" || cue.type === "video" ? formatLoopLabel(cue) : null;
   const assetWarning = getCueAssetWarning(cue);
-  const parallelConflict = isParallel
-    ? getParallelGroupOrderConflict(cue, allCues)
-    : null;
+  const parallelConflict = isParallel ? getParallelGroupOrderConflict(cue, allCues) : null;
 
   return (
     <>
@@ -177,11 +166,7 @@ export function CueRowDetails({
         </Typography>
       )}
       {active && playback && cueShowsPlaybackProgress(cue) && (
-        <PlaybackProgress
-          progress={playback}
-          compact
-          tone={isWait ? "wait" : "media"}
-        />
+        <PlaybackProgress progress={playback} compact tone={isWait ? "wait" : "media"} />
       )}
     </>
   );

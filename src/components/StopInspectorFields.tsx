@@ -1,13 +1,8 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
+import { formatStopTargetLabel, getStopTarget, isStopCue, isWaitCue } from "../lib/cues";
 import { isFadeCue } from "../lib/fade";
-import {
-  formatStopTargetLabel,
-  getStopTarget,
-  isStopCue,
-  isWaitCue,
-} from "../lib/cues";
 import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue } from "../types/cue";
@@ -33,11 +28,7 @@ export function StopInspectorFields({ stopCue }: StopInspectorFieldsProps) {
 
   const target = getStopTarget(stopCue, cues);
   const stoppableCues = cues.filter(
-    (c) =>
-      !isStopCue(c) &&
-      !isFadeCue(c) &&
-      !isWaitCue(c) &&
-      c.id !== stopCue.id,
+    (c) => !isStopCue(c) && !isFadeCue(c) && !isWaitCue(c) && c.id !== stopCue.id,
   );
 
   return (
@@ -46,8 +37,8 @@ export function StopInspectorFields({ stopCue }: StopInspectorFieldsProps) {
         Stop cue
       </Box>
       <Typography component="p" sx={inspectorGroupHintSx}>
-        When triggered (GO), this cue stops the target cue and any cues running
-        as part of it (e.g. children in a parallel group).
+        When triggered (GO), this cue stops the target cue and any cues running as part of it (e.g.
+        children in a parallel group).
       </Typography>
 
       <Box component="label" sx={inspectorFieldSx}>

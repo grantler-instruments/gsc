@@ -1,18 +1,15 @@
 import { describe, expect, it } from "vitest";
+import type { Fixture } from "../types/fixture";
 import {
   defaultFixturePlotEntry,
   ensureFixturePlot,
+  fixturePlotTooltipChannels,
   inferFixtureRenderKind,
   normalizeFixturePlot,
-  fixturePlotTooltipChannels,
   resolveFixtureVisualState,
 } from "./fixture-plot";
-import type { Fixture } from "../types/fixture";
 
-function fixture(
-  id: string,
-  overrides: Partial<Omit<Fixture, "id">> = {},
-): Fixture {
+function fixture(id: string, overrides: Partial<Omit<Fixture, "id">> = {}): Fixture {
   return {
     id,
     name: overrides.name ?? id,
@@ -25,9 +22,7 @@ function fixture(
 
 describe("fixture plot", () => {
   it("infers dimmer render for single-channel fixtures", () => {
-    expect(inferFixtureRenderKind(fixture("a", { channelCount: 1 }))).toBe(
-      "dimmer",
-    );
+    expect(inferFixtureRenderKind(fixture("a", { channelCount: 1 }))).toBe("dimmer");
   });
 
   it("infers rgb render from OFL channel keys", () => {
@@ -42,12 +37,7 @@ describe("fixture plot", () => {
             fixtureKey: "rgb",
             model: "RGB",
             modeName: "4ch",
-            channels: [
-              { key: "Red" },
-              { key: "Green" },
-              { key: "Blue" },
-              { key: "Dimmer" },
-            ],
+            channels: [{ key: "Red" }, { key: "Green" }, { key: "Blue" }, { key: "Dimmer" }],
           },
         }),
       ),
@@ -55,10 +45,7 @@ describe("fixture plot", () => {
   });
 
   it("creates plot entries for all fixtures", () => {
-    const fixtures = [
-      fixture("a", { channelCount: 1 }),
-      fixture("b", { channelCount: 6 }),
-    ];
+    const fixtures = [fixture("a", { channelCount: 1 }), fixture("b", { channelCount: 6 })];
     const plot = ensureFixturePlot(undefined, fixtures);
     expect(plot.entries).toHaveLength(2);
     expect(plot.entries[0]?.fixtureId).toBe("a");

@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { applyAssetPayloads, diskPathsMayHaveMedia } from "./asset-drop";
 import { useProjectStore } from "../stores/project";
-import {
-  activeCues,
-  resetTestProject,
-  testCue,
-} from "../test/fixtures/cues";
+import { activeCues, resetTestProject, testCue } from "../test/fixtures/cues";
+import { applyAssetPayloads, diskPathsMayHaveMedia } from "./asset-drop";
 
 describe("diskPathsMayHaveMedia", () => {
   it("accepts media file extensions", () => {
@@ -23,10 +19,7 @@ describe("applyAssetPayloads", () => {
   });
 
   it("adds cues to the list for list drops", () => {
-    applyAssetPayloads(
-      [{ path: "assets/a.wav", name: "A", kind: "audio" }],
-      { kind: "list" },
-    );
+    applyAssetPayloads([{ path: "assets/a.wav", name: "A", kind: "audio" }], { kind: "list" });
 
     const cues = activeCues();
     expect(cues).toHaveLength(1);
@@ -38,26 +31,24 @@ describe("applyAssetPayloads", () => {
   it("assigns asset to an existing media cue row", () => {
     resetTestProject([testCue("a", "Old", "audio", { assetPath: "old.wav" })]);
 
-    applyAssetPayloads(
-      [{ path: "assets/new.wav", name: "New", kind: "audio" }],
-      { kind: "row", cueId: "a" },
-    );
+    applyAssetPayloads([{ path: "assets/new.wav", name: "New", kind: "audio" }], {
+      kind: "row",
+      cueId: "a",
+    });
 
     const cue = activeCues()[0];
     expect(cue.name).toBe("New");
     expect(cue.assetPath).toBe("assets/new.wav");
-    expect(useProjectStore.getState().cueLists[0].selectedCueIds).toEqual([
-      "a",
-    ]);
+    expect(useProjectStore.getState().cueLists[0].selectedCueIds).toEqual(["a"]);
   });
 
   it("adds child cues when dropped on a container row", () => {
     resetTestProject([testCue("g", "Group", "group")]);
 
-    applyAssetPayloads(
-      [{ path: "assets/a.wav", name: "A", kind: "audio" }],
-      { kind: "row", cueId: "g" },
-    );
+    applyAssetPayloads([{ path: "assets/a.wav", name: "A", kind: "audio" }], {
+      kind: "row",
+      cueId: "g",
+    });
 
     const child = activeCues().find((c) => c.parentId === "g");
     expect(child?.name).toBe("A");
@@ -65,10 +56,10 @@ describe("applyAssetPayloads", () => {
   });
 
   it("creates list cues when row id is missing", () => {
-    applyAssetPayloads(
-      [{ path: "assets/a.wav", name: "A", kind: "audio" }],
-      { kind: "row", cueId: "missing" },
-    );
+    applyAssetPayloads([{ path: "assets/a.wav", name: "A", kind: "audio" }], {
+      kind: "row",
+      cueId: "missing",
+    });
 
     expect(activeCues()).toHaveLength(1);
     expect(activeCues()[0].name).toBe("A");

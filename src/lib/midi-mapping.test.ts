@@ -1,22 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useProjectStore } from "../stores/project";
+import { useTransportStore } from "../stores/transport";
+import { resetTestProject, testCue } from "../test/fixtures/cues";
 import {
   buildNoteToCueMappings,
   dispatchMidiAction,
   formatMidiActionLabel,
   handleIncomingMidi,
 } from "./midi-mapping";
-import { useTransportStore } from "../stores/transport";
-import { useProjectStore } from "../stores/project";
-import {
-  resetTestProject,
-  testCue,
-} from "../test/fixtures/cues";
 
 function activeListSelection(): string[] {
   const { cueLists, activeCueListId } = useProjectStore.getState();
-  return (
-    cueLists.find((l) => l.id === activeCueListId)?.selectedCueIds ?? []
-  );
+  return cueLists.find((l) => l.id === activeCueListId)?.selectedCueIds ?? [];
 }
 
 function resetTransport() {
@@ -45,72 +40,87 @@ describe("handleIncomingMidi", () => {
   });
 
   it("ignores note-on with zero velocity", () => {
-    handleIncomingMidi([0x90, 60, 0], [
-      {
-        id: "m1",
-        match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
-        action: { type: "select-cue", cueId: "a" },
-      },
-    ]);
+    handleIncomingMidi(
+      [0x90, 60, 0],
+      [
+        {
+          id: "m1",
+          match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
+          action: { type: "select-cue", cueId: "a" },
+        },
+      ],
+    );
 
     expect(activeListSelection()).toEqual([]);
   });
 
   it("dispatches the first enabled matching mapping", () => {
-    handleIncomingMidi([0x90, 60, 127], [
-      {
-        id: "m1",
-        match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
-        action: { type: "select-cue", cueId: "a" },
-      },
-      {
-        id: "m2",
-        match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
-        action: { type: "select-cue", cueId: "b" },
-      },
-    ]);
+    handleIncomingMidi(
+      [0x90, 60, 127],
+      [
+        {
+          id: "m1",
+          match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
+          action: { type: "select-cue", cueId: "a" },
+        },
+        {
+          id: "m2",
+          match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
+          action: { type: "select-cue", cueId: "b" },
+        },
+      ],
+    );
 
     expect(activeListSelection()).toEqual(["a"]);
   });
 
   it("skips disabled mappings", () => {
-    handleIncomingMidi([0x90, 60, 127], [
-      {
-        id: "m1",
-        enabled: false,
-        match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
-        action: { type: "select-cue", cueId: "a" },
-      },
-      {
-        id: "m2",
-        match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
-        action: { type: "select-cue", cueId: "b" },
-      },
-    ]);
+    handleIncomingMidi(
+      [0x90, 60, 127],
+      [
+        {
+          id: "m1",
+          enabled: false,
+          match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
+          action: { type: "select-cue", cueId: "a" },
+        },
+        {
+          id: "m2",
+          match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
+          action: { type: "select-cue", cueId: "b" },
+        },
+      ],
+    );
 
     expect(activeListSelection()).toEqual(["b"]);
   });
 
   it("debounces identical messages within 50ms", () => {
-    handleIncomingMidi([0x90, 60, 127], [
-      {
-        id: "m1",
-        match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
-        action: { type: "go-cue", cueId: "a" },
-      },
-    ]);
+    handleIncomingMidi(
+      [0x90, 60, 127],
+      [
+        {
+          id: "m1",
+          match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
+          action: { type: "go-cue", cueId: "a" },
+        },
+      ],
+    );
     expect(useTransportStore.getState().activeCueIds).toEqual(["a"]);
 
     useTransportStore.getState().stop();
     vi.mocked(performance.now).mockReturnValue(mockNow + 10);
 
-    handleIncomingMidi([0x90, 60, 127], [
-      {
-        id: "m1",
-        match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
-        action: { type: "go-cue", cueId: "a" },
-      },
-    ]);
+    handleIncomingMidi(
+      [0x90, 60, 127],
+      [
+        {
+          id: "m1",
+          match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
+          action: { type: "go-cue", cueId: "a" },
+        },
+      ],
+    );
 
     expect(useTransportStore.getState().activeCueIds).toEqual([]);
   });
@@ -163,11 +173,7 @@ describe("buildNoteToCueMappings", () => {
 describe("formatMidiActionLabel", () => {
   it("labels cue actions with cue number and name", () => {
     const cues = [testCue("a", "Intro", "audio", { number: "1" })];
-    expect(formatMidiActionLabel({ type: "go-cue", cueId: "a" }, cues)).toBe(
-      "GO 1 — Intro",
-    );
-    expect(formatMidiActionLabel({ type: "go-selected" }, cues)).toBe(
-      "GO (selected cue)",
-    );
+    expect(formatMidiActionLabel({ type: "go-cue", cueId: "a" }, cues)).toBe("GO 1 — Intro");
+    expect(formatMidiActionLabel({ type: "go-selected" }, cues)).toBe("GO (selected cue)");
   });
 });

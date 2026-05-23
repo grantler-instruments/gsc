@@ -1,13 +1,11 @@
-import { getLoopPlayCount } from "./loop";
 import type { Cue } from "../types/cue";
 import type { OutputLayer } from "../types/output";
+import { getLoopPlayCount } from "./loop";
 
 export function videoPlaybackWindow(cue: Cue, mediaDuration: number) {
   const inT = Math.max(0, cue.inTime ?? 0);
   const endSec =
-    cue.outTime !== undefined
-      ? Math.min(mediaDuration, Math.max(inT, cue.outTime))
-      : mediaDuration;
+    cue.outTime !== undefined ? Math.min(mediaDuration, Math.max(inT, cue.outTime)) : mediaDuration;
   return {
     offsetSec: inT,
     durationSec: Math.max(0.01, endSec - inT),
@@ -26,10 +24,7 @@ export function isOutputLayerLooping(layer: OutputLayer): boolean {
   return layer.loopCount !== 1;
 }
 
-export function elapsedVideoSec(
-  goAtMs: number,
-  nowMs = performance.now(),
-): number {
+export function elapsedVideoSec(goAtMs: number, nowMs = performance.now()): number {
   return Math.max(0, (nowMs - goAtMs) / 1000);
 }
 
@@ -54,10 +49,7 @@ export function videoTargetTime(
   return offsetSec + inSlice;
 }
 
-export function outputLayerTargetTime(
-  layer: OutputLayer,
-  nowMs = performance.now(),
-): number {
+export function outputLayerTargetTime(layer: OutputLayer, nowMs = performance.now()): number {
   const elapsed = elapsedVideoSec(layer.goAtMs, nowMs);
 
   if (layer.loopCount === "inf") {

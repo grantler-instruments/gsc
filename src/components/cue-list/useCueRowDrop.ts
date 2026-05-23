@@ -1,18 +1,15 @@
 import { useCallback, useRef, useState } from "react";
+import { isExternalFileDrag, resolveAssetDropPayloads } from "../../lib/asset-drop";
+import { cuesShareParent, isContainerCue } from "../../lib/cues";
+import { pointerLeftElement } from "../../lib/dom";
 import {
-  isExternalFileDrag,
-  resolveAssetDropPayloads,
-} from "../../lib/asset-drop";
-import {
+  type AssetDragPayload,
   isAssetDrag,
   isCueDrag,
   readCueDragId,
   setActiveAssetDrag,
   setActiveCueDrag,
-  type AssetDragPayload,
 } from "../../lib/drag";
-import { pointerLeftElement } from "../../lib/dom";
-import { cuesShareParent, isContainerCue } from "../../lib/cues";
 import type { Cue } from "../../types/cue";
 
 interface UseCueRowDropOptions {
@@ -21,11 +18,7 @@ interface UseCueRowDropOptions {
   canEdit: boolean;
   onAssetDrop: (payload: AssetDragPayload) => void;
   onCueDrop: (cueId: string) => void;
-  onCueReorder: (
-    draggedId: string,
-    targetId: string,
-    place: "before" | "after",
-  ) => void;
+  onCueReorder: (draggedId: string, targetId: string, place: "before" | "after") => void;
 }
 
 export function useCueRowDrop({
@@ -37,9 +30,7 @@ export function useCueRowDrop({
   onCueReorder,
 }: UseCueRowDropOptions) {
   const [dropActive, setDropActive] = useState(false);
-  const [insertPlace, setInsertPlace] = useState<"before" | "after" | null>(
-    null,
-  );
+  const [insertPlace, setInsertPlace] = useState<"before" | "after" | null>(null);
   const insertPlaceRef = useRef<"before" | "after" | null>(null);
   const isContainer = isContainerCue(cue);
 
@@ -49,8 +40,7 @@ export function useCueRowDrop({
       const draggedCueId = readCueDragId(e.dataTransfer);
       const draggingCue = draggedCueId !== null;
       const draggingAsset =
-        !draggingCue &&
-        (isAssetDrag(e.dataTransfer) || isExternalFileDrag(e.dataTransfer));
+        !draggingCue && (isAssetDrag(e.dataTransfer) || isExternalFileDrag(e.dataTransfer));
       if (!draggingCue && !draggingAsset) return;
 
       e.preventDefault();
@@ -67,8 +57,7 @@ export function useCueRowDrop({
         }
         if (dragged && cuesShareParent(dragged, cue)) {
           const rect = e.currentTarget.getBoundingClientRect();
-          const place =
-            e.clientY < rect.top + rect.height / 2 ? "before" : "after";
+          const place = e.clientY < rect.top + rect.height / 2 ? "before" : "after";
           e.dataTransfer.dropEffect = "move";
           insertPlaceRef.current = place;
           setInsertPlace(place);

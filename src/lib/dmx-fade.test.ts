@@ -1,7 +1,7 @@
-import { describe, expect, it, beforeEach } from "vitest";
-import { buildDmxFadePlan, sampleDmxFadePlan } from "./dmx-fade";
-import { getDmxChannelLevel, resetDmxOutputBuffers, setDmxChannelLevel } from "./dmx";
+import { beforeEach, describe, expect, it } from "vitest";
 import type { Fixture } from "../types/fixture";
+import { getDmxChannelLevel, resetDmxOutputBuffers, setDmxChannelLevel } from "./dmx";
+import { buildDmxFadePlan, sampleDmxFadePlan } from "./dmx-fade";
 
 const fixtures: Fixture[] = [
   {

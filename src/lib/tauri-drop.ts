@@ -1,5 +1,5 @@
-import type { AssetDragPayload } from "./drag";
 import { applyAssetPayloads } from "./asset-drop";
+import type { AssetDragPayload } from "./drag";
 import { canEditProject } from "./show-mode";
 
 export const GSC_DROP_ZONE = "data-gsc-drop-zone";
@@ -50,19 +50,14 @@ export async function dragDropPositionToClient(position: {
   const factor = await win.scaleFactor();
 
   const phys =
-    position instanceof PhysicalPosition
-      ? position
-      : new PhysicalPosition(position.x, position.y);
+    position instanceof PhysicalPosition ? position : new PhysicalPosition(position.x, position.y);
   const logical = phys.toLogical(factor);
 
-  const [outerPos, innerPos] = await Promise.all([
-    win.outerPosition(),
-    win.innerPosition(),
-  ]);
+  const [outerPos, innerPos] = await Promise.all([win.outerPosition(), win.innerPosition()]);
   const chrome = innerPos.toLogical(factor);
   const outer = outerPos.toLogical(factor);
 
-  let x = logical.x - (chrome.x - outer.x);
+  const x = logical.x - (chrome.x - outer.x);
   let y = logical.y - (chrome.y - outer.y);
 
   if (isMacOs()) {
@@ -72,14 +67,8 @@ export async function dragDropPositionToClient(position: {
   return { x, y };
 }
 
-function pointInRect(
-  x: number,
-  y: number,
-  rect: DOMRect,
-): boolean {
-  return (
-    x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
-  );
+function pointInRect(x: number, y: number, rect: DOMRect): boolean {
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 }
 
 function findDropTargetByRects(clientX: number, clientY: number): TauriDropTarget {
@@ -120,9 +109,10 @@ export function tauriDragHighlightState(target: TauriDropTarget): {
   return { assets: false, cueList: true };
 }
 
-export async function dropTargetAtPhysicalPosition(
-  position: { x: number; y: number },
-): Promise<TauriDropTarget> {
+export async function dropTargetAtPhysicalPosition(position: {
+  x: number;
+  y: number;
+}): Promise<TauriDropTarget> {
   const client = await dragDropPositionToClient(position);
   const byRects = findDropTargetByRects(client.x, client.y);
   if (byRects.kind !== "none") return byRects;

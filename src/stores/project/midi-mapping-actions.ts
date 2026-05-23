@@ -1,7 +1,7 @@
-import { buildNoteToCueMappings } from "../../lib/midi-mapping";
 import type { StoreApi } from "zustand";
-import type { ProjectState } from "./types";
+import { buildNoteToCueMappings } from "../../lib/midi-mapping";
 import { getActiveCueListFromState } from "./helpers";
+import type { ProjectState } from "./types";
 
 type ProjectStore = StoreApi<ProjectState>;
 
@@ -30,9 +30,7 @@ export function createMidiMappingActions(
 
     updateMidiMapping: (id, patch) =>
       set((s) => ({
-        midiMappings: s.midiMappings.map((m) =>
-          m.id === id ? { ...m, ...patch } : m,
-        ),
+        midiMappings: s.midiMappings.map((m) => (m.id === id ? { ...m, ...patch } : m)),
       })),
 
     setMidiMappings: (midiMappings) => set({ midiMappings }),

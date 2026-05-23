@@ -1,11 +1,9 @@
 import { useEffect, useRef } from "react";
-import type { Cue } from "../types/cue";
 import {
   ensureMediaDurationSec,
   getMediaDurationSec,
   prefetchMediaDurations,
 } from "../lib/media-duration";
-import { isWaitCue } from "../lib/wait";
 import {
   computePlaybackProgressWithBounds,
   createPlaybackBounds,
@@ -14,13 +12,12 @@ import {
   isFinitePlaybackComplete,
   type PlaybackBounds,
 } from "../lib/playback-slice";
+import { isWaitCue } from "../lib/wait";
 import type { CuePlaybackProgress } from "../stores/playback";
 import { usePlaybackStore } from "../stores/playback";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
-import {
-  useTransportStore,
-  type RunningSequence,
-} from "../stores/transport";
+import { type RunningSequence, useTransportStore } from "../stores/transport";
+import type { Cue } from "../types/cue";
 
 interface PlaybackSession {
   /** Wall-clock when the cue entered activeCueIds — not when bounds were resolved. */
@@ -28,9 +25,7 @@ interface PlaybackSession {
   bounds: PlaybackBounds;
 }
 
-function runningSequenceHasWaitProgress(
-  runningSequence: RunningSequence | null,
-): boolean {
+function runningSequenceHasWaitProgress(runningSequence: RunningSequence | null): boolean {
   if (!runningSequence) return false;
   const list = getActiveCueListFromState(useProjectStore.getState());
   const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
@@ -74,9 +69,7 @@ export function usePlaybackProgress(): void {
     const tryStartSession = (cueId: string, cue: Cue) => {
       if (sessionsRef.current.has(cueId)) return;
 
-      const sourceDurationSec = cue.assetPath
-        ? getMediaDurationSec(cue.assetPath)
-        : undefined;
+      const sourceDurationSec = cue.assetPath ? getMediaDurationSec(cue.assetPath) : undefined;
 
       if (cueNeedsKnownDuration(cue) && sourceDurationSec === undefined) {
         if (cue.assetPath && !probedPathsRef.current.has(cue.assetPath)) {
@@ -138,16 +131,12 @@ export function usePlaybackProgress(): void {
       const completedCueIds: string[] = [];
 
       if (runningSequence) {
-        const stepElapsedSec =
-          (now - runningSequence.stepStartedAtMs) / 1000;
+        const stepElapsedSec = (now - runningSequence.stepStartedAtMs) / 1000;
         for (const cueId of runningSequence.stepCueIds) {
           const cue = cueById.get(cueId);
           if (!cue || !isWaitCue(cue)) continue;
           const bounds = createPlaybackBounds(cue);
-          const snapshot = computePlaybackProgressWithBounds(
-            bounds,
-            stepElapsedSec,
-          );
+          const snapshot = computePlaybackProgressWithBounds(bounds, stepElapsedSec);
           entries.push({
             cueId,
             elapsedSec: stepElapsedSec,
@@ -161,10 +150,7 @@ export function usePlaybackProgress(): void {
         const session = sessionsRef.current.get(cueId);
         if (session) {
           const elapsedSec = (now - session.goAtMs) / 1000;
-          const snapshot = computePlaybackProgressWithBounds(
-            session.bounds,
-            elapsedSec,
-          );
+          const snapshot = computePlaybackProgressWithBounds(session.bounds, elapsedSec);
 
           entries.push({
             cueId,
@@ -182,9 +168,7 @@ export function usePlaybackProgress(): void {
         const cue = cueById.get(cueId);
         if (!cue || !cueShowsPlaybackProgress(cue)) continue;
 
-        const sourceDurationSec = cue.assetPath
-          ? getMediaDurationSec(cue.assetPath)
-          : undefined;
+        const sourceDurationSec = cue.assetPath ? getMediaDurationSec(cue.assetPath) : undefined;
         if (cueNeedsKnownDuration(cue) && sourceDurationSec === undefined) {
           continue;
         }

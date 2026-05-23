@@ -5,10 +5,7 @@ export function createOutputChannel(): BroadcastChannel {
   return new BroadcastChannel(OUTPUT_CHANNEL_NAME);
 }
 
-export function postOutputState(
-  channel: BroadcastChannel,
-  payload: OutputState,
-): void {
+export function postOutputState(channel: BroadcastChannel, payload: OutputState): void {
   const message: OutputMessage = { type: "state", payload };
   channel.postMessage(message);
 }

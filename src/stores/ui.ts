@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type { SidebarTabId } from "../types/sidebar";
-import type { RightSidebarTabId } from "../types/right-sidebar";
 import type { MidiAction } from "../types/midi-mapping";
+import type { RightSidebarTabId } from "../types/right-sidebar";
+import type { SidebarTabId } from "../types/sidebar";
 
 interface UiState {
   sidebarTab: SidebarTabId;
@@ -73,10 +73,8 @@ export const useUiStore = create<UiState>()(
             else collapsed.add(groupId);
             return { collapsedCueGroupIds: [...collapsed] };
           }),
-        setFixturePlotEditMode: (fixturePlotEditMode) =>
-          set({ fixturePlotEditMode }),
-        setFixturePlotExpanded: (fixturePlotExpanded) =>
-          set({ fixturePlotExpanded }),
+        setFixturePlotEditMode: (fixturePlotEditMode) => set({ fixturePlotEditMode }),
+        setFixturePlotExpanded: (fixturePlotExpanded) => set({ fixturePlotExpanded }),
         toggleFixturePlotExpanded: () =>
           set((s) => ({ fixturePlotExpanded: !s.fixturePlotExpanded })),
       }),

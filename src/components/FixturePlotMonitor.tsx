@@ -32,8 +32,7 @@ export function FixturePlotMonitor({
   const fixtures = useProjectStore((s) => s.fixtures);
   const [selectedFixtureId, setSelectedFixtureId] = useState<string | null>(null);
 
-  const editMode =
-    editModeProp ?? (fixturePlotEditMode && !showMode);
+  const editMode = editModeProp ?? (fixturePlotEditMode && !showMode);
   const setEditMode =
     onEditModeChange ??
     ((open: boolean) => {
@@ -123,7 +122,9 @@ export function FixturePlotMonitor({
             <Tooltip title={fixturePlotExpanded ? "Collapse" : "Expand above cue list"}>
               <IconButton
                 size="small"
-                aria-label={fixturePlotExpanded ? "Collapse fixture preview" : "Expand fixture preview"}
+                aria-label={
+                  fixturePlotExpanded ? "Collapse fixture preview" : "Expand fixture preview"
+                }
                 onClick={toggleFixturePlotExpanded}
                 sx={{ p: 0.25 }}
               >

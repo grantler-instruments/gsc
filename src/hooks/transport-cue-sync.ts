@@ -13,8 +13,5 @@ export function cueTriggerTransportStateChanged(
   prev: ReturnType<typeof selectCueTriggerTransportState>,
   next: ReturnType<typeof selectCueTriggerTransportState>,
 ): boolean {
-  return (
-    prev.activeCueIds !== next.activeCueIds ||
-    prev.cueStartedAtMs !== next.cueStartedAtMs
-  );
+  return prev.activeCueIds !== next.activeCueIds || prev.cueStartedAtMs !== next.cueStartedAtMs;
 }

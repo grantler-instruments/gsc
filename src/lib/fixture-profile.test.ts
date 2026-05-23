@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
+import type { Fixture } from "../types/fixture";
 import {
   buildFixturesProfileZip,
   mergeImportedFixtures,
   parseFixturesProfileZip,
   prepareFixturesProfileImport,
 } from "./fixture-profile";
-import type { Fixture } from "../types/fixture";
 
 const sampleFixture: Fixture = {
   id: "f1",
@@ -34,17 +34,13 @@ describe("fixture-profile", () => {
       ],
     ]);
 
-    const { zip } = await buildFixturesProfileZip([sampleFixture], (path) =>
-      blobs.get(path),
-    );
+    const { zip } = await buildFixturesProfileZip([sampleFixture], (path) => blobs.get(path));
     const parsed = parseFixturesProfileZip(zip);
 
     expect(parsed.snapshot.fixtures).toHaveLength(1);
     expect(parsed.snapshot.fixtures[0]?.name).toBe("Par 1");
     expect(parsed.profiles).toHaveLength(1);
-    expect(parsed.profiles[0]?.path).toBe(
-      "/project/fixtures/ofl/generic/rgb-par.json",
-    );
+    expect(parsed.profiles[0]?.path).toBe("/project/fixtures/ofl/generic/rgb-par.json");
   });
 
   it("remaps ids and conflicting addresses on import", () => {
@@ -72,9 +68,7 @@ describe("fixture-profile", () => {
     expect(imported.fixtures).toHaveLength(1);
     expect(imported.fixtures[0]?.id).not.toBe("f1");
     expect(imported.fixtures[0]?.startAddress).toBe(7);
-    expect(imported.profiles[0]?.path).toBe(
-      "/project/fixtures/ofl/generic/rgb-par.json",
-    );
+    expect(imported.profiles[0]?.path).toBe("/project/fixtures/ofl/generic/rgb-par.json");
   });
 
   it("avoids profile path collisions with existing project files", () => {
@@ -90,12 +84,8 @@ describe("fixture-profile", () => {
       ["/project/fixtures/ofl/generic/rgb-par.json"],
     );
 
-    expect(result.profiles[0]?.path).toBe(
-      "/project/fixtures/ofl/generic/rgb-par_2.json",
-    );
-    expect(result.fixtures[0]?.ofl?.filePath).toBe(
-      "/project/fixtures/ofl/generic/rgb-par_2.json",
-    );
+    expect(result.profiles[0]?.path).toBe("/project/fixtures/ofl/generic/rgb-par_2.json");
+    expect(result.fixtures[0]?.ofl?.filePath).toBe("/project/fixtures/ofl/generic/rgb-par_2.json");
   });
 
   it("merges imported fixtures after existing ones", () => {
@@ -118,9 +108,6 @@ describe("fixture-profile", () => {
       },
     ];
 
-    expect(mergeImportedFixtures(existing, imported)).toEqual([
-      ...existing,
-      imported[0],
-    ]);
+    expect(mergeImportedFixtures(existing, imported)).toEqual([...existing, imported[0]]);
   });
 });

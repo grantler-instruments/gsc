@@ -4,11 +4,7 @@ import { getWaitDurationSec } from "../lib/wait";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue } from "../types/cue";
-import {
-  inspectorFieldLabelSx,
-  inspectorFieldSx,
-  inspectorGroupHintSx,
-} from "./inspectorSx";
+import { inspectorFieldLabelSx, inspectorFieldSx, inspectorGroupHintSx } from "./inspectorSx";
 
 interface WaitInspectorFieldsProps {
   waitCue: Cue;
@@ -21,8 +17,8 @@ export function WaitInspectorFields({ waitCue }: WaitInspectorFieldsProps) {
   return (
     <>
       <Typography component="p" sx={inspectorGroupHintSx}>
-        Timed pause with no media. When placed inside a sequence, holds for
-        this duration before the next step runs.
+        Timed pause with no media. When placed inside a sequence, holds for this duration before the
+        next step runs.
       </Typography>
       <Box component="label" sx={inspectorFieldSx}>
         <Typography component="span" sx={inspectorFieldLabelSx}>

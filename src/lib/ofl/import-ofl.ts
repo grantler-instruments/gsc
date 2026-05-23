@@ -1,5 +1,5 @@
-import { joinPath, normalizePath, vfsHas, vfsPut } from "../../vfs/engine";
 import { getPlatform } from "../../platform";
+import { joinPath, normalizePath, vfsHas, vfsPut } from "../../vfs/engine";
 import { parseOflFixtureJson } from "./client";
 import type { OflFixtureSummary } from "./types";
 
@@ -11,11 +11,7 @@ export interface ImportedOflFile {
   summary: OflFixtureSummary;
 }
 
-function uniqueOflPath(
-  manufacturerKey: string,
-  fixtureKey: string,
-  taken: Set<string>,
-): string {
+function uniqueOflPath(manufacturerKey: string, fixtureKey: string, taken: Set<string>): string {
   let candidate = normalizePath(
     joinPath(joinPath(OFL_FIXTURES_DIR, manufacturerKey), `${fixtureKey}.json`),
   );
@@ -24,10 +20,7 @@ function uniqueOflPath(
   let index = 2;
   while (taken.has(candidate)) {
     candidate = normalizePath(
-      joinPath(
-        joinPath(OFL_FIXTURES_DIR, manufacturerKey),
-        `${fixtureKey}_${index}.json`,
-      ),
+      joinPath(joinPath(OFL_FIXTURES_DIR, manufacturerKey), `${fixtureKey}_${index}.json`),
     );
     index += 1;
   }
@@ -41,12 +34,7 @@ export async function importOflFixtureJson(
   raw: unknown,
   existingPaths: Iterable<string> = [],
 ): Promise<ImportedOflFile> {
-  const summary = parseOflFixtureJson(
-    manufacturerKey,
-    manufacturerName,
-    fixtureKey,
-    raw,
-  );
+  const summary = parseOflFixtureJson(manufacturerKey, manufacturerName, fixtureKey, raw);
   const taken = new Set(existingPaths);
   const path = uniqueOflPath(manufacturerKey, fixtureKey, taken);
   const fileName = `${fixtureKey}.json`;
@@ -59,18 +47,14 @@ export async function importOflFixtureJson(
   }
 
   if (getPlatform() === "tauri") {
-    const { syncImportedAssetToDisk } = await import(
-      "../../platform/project-storage.tauri"
-    );
+    const { syncImportedAssetToDisk } = await import("../../platform/project-storage.tauri");
     await syncImportedAssetToDisk(path, blob);
   }
 
   return { path, fileName, summary };
 }
 
-export function collectOflPaths(
-  fixtures: Array<{ ofl?: { filePath: string } }>,
-): string[] {
+export function collectOflPaths(fixtures: Array<{ ofl?: { filePath: string } }>): string[] {
   const paths = new Set<string>();
   for (const fixture of fixtures) {
     if (fixture.ofl?.filePath) {

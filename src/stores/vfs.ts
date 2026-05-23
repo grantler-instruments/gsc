@@ -1,13 +1,12 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import type { AssetKind } from "../types/cue";
-import { filesFromDataTransfer } from "../platform/files.web";
-import { vfsAllPaths, vfsHas, vfsRemove } from "../vfs/engine";
 import { clearCachedAudioBuffer } from "../audio/buffer-cache";
 import { clearMediaDuration } from "../lib/media-duration";
 import { getPlatform } from "../platform";
-import { assetKindFromPath, importFiles, type ImportedAsset } from "../vfs/import";
-import { vfsGet } from "../vfs/engine";
+import { filesFromDataTransfer } from "../platform/files.web";
+import type { AssetKind } from "../types/cue";
+import { vfsAllPaths, vfsGet, vfsHas, vfsRemove } from "../vfs/engine";
+import { assetKindFromPath, type ImportedAsset, importFiles } from "../vfs/import";
 
 export interface VfsEntry {
   path: string;
@@ -53,14 +52,10 @@ export const useVfsStore = create<VfsState>()(
           byPath.set(asset.path, { ...asset, loaded: true });
         }
         set({
-          entries: [...byPath.values()].sort((a, b) =>
-            a.path.localeCompare(b.path),
-          ),
+          entries: [...byPath.values()].sort((a, b) => a.path.localeCompare(b.path)),
         });
         if (getPlatform() === "tauri") {
-          const { syncImportedAssetToDisk } = await import(
-            "../platform/project-storage.tauri"
-          );
+          const { syncImportedAssetToDisk } = await import("../platform/project-storage.tauri");
           for (const asset of imported) {
             const blob = vfsGet(asset.path);
             if (blob) await syncImportedAssetToDisk(asset.path, blob);
@@ -79,8 +74,8 @@ export const useVfsStore = create<VfsState>()(
         clearCachedAudioBuffer(path);
         clearMediaDuration(path);
         if (getPlatform() === "tauri") {
-          void import("../platform/project-storage.tauri").then(
-            ({ removeAssetFromDisk }) => removeAssetFromDisk(path),
+          void import("../platform/project-storage.tauri").then(({ removeAssetFromDisk }) =>
+            removeAssetFromDisk(path),
           );
         }
         set((s) => ({

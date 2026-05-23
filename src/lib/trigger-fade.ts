@@ -1,20 +1,11 @@
-import { buildDmxFadePlan } from "./dmx-fade";
-import { applyDmxCueToBuffers } from "./dmx";
-import { getFadeTarget } from "./cues";
-import {
-  isLightFadeCue,
-  isOpacityFadeCue,
-  isVolumeFadeCue,
-  resolveLightFadeEndDmx,
-} from "./fade";
-import {
-  resolveEffectiveOpacity,
-  resolveEffectiveVolume,
-  useFadeStore,
-} from "../stores/fade";
+import { sendDmxUniverses } from "../platform/send-dmx";
+import { resolveEffectiveOpacity, resolveEffectiveVolume, useFadeStore } from "../stores/fade";
 import { useProjectStore } from "../stores/project";
 import type { Cue } from "../types/cue";
-import { sendDmxUniverses } from "../platform/send-dmx";
+import { getFadeTarget } from "./cues";
+import { applyDmxCueToBuffers } from "./dmx";
+import { buildDmxFadePlan } from "./dmx-fade";
+import { isLightFadeCue, isOpacityFadeCue, isVolumeFadeCue, resolveLightFadeEndDmx } from "./fade";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));

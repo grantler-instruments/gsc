@@ -1,6 +1,6 @@
-import { normalizeDmxCueData } from "./dmx";
 import type { DmxCueData } from "../types/cue";
 import type { Fixture } from "../types/fixture";
+import { normalizeDmxCueData } from "./dmx";
 
 export function cloneDmxCueData(data: DmxCueData): DmxCueData {
   return {
@@ -12,19 +12,12 @@ export function cloneDmxCueData(data: DmxCueData): DmxCueData {
   };
 }
 
-export function dmxCueDataEqual(
-  a: DmxCueData,
-  b: DmxCueData,
-  fixtures: Fixture[],
-): boolean {
+export function dmxCueDataEqual(a: DmxCueData, b: DmxCueData, fixtures: Fixture[]): boolean {
   const left = normalizeDmxCueData(a, fixtures);
   const right = normalizeDmxCueData(b, fixtures);
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
-export function snapshotDmxCueData(
-  data: DmxCueData,
-  fixtures: Fixture[],
-): DmxCueData {
+export function snapshotDmxCueData(data: DmxCueData, fixtures: Fixture[]): DmxCueData {
   return cloneDmxCueData(normalizeDmxCueData(data, fixtures));
 }

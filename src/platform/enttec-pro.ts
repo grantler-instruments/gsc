@@ -1,5 +1,6 @@
-import { getPlatform } from "./index";
 import type { DmxUniverseFrame } from "../lib/dmx";
+import { notifyErrorFromUnknown, notifyWarningDeduped } from "../lib/notifications";
+import { getPlatform } from "./index";
 
 export async function connectEnttecPro(portId: string | null): Promise<boolean> {
   if (getPlatform() === "tauri") {
@@ -9,7 +10,7 @@ export async function connectEnttecPro(portId: string | null): Promise<boolean> 
       await connectEnttecProTauri(portId);
       return true;
     } catch (err) {
-      console.warn("[dmx] Enttec Pro connection failed", err);
+      notifyErrorFromUnknown(err);
       return false;
     }
   }
@@ -37,16 +38,14 @@ export async function isEnttecProConnected(): Promise<boolean> {
   return isEnttecProConnectedWeb();
 }
 
-export async function sendEnttecProUniverses(
-  frames: DmxUniverseFrame[],
-): Promise<void> {
+export async function sendEnttecProUniverses(frames: DmxUniverseFrame[]): Promise<void> {
   if (frames.length === 0) return;
   if (getPlatform() === "tauri") {
     const { sendEnttecProUniversesTauri } = await import("./enttec-pro.tauri");
     try {
       await sendEnttecProUniversesTauri(frames);
     } catch (err) {
-      console.error("[dmx] Enttec Pro send failed", err);
+      notifyErrorFromUnknown(err);
     }
     return;
   }
@@ -56,8 +55,6 @@ export async function sendEnttecProUniverses(
 
 export async function isEnttecProWebSerialAvailable(): Promise<boolean> {
   if (getPlatform() === "tauri") return false;
-  const { isEnttecProWebSerialAvailable: available } = await import(
-    "./enttec-pro.web"
-  );
+  const { isEnttecProWebSerialAvailable: available } = await import("./enttec-pro.web");
   return available();
 }

@@ -1,8 +1,5 @@
 import type { Fixture, FixtureChannel } from "../types/fixture";
-import {
-  normalizeFixtureOflProfile,
-  oflProfileChannelCount,
-} from "./ofl/profile";
+import { normalizeFixtureOflProfile, oflProfileChannelCount } from "./ofl/profile";
 
 export const DMX_UNIVERSE_SIZE = 512;
 export const DEFAULT_FIXTURE_CHANNEL_COUNT = 1;
@@ -42,11 +39,15 @@ export function fixtureEndAddress(fixture: Pick<Fixture, "startAddress" | "chann
   return fixture.startAddress + fixture.channelCount - 1;
 }
 
-export function fixtureFitsInUniverse(fixture: Pick<Fixture, "startAddress" | "channelCount">): boolean {
+export function fixtureFitsInUniverse(
+  fixture: Pick<Fixture, "startAddress" | "channelCount">,
+): boolean {
   return fixtureEndAddress(fixture) <= DMX_UNIVERSE_SIZE;
 }
 
-export function formatFixturePatch(fixture: Pick<Fixture, "universe" | "startAddress" | "channelCount">): string {
+export function formatFixturePatch(
+  fixture: Pick<Fixture, "universe" | "startAddress" | "channelCount">,
+): string {
   return `U${fixture.universe} @ ${fixture.startAddress} · ${fixture.channelCount}ch`;
 }
 
@@ -93,10 +94,7 @@ function applyFixtureProfile(fixture: Fixture, overrides: Partial<Omit<Fixture, 
   fixture.channelCount = clampChannelCount(oflProfileChannelCount(fixture.ofl));
 }
 
-function syncManualFixtureChannels(
-  fixture: Fixture,
-  channelsOverride?: FixtureChannel[],
-): void {
+function syncManualFixtureChannels(fixture: Fixture, channelsOverride?: FixtureChannel[]): void {
   if (fixtureHasProfile(fixture)) {
     fixture.channels = undefined;
     return;
@@ -121,18 +119,13 @@ export function createFixture(
     startAddress: clampStartAddress(
       overrides.startAddress ?? suggestNextFixtureAddress(fixtures, universe),
     ),
-    channelCount: clampChannelCount(
-      overrides.channelCount ?? DEFAULT_FIXTURE_CHANNEL_COUNT,
-    ),
+    channelCount: clampChannelCount(overrides.channelCount ?? DEFAULT_FIXTURE_CHANNEL_COUNT),
   };
 
   applyFixtureProfile(fixture, overrides);
 
   if (!fixtureHasProfile(fixture)) {
-    fixture.channels = normalizeFixtureChannels(
-      overrides.channels,
-      fixture.channelCount,
-    );
+    fixture.channels = normalizeFixtureChannels(overrides.channels, fixture.channelCount);
     fixture.channelCount = fixture.channels.length;
   }
 
@@ -181,16 +174,11 @@ export function updateManualFixtureChannelName(
   name: string,
 ): FixtureChannel[] {
   return manualFixtureChannels(fixture).map((channel, channelIndex) =>
-    channelIndex === index
-      ? { name: name.trim() || undefined }
-      : channel,
+    channelIndex === index ? { name: name.trim() || undefined } : channel,
   );
 }
 
-export function removeManualFixtureChannel(
-  fixture: Fixture,
-  index: number,
-): FixtureChannel[] {
+export function removeManualFixtureChannel(fixture: Fixture, index: number): FixtureChannel[] {
   const channels = manualFixtureChannels(fixture);
   if (channels.length <= 1) return channels;
   return channels.filter((_, channelIndex) => channelIndex !== index);

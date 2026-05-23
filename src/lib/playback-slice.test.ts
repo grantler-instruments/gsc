@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { testCue } from "../test/fixtures/cues";
 import {
   computePlaybackProgress,
   computePlaybackProgressWithBounds,
@@ -9,7 +10,6 @@ import {
   isFinitePlaybackComplete,
   isImageInfiniteHold,
 } from "./playback-slice";
-import { testCue } from "../test/fixtures/cues";
 
 describe("getPlaybackSliceSec", () => {
   it("uses in/out range for audio", () => {
@@ -105,18 +105,14 @@ describe("computePlaybackProgressWithBounds", () => {
 
 describe("isFinitePlaybackComplete", () => {
   it("completes when elapsed reaches total run time", () => {
-    const bounds = createPlaybackBounds(
-      testCue("a", "A", "audio", { outTime: 5 }),
-    );
+    const bounds = createPlaybackBounds(testCue("a", "A", "audio", { outTime: 5 }));
     expect(isFinitePlaybackComplete(bounds, 4.9)).toBe(false);
     expect(isFinitePlaybackComplete(bounds, 5)).toBe(true);
   });
 
   it("never completes for infinite hold or loop", () => {
     const image = createPlaybackBounds(testCue("i", "I", "image"));
-    const looping = createPlaybackBounds(
-      testCue("a", "A", "audio", { loop: true }),
-    );
+    const looping = createPlaybackBounds(testCue("a", "A", "audio", { loop: true }));
     expect(isFinitePlaybackComplete(image, 999)).toBe(false);
     expect(isFinitePlaybackComplete(looping, 999)).toBe(false);
   });
@@ -144,9 +140,7 @@ describe("cueShowsPlaybackProgress", () => {
 
 describe("cueNeedsKnownDuration", () => {
   it("requires duration for audio/video with assets", () => {
-    expect(
-      cueNeedsKnownDuration(testCue("a", "A", "audio", { assetPath: "a.wav" })),
-    ).toBe(true);
+    expect(cueNeedsKnownDuration(testCue("a", "A", "audio", { assetPath: "a.wav" }))).toBe(true);
     expect(cueNeedsKnownDuration(testCue("a", "A", "audio"))).toBe(false);
     expect(cueNeedsKnownDuration(testCue("i", "I", "image"))).toBe(false);
   });

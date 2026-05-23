@@ -1,4 +1,5 @@
 import { normalizePath } from "../vfs/engine";
+import { notifyWarningDeduped } from "./notifications";
 
 const CACHE_NAME = "gsc-assets-v1";
 
@@ -11,11 +12,7 @@ function legacyCacheKey(path: string): string {
 }
 
 /** Store asset bytes in the origin-wide Cache API, scoped to a project. */
-export async function cacheAsset(
-  projectId: string,
-  path: string,
-  blob: Blob,
-): Promise<void> {
+export async function cacheAsset(projectId: string, path: string, blob: Blob): Promise<void> {
   if (typeof caches === "undefined") return;
   try {
     const cache = await caches.open(CACHE_NAME);
@@ -26,10 +23,7 @@ export async function cacheAsset(
 }
 
 /** Read asset bytes for a project; falls back to pre-project-scoped cache keys. */
-export async function getCachedAsset(
-  projectId: string,
-  path: string,
-): Promise<Blob | undefined> {
+export async function getCachedAsset(projectId: string, path: string): Promise<Blob | undefined> {
   if (typeof caches === "undefined") return undefined;
   try {
     const cache = await caches.open(CACHE_NAME);
@@ -43,14 +37,12 @@ export async function getCachedAsset(
     return blob;
   } catch (err) {
     console.warn(`[asset-cache] Could not read ${path}`, err);
+    notifyWarningDeduped(`Could not load asset: ${path}`);
     return undefined;
   }
 }
 
-export async function removeCachedAsset(
-  projectId: string,
-  path: string,
-): Promise<void> {
+export async function removeCachedAsset(projectId: string, path: string): Promise<void> {
   if (typeof caches === "undefined") return;
   try {
     const cache = await caches.open(CACHE_NAME);

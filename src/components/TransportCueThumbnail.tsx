@@ -1,9 +1,9 @@
 import Box from "@mui/material/Box";
 import { useEffect, useMemo, useState } from "react";
+import { useAssetObjectUrl } from "../hooks/useAssetObjectUrl";
 import { getStopTarget } from "../lib/cues";
 import { getVideoThumbnailDataUrl } from "../lib/video-thumbnail";
 import type { Cue } from "../types/cue";
-import { useAssetObjectUrl } from "../hooks/useAssetObjectUrl";
 
 const THUMB_SIZE = 48;
 
@@ -13,9 +13,7 @@ interface TransportCueThumbnailProps {
 }
 
 function useMediaThumbnail(cue: Cue): string | null {
-  const imageUrl = useAssetObjectUrl(
-    cue.type === "image" ? cue.assetPath : undefined,
-  );
+  const imageUrl = useAssetObjectUrl(cue.type === "image" ? cue.assetPath : undefined);
   const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,11 +29,9 @@ function useMediaThumbnail(cue: Cue): string | null {
 
     if (cue.type === "video") {
       let cancelled = false;
-      void getVideoThumbnailDataUrl(cue.assetPath, cue.inTime ?? 0).then(
-        (url) => {
-          if (!cancelled) setSrc(url);
-        },
-      );
+      void getVideoThumbnailDataUrl(cue.assetPath, cue.inTime ?? 0).then((url) => {
+        if (!cancelled) setSrc(url);
+      });
       return () => {
         cancelled = true;
       };
@@ -47,10 +43,7 @@ function useMediaThumbnail(cue: Cue): string | null {
   return cue.type === "image" ? imageUrl : src;
 }
 
-export function TransportCueThumbnail({
-  cue,
-  allCues,
-}: TransportCueThumbnailProps) {
+export function TransportCueThumbnail({ cue, allCues }: TransportCueThumbnailProps) {
   const preview = useMemo(() => {
     if (cue.type === "stop" && allCues) {
       const target = getStopTarget(cue, allCues);

@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  cloneDmxCueData,
-  dmxCueDataEqual,
-  snapshotDmxCueData,
-} from "./dmx-preview-session";
 import type { Fixture } from "../types/fixture";
+import { cloneDmxCueData, dmxCueDataEqual, snapshotDmxCueData } from "./dmx-preview-session";
 
 const fixtures: Fixture[] = [
   {
@@ -28,7 +24,11 @@ describe("dmx-preview-session helpers", () => {
 
     expect(dmxCueDataEqual(data, cloneDmxCueData(data), fixtures)).toBe(true);
     expect(
-      dmxCueDataEqual(data, { ...data, fixtures: [{ fixtureId: "a", values: [99, 20] }] }, fixtures),
+      dmxCueDataEqual(
+        data,
+        { ...data, fixtures: [{ fixtureId: "a", values: [99, 20] }] },
+        fixtures,
+      ),
     ).toBe(false);
   });
 

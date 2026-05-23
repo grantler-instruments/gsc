@@ -4,12 +4,12 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
+import { useUiStore } from "../stores/ui";
 import {
   RIGHT_SIDEBAR_TABS,
   RIGHT_SIDEBAR_WIDTH,
   type RightSidebarTabId,
 } from "../types/right-sidebar";
-import { useUiStore } from "../stores/ui";
 import { CueInspectorPanel } from "./cue-inspector/CueInspectorPanel";
 import { DmxOutputPanel } from "./DmxOutputPanel";
 
@@ -34,9 +34,7 @@ function normalizeRightSidebarTab(tab: string): RightSidebarTabId {
 }
 
 export function RightSidebar() {
-  const rightSidebarTab = useUiStore((s) =>
-    normalizeRightSidebarTab(s.rightSidebarTab),
-  );
+  const rightSidebarTab = useUiStore((s) => normalizeRightSidebarTab(s.rightSidebarTab));
   const setRightSidebarTab = useUiStore((s) => s.setRightSidebarTab);
 
   return (

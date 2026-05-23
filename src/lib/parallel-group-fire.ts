@@ -1,3 +1,4 @@
+import type { Cue } from "../types/cue";
 import {
   getChildCues,
   getStopTarget,
@@ -10,7 +11,6 @@ import {
   resolveStopCueIds,
 } from "./cues";
 import { triggerFadeCue } from "./trigger-fade";
-import type { Cue } from "../types/cue";
 
 type CueOutcome = "go" | "stop";
 
@@ -24,11 +24,7 @@ export interface ParallelGroupFireOptions {
   onSequenceStop?: () => void;
 }
 
-function tryGoLeaf(
-  cueId: string,
-  resolved: Map<string, CueOutcome>,
-  leafIds: string[],
-): void {
+function tryGoLeaf(cueId: string, resolved: Map<string, CueOutcome>, leafIds: string[]): void {
   if (resolved.has(cueId)) return;
   resolved.set(cueId, "go");
   leafIds.push(cueId);
@@ -68,13 +64,7 @@ export function walkParallelGroupChildren(
 
   for (const child of getChildCues(cues, group.id)) {
     if (isStopCue(child)) {
-      applyStopFirstWins(
-        child,
-        cues,
-        resolved,
-        actions.stopMany,
-        options.onSequenceStop,
-      );
+      applyStopFirstWins(child, cues, resolved, actions.stopMany, options.onSequenceStop);
     } else if (isWaitCue(child)) {
       /* no-op */
     } else if (isFadeCue(child)) {
@@ -82,9 +72,7 @@ export function walkParallelGroupChildren(
     } else if (isSequenceGroup(child)) {
       options.runSequence?.(child, cues);
     } else if (isParallelGroup(child)) {
-      leafIds.push(
-        ...walkParallelGroupChildren(child, cues, resolved, actions, options),
-      );
+      leafIds.push(...walkParallelGroupChildren(child, cues, resolved, actions, options));
     } else {
       tryGoLeaf(child.id, resolved, leafIds);
     }
@@ -101,13 +89,7 @@ export function fireParallelGroupChildren(
   options: ParallelGroupFireOptions = {},
 ): string[] {
   const resolved = new Map<string, CueOutcome>();
-  const leafIds = walkParallelGroupChildren(
-    group,
-    cues,
-    resolved,
-    actions,
-    options,
-  );
+  const leafIds = walkParallelGroupChildren(group, cues, resolved, actions, options);
   if (leafIds.length > 0) actions.goMany(leafIds);
   return leafIds;
 }

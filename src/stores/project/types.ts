@@ -2,10 +2,10 @@ import type { CueList } from "../../lib/cue-lists";
 import type {
   Cue,
   CueType,
+  DmxCueData,
   FadeCueType,
   MidiCueData,
   OscCueData,
-  DmxCueData,
   ProjectSnapshot,
 } from "../../types/cue";
 import type { Fixture } from "../../types/fixture";
@@ -33,19 +33,12 @@ export interface ProjectState {
   addSequenceCue: (opts?: { name?: string; parentId?: string }) => Cue;
   addStopCueForTarget: (targetId: string) => Cue | null;
   addFadeCue: (fadeType: FadeCueType) => Cue;
-  addFadeCueForTarget: (
-    targetId: string,
-    fadeType: FadeCueType,
-  ) => Cue | null;
+  addFadeCueForTarget: (targetId: string, fadeType: FadeCueType) => Cue | null;
   updateCue: (id: string, patch: Partial<Cue>) => void;
   removeCue: (id: string) => void;
   moveCueToGroup: (cueId: string, groupId: string | null) => void;
   addSelectedCueToGroup: (groupId: string) => void;
-  reorderCueRelative: (
-    draggedId: string,
-    targetId: string,
-    place: "before" | "after",
-  ) => void;
+  reorderCueRelative: (draggedId: string, targetId: string, place: "before" | "after") => void;
   selectCue: (id: string | null) => void;
   toggleSelectCue: (id: string) => void;
   selectCueRange: (id: string, visibleOrder: string[]) => void;

@@ -1,11 +1,8 @@
 import { useEffect } from "react";
-import {
-  deletePrimarySelectedCue,
-  selectAdjacentVisibleCue,
-} from "../lib/cue-navigation";
+import { deletePrimarySelectedCue, selectAdjacentVisibleCue } from "../lib/cue-navigation";
 import { isEditableKeyboardTarget } from "../lib/keyboard";
-import { openSettings } from "../lib/open-settings";
 import { startNewProject } from "../lib/new-project";
+import { openSettings } from "../lib/open-settings";
 import { canEditProject } from "../lib/show-mode";
 import { triggerGoSelected } from "../lib/transport-actions";
 import { useProjectStore } from "../stores/project";
@@ -22,23 +19,13 @@ export function useAppKeyboard(): void {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (
-        (e.metaKey || e.ctrlKey) &&
-        e.key.toLowerCase() === "n" &&
-        !e.shiftKey &&
-        !e.altKey
-      ) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "n" && !e.shiftKey && !e.altKey) {
         e.preventDefault();
         void startNewProject();
         return;
       }
 
-      if (
-        (e.metaKey || e.ctrlKey) &&
-        e.key === "," &&
-        !e.shiftKey &&
-        !e.altKey
-      ) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "," && !e.shiftKey && !e.altKey) {
         e.preventDefault();
         openSettings();
         return;
@@ -117,11 +104,7 @@ export function useAppKeyboard(): void {
         return;
       }
 
-      if (
-        canEditProject() &&
-        (e.metaKey || e.ctrlKey) &&
-        e.key.toLowerCase() === "g"
-      ) {
+      if (canEditProject() && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "g") {
         e.preventDefault();
         groupSelectedCues();
       }
@@ -129,5 +112,12 @@ export function useAppKeyboard(): void {
 
     document.addEventListener("keydown", onKeyDown, true);
     return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, [copySelectedCues, duplicateSelectedCues, groupSelectedCues, panic, pasteSelectedCues, toggleShowMode]);
+  }, [
+    copySelectedCues,
+    duplicateSelectedCues,
+    groupSelectedCues,
+    panic,
+    pasteSelectedCues,
+    toggleShowMode,
+  ]);
 }

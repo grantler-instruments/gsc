@@ -26,21 +26,14 @@ interface PlaybackRangeFieldsProps {
  * In / Out points within a media file (QLab-style playback range).
  * Audio and video cues use the waveform; images keep numeric fields.
  */
-export function PlaybackRangeFields({
-  cue,
-  readOnly = false,
-  onChange,
-}: PlaybackRangeFieldsProps) {
+export function PlaybackRangeFields({ cue, readOnly = false, onChange }: PlaybackRangeFieldsProps) {
   const inTime = cue.inTime ?? 0;
   const outTime = cue.outTime;
   const isImage = cue.type === "image";
   const isVideo = cue.type === "video";
-  const hasWaveform =
-    (cue.type === "audio" || isVideo) && !!cue.assetPath;
-  const effectiveOutLabel =
-    outTime !== undefined ? formatTime(outTime) : "End of file";
-  const sliceSec =
-    outTime !== undefined && outTime > inTime ? outTime - inTime : null;
+  const hasWaveform = (cue.type === "audio" || isVideo) && !!cue.assetPath;
+  const effectiveOutLabel = outTime !== undefined ? formatTime(outTime) : "End of file";
+  const sliceSec = outTime !== undefined && outTime > inTime ? outTime - inTime : null;
 
   const patchIn = (value: number) => {
     const nextIn = Math.max(0, value);

@@ -5,8 +5,8 @@ import Stack from "@mui/material/Stack";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
-import { getChildCues, isSequenceGroup } from "../lib/cues";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
+import { getChildCues, isSequenceGroup } from "../lib/cues";
 import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue } from "../types/cue";
@@ -15,9 +15,9 @@ import {
   groupChildItemSx,
   groupChildNameSx,
   groupChildNumberSx,
+  groupChildrenListSx,
   groupChildSelectSx,
   groupChildStepSx,
-  groupChildrenListSx,
   inspectorFieldLabelSx,
   inspectorFieldSx,
   inspectorGroupHintSx,
@@ -30,9 +30,7 @@ interface ContainerInspectorFieldsProps {
   container: Cue;
 }
 
-export function ContainerInspectorFields({
-  container,
-}: ContainerInspectorFieldsProps) {
+export function ContainerInspectorFields({ container }: ContainerInspectorFieldsProps) {
   const canEdit = !useUiStore((s) => s.showMode);
   const activeList = useActiveCueList();
   const cues = activeList.cues;
@@ -83,11 +81,7 @@ export function ContainerInspectorFields({
       </Typography>
 
       {canEdit && canAddSelected && (
-        <Button
-          variant="text"
-          size="small"
-          onClick={() => addSelectedCueToGroup(container.id)}
-        >
+        <Button variant="text" size="small" onClick={() => addSelectedCueToGroup(container.id)}>
           Add selected cue to {isSequence ? "sequence" : "group"}
         </Button>
       )}
@@ -96,9 +90,7 @@ export function ContainerInspectorFields({
         <Button
           variant="text"
           size="small"
-          onClick={() =>
-            addCue({ name: "Wait", type: "wait", parentId: container.id })
-          }
+          onClick={() => addCue({ name: "Wait", type: "wait", parentId: container.id })}
         >
           Add wait step
         </Button>

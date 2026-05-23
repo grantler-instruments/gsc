@@ -1,4 +1,6 @@
-import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from "fflate";
+import { strFromU8, strToU8, unzipSync, type Zippable, zipSync } from "fflate";
+import type { Fixture } from "../types/fixture";
+import { normalizePath, vfsHas, vfsPut } from "../vfs/engine";
 import {
   fixtureFitsInUniverse,
   getFixtureConflicts,
@@ -7,8 +9,6 @@ import {
 } from "./fixtures";
 import { collectOflPaths } from "./ofl/import-ofl";
 import { assetRelativePath } from "./project-paths";
-import type { Fixture } from "../types/fixture";
-import { normalizePath, vfsHas, vfsPut } from "../vfs/engine";
 
 export const FIXTURES_PROFILE_JSON = "fixtures.json";
 export const FIXTURES_PROFILE_EXTENSION = ".gsc-fixtures.zip";
@@ -29,9 +29,7 @@ export function collectFixtureProfilePaths(fixtures: Fixture[]): string[] {
 
 export async function buildFixturesProfileZip(
   fixtures: Fixture[],
-  readBlob: (
-    path: string,
-  ) => Blob | undefined | Promise<Blob | undefined>,
+  readBlob: (path: string) => Blob | undefined | Promise<Blob | undefined>,
 ): Promise<{ zip: Uint8Array; missing: string[] }> {
   const snapshot: FixturesProfileSnapshot = {
     version: 1,
@@ -48,9 +46,7 @@ export async function buildFixturesProfileZip(
       missing.push(virtualPath);
       continue;
     }
-    zipEntries[assetRelativePath(virtualPath)] = new Uint8Array(
-      await blob.arrayBuffer(),
-    );
+    zipEntries[assetRelativePath(virtualPath)] = new Uint8Array(await blob.arrayBuffer());
   }
 
   return { zip: zipSync(zipEntries), missing };
@@ -115,10 +111,7 @@ function uniqueProfilePath(desiredPath: string, taken: Set<string>): string {
   }
 }
 
-function remapFixtureProfilePaths(
-  fixture: Fixture,
-  pathMap: Map<string, string>,
-): Fixture {
+function remapFixtureProfilePaths(fixture: Fixture, pathMap: Map<string, string>): Fixture {
   const remapped: Fixture = {
     ...fixture,
     id: crypto.randomUUID(),
@@ -180,18 +173,12 @@ export function prepareFixturesProfileImport(
   const pathMap = new Map<string, string>();
 
   for (const profile of profiles) {
-    pathMap.set(
-      profile.path,
-      uniqueProfilePath(profile.path, takenPaths),
-    );
+    pathMap.set(profile.path, uniqueProfilePath(profile.path, takenPaths));
   }
 
   for (const fixture of snapshot.fixtures) {
     if (fixture.ofl?.filePath && !pathMap.has(fixture.ofl.filePath)) {
-      pathMap.set(
-        fixture.ofl.filePath,
-        uniqueProfilePath(fixture.ofl.filePath, takenPaths),
-      );
+      pathMap.set(fixture.ofl.filePath, uniqueProfilePath(fixture.ofl.filePath, takenPaths));
     }
   }
 
@@ -216,10 +203,7 @@ export function prepareFixturesProfileImport(
   };
 }
 
-export function downloadFixturesProfile(
-  zip: Uint8Array,
-  baseName = "fixtures",
-): void {
+export function downloadFixturesProfile(zip: Uint8Array, baseName = "fixtures"): void {
   const blob = new Blob([zip], { type: "application/zip" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -241,9 +225,7 @@ export async function hydrateFixtureProfiles(
 
   const { getPlatform } = await import("../platform");
   if (getPlatform() === "tauri") {
-    const { syncImportedAssetToDisk } = await import(
-      "../platform/project-storage.tauri"
-    );
+    const { syncImportedAssetToDisk } = await import("../platform/project-storage.tauri");
     for (const { path, blob } of profiles) {
       await syncImportedAssetToDisk(path, blob);
     }

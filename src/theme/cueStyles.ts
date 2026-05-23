@@ -9,10 +9,7 @@ export const cueListEmptySx = {
   fontSize: 13,
 } as const;
 
-export const CUE_TYPE_COLORS: Record<
-  CueType | AssetKind,
-  { color: string; bgcolor: string }
-> = {
+export const CUE_TYPE_COLORS: Record<CueType | AssetKind, { color: string; bgcolor: string }> = {
   audio: { color: "#6fcf97", bgcolor: "#1e3a2f" },
   video: { color: "#a78bfa", bgcolor: "#2a2540" },
   image: { color: "#e8b86d", bgcolor: "#3a2e1e" },
@@ -52,10 +49,7 @@ const CUE_NAME_TINT = {
   warning: "#e8a87c",
 } as const;
 
-export function cueTypeBadgeSx(
-  type: CueType | AssetKind,
-  compact = false,
-): SxProps<Theme> {
+export function cueTypeBadgeSx(type: CueType | AssetKind, compact = false): SxProps<Theme> {
   const palette = CUE_TYPE_COLORS[type];
   return {
     display: "inline-flex",
@@ -195,10 +189,12 @@ export function cueNumberSx(tokens: GscTokenSet): SxProps<Theme> {
   };
 }
 
-export function cueNameSx(state: Pick<
-  CueRowStyleState,
-  "primarySelected" | "isStop" | "isVolumeFade" | "isOpacityFade" | "isLightFade" | "hasWarning"
->): SxProps<Theme> {
+export function cueNameSx(
+  state: Pick<
+    CueRowStyleState,
+    "primarySelected" | "isStop" | "isVolumeFade" | "isOpacityFade" | "isLightFade" | "hasWarning"
+  >,
+): SxProps<Theme> {
   const cueNameColor = state.isStop
     ? CUE_NAME_TINT.stop
     : state.isVolumeFade
@@ -249,9 +245,7 @@ export const cueRowWarningIconSx: SxProps<Theme> = {
   opacity: 0.95,
 };
 
-export const cueRenameInputSx = (
-  tokens: GscTokenSet,
-): SxProps<Theme> => ({
+export const cueRenameInputSx = (tokens: GscTokenSet): SxProps<Theme> => ({
   flex: 1,
   minWidth: 0,
   font: "inherit",

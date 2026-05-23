@@ -1,24 +1,24 @@
-import { createCueList } from "./cue-lists";
-import { setActiveProjectId } from "./active-project-id";
 import { getPlatform } from "../platform";
-import {
-  persistPlatformProject,
-  promptProjectFolder,
-} from "../platform/project-storage";
+import { persistPlatformProject, promptProjectFolder } from "../platform/project-storage";
+import { useFadeStore } from "../stores/fade";
 import { usePlaybackStore } from "../stores/playback";
-import { useProjectLocationStore } from "../stores/project-location";
 import { useProjectStore } from "../stores/project";
+import { useProjectLocationStore } from "../stores/project-location";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
 import { useVfsStore } from "../stores/vfs";
-import { useFadeStore } from "../stores/fade";
 import { vfsClear } from "../vfs/engine";
+import { setActiveProjectId } from "./active-project-id";
+import { createCueList } from "./cue-lists";
 
 const TAURI_LAST_ROOT_KEY = "gsc-tauri-last-project-root";
 
 function showNameFromFolderPath(rootDir: string): string {
   const base =
-    rootDir.replace(/[/\\]+$/, "").split(/[/\\]/).pop() ?? "Untitled_Show";
+    rootDir
+      .replace(/[/\\]+$/, "")
+      .split(/[/\\]/)
+      .pop() ?? "Untitled_Show";
   const name = base.replace(/_/g, " ").trim();
   return name || "Untitled Show";
 }

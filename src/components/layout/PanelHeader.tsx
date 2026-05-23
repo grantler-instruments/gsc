@@ -22,11 +22,7 @@ export function PanelHeader({ title, children }: PanelHeaderProps) {
       }}
     >
       {title ? (
-        <Typography
-          component="h2"
-          variant="subtitle2"
-          sx={{ flex: 1, m: 0 }}
-        >
+        <Typography component="h2" variant="subtitle2" sx={{ flex: 1, m: 0 }}>
           {title}
         </Typography>
       ) : (

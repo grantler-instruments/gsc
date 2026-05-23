@@ -1,4 +1,5 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import type { Fixture } from "../types/fixture";
 import {
   addAllDmxFixturesToCue,
   addDmxFixtureToCue,
@@ -12,7 +13,6 @@ import {
   setDmxCueMode,
   updateDmxFixtureChannelValue,
 } from "./dmx";
-import type { Fixture } from "../types/fixture";
 
 const fixtures: Fixture[] = [
   {
@@ -77,7 +77,10 @@ describe("dmx", () => {
 
   it("formats partial and snapshot summaries", () => {
     expect(
-      formatDmxCue({ mode: "partial", fixtures: [{ fixtureId: "f1", values: [255, 0] }] }, fixtures),
+      formatDmxCue(
+        { mode: "partial", fixtures: [{ fixtureId: "f1", values: [255, 0] }] },
+        fixtures,
+      ),
     ).toBe("Par 1 · 1/2 ch");
     expect(
       formatDmxCue(

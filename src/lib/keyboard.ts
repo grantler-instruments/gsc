@@ -10,8 +10,7 @@ export function isMacPlatform(): boolean {
   if (typeof navigator === "undefined") return false;
   const platform =
     "userAgentData" in navigator
-      ? (navigator as Navigator & { userAgentData?: { platform?: string } })
-          .userAgentData?.platform
+      ? (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform
       : undefined;
   return (
     platform === "macOS" ||

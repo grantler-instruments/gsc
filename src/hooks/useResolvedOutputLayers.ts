@@ -6,9 +6,7 @@ import type { OutputLayer, OutputState } from "../types/output";
  * Output webviews load assets from the origin-wide Cache API,
  * populated by the control window when cues go active.
  */
-export function useResolvedOutputLayers(
-  state: OutputState,
-): OutputLayer[] {
+export function useResolvedOutputLayers(state: OutputState): OutputLayer[] {
   const [layers, setLayers] = useState<OutputLayer[]>([]);
   const urlsRef = useRef(new Map<string, string>());
 
@@ -42,9 +40,7 @@ export function useResolvedOutputLayers(
         if (cancelled) return;
 
         if (!blob) {
-          console.warn(
-            `[output] Asset not in cache: ${layer.assetPath}`,
-          );
+          console.warn(`[output] Asset not in cache: ${layer.assetPath}`);
           continue;
         }
 

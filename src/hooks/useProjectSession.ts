@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
+import { notifyWarning } from "../lib/notifications";
+import { projectPersistStateChanged, vfsPersistStateChanged } from "../lib/project-persist";
 import { persistPlatformProject, restorePlatformProject } from "../platform/project-storage";
-import {
-  projectPersistStateChanged,
-  vfsPersistStateChanged,
-} from "../lib/project-persist";
 import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
 import { useVfsStore } from "../stores/vfs";
@@ -38,27 +36,27 @@ export function useProjectSession(): boolean {
         await restorePlatformProject();
       } catch (err) {
         console.error("[session] restore failed", err);
-      } finally {
-        if (cancelled) return;
-        unsubs.push(
-          useProjectStore.subscribe((state, prev) => {
-            if (projectPersistStateChanged(prev, state)) {
-              scheduleSave();
-            }
-          }),
-          useVfsStore.subscribe((state, prev) => {
-            if (vfsPersistStateChanged(prev, state)) {
-              scheduleSave();
-            }
-          }),
-          useProjectLocationStore.subscribe((state, prev) => {
-            if (state.rootDir !== prev.rootDir) {
-              scheduleSave();
-            }
-          }),
-        );
-        setReady(true);
+        notifyWarning("Could not restore the last project.");
       }
+      if (cancelled) return;
+      unsubs.push(
+        useProjectStore.subscribe((state, prev) => {
+          if (projectPersistStateChanged(prev, state)) {
+            scheduleSave();
+          }
+        }),
+        useVfsStore.subscribe((state, prev) => {
+          if (vfsPersistStateChanged(prev, state)) {
+            scheduleSave();
+          }
+        }),
+        useProjectLocationStore.subscribe((state, prev) => {
+          if (state.rootDir !== prev.rootDir) {
+            scheduleSave();
+          }
+        }),
+      );
+      setReady(true);
     })();
 
     return () => {

@@ -1,8 +1,7 @@
 import Box from "@mui/material/Box";
 import { useEffect, useRef } from "react";
-import { resolveEffectiveOpacity } from "../stores/fade";
-import { useFadeStore } from "../stores/fade";
 import { useAssetObjectUrl } from "../hooks/useAssetObjectUrl";
+import { resolveEffectiveOpacity, useFadeStore } from "../stores/fade";
 import type { Cue } from "../types/cue";
 import {
   cueAssetPreviewMediaSx,
@@ -27,10 +26,7 @@ export function CueAssetPreview({ cue, className }: CueAssetPreviewProps) {
 
   if (!objectUrl) {
     return (
-      <Box
-        className={className}
-        sx={{ ...cueAssetPreviewSx, ...cueAssetPreviewMissingSx }}
-      >
+      <Box className={className} sx={{ ...cueAssetPreviewSx, ...cueAssetPreviewMissingSx }}>
         Asset not loaded — re-import after opening a project.
       </Box>
     );

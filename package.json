@@ -12,6 +12,10 @@
     "preview:pages": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "screenshots": "node scripts/screenshots/capture.mjs",
+    "screenshots:serve": "node scripts/screenshots/capture.mjs --serve",
     "tauri": "tauri"
   },
   "dependencies": {
@@ -31,10 +35,12 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.15",
     "@tauri-apps/cli": "^2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
+    "puppeteer": "^25.0.4",
     "typescript": "~5.8.3",
     "vite": "^7.0.4",
     "vitest": "^3.2.4"

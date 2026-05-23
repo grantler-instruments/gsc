@@ -1,18 +1,18 @@
+import { setActiveProjectId, tryGetActiveProjectId } from "../lib/active-project-id";
+import { cacheAsset, getCachedAsset } from "../lib/asset-cache";
 import {
   buildProjectBundleZip,
   hydrateVfsFromBundleAssets,
   parseProjectBundleZip,
 } from "../lib/project-bundle";
 import { BUNDLE_EXTENSION } from "../lib/project-paths";
-import { setActiveProjectId, tryGetActiveProjectId } from "../lib/active-project-id";
-import { cacheAsset, getCachedAsset } from "../lib/asset-cache";
 import { collectSessionAssetPaths } from "../lib/project-session";
 import { snapshotToCueLists } from "../lib/project-snapshot";
 import { useProjectStore } from "../stores/project";
+import type { VfsEntry } from "../stores/vfs";
 import { useVfsStore } from "../stores/vfs";
 import { vfsClear, vfsGet } from "../vfs/engine";
 import { assetKindFromPath } from "../vfs/import";
-import type { VfsEntry } from "../stores/vfs";
 
 function vfsEntriesFromPaths(paths: string[]): VfsEntry[] {
   return paths
@@ -43,16 +43,9 @@ export async function exportProjectBundleWeb(): Promise<{ missing: string[] }> {
   const snapshot = useProjectStore.getState().getSnapshot();
   if (snapshot.version !== 2) return { missing: [] };
 
-  const paths = collectSessionAssetPaths(
-    snapshot,
-    useVfsStore.getState().entries,
-  );
+  const paths = collectSessionAssetPaths(snapshot, useVfsStore.getState().entries);
 
-  const { zip, missing } = await buildProjectBundleZip(
-    snapshot,
-    paths,
-    readBlobForBundle,
-  );
+  const { zip, missing } = await buildProjectBundleZip(snapshot, paths, readBlobForBundle);
 
   const blob = new Blob([zip], { type: "application/zip" });
   const url = URL.createObjectURL(blob);

@@ -1,16 +1,14 @@
 import { invoke } from "@tauri-apps/api/core";
+import { notifyErrorFromUnknown, notifyWarningDeduped } from "../lib/notifications";
 
-export async function sendMidiMessage(
-  portId: string | null,
-  message: number[],
-): Promise<void> {
+export async function sendMidiMessage(portId: string | null, message: number[]): Promise<void> {
   if (!portId) {
-    console.warn("[midi] Select a MIDI interface in Settings before sending");
+    notifyWarningDeduped("Select a MIDI output in Settings before sending.");
     return;
   }
   try {
     await invoke("send_midi", { portId, message });
   } catch (err) {
-    console.warn("[midi] Send failed", err);
+    notifyErrorFromUnknown(err);
   }
 }

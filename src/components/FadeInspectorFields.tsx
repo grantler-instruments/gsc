@@ -1,6 +1,8 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
+import { formatStopTargetLabel, getFadeTarget, isStopCue, isWaitCue } from "../lib/cues";
+import { defaultDmxCueData, syncLightFadeDmxFromTarget } from "../lib/dmx";
 import {
   canLightFadeTarget,
   canOpacityFadeTarget,
@@ -11,18 +13,10 @@ import {
   isVolumeFadeCue,
   resolveFadeFromLevel,
 } from "../lib/fade";
-import {
-  formatStopTargetLabel,
-  getFadeTarget,
-  isStopCue,
-  isWaitCue,
-} from "../lib/cues";
-import { defaultDmxCueData, syncLightFadeDmxFromTarget } from "../lib/dmx";
 import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue, FadeCueType } from "../types/cue";
 import { CueTypeBadge } from "./CueTypeIcon";
-import { SliderNumberField } from "./SliderNumberField";
 import {
   inspectorFieldLabelSx,
   inspectorFieldSx,
@@ -33,6 +27,7 @@ import {
   inspectorReadonlySx,
   inspectorTargetLinkSx,
 } from "./inspectorSx";
+import { SliderNumberField } from "./SliderNumberField";
 
 interface FadeInspectorFieldsProps {
   fadeCue: Cue;
@@ -49,12 +44,7 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
   const isLightFade = isLightFadeCue(fadeCue);
   const target = getFadeTarget(fadeCue, cues);
   const eligibleTargets = cues.filter((c) => {
-    if (
-      c.id === fadeCue.id ||
-      isStopCue(c) ||
-      isFadeCue(c) ||
-      isWaitCue(c)
-    ) {
+    if (c.id === fadeCue.id || isStopCue(c) || isFadeCue(c) || isWaitCue(c)) {
       return false;
     }
     if (fadeType === "volumeFade") return canVolumeFadeTarget(c);
@@ -71,8 +61,8 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
           {fadeCueLabel(fadeType)}
         </Box>
         <Typography component="p" sx={inspectorGroupHintSx}>
-          When triggered (GO), fades from the current DMX output to the target
-          levels below over the given duration.
+          When triggered (GO), fades from the current DMX output to the target levels below over the
+          given duration.
         </Typography>
 
         <Box component="label" sx={inspectorFieldSx}>
@@ -136,8 +126,7 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
           </Button>
         ) : (
           <Typography component="p" sx={inspectorHintWarningSx}>
-            Choose a light cue to load its fixtures, or add fixtures manually
-            below.
+            Choose a light cue to load its fixtures, or add fixtures manually below.
           </Typography>
         )}
       </Box>
@@ -151,8 +140,8 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
       </Box>
       <Typography component="p" sx={inspectorGroupHintSx}>
         When triggered (GO), fades the target cue&apos;s{" "}
-        {fadeType === "volumeFade" ? "volume" : "opacity"} from its current
-        level at that moment to the end level over the given duration.
+        {fadeType === "volumeFade" ? "volume" : "opacity"} from its current level at that moment to
+        the end level over the given duration.
       </Typography>
 
       <Box component="label" sx={inspectorFieldSx}>
@@ -198,9 +187,7 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
           </Typography>
           <Typography component="p" sx={inspectorReadonlySx}>
             {resolveFadeFromLevel(fadeCue, target).toFixed(2)}
-            {isVolumeFadeCue(fadeCue)
-              ? " — target cue volume now"
-              : " — target cue opacity now"}
+            {isVolumeFadeCue(fadeCue) ? " — target cue volume now" : " — target cue opacity now"}
           </Typography>
         </Box>
       ) : null}

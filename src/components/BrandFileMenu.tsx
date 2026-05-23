@@ -9,16 +9,12 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { useRef, useState } from "react";
 import { notifyWarning } from "../lib/notifications";
-import { openSettings } from "../lib/open-settings";
 import { openProjectSnapshot } from "../lib/open-project";
+import { openSettings } from "../lib/open-settings";
 import { downloadProject, parseProjectFile } from "../lib/project-io";
 import { BUNDLE_EXTENSION } from "../lib/project-paths";
 import { getPlatform } from "../platform";
-import {
-  exportProjectBundle,
-  importProjectBundle,
-  openProject,
-} from "../platform/project-storage";
+import { exportProjectBundle, importProjectBundle, openProject } from "../platform/project-storage";
 import { useProjectStore } from "../stores/project";
 import { projectDisplayName, useProjectLocationStore } from "../stores/project-location";
 import { useUiStore } from "../stores/ui";
@@ -45,10 +41,7 @@ export function BrandFileMenu() {
     close();
     const { missing } = await exportProjectBundle();
     if (missing.length > 0) {
-      console.warn("Export missing assets:", missing);
-      notifyWarning(
-        `Exported, but ${missing.length} asset(s) were missing from storage.`,
-      );
+      notifyWarning(`Exported, but ${missing.length} asset(s) were missing from storage.`);
     }
   };
 
@@ -140,10 +133,7 @@ export function BrandFileMenu() {
             <ListItemIcon>
               <SaveOutlinedIcon fontSize="small" />
             </ListItemIcon>
-            <ListItemText
-              primary="Save project (JSON)…"
-              secondary="Cues only, no media files"
-            />
+            <ListItemText primary="Save project (JSON)…" secondary="Cues only, no media files" />
           </MenuItem>
         ) : null}
 
@@ -154,9 +144,7 @@ export function BrandFileMenu() {
           <ListItemText
             primary="Export project bundle…"
             secondary={
-              showMode
-                ? "Disabled in show mode"
-                : `Includes all assets (${BUNDLE_EXTENSION})`
+              showMode ? "Disabled in show mode" : `Includes all assets (${BUNDLE_EXTENSION})`
             }
           />
         </MenuItem>

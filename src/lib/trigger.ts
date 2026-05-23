@@ -1,3 +1,4 @@
+import type { Cue } from "../types/cue";
 import {
   getChildCues,
   getStopTarget,
@@ -11,7 +12,6 @@ import {
 import { fireParallelGroupChildren } from "./parallel-group-fire";
 import { cancelAllSequences, runSequence } from "./sequence-runner";
 import { triggerFadeCue } from "./trigger-fade";
-import type { Cue } from "../types/cue";
 
 type GoMany = (ids: string[]) => void;
 type GoOne = (id: string) => void;
@@ -65,11 +65,7 @@ export function triggerGo(
   return { triggered: [cue.id], emptyContainer: false };
 }
 
-export function triggerStopCue(
-  cue: Cue,
-  cues: Cue[],
-  stopMany: StopMany,
-): void {
+export function triggerStopCue(cue: Cue, cues: Cue[], stopMany: StopMany): void {
   if (isSequenceGroup(cue)) {
     cancelAllSequences();
   }

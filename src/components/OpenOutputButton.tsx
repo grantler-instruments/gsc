@@ -1,6 +1,6 @@
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { useCallback, useState } from "react";
 import { openOutputWindow } from "../platform/output-window";
 

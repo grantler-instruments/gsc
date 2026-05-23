@@ -5,8 +5,8 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
 import { getCueDisplayName } from "../lib/cues";
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useDmxPreviewSessionStore } from "../stores/dmx-preview-session";
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 
 export function DmxPreviewConfirmDialog() {
   const confirm = useDmxPreviewSessionStore((s) => s.confirm);
@@ -18,17 +18,12 @@ export function DmxPreviewConfirmDialog() {
   const cueName = cue ? getCueDisplayName(cue, cues) : "this cue";
 
   return (
-    <Dialog
-      open={confirm !== null}
-      onClose={cancelConfirm}
-      maxWidth="xs"
-      fullWidth
-    >
+    <Dialog open={confirm !== null} onClose={cancelConfirm} maxWidth="xs" fullWidth>
       <DialogTitle>Keep preview changes?</DialogTitle>
       <DialogContent>
         <Typography sx={{ m: 0, fontSize: 14, color: "text.secondary" }}>
-          {cueName} was edited while previewing on DMX. Keep those changes in the
-          cue, or revert to the levels stored when preview started?
+          {cueName} was edited while previewing on DMX. Keep those changes in the cue, or revert to
+          the levels stored when preview started?
         </Typography>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>

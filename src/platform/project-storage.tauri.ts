@@ -1,3 +1,4 @@
+import { join } from "@tauri-apps/api/path";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import {
   exists,
@@ -9,8 +10,9 @@ import {
   writeFile,
   writeTextFile,
 } from "@tauri-apps/plugin-fs";
-import { join } from "@tauri-apps/api/path";
 import { setActiveProjectId } from "../lib/active-project-id";
+import { prefetchMediaDurations } from "../lib/media-duration";
+import { notifyWarning, notifyWarningDeduped } from "../lib/notifications";
 import {
   buildProjectBundleZip,
   parseProjectBundleZip,
@@ -24,17 +26,15 @@ import {
   virtualPathsFromRelativeFiles,
   writeAssetToDisk,
 } from "../lib/project-disk";
-import { prefetchMediaDurations } from "../lib/media-duration";
+import { BUNDLE_EXTENSION, PROJECT_JSON } from "../lib/project-paths";
 import { collectSessionAssetPaths } from "../lib/project-session";
 import { snapshotToCueLists } from "../lib/project-snapshot";
-import { BUNDLE_EXTENSION, PROJECT_JSON } from "../lib/project-paths";
-import { notifyErrorFromUnknown } from "../lib/notifications";
 import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
+import type { VfsEntry } from "../stores/vfs";
 import { useVfsStore } from "../stores/vfs";
 import { vfsClear, vfsGet } from "../vfs/engine";
 import { assetKindFromPath } from "../vfs/import";
-import type { VfsEntry } from "../stores/vfs";
 
 const LAST_ROOT_KEY = "gsc-tauri-last-project-root";
 
@@ -55,16 +55,12 @@ function projectDirNameFromShowName(name: string): string {
 async function isDirectoryEmpty(dir: string): Promise<boolean> {
   if (!(await exists(dir))) return true;
   const entries = await readDir(dir);
-  return (
-    entries.filter((e) => !IGNORED_DIR_ENTRIES.has(e.name)).length === 0
-  );
+  return entries.filter((e) => !IGNORED_DIR_ENTRIES.has(e.name)).length === 0;
 }
 
 /** Turn a save-dialog path into a project directory (strip accidental file extensions). */
 function projectRootFromSavePath(savePath: string): string {
-  return savePath
-    .replace(/[/\\]+$/, "")
-    .replace(/\.(gsc\.zip|gsc|zip)$/i, "");
+  return savePath.replace(/[/\\]+$/, "").replace(/\.(gsc\.zip|gsc|zip)$/i, "");
 }
 
 /**
@@ -96,10 +92,7 @@ export async function promptTauriProjectFolder(
   return rootDir;
 }
 
-async function writeBundleFilesToFolder(
-  rootDir: string,
-  zipData: Uint8Array,
-): Promise<void> {
+async function writeBundleFilesToFolder(rootDir: string, zipData: Uint8Array): Promise<void> {
   const { files } = projectBundleDiskFiles(zipData);
   const sep = rootDir.includes("\\") ? "\\" : "/";
   const base = rootDir.replace(/[/\\]+$/, "");
@@ -122,19 +115,13 @@ async function ensureDiskDir(dir: string): Promise<void> {
   }
 }
 
-async function collectRelativeFiles(
-  dir: string,
-  prefix = "",
-): Promise<string[]> {
+async function collectRelativeFiles(dir: string, prefix = ""): Promise<string[]> {
   const entries = await readDir(dir);
   const files: string[] = [];
   for (const entry of entries) {
     const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
     if (entry.isDirectory) {
-      const nested = await collectRelativeFiles(
-        await join(dir, entry.name),
-        rel,
-      );
+      const nested = await collectRelativeFiles(await join(dir, entry.name), rel);
       files.push(...nested);
     } else {
       files.push(rel);
@@ -186,12 +173,13 @@ export async function loadProjectFromFolder(rootDir: string): Promise<void> {
     diskPaths = virtualPathsFromRelativeFiles(relFiles);
   }
 
-  const paths = collectSessionAssetPaths(snap, diskPaths.map((p) => ({ path: p })));
+  const paths = collectSessionAssetPaths(
+    snap,
+    diskPaths.map((p) => ({ path: p })),
+  );
   const uniquePaths = [...new Set(paths)];
 
-  await registerDiskAssetPaths(rootDir, uniquePaths, async (diskPath) =>
-    exists(diskPath),
-  );
+  await registerDiskAssetPaths(rootDir, uniquePaths, async (diskPath) => exists(diskPath));
 
   useVfsStore.setState({ entries: vfsEntriesFromPaths(uniquePaths) });
   prefetchMediaDurations(
@@ -206,10 +194,7 @@ export async function saveProjectToFolder(rootDir: string): Promise<void> {
   const snapshot = useProjectStore.getState().getSnapshot();
   if (snapshot.version !== 2) return;
 
-  const paths = collectSessionAssetPaths(
-    snapshot,
-    useVfsStore.getState().entries,
-  );
+  const paths = collectSessionAssetPaths(snapshot, useVfsStore.getState().entries);
 
   await saveAllVfsAssetsToDisk(rootDir, paths, writeDiskFile, ensureDiskDir);
 
@@ -217,14 +202,9 @@ export async function saveProjectToFolder(rootDir: string): Promise<void> {
   await writeTextFile(jsonPath, JSON.stringify(snapshot, null, 2));
 }
 
-async function openProjectBundleFromZipData(
-  zipData: Uint8Array,
-): Promise<boolean> {
+async function openProjectBundleFromZipData(zipData: Uint8Array): Promise<boolean> {
   const { snapshot } = parseProjectBundleZip(zipData);
-  const destDir = await promptTauriProjectFolder(
-    "Save project as",
-    snapshot.name,
-  );
+  const destDir = await promptTauriProjectFolder("Save project as", snapshot.name);
   if (!destDir) return false;
 
   await writeBundleFilesToFolder(destDir, zipData);
@@ -233,9 +213,7 @@ async function openProjectBundleFromZipData(
 }
 
 /** Extract a dropped or chosen bundle into a new project folder and load it. */
-export async function openProjectBundleFromPath(
-  bundlePath: string,
-): Promise<boolean> {
+export async function openProjectBundleFromPath(bundlePath: string): Promise<boolean> {
   if (bundleOpenInProgress) return false;
   bundleOpenInProgress = true;
   try {
@@ -335,7 +313,7 @@ export async function restoreLastTauriProject(): Promise<boolean> {
     await loadProjectFromFolder(rootDir);
     return true;
   } catch (err) {
-    console.warn("[tauri] Could not restore last project", err);
+    notifyWarning("Could not restore the last project.");
     localStorage.removeItem(LAST_ROOT_KEY);
     setActiveProjectId(useProjectStore.getState().id);
     return false;
@@ -348,9 +326,10 @@ export async function persistTauriProject(): Promise<void> {
     if (!rootDir) return;
     await saveProjectToFolder(rootDir);
   } catch (err) {
-    console.warn("[tauri] Could not autosave project", err);
     if (err instanceof Error && err.message.includes("already exists")) {
       showError(err);
+    } else {
+      notifyWarningDeduped("Could not autosave the project.");
     }
   }
 }
@@ -359,14 +338,11 @@ export async function exportProjectBundleTauri(): Promise<boolean> {
   const snapshot = useProjectStore.getState().getSnapshot();
   if (snapshot.version !== 2) return false;
 
-  const paths = collectSessionAssetPaths(
-    snapshot,
-    useVfsStore.getState().entries,
-  );
+  const paths = collectSessionAssetPaths(snapshot, useVfsStore.getState().entries);
 
   const { zip, missing } = await buildProjectBundleZip(snapshot, paths, vfsGet);
   if (missing.length > 0) {
-    console.warn("[export] Missing assets:", missing);
+    notifyWarning(`Exported, but ${missing.length} asset(s) were missing from storage.`);
   }
 
   const base = snapshot.name.replace(/[^\w.-]+/g, "_") || "show";
@@ -382,10 +358,7 @@ export async function exportProjectBundleTauri(): Promise<boolean> {
 }
 
 /** Write imported blob to disk when a project folder is bound. */
-export async function syncImportedAssetToDisk(
-  virtualPath: string,
-  blob: Blob,
-): Promise<void> {
+export async function syncImportedAssetToDisk(virtualPath: string, blob: Blob): Promise<void> {
   const rootDir = useProjectLocationStore.getState().rootDir;
   if (!rootDir) return;
   await writeAssetToDisk(rootDir, virtualPath, blob, writeDiskFile, ensureDiskDir);

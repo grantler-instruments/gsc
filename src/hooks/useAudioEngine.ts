@@ -40,30 +40,19 @@ export function useAudioEngine(): void {
 
     const runSync = () => {
       void audioEngine.unlock();
-      const { activeCueIds, masterVolume, cueStartedAtMs } =
-        useTransportStore.getState();
+      const { activeCueIds, masterVolume, cueStartedAtMs } = useTransportStore.getState();
       if (activeCueIds.length === 0) {
         void audioEngine.stopAll();
         return;
       }
       const list = getActiveCueListFromState(useProjectStore.getState());
       if (!list) return;
-      void audioEngine.sync(
-        activeCueIds,
-        list.cues,
-        masterVolume,
-        cueStartedAtMs,
-      );
+      void audioEngine.sync(activeCueIds, list.cues, masterVolume, cueStartedAtMs);
     };
 
     runSync();
     const unsubTransport = useTransportStore.subscribe((state, prev) => {
-      if (
-        audioSyncStateChanged(
-          selectAudioSyncState(prev),
-          selectAudioSyncState(state),
-        )
-      ) {
+      if (audioSyncStateChanged(selectAudioSyncState(prev), selectAudioSyncState(state))) {
         runSync();
       }
     });

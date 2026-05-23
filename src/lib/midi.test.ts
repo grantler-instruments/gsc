@@ -65,12 +65,10 @@ describe("encodeMidiMessage", () => {
 describe("midiMatches", () => {
   it("matches note-on by channel and note", () => {
     const match = { channel: 1, kind: "note-on" as const, note: 60, velocity: 127 };
-    expect(
-      midiMatches(match, { channel: 1, kind: "note-on", note: 60, velocity: 100 }),
-    ).toBe(true);
-    expect(
-      midiMatches(match, { channel: 1, kind: "note-on", note: 61, velocity: 100 }),
-    ).toBe(false);
+    expect(midiMatches(match, { channel: 1, kind: "note-on", note: 60, velocity: 100 })).toBe(true);
+    expect(midiMatches(match, { channel: 1, kind: "note-on", note: 61, velocity: 100 })).toBe(
+      false,
+    );
   });
 
   it("matches control change by controller and value", () => {

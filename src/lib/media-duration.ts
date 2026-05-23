@@ -6,7 +6,6 @@ import { assetKindFromPath } from "../vfs/import";
 const cache = new Map<string, number>();
 const pending = new Set<string>();
 
-
 export function getMediaDurationSec(assetPath: string): number | undefined {
   const d = cache.get(assetPath);
   return d !== undefined && Number.isFinite(d) && d > 0 ? d : undefined;
@@ -51,9 +50,7 @@ async function probeVideoDurationSec(assetPath: string): Promise<number | undefi
 }
 
 /** Decode or read metadata so duration is available for UI and sequencing. */
-export async function ensureMediaDurationSec(
-  assetPath: string,
-): Promise<number | undefined> {
+export async function ensureMediaDurationSec(assetPath: string): Promise<number | undefined> {
   const cached = getMediaDurationSec(assetPath);
   if (cached !== undefined) return cached;
   if (pending.has(assetPath)) return undefined;

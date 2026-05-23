@@ -1,5 +1,5 @@
-import { createCueList } from "../../lib/cue-lists";
 import { setActiveProjectId } from "../../lib/active-project-id";
+import { createCueList } from "../../lib/cue-lists";
 import { emptyFixturePlot } from "../../lib/fixture-plot";
 import type { MidiMapping } from "../../types/midi-mapping";
 

@@ -1,8 +1,4 @@
-import {
-  OFL_MANUFACTURERS_URL,
-  oflFixtureRawUrl,
-  oflManufacturerContentsUrl,
-} from "./constants";
+import { OFL_MANUFACTURERS_URL, oflFixtureRawUrl, oflManufacturerContentsUrl } from "./constants";
 import type {
   OflFixtureListEntry,
   OflFixtureSummary,
@@ -41,17 +37,12 @@ export async function fetchOflManufacturers(): Promise<OflManufacturer[]> {
     .filter(([key]) => key !== "$schema")
     .map(([key, value]) => ({
       key,
-      name:
-        typeof value === "string"
-          ? value
-          : value.name?.trim() || titleCaseFromKey(key),
+      name: typeof value === "string" ? value : value.name?.trim() || titleCaseFromKey(key),
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export async function fetchOflFixtureList(
-  manufacturerKey: string,
-): Promise<OflFixtureListEntry[]> {
+export async function fetchOflFixtureList(manufacturerKey: string): Promise<OflFixtureListEntry[]> {
   const response = await fetch(oflManufacturerContentsUrl(manufacturerKey));
   if (!response.ok) {
     throw new Error(`Could not load fixtures for ${manufacturerKey} (${response.status})`);

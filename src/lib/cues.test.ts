@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { testCue } from "../test/fixtures/cues";
 import {
   appendCueInList,
   buildCueTree,
@@ -15,14 +16,10 @@ import {
   resolveParallelGoIds,
   resolveStopCueIds,
 } from "./cues";
-import { testCue } from "../test/fixtures/cues";
 
 describe("renumberCueList", () => {
   it("numbers top-level cues sequentially", () => {
-    const cues = [
-      testCue("a", "A", "audio"),
-      testCue("b", "B", "audio"),
-    ];
+    const cues = [testCue("a", "A", "audio"), testCue("b", "B", "audio")];
     const numbered = renumberCueList(cues);
     expect(numbered.map((c) => c.number)).toEqual(["1", "2"]);
   });
@@ -59,10 +56,7 @@ describe("buildCueTree", () => {
 
 describe("appendCueInList", () => {
   it("inserts after the last sibling with the same parent", () => {
-    const cues = [
-      testCue("a", "A", "audio"),
-      testCue("b", "B", "audio"),
-    ];
+    const cues = [testCue("a", "A", "audio"), testCue("b", "B", "audio")];
     const inserted = appendCueInList(cues, testCue("c", "C", "audio"));
     expect(inserted.map((c) => c.id)).toEqual(["a", "b", "c"]);
   });
@@ -73,10 +67,7 @@ describe("appendCueInList", () => {
       testCue("a", "A", "audio", { parentId: "g" }),
       testCue("x", "X", "audio"),
     ];
-    const inserted = appendCueInList(
-      cues,
-      testCue("b", "B", "audio", { parentId: "g" }),
-    );
+    const inserted = appendCueInList(cues, testCue("b", "B", "audio", { parentId: "g" }));
     const ids = inserted.map((c) => c.id);
     expect(ids.indexOf("b")).toBeGreaterThan(ids.indexOf("a"));
     expect(ids.indexOf("b")).toBeLessThan(ids.indexOf("x"));
@@ -84,11 +75,7 @@ describe("appendCueInList", () => {
 });
 
 describe("reorderSiblingCues", () => {
-  const cues = [
-    testCue("a", "A", "audio"),
-    testCue("b", "B", "audio"),
-    testCue("c", "C", "audio"),
-  ];
+  const cues = [testCue("a", "A", "audio"), testCue("b", "B", "audio"), testCue("c", "C", "audio")];
 
   it("moves a cue before a sibling", () => {
     const next = reorderSiblingCues(cues, "c", "a", "before");
@@ -146,9 +133,7 @@ describe("resolveParallelGoIds", () => {
       testCue("seq", "Seq", "sequence", { parentId: "par" }),
       testCue("a", "A", "audio", { parentId: "seq" }),
     ];
-    expect(resolveParallelGoIds(cues.find((c) => c.id === "par")!, cues)).toEqual(
-      ["seq"],
-    );
+    expect(resolveParallelGoIds(cues.find((c) => c.id === "par")!, cues)).toEqual(["seq"]);
   });
 
   it("returns a single cue id for non-group cues", () => {
@@ -277,9 +262,7 @@ describe("isUtilityCue", () => {
     expect(isUtilityCue(testCue("a", "A", "audio"))).toBe(false);
     expect(isUtilityCue(testCue("s", "Stop", "stop"))).toBe(true);
     expect(isUtilityCue(testCue("w", "Wait", "wait"))).toBe(true);
-    expect(
-      isUtilityCue(testCue("f", "Fade", "volumeFade", { fadeTargetId: "a" })),
-    ).toBe(true);
+    expect(isUtilityCue(testCue("f", "Fade", "volumeFade", { fadeTargetId: "a" }))).toBe(true);
   });
 });
 

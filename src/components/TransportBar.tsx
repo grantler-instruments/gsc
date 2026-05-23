@@ -4,13 +4,13 @@ import Chip from "@mui/material/Chip";
 import Slider from "@mui/material/Slider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { findProjectCue, useActiveCueList, useProjectStore } from "../stores/project";
-import { useTransportStore } from "../stores/transport";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
 import { getCueDisplayName } from "../lib/cues";
 import { triggerGoSelected } from "../lib/transport-actions";
-import { SIDEBAR_WIDTH } from "../types/sidebar";
+import { findProjectCue, useActiveCueList, useProjectStore } from "../stores/project";
+import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
+import { SIDEBAR_WIDTH } from "../types/sidebar";
 import { CueTypeBadge } from "./CueTypeIcon";
 import { TransportCueThumbnail } from "./TransportCueThumbnail";
 
@@ -48,13 +48,7 @@ function CueNotesLine({ notes }: { notes?: string }) {
   );
 }
 
-function CueSummary({
-  cue,
-  allCues,
-}: {
-  cue: Cue;
-  allCues?: Cue[];
-}) {
+function CueSummary({ cue, allCues }: { cue: Cue; allCues?: Cue[] }) {
   const displayName = allCues ? getCueDisplayName(cue, allCues) : cue.name;
 
   return (
@@ -85,12 +79,9 @@ export function TransportBar() {
   const panic = useTransportStore((s) => s.panic);
   const setMasterVolume = useTransportStore((s) => s.setMasterVolume);
   const selectedCue = cues.find((c) => c.id === selectedCueId);
-  const activeCue = activeCueId
-    ? findProjectCue(cueLists, activeCueId)
-    : undefined;
+  const activeCue = activeCueId ? findProjectCue(cueLists, activeCueId) : undefined;
   const activeCount = useTransportStore((s) => s.activeCueIds.length);
-  const playingOther =
-    isPlaying && activeCue && activeCue.id !== selectedCueId;
+  const playingOther = isPlaying && activeCue && activeCue.id !== selectedCueId;
 
   return (
     <Box
@@ -144,11 +135,7 @@ export function TransportBar() {
         }}
       >
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          {selectedCue ? (
-            <CueSummary cue={selectedCue} allCues={cues} />
-          ) : (
-            <CueNotesLine />
-          )}
+          {selectedCue ? <CueSummary cue={selectedCue} allCues={cues} /> : <CueNotesLine />}
         </Box>
 
         <Box

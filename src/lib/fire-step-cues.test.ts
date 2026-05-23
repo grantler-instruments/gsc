@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireStepCues, playbackCueIdsInStep } from "./fire-step-cues";
 import { useFadeStore } from "../stores/fade";
 import { useTransportStore } from "../stores/transport";
 import { testCue } from "../test/fixtures/cues";
+import { fireStepCues, playbackCueIdsInStep } from "./fire-step-cues";
 
 function resetTransport() {
   useTransportStore.setState({
@@ -30,10 +30,7 @@ describe("fireStepCues", () => {
   });
 
   it("GOs playback cues in a step", () => {
-    const cues = [
-      testCue("a", "A", "audio"),
-      testCue("b", "B", "audio"),
-    ];
+    const cues = [testCue("a", "A", "audio"), testCue("b", "B", "audio")];
     const actions = mockActions();
 
     fireStepCues(["a", "b"], cues, actions);
@@ -42,10 +39,7 @@ describe("fireStepCues", () => {
   });
 
   it("skips wait cues without GO", () => {
-    const cues = [
-      testCue("w", "Wait", "wait"),
-      testCue("a", "A", "audio"),
-    ];
+    const cues = [testCue("w", "Wait", "wait"), testCue("a", "A", "audio")];
     const actions = mockActions();
 
     fireStepCues(["w", "a"], cues, actions);
@@ -164,9 +158,7 @@ describe("playbackCueIdsInStep", () => {
   ];
 
   it("keeps only playback cues", () => {
-    expect(playbackCueIdsInStep(["a", "fade", "w", "par", "stop"], cues)).toEqual(
-      ["a"],
-    );
+    expect(playbackCueIdsInStep(["a", "fade", "w", "par", "stop"], cues)).toEqual(["a"]);
   });
 
   it("ignores missing cue ids", () => {

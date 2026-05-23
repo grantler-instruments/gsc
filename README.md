@@ -16,6 +16,8 @@ Web-based show playback for audio and video cues. Same codebase runs in the brow
 ```bash
 npm install
 npm run dev
+npm run lint       # check format + lint
+npm run lint:fix   # auto-fix where safe
 ```
 
 | URL | What |
@@ -76,6 +78,8 @@ src/
 ├── types/
 └── vfs/
 ```
+
+See **[docs/architecture.md](docs/architecture.md)** for how playback, stores, and platform code fit together.
 
 ## Cue types
 

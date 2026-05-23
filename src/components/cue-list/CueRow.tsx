@@ -5,13 +5,8 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { memo, type MouseEvent } from "react";
+import { type MouseEvent, memo } from "react";
 import { getCueAssetWarning } from "../../lib/cue-asset";
-import { pointerLeftElement } from "../../lib/dom";
-import {
-  setActiveCueDrag,
-  setCueDragData,
-} from "../../lib/drag";
 import {
   getCueDisplayName,
   getFadeTarget,
@@ -23,9 +18,10 @@ import {
   isSequenceGroup,
   isStopCue,
 } from "../../lib/cues";
+import { pointerLeftElement } from "../../lib/dom";
+import { setActiveCueDrag, setCueDragData } from "../../lib/drag";
 import { isLightFadeReady } from "../../lib/fade";
 import { getParallelGroupOrderConflict } from "../../lib/parallel-group-fire";
-import type { Cue } from "../../types/cue";
 import { usePlaybackStore } from "../../stores/playback";
 import { useProjectStore } from "../../stores/project";
 import { useUiStore } from "../../stores/ui";
@@ -38,12 +34,13 @@ import {
   cueRowWarningIconSx,
 } from "../../theme/cueStyles";
 import { useGscTokens } from "../../theme/useGscTokens";
+import type { Cue } from "../../types/cue";
 import { CueNotesIcon } from "../CueNotesIcon";
 import { CueTypeBadge } from "../CueTypeIcon";
-import { useCueListActions } from "./cueListActionsContext";
 import { CueRenameInput } from "./CueRenameInput";
 import { CueRowActions } from "./CueRowActions";
 import { CueRowDetails } from "./CueRowDetails";
+import { useCueListActions } from "./cueListActionsContext";
 import { useCueRowDrop } from "./useCueRowDrop";
 
 export interface CueRowProps {
@@ -124,9 +121,7 @@ export const CueRow = memo(function CueRow({
     onToggleExpand,
   } = useCueListActions();
 
-  const playback = usePlaybackStore((s) =>
-    active ? s.byCueId[cue.id] : undefined,
-  );
+  const playback = usePlaybackStore((s) => (active ? s.byCueId[cue.id] : undefined));
 
   const fixtures = useProjectStore((s) => s.fixtures);
   const isPreviewing = useUiStore((s) => s.dmxPreviewCueIds.includes(cue.id));
@@ -139,20 +134,13 @@ export const CueRow = memo(function CueRow({
   const stopTarget = isStop ? getStopTarget(cue, allCues) : undefined;
   const fadeTarget = isFade ? getFadeTarget(cue, allCues) : undefined;
   const stopTargetMissing = isStop && !stopTarget;
-  const fadeTargetMissing =
-    isFade &&
-    !isLightFade &&
-    !fadeTarget;
-  const lightFadeTargetMissing =
-    isLightFade && Boolean(cue.fadeTargetId) && !fadeTarget;
+  const fadeTargetMissing = isFade && !isLightFade && !fadeTarget;
+  const lightFadeTargetMissing = isLightFade && Boolean(cue.fadeTargetId) && !fadeTarget;
   const lightFadeMissing =
     isLightFade && !lightFadeTargetMissing && !isLightFadeReady(cue, fixtures, allCues);
   const assetWarning = getCueAssetWarning(cue);
-  const parallelConflict = isParallel
-    ? getParallelGroupOrderConflict(cue, allCues)
-    : null;
-  const isCurrentSequenceStep =
-    runningSequence?.stepCueIds.includes(cue.id) ?? false;
+  const parallelConflict = isParallel ? getParallelGroupOrderConflict(cue, allCues) : null;
+  const isCurrentSequenceStep = runningSequence?.stepCueIds.includes(cue.id) ?? false;
 
   const hasWarning =
     missingAsset ||
@@ -166,24 +154,23 @@ export const CueRow = memo(function CueRow({
     : lightFadeTargetMissing
       ? "Reference cue missing"
       : lightFadeMissing
-      ? "Add fixtures and levels to this light fade"
-      : fadeTargetMissing
-      ? "Fade target missing"
-      : stopTargetMissing
-        ? "Stop target missing"
-        : assetWarning
-          ? `${assetWarning.title} — drag from Assets onto this cue or the list`
-          : "Warning";
+        ? "Add fixtures and levels to this light fade"
+        : fadeTargetMissing
+          ? "Fade target missing"
+          : stopTargetMissing
+            ? "Stop target missing"
+            : assetWarning
+              ? `${assetWarning.title} — drag from Assets onto this cue or the list`
+              : "Warning";
 
-  const { dropActive, insertPlace, onDragOver, onDragLeave, onDrop } =
-    useCueRowDrop({
-      cue,
-      allCues,
-      canEdit,
-      onAssetDrop: (payload) => onAssetDrop(cue.id, payload),
-      onCueDrop: (draggedId) => onCueDrop(draggedId, cue.id),
-      onCueReorder,
-    });
+  const { dropActive, insertPlace, onDragOver, onDragLeave, onDrop } = useCueRowDrop({
+    cue,
+    allCues,
+    canEdit,
+    onAssetDrop: (payload) => onAssetDrop(cue.id, payload),
+    onCueDrop: (draggedId) => onCueDrop(draggedId, cue.id),
+    onCueReorder,
+  });
 
   const rowStyleState = {
     tokens,
@@ -254,11 +241,7 @@ export const CueRow = memo(function CueRow({
             onToggleExpand(cue.id);
           }}
         >
-          {expanded ? (
-            <ExpandMoreIcon fontSize="small" />
-          ) : (
-            <ChevronRightIcon fontSize="small" />
-          )}
+          {expanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
         </IconButton>
       ) : (
         <Box component="span" sx={{ width: 24, flexShrink: 0 }} />

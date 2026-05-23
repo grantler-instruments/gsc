@@ -1,8 +1,8 @@
-import type { CueList } from "./cue-lists";
+import type { VfsEntry } from "../stores/vfs";
 import type { Fixture } from "../types/fixture";
 import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
-import type { VfsEntry } from "../stores/vfs";
+import type { CueList } from "./cue-lists";
 
 /** Fields that are written by getSnapshot() / persistPlatformProject(). */
 export interface ProjectPersistSlice {

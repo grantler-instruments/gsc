@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import type { SxProps, Theme } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef } from "react";
 import {
   isOutputLayerLooping,
@@ -11,11 +11,7 @@ import {
 } from "../lib/video-playback";
 import { useTransportStore } from "../stores/transport";
 import type { OutputLayer } from "../types/output";
-import {
-  visualLayerSx,
-  visualLayerWrapSx,
-  visualStageEmptySx,
-} from "./visualStageSx";
+import { visualLayerSx, visualLayerWrapSx, visualStageEmptySx } from "./visualStageSx";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
@@ -134,15 +130,7 @@ function VideoLayer({ layer, onEnded }: VideoLayerProps) {
     video.style.opacity = String(clamp01(layer.opacity));
   }, [layer.opacity]);
 
-  return (
-    <Box
-      component="video"
-      ref={ref}
-      sx={visualLayerSx}
-      playsInline
-      muted
-    />
-  );
+  return <Box component="video" ref={ref} sx={visualLayerSx} playsInline muted />;
 }
 
 interface ImageLayerProps {
@@ -165,22 +153,22 @@ export type VisualStageRole = "control" | "output";
 
 interface VisualStageProps {
   layers: OutputLayer[];
-  role: VisualStageRole;
+  stageRole: VisualStageRole;
   className?: string;
   sx?: SxProps<Theme>;
 }
 
 /** Composites active video/image layers (picture only — audio via Web Audio in control app). */
-export function VisualStage({ layers, role, className, sx }: VisualStageProps) {
+export function VisualStage({ layers, stageRole, className, sx }: VisualStageProps) {
   const stopCue = useTransportStore((s) => s.stopCue);
 
   const handleEnded = useCallback(
     (cueId: string) => {
-      if (role === "control") {
+      if (stageRole === "control") {
         stopCue(cueId);
       }
     },
-    [role, stopCue],
+    [stageRole, stopCue],
   );
 
   return (
@@ -196,21 +184,15 @@ export function VisualStage({ layers, role, className, sx }: VisualStageProps) {
         ...sx,
       }}
     >
-      {layers.length === 0 && role === "control" && (
+      {layers.length === 0 && stageRole === "control" && (
         <Typography component="span" sx={visualStageEmptySx}>
           No active video or image cues
         </Typography>
       )}
       {layers.map((layer, index) => (
-        <Box
-          key={layer.cueId}
-          sx={{ ...visualLayerWrapSx, zIndex: index + 1 }}
-        >
+        <Box key={layer.cueId} sx={{ ...visualLayerWrapSx, zIndex: index + 1 }}>
           {layer.type === "video" ? (
-            <VideoLayer
-              layer={layer}
-              onEnded={role === "control" ? handleEnded : undefined}
-            />
+            <VideoLayer layer={layer} onEnded={stageRole === "control" ? handleEnded : undefined} />
           ) : (
             <ImageLayer layer={layer} />
           )}

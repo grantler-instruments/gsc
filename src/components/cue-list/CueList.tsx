@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import { useMemo } from "react";
-import { buildCueTree } from "../../lib/cues";
 import { getPrimarySelectedCueId } from "../../lib/cue-selection";
+import { buildCueTree } from "../../lib/cues";
 import { useActiveCueList, useProjectStore } from "../../stores/project";
 import { useTransportStore } from "../../stores/transport";
 import { useUiStore } from "../../stores/ui";
@@ -10,9 +10,9 @@ import { AddCueMenu } from "../AddCueMenu";
 import { CueContextMenu } from "../CueContextMenu";
 import { CueListTabs } from "../CueListTabs";
 import { FixturePlotMonitor } from "../FixturePlotMonitor";
-import { CueListActionsProvider } from "./cueListActionsContext";
 import { CueListBody } from "./CueListBody";
 import { CueListTree } from "./CueListTree";
+import { CueListActionsProvider } from "./cueListActionsContext";
 import { useCueListContextMenu } from "./useCueListContextMenu";
 import { useCueListDrop } from "./useCueListDrop";
 import { useCueListRename } from "./useCueListRename";
@@ -28,16 +28,11 @@ export function CueList() {
   const cues = activeList.cues;
   const canEdit = !showMode;
   const collapsedCueGroupIds = useUiStore((s) => s.collapsedCueGroupIds);
-  const collapsedGroups = useMemo(
-    () => new Set(collapsedCueGroupIds),
-    [collapsedCueGroupIds],
-  );
+  const collapsedGroups = useMemo(() => new Set(collapsedCueGroupIds), [collapsedCueGroupIds]);
   const activeCueIds = useTransportStore((s) => s.activeCueIds);
   const runningSequence = useTransportStore((s) => s.runningSequence);
   const copySelectedCues = useProjectStore((s) => s.copySelectedCues);
-  const duplicateSelectedCues = useProjectStore(
-    (s) => s.duplicateSelectedCues,
-  );
+  const duplicateSelectedCues = useProjectStore((s) => s.duplicateSelectedCues);
 
   const selection = useCueListSelection(cues, collapsedGroups);
   const rename = useCueListRename(cues);
@@ -47,10 +42,7 @@ export function CueList() {
     selection.selectedCueIds,
     selection.selectedCueIdSet,
   );
-  const stopHighlights = useCueListStopHighlights(
-    cues,
-    selection.primarySelectedId,
-  );
+  const stopHighlights = useCueListStopHighlights(cues, selection.primarySelectedId);
   const listDrop = useCueListDrop(canEdit);
 
   const tree = useMemo(() => buildCueTree(cues), [cues]);
@@ -64,24 +56,15 @@ export function CueList() {
         flexDirection: "column",
         minHeight: 0,
         minWidth: 0,
-        borderRight:
-          !showMode && getPrimarySelectedCueId(selection.selectedCueIds)
-            ? 1
-            : 0,
+        borderRight: !showMode && getPrimarySelectedCueId(selection.selectedCueIds) ? 1 : 0,
         borderColor: "divider",
       }}
     >
-      {fixturePlotExpanded && fixtures.length > 0 && (
-        <FixturePlotMonitor expanded />
-      )}
+      {fixturePlotExpanded && fixtures.length > 0 && <FixturePlotMonitor expanded />}
 
       <CueListTabs />
 
-      <CueListActionsProvider
-        canEdit={canEdit}
-        allCues={cues}
-        runningSequence={runningSequence}
-      >
+      <CueListActionsProvider canEdit={canEdit} allCues={cues} runningSequence={runningSequence}>
         <CueListBody
           canEdit={canEdit}
           listDropActive={listDrop.listDropActive}

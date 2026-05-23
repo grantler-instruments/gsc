@@ -3,14 +3,10 @@ import OpacityIcon from "@mui/icons-material/Opacity";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import VolumeDownIcon from "@mui/icons-material/VolumeDown";
 import IconButton from "@mui/material/IconButton";
-import {
-  canLightFadeTarget,
-  canOpacityFadeTarget,
-  canVolumeFadeTarget,
-} from "../../lib/fade";
 import { isUtilityCue } from "../../lib/cues";
-import type { Cue } from "../../types/cue";
+import { canLightFadeTarget, canOpacityFadeTarget, canVolumeFadeTarget } from "../../lib/fade";
 import { cueRowFadeActionSx, cueRowStopActionSx } from "../../theme/cueStyles";
+import type { Cue } from "../../types/cue";
 
 interface CueRowActionsProps {
   cue: Cue;

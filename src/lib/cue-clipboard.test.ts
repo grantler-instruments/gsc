@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { testCue } from "../test/fixtures/cues";
 import {
   collectCuesForCopy,
   getCueClipboard,
@@ -6,7 +7,6 @@ import {
   prepareCuePaste,
   setCueClipboard,
 } from "./cue-clipboard";
-import { testCue } from "../test/fixtures/cues";
 
 describe("cue clipboard storage", () => {
   beforeEach(() => {
@@ -78,10 +78,7 @@ describe("prepareCuePaste", () => {
   });
 
   it("appends clones at the end when there is no anchor", () => {
-    const source = [
-      testCue("a", "A", "audio"),
-      testCue("b", "B", "audio"),
-    ];
+    const source = [testCue("a", "A", "audio"), testCue("b", "B", "audio")];
     const existing = [testCue("x", "X", "audio")];
 
     const result = prepareCuePaste(source, existing, null);
@@ -92,10 +89,7 @@ describe("prepareCuePaste", () => {
   });
 
   it("inserts after the anchor subtree as a sibling with remapped ids", () => {
-    const source = [
-      testCue("g", "Group", "group"),
-      testCue("a", "A", "audio", { parentId: "g" }),
-    ];
+    const source = [testCue("g", "Group", "group"), testCue("a", "A", "audio", { parentId: "g" })];
     const existing = [
       testCue("x", "X", "audio"),
       testCue("p", "Parent", "group"),
@@ -128,11 +122,7 @@ describe("prepareCuePaste", () => {
 
     const pastedA = result!.cues.find((c) => c.name === "A");
     expect(pastedA?.parentId).toBe("p");
-    expect(result!.cues.map((c) => c.name)).toEqual([
-      "Parent",
-      "Child",
-      "A",
-    ]);
+    expect(result!.cues.map((c) => c.name)).toEqual(["Parent", "Child", "A"]);
   });
 
   it("remaps internal stop and fade targets within the pasted set", () => {

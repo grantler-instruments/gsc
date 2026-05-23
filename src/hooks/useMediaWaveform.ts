@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  getCachedAudioBuffer,
-  loadAudioBuffer,
-} from "../audio/buffer-cache";
-import {
-  ensureMediaDurationSec,
-  getMediaDurationSec,
-} from "../lib/media-duration";
+import { getCachedAudioBuffer, loadAudioBuffer } from "../audio/buffer-cache";
+import { ensureMediaDurationSec, getMediaDurationSec } from "../lib/media-duration";
 import { computeWaveformPeaks, WAVEFORM_PEAK_COUNT } from "../lib/waveform";
 import { vfsHas } from "../vfs/engine";
 
@@ -25,9 +19,7 @@ function placeholderPeaks(): Float32Array {
   return peaks;
 }
 
-async function loadVideoWaveform(
-  assetPath: string,
-): Promise<MediaWaveformData | null> {
+async function loadVideoWaveform(assetPath: string): Promise<MediaWaveformData | null> {
   try {
     const buffer = await loadAudioBuffer(assetPath);
     if (buffer) {

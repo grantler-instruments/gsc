@@ -1,11 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { estimateCueDurationMs, estimateStepDurationMs } from "./cue-duration";
-import {
-  clearMediaDuration,
-  setMediaDurationSec,
-} from "./media-duration";
-import { INFINITE_LOOP_ESTIMATE_SEC } from "./loop";
 import { testCue } from "../test/fixtures/cues";
+import { estimateCueDurationMs, estimateStepDurationMs } from "./cue-duration";
+import { INFINITE_LOOP_ESTIMATE_SEC } from "./loop";
+import { clearMediaDuration, setMediaDurationSec } from "./media-duration";
 
 describe("estimateCueDurationMs", () => {
   beforeEach(() => {
@@ -42,16 +39,12 @@ describe("estimateCueDurationMs", () => {
       assetPath: "assets/a.wav",
       loop: true,
     });
-    expect(estimateCueDurationMs(cue, [cue])).toBe(
-      INFINITE_LOOP_ESTIMATE_SEC * 1000,
-    );
+    expect(estimateCueDurationMs(cue, [cue])).toBe(INFINITE_LOOP_ESTIMATE_SEC * 1000);
   });
 
   it("uses infinite estimate for image without duration", () => {
     const cue = testCue("i", "I", "image");
-    expect(estimateCueDurationMs(cue, [cue])).toBe(
-      INFINITE_LOOP_ESTIMATE_SEC * 1000,
-    );
+    expect(estimateCueDurationMs(cue, [cue])).toBe(INFINITE_LOOP_ESTIMATE_SEC * 1000);
   });
 
   it("sums sequential steps for a sequence container", () => {

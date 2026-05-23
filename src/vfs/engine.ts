@@ -11,11 +11,7 @@ const objectUrls = new Map<string, string>();
 /** Paths known on disk (Tauri) — resolved into memory on first read. */
 const diskBackedPaths = new Set<string>();
 
-export function vfsPut(
-  path: string,
-  blob: Blob,
-  options?: { cache?: boolean },
-): void {
+export function vfsPut(path: string, blob: Blob, options?: { cache?: boolean }): void {
   const normalized = normalizePath(path);
   revokeUrl(normalized);
   blobs.set(normalized, blob);

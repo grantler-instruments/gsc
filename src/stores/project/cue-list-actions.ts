@@ -1,8 +1,8 @@
+import type { StoreApi } from "zustand";
 import { createCueList, nextCueListName } from "../../lib/cue-lists";
 import { canEditProject } from "../../lib/show-mode";
-import type { StoreApi } from "zustand";
-import type { ProjectState } from "./types";
 import { getActiveCueListFromState } from "./helpers";
+import type { ProjectState } from "./types";
 
 type ProjectStore = StoreApi<ProjectState>;
 
@@ -11,11 +11,7 @@ export function createCueListActions(
   get: ProjectStore["getState"],
 ): Pick<
   ProjectState,
-  | "addCueList"
-  | "removeCueList"
-  | "renameCueList"
-  | "setActiveCueList"
-  | "setName"
+  "addCueList" | "removeCueList" | "renameCueList" | "setActiveCueList" | "setName"
 > {
   return {
     addCueList: (name) => {
@@ -35,10 +31,7 @@ export function createCueListActions(
       const nextLists = cueLists.filter((l) => l.id !== listId);
       set((s) => ({
         cueLists: nextLists,
-        activeCueListId:
-          s.activeCueListId === listId
-            ? nextLists[0].id
-            : s.activeCueListId,
+        activeCueListId: s.activeCueListId === listId ? nextLists[0].id : s.activeCueListId,
       }));
     },
 
@@ -47,9 +40,7 @@ export function createCueListActions(
       const trimmed = name.trim();
       if (!trimmed) return;
       set((s) => ({
-        cueLists: s.cueLists.map((l) =>
-          l.id === listId ? { ...l, name: trimmed } : l,
-        ),
+        cueLists: s.cueLists.map((l) => (l.id === listId ? { ...l, name: trimmed } : l)),
       }));
     },
 

@@ -1,11 +1,11 @@
 import type { Fixture } from "../types/fixture";
-import { fixtureChannelLabel } from "./dmx";
 import type {
   FixturePlot,
   FixturePlotChannelMap,
   FixturePlotEntry,
   FixtureRenderKind,
 } from "../types/fixture-plot";
+import { fixtureChannelLabel } from "./dmx";
 
 export const DEFAULT_PLOT_ENTRY_SIZE = 0.12;
 export const LEGACY_PLOT_ENTRY_SIZE = 0.08;
@@ -25,8 +25,7 @@ function clamp01(value: number): number {
 
 function clampPlotSize(value: number | undefined): number {
   const raw = value ?? DEFAULT_PLOT_ENTRY_SIZE;
-  const size =
-    raw === LEGACY_PLOT_ENTRY_SIZE ? DEFAULT_PLOT_ENTRY_SIZE : raw;
+  const size = raw === LEGACY_PLOT_ENTRY_SIZE ? DEFAULT_PLOT_ENTRY_SIZE : raw;
   return Math.max(MIN_PLOT_ENTRY_SIZE, Math.min(MAX_PLOT_ENTRY_SIZE, size));
 }
 
@@ -63,17 +62,13 @@ export function defaultFixturePlotChannelMap(
   if (render !== "rgb") return undefined;
 
   const keys = oflChannelKeys(fixture);
-  const findIndex = (match: (key: string) => boolean) =>
-    keys.findIndex(match);
+  const findIndex = (match: (key: string) => boolean) => keys.findIndex(match);
 
   const red = findIndex((key) => key.includes("red"));
   const green = findIndex((key) => key.includes("green"));
   const blue = findIndex((key) => key.includes("blue"));
   const intensity = findIndex(
-    (key) =>
-      key.includes("dimmer") ||
-      key.includes("intensity") ||
-      key.includes("master"),
+    (key) => key.includes("dimmer") || key.includes("intensity") || key.includes("master"),
   );
 
   return {
@@ -125,8 +120,7 @@ export function normalizeFixturePlotEntry(
     y: clampPlotCoord(entry.y ?? 0.5, size),
     size,
     render,
-    channelMap:
-      entry.channelMap ?? defaultFixturePlotChannelMap(fixture, render),
+    channelMap: entry.channelMap ?? defaultFixturePlotChannelMap(fixture, render),
   };
 }
 
@@ -134,9 +128,7 @@ export function normalizeFixturePlot(
   plot: Partial<FixturePlot> | undefined,
   fixtures: Fixture[] = [],
 ): FixturePlot {
-  const byId = new Map(
-    (plot?.entries ?? []).map((entry) => [entry.fixtureId, entry]),
-  );
+  const byId = new Map((plot?.entries ?? []).map((entry) => [entry.fixtureId, entry]));
   let newIndex = 0;
   const entries = fixtures.map((fixture) => {
     const existing = byId.get(fixture.id);
@@ -154,17 +146,11 @@ export function normalizeFixturePlot(
   };
 }
 
-export function ensureFixturePlot(
-  plot: FixturePlot | undefined,
-  fixtures: Fixture[],
-): FixturePlot {
+export function ensureFixturePlot(plot: FixturePlot | undefined, fixtures: Fixture[]): FixturePlot {
   return normalizeFixturePlot(plot, fixtures);
 }
 
-export function fixturePlotNeedsSync(
-  plot: FixturePlot | undefined,
-  fixtures: Fixture[],
-): boolean {
+export function fixturePlotNeedsSync(plot: FixturePlot | undefined, fixtures: Fixture[]): boolean {
   const normalized = normalizeFixturePlot(plot, fixtures);
   const currentIds = new Set((plot?.entries ?? []).map((entry) => entry.fixtureId));
   const fixtureIds = new Set(fixtures.map((fixture) => fixture.id));

@@ -1,10 +1,10 @@
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
 import { estimateStepDurationMs } from "./cue-duration";
 import { expandSequenceSteps, isFadeCue } from "./cues";
 import { fireStepCues, playbackCueIdsInStep } from "./fire-step-cues";
 import { clearSequenceTimers, scheduleSequenceStep } from "./sequence-timers";
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
-import { useTransportStore } from "../stores/transport";
 
 export function cancelAllSequences(): void {
   clearSequenceTimers();
@@ -36,12 +36,7 @@ export function advanceRunningSequence(cues: Cue[]): void {
   runSequenceStep(rootCue, cues, steps, nextIndex);
 }
 
-function runSequenceStep(
-  rootCue: Cue,
-  cues: Cue[],
-  steps: string[][],
-  index: number,
-): void {
+function runSequenceStep(rootCue: Cue, cues: Cue[], steps: string[][], index: number): void {
   const transport = useTransportStore.getState();
   const stepCueIds = steps[index];
 
@@ -88,10 +83,7 @@ function runSequenceStep(
   }, durationMs);
 }
 
-export function runSequence(
-  rootCue: Cue,
-  cues: Cue[],
-): { started: boolean; stepCount: number } {
+export function runSequence(rootCue: Cue, cues: Cue[]): { started: boolean; stepCount: number } {
   const steps = expandSequenceSteps(rootCue.id, cues);
   if (steps.length === 0) {
     return { started: false, stepCount: 0 };
@@ -112,8 +104,7 @@ export function notifyFadeCueComplete(fadeCueId: string, cues: Cue[]): void {
   if (!fadeCue || !isFadeCue(fadeCue)) return;
 
   // Only skip the timer when this step is fade-only (typical fade → stop chain).
-  const stepIsFadeOnly =
-    running.stepCueIds.length === 1 && running.stepCueIds[0] === fadeCueId;
+  const stepIsFadeOnly = running.stepCueIds.length === 1 && running.stepCueIds[0] === fadeCueId;
 
   if (stepIsFadeOnly) {
     advanceRunningSequence(cues);

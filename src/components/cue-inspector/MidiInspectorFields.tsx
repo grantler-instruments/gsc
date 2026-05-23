@@ -1,9 +1,5 @@
 import Box from "@mui/material/Box";
-import {
-  clampMidiByte,
-  clampMidiChannel,
-  MIDI_MESSAGE_KINDS,
-} from "../../lib/midi";
+import { clampMidiByte, clampMidiChannel, MIDI_MESSAGE_KINDS } from "../../lib/midi";
 import type { Cue, MidiCueData, MidiMessageKind } from "../../types/cue";
 import { inspectorFieldSx } from "../inspectorSx";
 
@@ -13,11 +9,7 @@ interface MidiInspectorFieldsProps {
   onPatch: (patch: Partial<MidiCueData>) => void;
 }
 
-export function MidiInspectorFields({
-  cue,
-  readOnly,
-  onPatch,
-}: MidiInspectorFieldsProps) {
+export function MidiInspectorFields({ cue, readOnly, onPatch }: MidiInspectorFieldsProps) {
   if (cue.type !== "midi" || !cue.midi) return null;
 
   const midi = cue.midi;
@@ -32,9 +24,7 @@ export function MidiInspectorFields({
           max={16}
           value={midi.channel}
           disabled={readOnly}
-          onChange={(e) =>
-            onPatch({ channel: clampMidiChannel(Number(e.currentTarget.value)) })
-          }
+          onChange={(e) => onPatch({ channel: clampMidiChannel(Number(e.currentTarget.value)) })}
         />
       </Box>
 
@@ -43,9 +33,7 @@ export function MidiInspectorFields({
         <select
           value={midi.kind}
           disabled={readOnly}
-          onChange={(e) =>
-            onPatch({ kind: e.currentTarget.value as MidiMessageKind })
-          }
+          onChange={(e) => onPatch({ kind: e.currentTarget.value as MidiMessageKind })}
         >
           {MIDI_MESSAGE_KINDS.map((k) => (
             <option key={k} value={k}>
@@ -65,9 +53,7 @@ export function MidiInspectorFields({
               max={127}
               value={midi.note ?? 60}
               disabled={readOnly}
-              onChange={(e) =>
-                onPatch({ note: clampMidiByte(Number(e.currentTarget.value)) })
-              }
+              onChange={(e) => onPatch({ note: clampMidiByte(Number(e.currentTarget.value)) })}
             />
           </Box>
           {midi.kind === "note-on" && (
@@ -115,9 +101,7 @@ export function MidiInspectorFields({
               max={127}
               value={midi.value ?? 0}
               disabled={readOnly}
-              onChange={(e) =>
-                onPatch({ value: clampMidiByte(Number(e.currentTarget.value)) })
-              }
+              onChange={(e) => onPatch({ value: clampMidiByte(Number(e.currentTarget.value)) })}
             />
           </Box>
         </>
@@ -132,9 +116,7 @@ export function MidiInspectorFields({
             max={127}
             value={midi.program ?? 0}
             disabled={readOnly}
-            onChange={(e) =>
-              onPatch({ program: clampMidiByte(Number(e.currentTarget.value)) })
-            }
+            onChange={(e) => onPatch({ program: clampMidiByte(Number(e.currentTarget.value)) })}
           />
         </Box>
       )}

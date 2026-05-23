@@ -1,22 +1,12 @@
-import {
-  buildCueTree,
-  getChildCues,
-  isContainerCue,
-  type CueListNode,
-} from "./cues";
 import type { Cue } from "../types/cue";
+import { buildCueTree, type CueListNode, getChildCues, isContainerCue } from "./cues";
 
-export function getPrimarySelectedCueId(
-  selectedCueIds: string[],
-): string | null {
+export function getPrimarySelectedCueId(selectedCueIds: string[]): string | null {
   return selectedCueIds[selectedCueIds.length - 1] ?? null;
 }
 
 /** Visible cue order in the list (respects collapsed containers). */
-export function flattenVisibleCueIds(
-  cues: Cue[],
-  collapsedGroupIds: Set<string>,
-): string[] {
+export function flattenVisibleCueIds(cues: Cue[], collapsedGroupIds: Set<string>): string[] {
   const tree = buildCueTree(cues);
   const ids: string[] = [];
 
@@ -37,11 +27,7 @@ export function flattenVisibleCueIds(
   return ids;
 }
 
-export function isCueDescendantOf(
-  cues: Cue[],
-  ancestorId: string,
-  descendantId: string,
-): boolean {
+export function isCueDescendantOf(cues: Cue[], ancestorId: string, descendantId: string): boolean {
   const walk = (parentId: string): boolean => {
     for (const child of getChildCues(cues, parentId)) {
       if (child.id === descendantId) return true;
@@ -90,9 +76,7 @@ export function buildParallelGroupFromSelection(
   if (!check.ok) return null;
 
   const selectedSet = new Set(selectedIds);
-  const siblings = cues.filter(
-    (c) => (c.parentId ?? null) === (check.parentId ?? null),
-  );
+  const siblings = cues.filter((c) => (c.parentId ?? null) === (check.parentId ?? null));
   const orderedSelected = siblings.filter((c) => selectedSet.has(c.id));
   if (orderedSelected.length < 2) return null;
 
@@ -107,13 +91,7 @@ export function buildParallelGroupFromSelection(
     parentId: check.parentId,
   };
 
-  const withParents = cues.map((c) =>
-    selectedSet.has(c.id) ? { ...c, parentId: group.id } : c,
-  );
+  const withParents = cues.map((c) => (selectedSet.has(c.id) ? { ...c, parentId: group.id } : c));
 
-  return [
-    ...withParents.slice(0, firstIdx),
-    group,
-    ...withParents.slice(firstIdx),
-  ];
+  return [...withParents.slice(0, firstIdx), group, ...withParents.slice(firstIdx)];
 }

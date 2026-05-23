@@ -1,8 +1,8 @@
 import Button from "@mui/material/Button";
 import { formatShortcut } from "../lib/keyboard";
+import { useUiStore } from "../stores/ui";
 import { showModeToggleSx } from "../theme/gscTheme";
 import { useGscTokens } from "../theme/useGscTokens";
-import { useUiStore } from "../stores/ui";
 
 const toolbarActionButtonMinWidth = 148;
 

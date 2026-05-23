@@ -1,7 +1,7 @@
-import { fixtureChannelAddress } from "./fixtures";
 import { bumpDmxOutputRevision } from "../stores/dmx-output";
 import type { DmxCueData, DmxCueMode, DmxFixtureValues } from "../types/cue";
 import type { Fixture } from "../types/fixture";
+import { fixtureChannelAddress } from "./fixtures";
 
 export const DMX_VALUE_MAX = 255;
 export const DEFAULT_ART_NET_HOST = "127.0.0.1";
@@ -39,9 +39,7 @@ function normalizePartialFixtures(
   const byId = new Map(entries.map((entry) => [entry.fixtureId, entry]));
   return fixtures
     .filter((fixture) => byId.has(fixture.id))
-    .map((fixture) =>
-      normalizeDmxFixtureEntry(byId.get(fixture.id)!, fixture),
-    )
+    .map((fixture) => normalizeDmxFixtureEntry(byId.get(fixture.id)!, fixture))
     .filter((entry): entry is DmxFixtureValues => entry !== null);
 }
 
@@ -53,10 +51,7 @@ function normalizeSnapshotFixtures(
   return fixtures
     .map((fixture) => {
       const existing = byId.get(fixture.id);
-      return normalizeDmxFixtureEntry(
-        existing ?? { fixtureId: fixture.id, values: [] },
-        fixture,
-      );
+      return normalizeDmxFixtureEntry(existing ?? { fixtureId: fixture.id, values: [] }, fixture);
     })
     .filter((entry): entry is DmxFixtureValues => entry !== null);
 }
@@ -80,18 +75,11 @@ export function normalizeDmxCueData(
   };
 }
 
-export function setDmxCueMode(
-  data: DmxCueData,
-  mode: DmxCueMode,
-  fixtures: Fixture[],
-): DmxCueData {
+export function setDmxCueMode(data: DmxCueData, mode: DmxCueMode, fixtures: Fixture[]): DmxCueData {
   return normalizeDmxCueData({ ...data, mode }, fixtures);
 }
 
-export function addDmxFixtureToCue(
-  data: DmxCueData,
-  fixture: Fixture,
-): DmxCueData {
+export function addDmxFixtureToCue(data: DmxCueData, fixture: Fixture): DmxCueData {
   if (data.fixtures.some((entry) => entry.fixtureId === fixture.id)) {
     return data;
   }
@@ -107,10 +95,7 @@ export function addDmxFixtureToCue(
   };
 }
 
-export function addAllDmxFixturesToCue(
-  data: DmxCueData,
-  fixtures: Fixture[],
-): DmxCueData {
+export function addAllDmxFixturesToCue(data: DmxCueData, fixtures: Fixture[]): DmxCueData {
   let next = data;
   for (const fixture of availableDmxFixtures(data, fixtures)) {
     next = addDmxFixtureToCue(next, fixture);
@@ -118,10 +103,7 @@ export function addAllDmxFixturesToCue(
   return next;
 }
 
-export function removeDmxFixtureFromCue(
-  data: DmxCueData,
-  fixtureId: string,
-): DmxCueData {
+export function removeDmxFixtureFromCue(data: DmxCueData, fixtureId: string): DmxCueData {
   return {
     ...data,
     fixtures: data.fixtures.filter((entry) => entry.fixtureId !== fixtureId),
@@ -144,10 +126,7 @@ export function formatDmxCue(data: DmxCueData, fixtures: Fixture[]): string {
   return labels.length > 0 ? labels.join(" · ") : `${data.fixtures.length} fixtures`;
 }
 
-export function fixtureChannelLabel(
-  fixture: Fixture,
-  channelIndex: number,
-): string | undefined {
+export function fixtureChannelLabel(fixture: Fixture, channelIndex: number): string | undefined {
   const manualName = fixture.channels?.[channelIndex]?.name;
   if (manualName) return manualName;
   const oflKey = fixture.ofl?.channels[channelIndex]?.key;
@@ -169,11 +148,7 @@ export function getDmxChannelLevel(universe: number, address: number): number {
   return getUniverseBuffer(universe)[address - 1] ?? 0;
 }
 
-export function setDmxChannelLevel(
-  universe: number,
-  address: number,
-  value: number,
-): void {
+export function setDmxChannelLevel(universe: number, address: number, value: number): void {
   if (address < 1 || address > 512) return;
   getUniverseBuffer(universe)[address - 1] = clampDmxValue(value);
 }
@@ -223,10 +198,7 @@ export interface DmxUniverseFrame {
   data: Uint8Array;
 }
 
-export function applyDmxCueToBuffers(
-  data: DmxCueData,
-  fixtures: Fixture[],
-): DmxUniverseFrame[] {
+export function applyDmxCueToBuffers(data: DmxCueData, fixtures: Fixture[]): DmxUniverseFrame[] {
   const normalized = normalizeDmxCueData(data, fixtures);
   const affected = new Set<number>();
 
@@ -278,10 +250,7 @@ export function artNetUniverseFromFixtureUniverse(universe: number): number {
   return Math.max(0, Math.floor(universe) - 1);
 }
 
-export function availableDmxFixtures(
-  data: DmxCueData,
-  fixtures: Fixture[],
-): Fixture[] {
+export function availableDmxFixtures(data: DmxCueData, fixtures: Fixture[]): Fixture[] {
   const used = new Set(data.fixtures.map((entry) => entry.fixtureId));
   return fixtures.filter((fixture) => !used.has(fixture.id));
 }

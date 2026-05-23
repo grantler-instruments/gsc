@@ -5,6 +5,7 @@ import {
   isExternalFileDrag,
   resolveAssetDropPayloads,
 } from "../../lib/asset-drop";
+import { pointerLeftElement } from "../../lib/dom";
 import {
   isAssetDrag,
   isCueDrag,
@@ -13,7 +14,6 @@ import {
   setActiveAssetDrag,
   setActiveCueDrag,
 } from "../../lib/drag";
-import { pointerLeftElement } from "../../lib/dom";
 import { useProjectStore } from "../../stores/project";
 
 export function useCueListDrop(canEdit: boolean) {

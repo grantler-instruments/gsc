@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { testCue } from "../test/fixtures/cues";
 import {
   canLightFadeTarget,
   canOpacityFadeTarget,
@@ -7,14 +8,13 @@ import {
   fadeCueLabel,
   isFadeCue,
   isLightFadeCue,
+  isLightFadeReady,
   isOpacityFadeCue,
   isValidFadeTarget,
   isVolumeFadeCue,
-  isLightFadeReady,
   resolveFadeFromLevel,
   resolveLightFadeEndDmx,
 } from "./fade";
-import { testCue } from "../test/fixtures/cues";
 
 describe("isFadeCue", () => {
   it("detects volume, opacity, and light fade cue types", () => {
@@ -29,27 +29,15 @@ describe("isFadeCue", () => {
 
 describe("isValidFadeTarget", () => {
   it("accepts audio and video for volume fades", () => {
-    expect(
-      isValidFadeTarget("volumeFade", testCue("a", "A", "audio")),
-    ).toBe(true);
-    expect(
-      isValidFadeTarget("volumeFade", testCue("v", "V", "video")),
-    ).toBe(true);
-    expect(
-      isValidFadeTarget("volumeFade", testCue("i", "I", "image")),
-    ).toBe(false);
+    expect(isValidFadeTarget("volumeFade", testCue("a", "A", "audio"))).toBe(true);
+    expect(isValidFadeTarget("volumeFade", testCue("v", "V", "video"))).toBe(true);
+    expect(isValidFadeTarget("volumeFade", testCue("i", "I", "image"))).toBe(false);
   });
 
   it("accepts video and image for opacity fades", () => {
-    expect(
-      isValidFadeTarget("opacityFade", testCue("v", "V", "video")),
-    ).toBe(true);
-    expect(
-      isValidFadeTarget("opacityFade", testCue("i", "I", "image")),
-    ).toBe(true);
-    expect(
-      isValidFadeTarget("opacityFade", testCue("a", "A", "audio")),
-    ).toBe(false);
+    expect(isValidFadeTarget("opacityFade", testCue("v", "V", "video"))).toBe(true);
+    expect(isValidFadeTarget("opacityFade", testCue("i", "I", "image"))).toBe(true);
+    expect(isValidFadeTarget("opacityFade", testCue("a", "A", "audio"))).toBe(false);
   });
 
   it("accepts light cues for light fades", () => {
@@ -61,21 +49,14 @@ describe("isValidFadeTarget", () => {
         }),
       ),
     ).toBe(true);
-    expect(
-      isValidFadeTarget("lightFade", testCue("a", "A", "audio")),
-    ).toBe(false);
+    expect(isValidFadeTarget("lightFade", testCue("a", "A", "audio"))).toBe(false);
   });
 
   it("rejects utility cues and missing targets", () => {
     expect(isValidFadeTarget("volumeFade", undefined)).toBe(false);
-    expect(isValidFadeTarget("volumeFade", testCue("w", "Wait", "wait"))).toBe(
-      false,
-    );
+    expect(isValidFadeTarget("volumeFade", testCue("w", "Wait", "wait"))).toBe(false);
     expect(
-      isValidFadeTarget(
-        "volumeFade",
-        testCue("f", "Fade", "volumeFade", { fadeTargetId: "a" }),
-      ),
+      isValidFadeTarget("volumeFade", testCue("f", "Fade", "volumeFade", { fadeTargetId: "a" })),
     ).toBe(false);
   });
 });
@@ -85,7 +66,9 @@ describe("canVolumeFadeTarget / canOpacityFadeTarget", () => {
     expect(canVolumeFadeTarget(testCue("a", "A", "audio"))).toBe(true);
     expect(canOpacityFadeTarget(testCue("i", "I", "image"))).toBe(true);
     expect(canVolumeFadeTarget(testCue("m", "M", "midi"))).toBe(false);
-    expect(canLightFadeTarget(testCue("l", "L", "dmx", { dmx: { mode: "partial", fixtures: [] } }))).toBe(true);
+    expect(
+      canLightFadeTarget(testCue("l", "L", "dmx", { dmx: { mode: "partial", fixtures: [] } })),
+    ).toBe(true);
   });
 });
 
@@ -94,26 +77,17 @@ describe("resolveFadeFromLevel", () => {
     const audio = testCue("a", "A", "audio", { volume: 0.5 });
     const video = testCue("v", "V", "video", { opacity: 0.25 });
     expect(
-      resolveFadeFromLevel(
-        testCue("f", "Fade", "volumeFade", { fadeTargetId: "a" }),
-        audio,
-      ),
+      resolveFadeFromLevel(testCue("f", "Fade", "volumeFade", { fadeTargetId: "a" }), audio),
     ).toBe(0.5);
     expect(
-      resolveFadeFromLevel(
-        testCue("f", "Fade", "opacityFade", { fadeTargetId: "v" }),
-        video,
-      ),
+      resolveFadeFromLevel(testCue("f", "Fade", "opacityFade", { fadeTargetId: "v" }), video),
     ).toBe(0.25);
   });
 
   it("clamps out-of-range values", () => {
     const audio = testCue("a", "A", "audio", { volume: 2 });
     expect(
-      resolveFadeFromLevel(
-        testCue("f", "Fade", "volumeFade", { fadeTargetId: "a" }),
-        audio,
-      ),
+      resolveFadeFromLevel(testCue("f", "Fade", "volumeFade", { fadeTargetId: "a" }), audio),
     ).toBe(1);
   });
 });
@@ -180,9 +154,9 @@ describe("isLightFadeReady", () => {
         dmx: { mode: "partial", fixtures: [] },
       }),
     ];
-    expect(
-      resolveLightFadeEndDmx(cues[1], cues, fixtures)?.fixtures,
-    ).toEqual([{ fixtureId: "f1", values: [64] }]);
+    expect(resolveLightFadeEndDmx(cues[1], cues, fixtures)?.fixtures).toEqual([
+      { fixtureId: "f1", values: [64] },
+    ]);
     expect(isLightFadeReady(cues[1], fixtures, cues)).toBe(true);
   });
 });

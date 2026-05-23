@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { testCue } from "../test/fixtures/cues";
 import { createCueList } from "./cue-lists";
+import { emptyFixturePlot } from "./fixture-plot";
 import {
+  type ProjectPersistSlice,
   projectPersistStateChanged,
   vfsPersistStateChanged,
-  type ProjectPersistSlice,
 } from "./project-persist";
-import { emptyFixturePlot } from "./fixture-plot";
-import { testCue } from "../test/fixtures/cues";
 
 function projectState(overrides: Partial<ProjectPersistSlice> = {}): ProjectPersistSlice {
   const list = createCueList("Main");

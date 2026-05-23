@@ -1,15 +1,15 @@
-import { fixtureChannelAddress } from "./fixtures";
+import { bumpDmxOutputRevision } from "../stores/dmx-output";
+import type { DmxCueData } from "../types/cue";
+import type { Fixture } from "../types/fixture";
 import {
   clampDmxValue,
+  type DmxUniverseFrame,
   getDmxChannelLevel,
   getDmxUniverseFrame,
   normalizeDmxCueData,
   setDmxChannelLevel,
-  type DmxUniverseFrame,
 } from "./dmx";
-import { bumpDmxOutputRevision } from "../stores/dmx-output";
-import type { DmxCueData } from "../types/cue";
-import type { Fixture } from "../types/fixture";
+import { fixtureChannelAddress } from "./fixtures";
 
 export interface DmxFadeChannel {
   universe: number;
@@ -23,21 +23,15 @@ export interface DmxFadePlan {
   channels: DmxFadeChannel[];
 }
 
-function targetValuesByFixture(
-  data: DmxCueData,
-  fixtures: Fixture[],
-): Map<string, number[]> {
+function targetValuesByFixture(data: DmxCueData, fixtures: Fixture[]): Map<string, number[]> {
   const normalized = normalizeDmxCueData(data, fixtures);
-  const byId = new Map(
-    normalized.fixtures.map((entry) => [entry.fixtureId, entry.values]),
-  );
+  const byId = new Map(normalized.fixtures.map((entry) => [entry.fixtureId, entry.values]));
 
   if (normalized.mode === "snapshot") {
     return new Map(
       fixtures.map((fixture) => [
         fixture.id,
-        byId.get(fixture.id) ??
-          Array.from({ length: fixture.channelCount }, () => 0),
+        byId.get(fixture.id) ?? Array.from({ length: fixture.channelCount }, () => 0),
       ]),
     );
   }
@@ -46,10 +40,7 @@ function targetValuesByFixture(
 }
 
 /** Build per-channel fade steps from current output to a light cue's levels. */
-export function buildDmxFadePlan(
-  data: DmxCueData,
-  fixtures: Fixture[],
-): DmxFadePlan | null {
+export function buildDmxFadePlan(data: DmxCueData, fixtures: Fixture[]): DmxFadePlan | null {
   if (fixtures.length === 0) return null;
 
   const normalized = normalizeDmxCueData(data, fixtures);
@@ -84,10 +75,7 @@ export function buildDmxFadePlan(
   return channels.length > 0 ? { channels } : null;
 }
 
-export function sampleDmxFadePlan(
-  plan: DmxFadePlan,
-  t: number,
-): DmxUniverseFrame[] {
+export function sampleDmxFadePlan(plan: DmxFadePlan, t: number): DmxUniverseFrame[] {
   const clampedT = Math.max(0, Math.min(1, t));
   const universes = new Set<number>();
 
@@ -101,15 +89,10 @@ export function sampleDmxFadePlan(
   }
 
   bumpDmxOutputRevision();
-  return [...universes]
-    .sort((a, b) => a - b)
-    .map((universe) => getDmxUniverseFrame(universe));
+  return [...universes].sort((a, b) => a - b).map((universe) => getDmxUniverseFrame(universe));
 }
 
-export function formatLightFadeTargetSummary(
-  data: DmxCueData,
-  fixtures: Fixture[],
-): string {
+export function formatLightFadeTargetSummary(data: DmxCueData, fixtures: Fixture[]): string {
   return `Light cue · ${normalizeDmxCueData(data, fixtures).fixtures.length} fixture${
     normalizeDmxCueData(data, fixtures).fixtures.length === 1 ? "" : "s"
   }`;

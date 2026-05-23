@@ -1,22 +1,15 @@
-import {
-  buildParallelGroupFromSelection,
-  getPrimarySelectedCueId,
-} from "../../lib/cue-selection";
+import type { StoreApi } from "zustand";
 import {
   collectCuesForCopy,
   getCueClipboard,
   prepareCuePaste,
   setCueClipboard,
 } from "../../lib/cue-clipboard";
-import { guardDmxPreviewSelection } from "../../stores/dmx-preview-session";
+import { buildParallelGroupFromSelection, getPrimarySelectedCueId } from "../../lib/cue-selection";
 import { canEditProject } from "../../lib/show-mode";
-import type { StoreApi } from "zustand";
+import { guardDmxPreviewSelection } from "../../stores/dmx-preview-session";
+import { applyRenumber, getActiveCueListFromState, patchActiveList } from "./helpers";
 import type { ProjectState } from "./types";
-import {
-  applyRenumber,
-  getActiveCueListFromState,
-  patchActiveList,
-} from "./helpers";
 
 type ProjectStore = StoreApi<ProjectState>;
 
@@ -65,8 +58,7 @@ export function createSelectionActions(
     selectCueRange: (id, visibleOrder) => {
       if (!guardDmxPreviewSelection(id)) return;
       const active = getActiveCueListFromState(get());
-      const anchor =
-        active.selectionAnchorId ?? active.selectedCueIds[0] ?? id;
+      const anchor = active.selectionAnchorId ?? active.selectedCueIds[0] ?? id;
       const a = visibleOrder.indexOf(anchor);
       const b = visibleOrder.indexOf(id);
       if (a === -1 || b === -1) {
@@ -90,16 +82,11 @@ export function createSelectionActions(
     groupSelectedCues: () => {
       if (!canEditProject()) return null;
       const active = getActiveCueListFromState(get());
-      const next = buildParallelGroupFromSelection(
-        active.selectedCueIds,
-        active.cues,
-      );
+      const next = buildParallelGroupFromSelection(active.selectedCueIds, active.cues);
       if (!next) return null;
 
       const group = next.find(
-        (c) =>
-          c.type === "group" &&
-          !active.cues.some((existing) => existing.id === c.id),
+        (c) => c.type === "group" && !active.cues.some((existing) => existing.id === c.id),
       );
       if (!group) return null;
 
@@ -117,10 +104,7 @@ export function createSelectionActions(
     copySelectedCues: () => {
       if (!canEditProject()) return false;
       const active = getActiveCueListFromState(get());
-      const collected = collectCuesForCopy(
-        active.selectedCueIds,
-        active.cues,
-      );
+      const collected = collectCuesForCopy(active.selectedCueIds, active.cues);
       if (collected.length === 0) return false;
       setCueClipboard(collected);
       return true;
@@ -140,9 +124,7 @@ export function createSelectionActions(
         ...patchActiveList(get(), () => ({
           cues: prepared.cues,
           selectedCueIds: prepared.selectedCueIds,
-          selectionAnchorId:
-            prepared.selectedCueIds[prepared.selectedCueIds.length - 1] ??
-            null,
+          selectionAnchorId: prepared.selectedCueIds[prepared.selectedCueIds.length - 1] ?? null,
         })),
       });
       return true;
@@ -153,10 +135,7 @@ export function createSelectionActions(
       const active = getActiveCueListFromState(get());
       if (active.selectedCueIds.length === 0) return false;
 
-      const collected = collectCuesForCopy(
-        active.selectedCueIds,
-        active.cues,
-      );
+      const collected = collectCuesForCopy(active.selectedCueIds, active.cues);
       if (collected.length === 0) return false;
 
       const anchorId = getPrimarySelectedCueId(active.selectedCueIds);
@@ -167,9 +146,7 @@ export function createSelectionActions(
         ...patchActiveList(get(), () => ({
           cues: prepared.cues,
           selectedCueIds: prepared.selectedCueIds,
-          selectionAnchorId:
-            prepared.selectedCueIds[prepared.selectedCueIds.length - 1] ??
-            null,
+          selectionAnchorId: prepared.selectedCueIds[prepared.selectedCueIds.length - 1] ?? null,
         })),
       });
       return true;

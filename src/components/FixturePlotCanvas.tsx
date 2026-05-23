@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import { useCallback, useRef, useState } from "react";
-import { ensureFixturePlot, resolveFixtureVisualState } from "../lib/fixture-plot";
 import { useFixturePlotValues } from "../hooks/useFixturePlotValues";
+import { ensureFixturePlot, resolveFixtureVisualState } from "../lib/fixture-plot";
 import { useProjectStore } from "../stores/project";
 import type { FixturePlotEntry } from "../types/fixture-plot";
 import { FixturePlotGlyph } from "./FixturePlotGlyph";
@@ -56,11 +56,7 @@ export function FixturePlotCanvas({
       const svg = svgRef.current;
       if (!drag || !svg || event.pointerId !== drag.pointerId) return;
       const { x, y } = clientToPlotCoords(svg, event.clientX, event.clientY);
-      onMoveEntry(
-        drag.fixtureId,
-        x + drag.offsetX,
-        y + drag.offsetY,
-      );
+      onMoveEntry(drag.fixtureId, x + drag.offsetX, y + drag.offsetY);
     },
     [onMoveEntry],
   );
@@ -127,14 +123,7 @@ export function FixturePlotCanvas({
         onPointerCancel={endDrag}
         onPointerDown={handleBackgroundPointerDown}
       >
-        <rect
-          x={0}
-          y={0}
-          width={1}
-          height={1}
-          fill="#111"
-          style={{ pointerEvents: "all" }}
-        />
+        <rect x={0} y={0} width={1} height={1} fill="#111" style={{ pointerEvents: "all" }} />
         {plot.entries.map((entry) => {
           const fixture = fixtureById.get(entry.fixtureId);
           if (!fixture) return null;

@@ -6,8 +6,8 @@ import { isDmxPreviewableCue } from "../../lib/dmx-preview";
 import { useDmxPreviewSessionStore } from "../../stores/dmx-preview-session";
 import { useActiveCueList, useProjectStore } from "../../stores/project";
 import { useUiStore } from "../../stores/ui";
-import type { Cue } from "../../types/cue";
 import { CUE_TYPE_COLORS } from "../../theme/cueStyles";
+import type { Cue } from "../../types/cue";
 import { inspectorHintSx } from "../inspectorSx";
 
 interface DmxPreviewFieldProps {
@@ -25,23 +25,13 @@ const previewIdleSx = {
   },
 } as const;
 
-export function DmxPreviewField({
-  cue,
-  readOnly,
-  dmxDisabled,
-}: DmxPreviewFieldProps) {
+export function DmxPreviewField({ cue, readOnly, dmxDisabled }: DmxPreviewFieldProps) {
   const fixtures = useProjectStore((s) => s.fixtures);
   const cues = useActiveCueList().cues;
   const previewActive = useUiStore((s) => s.dmxPreviewCueIds.includes(cue.id));
-  const requestActivatePreview = useDmxPreviewSessionStore(
-    (s) => s.requestActivatePreview,
-  );
-  const requestDeactivatePreview = useDmxPreviewSessionStore(
-    (s) => s.requestDeactivatePreview,
-  );
-  const confirmOpen = useDmxPreviewSessionStore(
-    (s) => s.confirm?.cueId === cue.id,
-  );
+  const requestActivatePreview = useDmxPreviewSessionStore((s) => s.requestActivatePreview);
+  const requestDeactivatePreview = useDmxPreviewSessionStore((s) => s.requestDeactivatePreview);
+  const confirmOpen = useDmxPreviewSessionStore((s) => s.confirm?.cueId === cue.id);
 
   const previewable = isDmxPreviewableCue(cue, fixtures, cues);
   const active = previewActive && previewable;
@@ -55,8 +45,7 @@ export function DmxPreviewField({
   } else if (dmxDisabled) {
     hint = "DMX preview requires the desktop app.";
   } else if (active) {
-    hint =
-      "Levels are snapshotted when preview starts. Turn preview off to keep or revert edits.";
+    hint = "Levels are snapshotted when preview starts. Turn preview off to keep or revert edits.";
   }
 
   const handleClick = () => {

@@ -1,12 +1,9 @@
-import type { AssetDragPayload } from "./drag";
-import type { AssetKind, Cue } from "../types/cue";
 import type { VfsEntry } from "../stores/vfs";
+import type { AssetKind, Cue } from "../types/cue";
 import { vfsHas } from "../vfs/engine";
+import type { AssetDragPayload } from "./drag";
 
-export function assetPayloadMatchesCue(
-  cue: Cue,
-  payload: AssetDragPayload,
-): boolean {
+export function assetPayloadMatchesCue(cue: Cue, payload: AssetDragPayload): boolean {
   return cueNeedsAsset(cue) && cue.type === payload.kind;
 }
 
@@ -25,9 +22,7 @@ export function cueNeedsAsset(cue: Cue): boolean {
   return cue.type === "audio" || cue.type === "video" || cue.type === "image";
 }
 
-export function getCueAssetWarning(
-  cue: Cue,
-): { title: string; detail: string } | null {
+export function getCueAssetWarning(cue: Cue): { title: string; detail: string } | null {
   if (!cueNeedsAsset(cue)) return null;
   if (!cue.assetPath) {
     return {

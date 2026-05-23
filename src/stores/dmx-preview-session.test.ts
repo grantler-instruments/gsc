@@ -90,12 +90,12 @@ describe("dmx preview session store", () => {
 
     useDmxPreviewSessionStore.getState().resolveConfirm(false);
 
-    expect(
-      useProjectStore.getState().cueLists[0].cues.find((cue) => cue.id === "c1")?.dmx,
-    ).toEqual({
-      mode: "partial",
-      fixtures: [{ fixtureId: "a", values: [0, 0] }],
-    });
+    expect(useProjectStore.getState().cueLists[0].cues.find((cue) => cue.id === "c1")?.dmx).toEqual(
+      {
+        mode: "partial",
+        fixtures: [{ fixtureId: "a", values: [0, 0] }],
+      },
+    );
     expect(useUiStore.getState().dmxPreviewCueIds).toEqual([]);
   });
 });

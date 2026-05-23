@@ -1,8 +1,9 @@
 import { useAppKeyboard } from "./useAppKeyboard";
 import { useAudioEngine } from "./useAudioEngine";
+import { useCueDmxPreview } from "./useCueDmxPreview";
 import { useDmxEngine } from "./useDmxEngine";
 import { useDmxFadeEngine } from "./useDmxFadeEngine";
-import { useCueDmxPreview } from "./useCueDmxPreview";
+import { useEnttecProConnection } from "./useEnttecProConnection";
 import { useFadeAnimation } from "./useFadeAnimation";
 import { useMidiEngine } from "./useMidiEngine";
 import { useMidiInput } from "./useMidiInput";
@@ -12,7 +13,6 @@ import { usePlaybackProgress } from "./usePlaybackProgress";
 import { usePreventBrowserFileDrop } from "./usePreventBrowserFileDrop";
 import { useProjectSession } from "./useProjectSession";
 import { useTauriAppMenu } from "./useTauriAppMenu";
-import { useEnttecProConnection } from "./useEnttecProConnection";
 
 /** Side-effect hooks for session restore, engines, and platform integration. */
 export function useAppRuntime(): boolean {

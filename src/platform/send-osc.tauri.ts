@@ -1,15 +1,16 @@
 import { invoke } from "@tauri-apps/api/core";
+import { notifyErrorFromUnknown, notifyWarning } from "../lib/notifications";
 import { serializeOscArgsForInvoke } from "../lib/osc";
 import type { OscCueData } from "../types/cue";
 
 export async function sendOscMessage(data: OscCueData): Promise<void> {
   const args = serializeOscArgsForInvoke(data.args);
   if (!data.host.trim()) {
-    console.warn("[osc] Host is required");
+    notifyWarning("OSC host is required.");
     return;
   }
   if (!data.address.startsWith("/")) {
-    console.warn("[osc] Address must start with / — got:", data.address);
+    notifyWarning(`OSC address must start with / (got "${data.address}").`);
     return;
   }
   try {
@@ -20,6 +21,6 @@ export async function sendOscMessage(data: OscCueData): Promise<void> {
       args,
     });
   } catch (err) {
-    console.error("[osc] Send failed", err);
+    notifyErrorFromUnknown(err);
   }
 }

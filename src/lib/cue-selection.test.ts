@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { testCue } from "../test/fixtures/cues";
 import {
   buildParallelGroupFromSelection,
   canGroupSelectedCues,
@@ -6,7 +7,6 @@ import {
   getPrimarySelectedCueId,
   isCueDescendantOf,
 } from "./cue-selection";
-import { testCue } from "../test/fixtures/cues";
 
 describe("getPrimarySelectedCueId", () => {
   it("returns null for an empty selection", () => {
@@ -96,10 +96,7 @@ describe("buildParallelGroupFromSelection", () => {
   });
 
   it("returns null when grouping is not allowed", () => {
-    const cues = [
-      testCue("a", "A", "audio"),
-      testCue("b", "B", "audio"),
-    ];
+    const cues = [testCue("a", "A", "audio"), testCue("b", "B", "audio")];
     expect(buildParallelGroupFromSelection(["a"], cues)).toBeNull();
   });
 

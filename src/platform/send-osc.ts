@@ -1,5 +1,5 @@
-import { getPlatform } from "./index";
 import type { OscCueData } from "../types/cue";
+import { getPlatform } from "./index";
 
 /** Send an OSC message to the destination in the cue data. */
 export async function sendOscMessage(data: OscCueData): Promise<void> {

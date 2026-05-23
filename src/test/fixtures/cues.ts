@@ -1,14 +1,9 @@
 import { createCueList } from "../../lib/cue-lists";
-import type { Cue, CueType } from "../../types/cue";
 import { useProjectStore } from "../../stores/project";
 import { useUiStore } from "../../stores/ui";
+import type { Cue, CueType } from "../../types/cue";
 
-export function testCue(
-  id: string,
-  name: string,
-  type: CueType,
-  extra: Partial<Cue> = {},
-): Cue {
+export function testCue(id: string, name: string, type: CueType, extra: Partial<Cue> = {}): Cue {
   return {
     id,
     number: "0",

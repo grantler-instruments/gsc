@@ -2,10 +2,10 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import type { Cue } from "../../types/cue";
 import { CueAssetPreview } from "../CueAssetPreview";
+import { inspectorFieldLabelSx, inspectorFieldSx } from "../inspectorSx";
 import { LoopFields } from "../LoopFields";
 import { PlaybackRangeFields } from "../PlaybackRangeFields";
 import { SliderNumberField } from "../SliderNumberField";
-import { inspectorFieldLabelSx, inspectorFieldSx } from "../inspectorSx";
 
 interface MediaInspectorFieldsProps {
   cue: Cue;
@@ -13,13 +13,8 @@ interface MediaInspectorFieldsProps {
   onChange: (patch: Partial<Cue>) => void;
 }
 
-export function MediaInspectorFields({
-  cue,
-  readOnly,
-  onChange,
-}: MediaInspectorFieldsProps) {
-  const isMedia =
-    cue.type === "audio" || cue.type === "video" || cue.type === "image";
+export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspectorFieldsProps) {
+  const isMedia = cue.type === "audio" || cue.type === "video" || cue.type === "image";
   if (!isMedia) return null;
 
   return (

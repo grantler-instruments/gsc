@@ -1,12 +1,11 @@
 import { exists, readFile } from "@tauri-apps/plugin-fs";
+import { notifyWarningDeduped } from "../lib/notifications";
 import { diskPathForAsset } from "../lib/project-disk";
 import { useProjectLocationStore } from "../stores/project-location";
-import { mimeTypeFromPath } from "../vfs/import";
 import { normalizePath, vfsPut } from "../vfs/engine";
+import { mimeTypeFromPath } from "../vfs/import";
 
-export async function readAssetBlobFromProjectDisk(
-  virtualPath: string,
-): Promise<Blob | undefined> {
+export async function readAssetBlobFromProjectDisk(virtualPath: string): Promise<Blob | undefined> {
   const rootDir = useProjectLocationStore.getState().rootDir;
   if (!rootDir) return undefined;
 
@@ -20,14 +19,13 @@ export async function readAssetBlobFromProjectDisk(
     return mime ? new Blob([data], { type: mime }) : new Blob([data]);
   } catch (err) {
     console.warn(`[tauri] Could not read asset ${normalized}`, err);
+    notifyWarningDeduped(`Could not read asset: ${normalized}`);
     return undefined;
   }
 }
 
 /** Load a disk-backed asset into the in-memory VFS (no Cache API write). */
-export async function loadAssetBlobFromProjectDisk(
-  virtualPath: string,
-): Promise<Blob | undefined> {
+export async function loadAssetBlobFromProjectDisk(virtualPath: string): Promise<Blob | undefined> {
   const blob = await readAssetBlobFromProjectDisk(virtualPath);
   if (!blob) return undefined;
   vfsPut(virtualPath, blob, { cache: false });

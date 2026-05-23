@@ -1,10 +1,7 @@
-import { getPlatform } from "./index";
 import type { DmxUniverseFrame } from "../lib/dmx";
-import {
-  DEFAULT_ART_NET_HOST,
-  DEFAULT_ART_NET_PORT,
-} from "../lib/dmx";
-import { usePreferencesStore, resolveDmxOutputBackend } from "../stores/preferences";
+import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx";
+import { resolveDmxOutputBackend, usePreferencesStore } from "../stores/preferences";
+import { getPlatform } from "./index";
 
 export async function sendDmxUniverses(
   frames: DmxUniverseFrame[],
@@ -14,10 +11,7 @@ export async function sendDmxUniverses(
   if (frames.length === 0) return;
 
   const prefs = usePreferencesStore.getState();
-  const backend = resolveDmxOutputBackend(
-    prefs.dmxOutputBackend,
-    getPlatform(),
-  );
+  const backend = resolveDmxOutputBackend(prefs.dmxOutputBackend, getPlatform());
 
   if (backend === "enttec-pro") {
     const { sendEnttecProUniverses } = await import("./enttec-pro");

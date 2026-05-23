@@ -6,21 +6,21 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import { useCallback, useRef, useState } from "react";
+import { isExternalFileDrag, resolveAssetDropPayloads } from "../lib/asset-drop";
 import {
-  assetPayloadMatchesCue,
   ASSET_FILE_ACCEPT,
+  assetPayloadMatchesCue,
   filterAssetsForCue,
   getCueAssetWarning,
 } from "../lib/cue-asset";
-import { isExternalFileDrag, resolveAssetDropPayloads } from "../lib/asset-drop";
 import { pointerLeftElement } from "../lib/dom";
-import { isAssetDrag, setActiveAssetDrag } from "../lib/drag";
 import type { AssetDragPayload } from "../lib/drag";
+import { isAssetDrag, setActiveAssetDrag } from "../lib/drag";
 import { prefetchMediaDurations } from "../lib/media-duration";
 import { useProjectStore } from "../stores/project";
 import { useVfsStore } from "../stores/vfs";
-import { useGscTokens } from "../theme/useGscTokens";
 import { cueListDropActiveSx } from "../theme/cueStyles";
+import { useGscTokens } from "../theme/useGscTokens";
 import type { AssetKind, Cue } from "../types/cue";
 import { CueTypeBadge } from "./CueTypeIcon";
 import { inspectorGroupHintSx, inspectorHintSx } from "./inspectorSx";
@@ -200,10 +200,7 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
             <Typography component="p" sx={{ ...inspectorGroupHintSx, m: 0 }}>
               Drop a {kindLabel} file here
             </Typography>
-            <Typography
-              component="p"
-              sx={{ ...inspectorHintSx, m: 0, mt: 0.5 }}
-            >
+            <Typography component="p" sx={{ ...inspectorHintSx, m: 0, mt: 0.5 }}>
               From Assets or your computer
             </Typography>
             <Button

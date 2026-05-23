@@ -1,5 +1,5 @@
-import { getPlatform } from "./index";
 import type { DeviceOption } from "../types/device";
+import { getPlatform } from "./index";
 
 export async function listMidiOutputDevices(): Promise<DeviceOption[]> {
   if (getPlatform() === "tauri") {

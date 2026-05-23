@@ -1,18 +1,9 @@
-import { describe, expect, it, beforeEach } from "vitest";
-import {
-  applyDmxCueToBuffers,
-  resetDmxOutputBuffers,
-} from "./dmx";
-import {
-  groupDmxOutputChannelsByFixture,
-  listDmxOutputChannels,
-} from "./dmx-output";
+import { beforeEach, describe, expect, it } from "vitest";
 import type { Fixture } from "../types/fixture";
+import { applyDmxCueToBuffers, resetDmxOutputBuffers } from "./dmx";
+import { groupDmxOutputChannelsByFixture, listDmxOutputChannels } from "./dmx-output";
 
-function fixture(
-  id: string,
-  overrides: Partial<Omit<Fixture, "id">> = {},
-): Fixture {
+function fixture(id: string, overrides: Partial<Omit<Fixture, "id">> = {}): Fixture {
   return {
     id,
     name: overrides.name ?? id,

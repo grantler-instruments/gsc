@@ -1,23 +1,16 @@
-import { assetKindFromFilename } from "../vfs/import";
-import { isProjectBundlePath } from "./project-paths";
-import { filesFromDataTransfer } from "../platform/files.web";
 import { getPlatform } from "../platform";
+import { filesFromDataTransfer } from "../platform/files.web";
 import {
   openDroppedProjectBundle,
   openDroppedProjectBundleFile,
 } from "../platform/project-storage";
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useVfsStore } from "../stores/vfs";
+import { assetKindFromFilename } from "../vfs/import";
 import { isContainerCue } from "./cues";
+import { type AssetDragPayload, isAssetDrag, readAssetDragData } from "./drag";
+import { isProjectBundlePath } from "./project-paths";
 import { canEditProject } from "./show-mode";
-import {
-  getActiveCueListFromState,
-  useProjectStore,
-} from "../stores/project";
-import {
-  isAssetDrag,
-  readAssetDragData,
-  type AssetDragPayload,
-} from "./drag";
 
 /** True if any path looks like a media file (folders are treated as possible media). */
 export function diskPathsMayHaveMedia(paths: string[]): boolean {
@@ -72,15 +65,10 @@ export async function resolveAssetDropPayloads(
   return imported.map(({ path, name, kind }) => ({ path, name, kind }));
 }
 
-export type AssetDropTarget =
-  | { kind: "list" }
-  | { kind: "row"; cueId: string };
+export type AssetDropTarget = { kind: "list" } | { kind: "row"; cueId: string };
 
 /** Apply resolved asset payloads to the cue list or a specific row. */
-export function applyAssetPayloads(
-  payloads: AssetDragPayload[],
-  target: AssetDropTarget,
-): void {
+export function applyAssetPayloads(payloads: AssetDragPayload[], target: AssetDropTarget): void {
   if (!payloads.length || !canEditProject()) return;
 
   const state = useProjectStore.getState();
@@ -132,14 +120,10 @@ export function applyAssetPayloads(
 }
 
 /** Tauri: import dropped disk paths into the VFS and return cue payloads. */
-export async function resolveAssetDropFromDiskPaths(
-  paths: string[],
-): Promise<AssetDragPayload[]> {
+export async function resolveAssetDropFromDiskPaths(paths: string[]): Promise<AssetDragPayload[]> {
   if (getPlatform() !== "tauri") return [];
 
-  const { importAssetsFromDiskPaths } = await import(
-    "../platform/import-assets.tauri"
-  );
+  const { importAssetsFromDiskPaths } = await import("../platform/import-assets.tauri");
   const imported = await importAssetsFromDiskPaths(paths);
   return imported.map(({ path, name, kind }) => ({ path, name, kind }));
 }
@@ -148,8 +132,7 @@ export async function handleTauriMediaDrop(
   paths: string[],
   position: { x: number; y: number },
 ): Promise<void> {
-  const { dropTargetAtPhysicalPosition, applyAssetDropPayloads } =
-    await import("./tauri-drop");
+  const { dropTargetAtPhysicalPosition, applyAssetDropPayloads } = await import("./tauri-drop");
   const [target, payloads] = await Promise.all([
     dropTargetAtPhysicalPosition(position),
     resolveAssetDropFromDiskPaths(paths),

@@ -2,24 +2,20 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { memo } from "react";
-import { canOpacityFadeTarget, canVolumeFadeTarget } from "../../lib/fade";
 import { formatDmxCue } from "../../lib/dmx";
+import { canOpacityFadeTarget, canVolumeFadeTarget } from "../../lib/fade";
 import { formatMidiCue } from "../../lib/midi";
 import { formatOscCue } from "../../lib/osc";
-import { formatPlaybackRangeLabel } from "../../lib/time";
 import { cueShowsPlaybackProgress } from "../../lib/playback-slice";
-import {
-  resolveEffectiveOpacity,
-  resolveEffectiveVolume,
-  useFadeStore,
-} from "../../stores/fade";
+import { formatPlaybackRangeLabel } from "../../lib/time";
+import { resolveEffectiveOpacity, resolveEffectiveVolume, useFadeStore } from "../../stores/fade";
 import { usePlaybackStore } from "../../stores/playback";
 import { useProjectStore } from "../../stores/project";
 import { useGscTokens } from "../../theme/useGscTokens";
 import type { Cue } from "../../types/cue";
 import { AudioWaveform } from "../AudioWaveform";
-import { PlaybackProgress } from "../PlaybackProgress";
 import { CueTypeBadge } from "../CueTypeIcon";
+import { PlaybackProgress } from "../PlaybackProgress";
 import { ActiveCueLevelControl } from "./ActiveCueLevelControl";
 
 interface ActiveCueRowProps {
@@ -41,21 +37,13 @@ export const ActiveCueRow = memo(function ActiveCueRow({
   const updateCue = useProjectStore((s) => s.updateCue);
   const clearFade = useFadeStore((s) => s.clearFade);
   const playback = usePlaybackStore((s) => s.byCueId[cue.id]);
-  const volumeFade = useFadeStore(
-    (s) =>
-      s.fadesByTargetId[cue.id]?.property === "volume"
-        ? s.fadesByTargetId[cue.id]
-        : undefined,
+  const volumeFade = useFadeStore((s) =>
+    s.fadesByTargetId[cue.id]?.property === "volume" ? s.fadesByTargetId[cue.id] : undefined,
   );
-  const opacityFade = useFadeStore(
-    (s) =>
-      s.fadesByTargetId[cue.id]?.property === "opacity"
-        ? s.fadesByTargetId[cue.id]
-        : undefined,
+  const opacityFade = useFadeStore((s) =>
+    s.fadesByTargetId[cue.id]?.property === "opacity" ? s.fadesByTargetId[cue.id] : undefined,
   );
-  const fadeFrameMs = useFadeStore((s) =>
-    volumeFade || opacityFade ? s.frameMs : 0,
-  );
+  const fadeFrameMs = useFadeStore((s) => (volumeFade || opacityFade ? s.frameMs : 0));
 
   const fixtures = useProjectStore((s) => s.fixtures);
   const rangeLabel =
@@ -109,29 +97,17 @@ export const ActiveCueRow = memo(function ActiveCueRow({
           {cue.name}
         </Typography>
         {cue.type === "midi" && cue.midi && (
-          <Typography
-            component="span"
-            noWrap
-            sx={{ fontSize: 11, color: "text.secondary" }}
-          >
+          <Typography component="span" noWrap sx={{ fontSize: 11, color: "text.secondary" }}>
             {formatMidiCue(cue.midi)}
           </Typography>
         )}
         {cue.type === "osc" && cue.osc && (
-          <Typography
-            component="span"
-            noWrap
-            sx={{ fontSize: 11, color: "text.secondary" }}
-          >
+          <Typography component="span" noWrap sx={{ fontSize: 11, color: "text.secondary" }}>
             {formatOscCue(cue.osc)}
           </Typography>
         )}
         {cue.type === "dmx" && cue.dmx && (
-          <Typography
-            component="span"
-            noWrap
-            sx={{ fontSize: 11, color: "text.secondary" }}
-          >
+          <Typography component="span" noWrap sx={{ fontSize: 11, color: "text.secondary" }}>
             {formatDmxCue(cue.dmx, fixtures)}
           </Typography>
         )}
@@ -147,25 +123,15 @@ export const ActiveCueRow = memo(function ActiveCueRow({
           </Box>
         )}
         {rangeLabel && (
-          <Typography
-            component="span"
-            noWrap
-            sx={{ fontSize: 11, color: "text.secondary" }}
-          >
+          <Typography component="span" noWrap sx={{ fontSize: 11, color: "text.secondary" }}>
             {rangeLabel}
           </Typography>
         )}
-        {playback && cueShowsPlaybackProgress(cue) && (
-          <PlaybackProgress progress={playback} />
-        )}
+        {playback && cueShowsPlaybackProgress(cue) && <PlaybackProgress progress={playback} />}
         {canVolumeFadeTarget(cue) && (
           <ActiveCueLevelControl
             label="Vol"
-            value={resolveEffectiveVolume(
-              cue.id,
-              cue.volume ?? 1,
-              fadeFrameMs || undefined,
-            )}
+            value={resolveEffectiveVolume(cue.id, cue.volume ?? 1, fadeFrameMs || undefined)}
             onChange={(volume) => {
               if (volumeFade) clearFade(cue.id);
               updateCue(cue.id, { volume });
@@ -175,11 +141,7 @@ export const ActiveCueRow = memo(function ActiveCueRow({
         {canOpacityFadeTarget(cue) && (
           <ActiveCueLevelControl
             label="Opac"
-            value={resolveEffectiveOpacity(
-              cue.id,
-              cue.opacity ?? 1,
-              fadeFrameMs || undefined,
-            )}
+            value={resolveEffectiveOpacity(cue.id, cue.opacity ?? 1, fadeFrameMs || undefined)}
             onChange={(opacity) => {
               if (opacityFade) clearFade(cue.id);
               updateCue(cue.id, { opacity });

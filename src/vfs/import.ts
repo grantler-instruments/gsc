@@ -4,16 +4,7 @@ import { joinPath, normalizePath, vfsHas, vfsPut } from "./engine";
 
 const PROJECT_ROOT = "/project";
 
-const AUDIO_EXT = new Set([
-  "wav",
-  "mp3",
-  "ogg",
-  "m4a",
-  "aac",
-  "flac",
-  "aiff",
-  "aif",
-]);
+const AUDIO_EXT = new Set(["wav", "mp3", "ogg", "m4a", "aac", "flac", "aiff", "aif"]);
 const VIDEO_EXT = new Set(["mp4", "webm", "mov", "mkv", "m4v"]);
 const IMAGE_EXT = new Set([
   "png",
@@ -42,9 +33,7 @@ export function assetKindFromFilename(filename: string): AssetKind | null {
 }
 
 /** @deprecated Use assetKindFromFilename */
-export function mediaKindFromFilename(
-  filename: string,
-): AssetKind | null {
+export function mediaKindFromFilename(filename: string): AssetKind | null {
   return assetKindFromFilename(filename);
 }
 
@@ -87,9 +76,7 @@ export async function importFiles(
   }
 
   prefetchMediaDurations(
-    imported
-      .filter((a) => a.kind === "audio" || a.kind === "video")
-      .map((a) => a.path),
+    imported.filter((a) => a.kind === "audio" || a.kind === "video").map((a) => a.path),
   );
 
   return imported;

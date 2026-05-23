@@ -1,3 +1,4 @@
+import { notifyWarningDeduped } from "../lib/notifications";
 import type { MidiMessageHandler } from "./receive-midi";
 import { getWebMidiAccess, resolveWebMidiInput } from "./web-midi";
 
@@ -5,15 +6,19 @@ export async function openMidiInput(
   portId: string | null,
   onMessage: MidiMessageHandler,
 ): Promise<() => void> {
+  if (!portId) {
+    return () => {};
+  }
+
   const access = await getWebMidiAccess();
   if (!access) {
-    console.warn("[midi] Web MIDI is not available in this browser");
+    notifyWarningDeduped("Web MIDI is not available in this browser.");
     return () => {};
   }
 
   const input = resolveWebMidiInput(access, portId);
   if (!input) {
-    console.warn("[midi] No MIDI input device available");
+    notifyWarningDeduped("The selected MIDI input device is not available.");
     return () => {};
   }
 

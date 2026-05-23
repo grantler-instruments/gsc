@@ -1,13 +1,9 @@
 import Box from "@mui/material/Box";
 import GlobalStyles from "@mui/material/GlobalStyles";
 import { useEffect, useRef, useState } from "react";
-import {
-  createOutputChannel,
-  isOutputMessage,
-  postRequestState,
-} from "../lib/output-channel";
-import type { OutputState } from "../types/output";
 import { useResolvedOutputLayers } from "../hooks/useResolvedOutputLayers";
+import { createOutputChannel, isOutputMessage, postRequestState } from "../lib/output-channel";
+import type { OutputState } from "../types/output";
 import { VisualStage } from "./VisualStage";
 
 /** Full-screen output window — subscribes to cross-window state. */
@@ -79,7 +75,7 @@ export function OutputApp() {
       >
         <VisualStage
           layers={layers}
-          role="output"
+          stageRole="output"
           sx={{ minHeight: "100%", height: "100%" }}
         />
       </Box>

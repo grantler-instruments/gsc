@@ -1,8 +1,5 @@
 import { useMemo } from "react";
-import {
-  groupDmxOutputChannelsByFixture,
-  listDmxOutputChannels,
-} from "../lib/dmx-output";
+import { groupDmxOutputChannelsByFixture, listDmxOutputChannels } from "../lib/dmx-output";
 import { useDmxOutputStore } from "../stores/dmx-output";
 import { useFadeStore } from "../stores/fade";
 import { useProjectStore } from "../stores/project";
@@ -16,14 +13,9 @@ export function useFixturePlotValues(): Map<string, number[]> {
   return useMemo(() => {
     void revision;
     void fadeFrameMs;
-    const groups = groupDmxOutputChannelsByFixture(
-      listDmxOutputChannels(fixtures),
-    );
+    const groups = groupDmxOutputChannelsByFixture(listDmxOutputChannels(fixtures));
     return new Map(
-      groups.map((group) => [
-        group.fixtureId,
-        group.channels.map((channel) => channel.value),
-      ]),
+      groups.map((group) => [group.fixtureId, group.channels.map((channel) => channel.value)]),
     );
   }, [fixtures, revision, fadeFrameMs]);
 }

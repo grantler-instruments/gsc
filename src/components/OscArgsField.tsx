@@ -13,12 +13,7 @@ interface OscArgsFieldProps {
   onChange: (args: OscArg[]) => void;
 }
 
-export function OscArgsField({
-  cueId,
-  args,
-  readOnly,
-  onChange,
-}: OscArgsFieldProps) {
+export function OscArgsField({ cueId, args, readOnly, onChange }: OscArgsFieldProps) {
   const [text, setText] = useState(() => formatOscArgsText(args));
   const [error, setError] = useState<string | null>(null);
 

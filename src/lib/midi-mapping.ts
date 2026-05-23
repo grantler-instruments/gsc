@@ -1,9 +1,9 @@
-import { midiMatches, parseMidiMessage } from "./midi";
-import { triggerGoAndAdvance, triggerGoSelected } from "./transport-actions";
-import type { Cue } from "../types/cue";
-import type { MidiAction, MidiMapping, MidiMatch } from "../types/midi-mapping";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
+import type { Cue } from "../types/cue";
+import type { MidiAction, MidiMapping, MidiMatch } from "../types/midi-mapping";
+import { midiMatches, parseMidiMessage } from "./midi";
+import { triggerGoAndAdvance, triggerGoSelected } from "./transport-actions";
 
 const DEBOUNCE_MS = 50;
 
@@ -45,10 +45,7 @@ export function dispatchMidiAction(action: MidiAction): void {
   }
 }
 
-export function handleIncomingMidi(
-  data: number[],
-  mappings: MidiMapping[],
-): void {
+export function handleIncomingMidi(data: number[], mappings: MidiMapping[]): void {
   const incoming = parseMidiMessage(data);
   if (!incoming) return;
 
@@ -67,10 +64,7 @@ export function handleIncomingMidi(
   }
 }
 
-export function buildNoteToCueMappings(
-  cues: Cue[],
-  startNote = 36,
-): MidiMapping[] {
+export function buildNoteToCueMappings(cues: Cue[], startNote = 36): MidiMapping[] {
   const topLevel = cues.filter((c) => !c.parentId);
   return topLevel.map((cue, i) => ({
     id: crypto.randomUUID(),
@@ -84,10 +78,7 @@ export function buildNoteToCueMappings(
   }));
 }
 
-export function formatMidiActionLabel(
-  action: MidiAction,
-  cues: Cue[],
-): string {
+export function formatMidiActionLabel(action: MidiAction, cues: Cue[]): string {
   switch (action.type) {
     case "go-selected":
       return "GO (selected cue)";

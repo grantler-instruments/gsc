@@ -1,23 +1,17 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { useProjectStore } from "../stores/project";
+import { useTransportStore } from "../stores/transport";
+import { useUiStore } from "../stores/ui";
+import { activeCues, resetTestProject, testCue } from "../test/fixtures/cues";
 import {
   deletePrimarySelectedCue,
   selectAdjacentVisibleCue,
   selectNextCueAfterGo,
 } from "./cue-navigation";
-import { useProjectStore } from "../stores/project";
-import { useUiStore } from "../stores/ui";
-import { useTransportStore } from "../stores/transport";
-import {
-  activeCues,
-  resetTestProject,
-  testCue,
-} from "../test/fixtures/cues";
 
 function activeListSelection(): string[] {
   const { cueLists, activeCueListId } = useProjectStore.getState();
-  return (
-    cueLists.find((l) => l.id === activeCueListId)?.selectedCueIds ?? []
-  );
+  return cueLists.find((l) => l.id === activeCueListId)?.selectedCueIds ?? [];
 }
 
 describe("selectAdjacentVisibleCue", () => {
@@ -72,10 +66,7 @@ describe("selectNextCueAfterGo", () => {
   });
 
   it("selects the next sibling for a leaf cue", () => {
-    resetTestProject([
-      testCue("a", "A", "audio"),
-      testCue("b", "B", "audio"),
-    ]);
+    resetTestProject([testCue("a", "A", "audio"), testCue("b", "B", "audio")]);
     useProjectStore.getState().selectCue("a");
 
     selectNextCueAfterGo("a");

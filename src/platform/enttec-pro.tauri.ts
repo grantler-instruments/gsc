@@ -13,9 +13,7 @@ export async function isEnttecProConnectedTauri(): Promise<boolean> {
   return invoke<boolean>("is_enttec_pro_connected");
 }
 
-export async function sendEnttecProUniversesTauri(
-  frames: DmxUniverseFrame[],
-): Promise<void> {
+export async function sendEnttecProUniversesTauri(frames: DmxUniverseFrame[]): Promise<void> {
   if (frames.length === 0) return;
   await invoke("send_enttec_pro_dmx", {
     frames: frames.map((frame) => ({

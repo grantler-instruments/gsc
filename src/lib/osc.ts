@@ -14,9 +14,7 @@ export function clampOscPort(v: number): number {
 }
 
 function normalizeQuotes(text: string): string {
-  return text
-    .replace(/[\u201C\u201D]/g, '"')
-    .replace(/[\u2018\u2019]/g, "'");
+  return text.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'");
 }
 
 export function normalizeOscArg(value: unknown): OscArg | null {
@@ -33,10 +31,7 @@ function isTypedOscArg(value: unknown): value is OscArg {
   if (!value || typeof value !== "object") return false;
   const arg = value as Partial<OscArg>;
   return (
-    (arg.type === "int" ||
-      arg.type === "float" ||
-      arg.type === "string" ||
-      arg.type === "bool") &&
+    (arg.type === "int" || arg.type === "float" || arg.type === "string" || arg.type === "bool") &&
     arg.value !== undefined
   );
 }
@@ -179,10 +174,7 @@ function formatOscArgValue(arg: OscArg): string {
 }
 
 export function formatOscCue(data: OscCueData): string {
-  const args =
-    data.args.length > 0
-      ? ` ${data.args.map(formatOscArgValue).join(", ")}`
-      : "";
+  const args = data.args.length > 0 ? ` ${data.args.map(formatOscArgValue).join(", ")}` : "";
   return `${data.host}:${data.port} ${data.address}${args}`;
 }
 

@@ -1,5 +1,4 @@
 import { getLoopPlayCount } from "../lib/loop";
-import { resolveEffectiveVolume } from "../stores/fade";
 import {
   isVideoLooping,
   isVideoPlaybackComplete,
@@ -7,6 +6,7 @@ import {
   videoPlaybackWindow,
   videoTargetTime,
 } from "../lib/video-playback";
+import { resolveEffectiveVolume } from "../stores/fade";
 import type { Cue } from "../types/cue";
 import { vfsGetObjectUrl } from "../vfs/engine";
 
@@ -45,8 +45,7 @@ export function startVideoVoice(
   const source = ctx.createMediaElementSource(video);
   const gain = ctx.createGain();
   gain.gain.value =
-    clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) *
-    clamp01(masterVolume);
+    clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) * clamp01(masterVolume);
   source.connect(gain);
   gain.connect(ctx.destination);
 
@@ -81,10 +80,7 @@ export function startVideoVoice(
   const seekAndPlay = () => {
     seekToClock();
     void video.play().catch((err) => {
-      console.warn(
-        "[audio] Video voice play blocked — interact with the page first",
-        err,
-      );
+      console.warn("[audio] Video voice play blocked — interact with the page first", err);
     });
   };
 
@@ -155,14 +151,9 @@ export function startVideoVoice(
   return voice;
 }
 
-export function updateVideoVoiceGain(
-  voice: VideoVoice,
-  cue: Cue,
-  masterVolume: number,
-): void {
+export function updateVideoVoiceGain(voice: VideoVoice, cue: Cue, masterVolume: number): void {
   voice.gain.gain.value =
-    clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) *
-    clamp01(masterVolume);
+    clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) * clamp01(masterVolume);
 }
 
 export function stopVideoVoice(voice: VideoVoice): void {

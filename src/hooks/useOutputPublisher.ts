@@ -1,16 +1,12 @@
 import { useEffect, useRef } from "react";
 import { cacheAsset } from "../lib/asset-cache";
+import { createOutputChannel, isOutputMessage, postOutputState } from "../lib/output-channel";
 import { buildOutputState } from "../lib/output-state";
-import {
-  createOutputChannel,
-  isOutputMessage,
-  postOutputState,
-} from "../lib/output-channel";
+import { resolveAssetBlob } from "../platform/vfs-asset";
+import { useFadeStore } from "../stores/fade";
+import { usePlaybackStore } from "../stores/playback";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
-import { usePlaybackStore } from "../stores/playback";
-import { useFadeStore } from "../stores/fade";
-import { resolveAssetBlob } from "../platform/vfs-asset";
 
 const selectOutputTransportState = (s: {
   activeCueIds: string[];
@@ -24,10 +20,7 @@ function outputTransportChanged(
   prev: ReturnType<typeof selectOutputTransportState>,
   next: ReturnType<typeof selectOutputTransportState>,
 ): boolean {
-  return (
-    prev.activeCueIds !== next.activeCueIds ||
-    prev.cueStartedAtMs !== next.cueStartedAtMs
-  );
+  return prev.activeCueIds !== next.activeCueIds || prev.cueStartedAtMs !== next.cueStartedAtMs;
 }
 
 /** Publishes visual output state to the output window via BroadcastChannel. */
@@ -94,10 +87,7 @@ export function useOutputPublisher(): void {
 
     const unsubTransport = useTransportStore.subscribe((state, prev) => {
       if (
-        outputTransportChanged(
-          selectOutputTransportState(prev),
-          selectOutputTransportState(state),
-        )
+        outputTransportChanged(selectOutputTransportState(prev), selectOutputTransportState(state))
       ) {
         schedulePublish();
       }

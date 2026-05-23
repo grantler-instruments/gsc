@@ -1,8 +1,8 @@
-import { useCallback, useState, type MouseEvent } from "react";
+import { type MouseEvent, useCallback, useState } from "react";
 import { isUtilityCue } from "../../lib/cues";
+import { useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
 import type { CueContextMenuState } from "../CueContextMenu";
-import { useProjectStore } from "../../stores/project";
 
 export function useCueListContextMenu(
   cues: Cue[],
@@ -11,9 +11,7 @@ export function useCueListContextMenu(
   selectedCueIdSet: Set<string>,
 ) {
   const selectCue = useProjectStore((s) => s.selectCue);
-  const [contextMenu, setContextMenu] = useState<CueContextMenuState | null>(
-    null,
-  );
+  const [contextMenu, setContextMenu] = useState<CueContextMenuState | null>(null);
 
   const handleRowContextMenu = useCallback(
     (cueId: string, e: MouseEvent) => {
@@ -30,13 +28,9 @@ export function useCueListContextMenu(
     [canEdit, selectCue, selectedCueIdSet],
   );
 
-  const contextMenuCue = contextMenu
-    ? cues.find((c) => c.id === contextMenu.cueId)
-    : undefined;
+  const contextMenuCue = contextMenu ? cues.find((c) => c.id === contextMenu.cueId) : undefined;
   const canRenameFromMenu =
-    !!contextMenuCue &&
-    selectedCueIds.length === 1 &&
-    !isUtilityCue(contextMenuCue);
+    !!contextMenuCue && selectedCueIds.length === 1 && !isUtilityCue(contextMenuCue);
 
   return {
     contextMenu,

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { Fixture } from "../types/fixture";
 import {
+  addManualFixtureChannel,
   createFixture,
   fixturesOverlap,
   formatFixturePatch,
@@ -7,14 +9,9 @@ import {
   normalizeFixtures,
   suggestNextFixtureAddress,
   updateManualFixtureChannelName,
-  addManualFixtureChannel,
 } from "./fixtures";
-import type { Fixture } from "../types/fixture";
 
-function fixture(
-  id: string,
-  overrides: Partial<Omit<Fixture, "id">> = {},
-): Fixture {
+function fixture(id: string, overrides: Partial<Omit<Fixture, "id">> = {}): Fixture {
   return {
     id,
     name: overrides.name ?? id,

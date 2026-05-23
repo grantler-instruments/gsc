@@ -13,11 +13,7 @@ export function useActivePlaybackCues(): Cue[] {
       activeCueIds
         .map((id) => findProjectCue(cueLists, id))
         .filter(
-          (c): c is Cue =>
-            c !== undefined &&
-            !isContainerCue(c) &&
-            !isStopCue(c) &&
-            !isWaitCue(c),
+          (c): c is Cue => c !== undefined && !isContainerCue(c) && !isStopCue(c) && !isWaitCue(c),
         ),
     [activeCueIds, cueLists],
   );

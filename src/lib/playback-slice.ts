@@ -1,6 +1,6 @@
+import type { Cue } from "../types/cue";
 import { getLoopPlayCount, isLoopableMediaCue } from "./loop";
 import { getWaitDurationSec, isWaitCue } from "./wait";
-import type { Cue } from "../types/cue";
 
 const DEFAULT_MEDIA_SEC = 5;
 const DEFAULT_MIDI_SEC = 0.15;
@@ -26,10 +26,7 @@ export function cueShowsPlaybackProgress(cue: Cue): boolean {
 }
 
 /** Length of one in→out slice in seconds (excludes fade padding). */
-export function getPlaybackSliceSec(
-  cue: Cue,
-  sourceDurationSec?: number,
-): number {
+export function getPlaybackSliceSec(cue: Cue, sourceDurationSec?: number): number {
   if (cue.type === "midi") {
     return DEFAULT_MIDI_SEC;
   }
@@ -72,10 +69,7 @@ export interface PlaybackBounds {
 }
 
 /** Snapshot timing for one GO — avoids bar jumps when duration loads mid-playback. */
-export function createPlaybackBounds(
-  cue: Cue,
-  sourceDurationSec?: number,
-): PlaybackBounds {
+export function createPlaybackBounds(cue: Cue, sourceDurationSec?: number): PlaybackBounds {
   if (isWaitCue(cue)) {
     const sliceSec = getWaitDurationSec(cue);
     return {
@@ -146,8 +140,7 @@ export function computePlaybackProgressWithBounds(
   let loopIteration: number | undefined;
   let loopTotal: number | "inf" | undefined;
 
-  const iterationIndex =
-    sliceSec > 0 ? Math.floor(Math.max(0, elapsedSec) / sliceSec) : 0;
+  const iterationIndex = sliceSec > 0 ? Math.floor(Math.max(0, elapsedSec) / sliceSec) : 0;
 
   if (looping) {
     const inSlice = sliceSec > 0 ? elapsedSec % sliceSec : 0;
@@ -178,10 +171,7 @@ export function computePlaybackProgressWithBounds(
   };
 }
 
-export function isFinitePlaybackComplete(
-  bounds: PlaybackBounds,
-  elapsedSec: number,
-): boolean {
+export function isFinitePlaybackComplete(bounds: PlaybackBounds, elapsedSec: number): boolean {
   if (bounds.imageHoldInfinite || bounds.looping) return false;
   const totalRunSec = bounds.sliceSec * (bounds.loopCount as number);
   return elapsedSec >= totalRunSec;
@@ -199,7 +189,5 @@ export function computePlaybackProgress(
 }
 
 export function cueNeedsKnownDuration(cue: Cue): boolean {
-  return (
-    (cue.type === "audio" || cue.type === "video") && cue.assetPath !== undefined
-  );
+  return (cue.type === "audio" || cue.type === "video") && cue.assetPath !== undefined;
 }

@@ -1,11 +1,11 @@
-import type { FixturePlot, FixturePlotEntry } from "../../types/fixture-plot";
+import type { StoreApi } from "zustand";
 import {
   ensureFixturePlot,
   fixturePlotNeedsSync,
   normalizeFixturePlot,
   updateFixturePlotEntryPosition,
 } from "../../lib/fixture-plot";
-import type { StoreApi } from "zustand";
+import type { FixturePlot, FixturePlotEntry } from "../../types/fixture-plot";
 import type { ProjectState } from "./types";
 
 type ProjectStore = StoreApi<ProjectState>;
@@ -15,10 +15,7 @@ export function createFixturePlotActions(
   get: ProjectStore["getState"],
 ): Pick<
   ProjectState,
-  | "syncFixturePlot"
-  | "updateFixturePlotEntry"
-  | "setFixturePlot"
-  | "moveFixturePlotEntry"
+  "syncFixturePlot" | "updateFixturePlotEntry" | "setFixturePlot" | "moveFixturePlotEntry"
 > {
   return {
     syncFixturePlot: () => {

@@ -1,13 +1,13 @@
-import { type CueList } from "./cue-lists";
-import { normalizeFixtures } from "./fixtures";
-import { normalizeFixturePlot } from "./fixture-plot";
-import { defaultMidiCueData } from "./midi";
-import { defaultOscCueData, normalizeOscArgs } from "./osc";
-import { defaultDmxCueData, normalizeDmxCueData } from "./dmx";
 import type { Cue, ProjectSnapshot } from "../types/cue";
 import type { Fixture } from "../types/fixture";
 import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
+import type { CueList } from "./cue-lists";
+import { defaultDmxCueData, normalizeDmxCueData } from "./dmx";
+import { normalizeFixturePlot } from "./fixture-plot";
+import { normalizeFixtures } from "./fixtures";
+import { defaultMidiCueData } from "./midi";
+import { defaultOscCueData, normalizeOscArgs } from "./osc";
 
 function normalizeCues(cues: Cue[], fixtures: Fixture[] = []): Cue[] {
   return cues.map((c) => {
@@ -54,8 +54,7 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
     selectedCueIds: [],
     selectionAnchorId: null,
   }));
-  const active =
-    cueLists.find((l) => l.id === snap.activeCueListId) ?? cueLists[0];
+  const active = cueLists.find((l) => l.id === snap.activeCueListId) ?? cueLists[0];
   return {
     id: snap.id,
     name: snap.name,

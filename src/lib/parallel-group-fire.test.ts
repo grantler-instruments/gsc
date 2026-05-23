@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
+import { testCue } from "../test/fixtures/cues";
 import {
   fireParallelGroupChildren,
   getParallelGroupOrderConflict,
   walkParallelGroupChildren,
 } from "./parallel-group-fire";
-import { testCue } from "../test/fixtures/cues";
 
 describe("walkParallelGroupChildren", () => {
   it("stop before playback — only stop wins", () => {
@@ -20,12 +20,7 @@ describe("walkParallelGroupChildren", () => {
     const goMany = vi.fn<(ids: string[]) => void>();
     const resolved = new Map<string, "go" | "stop">();
 
-    const leafIds = walkParallelGroupChildren(
-      cues[0],
-      cues,
-      resolved,
-      { stopMany, goMany },
-    );
+    const leafIds = walkParallelGroupChildren(cues[0], cues, resolved, { stopMany, goMany });
 
     expect(stopMany).toHaveBeenCalledWith(["a"]);
     expect(leafIds).toEqual([]);
@@ -45,12 +40,7 @@ describe("walkParallelGroupChildren", () => {
     const goMany = vi.fn<(ids: string[]) => void>();
     const resolved = new Map<string, "go" | "stop">();
 
-    const leafIds = walkParallelGroupChildren(
-      cues[0],
-      cues,
-      resolved,
-      { stopMany, goMany },
-    );
+    const leafIds = walkParallelGroupChildren(cues[0], cues, resolved, { stopMany, goMany });
 
     expect(leafIds).toEqual(["a"]);
     expect(stopMany).not.toHaveBeenCalled();
@@ -66,11 +56,7 @@ describe("fireParallelGroupChildren", () => {
     ];
     const goMany = vi.fn<(ids: string[]) => void>();
 
-    const ids = fireParallelGroupChildren(
-      cues[0],
-      cues,
-      { goMany, stopMany: vi.fn() },
-    );
+    const ids = fireParallelGroupChildren(cues[0], cues, { goMany, stopMany: vi.fn() });
 
     expect(ids).toEqual(["a", "b"]);
     expect(goMany).toHaveBeenCalledWith(["a", "b"]);

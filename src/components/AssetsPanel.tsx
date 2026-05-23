@@ -6,17 +6,13 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useRef, useState } from "react";
 import { isExternalFileDrag } from "../lib/asset-drop";
 import { pointerLeftElement } from "../lib/dom";
-import {
-  isAssetDrag,
-  setActiveAssetDrag,
-  setAssetDragData,
-} from "../lib/drag";
-import { cueListDropActiveSx } from "../theme/cueStyles";
+import { isAssetDrag, setActiveAssetDrag, setAssetDragData } from "../lib/drag";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
-import { useGscTokens } from "../theme/useGscTokens";
-import { useVfsStore } from "../stores/vfs";
 import type { VfsEntry } from "../stores/vfs";
+import { useVfsStore } from "../stores/vfs";
+import { cueListDropActiveSx } from "../theme/cueStyles";
+import { useGscTokens } from "../theme/useGscTokens";
 import { CueTypeBadge } from "./CueTypeIcon";
 
 const emptyListSx = {
@@ -134,9 +130,7 @@ export function AssetsPanel() {
             component="li"
             key={entry.path}
             draggable={canEdit}
-            onDragStart={
-              canEdit ? (e) => onAssetDragStart(e, entry) : undefined
-            }
+            onDragStart={canEdit ? (e) => onAssetDragStart(e, entry) : undefined}
             onDragEnd={canEdit ? () => setActiveAssetDrag(null) : undefined}
             sx={{
               display: "flex",
@@ -177,11 +171,7 @@ export function AssetsPanel() {
                 >
                   +
                 </IconButton>
-                <IconButton
-                  size="small"
-                  title="Remove"
-                  onClick={() => removeEntry(entry.path)}
-                >
+                <IconButton size="small" title="Remove" onClick={() => removeEntry(entry.path)}>
                   ×
                 </IconButton>
               </Stack>

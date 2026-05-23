@@ -1,8 +1,7 @@
 import { useCallback, useState } from "react";
-import {
-  isExternalFileDrag,
-  resolveAssetDropPayloads,
-} from "../../lib/asset-drop";
+import { isExternalFileDrag, resolveAssetDropPayloads } from "../../lib/asset-drop";
+import { getLastSiblingOfCue } from "../../lib/cues";
+import { pointerLeftElement } from "../../lib/dom";
 import {
   isAssetDrag,
   isCueDrag,
@@ -10,10 +9,8 @@ import {
   setActiveAssetDrag,
   setActiveCueDrag,
 } from "../../lib/drag";
-import { pointerLeftElement } from "../../lib/dom";
-import { getLastSiblingOfCue } from "../../lib/cues";
-import type { Cue } from "../../types/cue";
 import { useProjectStore } from "../../stores/project";
+import type { Cue } from "../../types/cue";
 import { useCueListActions } from "./cueListActionsContext";
 
 export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
@@ -28,8 +25,7 @@ export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
       const draggedCueId = readCueDragId(e.dataTransfer);
       const draggingCue = draggedCueId !== null;
       const draggingAsset =
-        !draggingCue &&
-        (isAssetDrag(e.dataTransfer) || isExternalFileDrag(e.dataTransfer));
+        !draggingCue && (isAssetDrag(e.dataTransfer) || isExternalFileDrag(e.dataTransfer));
       if (!draggingCue && !draggingAsset) return;
 
       e.preventDefault();

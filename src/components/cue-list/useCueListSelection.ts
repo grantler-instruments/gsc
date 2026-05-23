@@ -1,27 +1,16 @@
-import { useCallback, useMemo, type MouseEvent } from "react";
-import {
-  flattenVisibleCueIds,
-  getPrimarySelectedCueId,
-} from "../../lib/cue-selection";
-import type { Cue } from "../../types/cue";
+import { type MouseEvent, useCallback, useMemo } from "react";
+import { flattenVisibleCueIds, getPrimarySelectedCueId } from "../../lib/cue-selection";
 import { getActiveCueListFromState, useProjectStore } from "../../stores/project";
+import type { Cue } from "../../types/cue";
 
-export function useCueListSelection(
-  cues: Cue[],
-  collapsedGroups: Set<string>,
-) {
-  const selectedCueIds = useProjectStore(
-    (s) => getActiveCueListFromState(s).selectedCueIds,
-  );
+export function useCueListSelection(cues: Cue[], collapsedGroups: Set<string>) {
+  const selectedCueIds = useProjectStore((s) => getActiveCueListFromState(s).selectedCueIds);
   const selectCue = useProjectStore((s) => s.selectCue);
   const toggleSelectCue = useProjectStore((s) => s.toggleSelectCue);
   const selectCueRange = useProjectStore((s) => s.selectCueRange);
 
   const primarySelectedId = getPrimarySelectedCueId(selectedCueIds);
-  const selectedCueIdSet = useMemo(
-    () => new Set(selectedCueIds),
-    [selectedCueIds],
-  );
+  const selectedCueIdSet = useMemo(() => new Set(selectedCueIds), [selectedCueIds]);
 
   const visibleCueOrder = useMemo(
     () => flattenVisibleCueIds(cues, collapsedGroups),

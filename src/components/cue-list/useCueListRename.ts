@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { isUtilityCue } from "../../lib/cues";
-import type { Cue } from "../../types/cue";
 import { useProjectStore } from "../../stores/project";
+import type { Cue } from "../../types/cue";
 
 export function useCueListRename(cues: Cue[]) {
   const updateCue = useProjectStore((s) => s.updateCue);

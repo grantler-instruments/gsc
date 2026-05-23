@@ -2,8 +2,8 @@ import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type { PointerEvent, ReactNode } from "react";
-import { fixturePlotTooltipChannels } from "../lib/fixture-plot";
 import type { FixtureVisualState } from "../lib/fixture-plot";
+import { fixturePlotTooltipChannels } from "../lib/fixture-plot";
 import type { Fixture } from "../types/fixture";
 import type { FixtureRenderKind } from "../types/fixture-plot";
 
@@ -62,13 +62,7 @@ function FixturePlotTooltipContent({
   );
 }
 
-function AbstractBars({
-  channels,
-  radius,
-}: {
-  channels: number[];
-  radius: number;
-}) {
+function AbstractBars({ channels, radius }: { channels: number[]; radius: number }) {
   const barCount = Math.max(channels.length, 1);
   const barWidth = (radius * 1.4) / barCount;
   const startX = -((barCount - 1) * barWidth) / 2;
@@ -110,8 +104,7 @@ export function FixturePlotGlyph({
 }: FixturePlotGlyphProps) {
   const radius = size / 2;
   const fill = visual.fill ?? "currentColor";
-  const fillOpacity =
-    render === "abstract" ? 0.12 : Math.max(visual.opacity, 0.04);
+  const fillOpacity = render === "abstract" ? 0.12 : Math.max(visual.opacity, 0.04);
   const label = fixture.name;
   const tooltipTitle: ReactNode = (
     <FixturePlotTooltipContent fixture={fixture} channelValues={channelValues} />
@@ -128,9 +121,7 @@ export function FixturePlotGlyph({
         strokeWidth={selected ? 0.004 : 0.002}
         style={{ pointerEvents: "none" }}
       />
-      {render === "abstract" && (
-        <AbstractBars channels={visual.channels} radius={radius} />
-      )}
+      {render === "abstract" && <AbstractBars channels={visual.channels} radius={radius} />}
       {editMode && (
         <circle
           r={radius}

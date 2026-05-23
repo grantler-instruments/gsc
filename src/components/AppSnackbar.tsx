@@ -1,9 +1,6 @@
 import Alert from "@mui/material/Alert";
 import Snackbar from "@mui/material/Snackbar";
-import {
-  useNotificationsStore,
-  type NotificationSeverity,
-} from "../stores/notifications";
+import { type NotificationSeverity, useNotificationsStore } from "../stores/notifications";
 
 const AUTO_HIDE_MS: Record<NotificationSeverity, number> = {
   error: 8000,
@@ -23,9 +20,7 @@ export function AppSnackbar() {
   return (
     <Snackbar
       open={!!current}
-      autoHideDuration={
-        current ? AUTO_HIDE_MS[current.severity] : undefined
-      }
+      autoHideDuration={current ? AUTO_HIDE_MS[current.severity] : undefined}
       onClose={handleClose}
       anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
     >

@@ -21,10 +21,7 @@ export function getActiveAssetDrag(): AssetDragPayload | null {
   return activeAssetDrag;
 }
 
-export function setAssetDragData(
-  dataTransfer: DataTransfer,
-  payload: AssetDragPayload,
-): void {
+export function setAssetDragData(dataTransfer: DataTransfer, payload: AssetDragPayload): void {
   activeAssetDrag = payload;
   dataTransfer.setData(GSC_ASSET_DRAG_TYPE, JSON.stringify(payload));
   dataTransfer.effectAllowed = "copy";
@@ -46,9 +43,7 @@ function parseAssetDragPayload(raw: string): AssetDragPayload | null {
   return null;
 }
 
-export function readAssetDragData(
-  dataTransfer: DataTransfer,
-): AssetDragPayload | null {
+export function readAssetDragData(dataTransfer: DataTransfer): AssetDragPayload | null {
   const raw = dataTransfer.getData(GSC_ASSET_DRAG_TYPE);
   if (raw) {
     const parsed = parseAssetDragPayload(raw);
@@ -58,9 +53,7 @@ export function readAssetDragData(
 }
 
 export function isAssetDrag(dataTransfer: DataTransfer): boolean {
-  return (
-    dataTransfer.types.includes(GSC_ASSET_DRAG_TYPE) || activeAssetDrag !== null
-  );
+  return dataTransfer.types.includes(GSC_ASSET_DRAG_TYPE) || activeAssetDrag !== null;
 }
 
 export const GSC_CUE_DRAG_TYPE = "application/x-gsc-cue";
@@ -69,17 +62,12 @@ export interface CueDragPayload {
   cueId: string;
 }
 
-export function setCueDragData(
-  dataTransfer: DataTransfer,
-  payload: CueDragPayload,
-): void {
+export function setCueDragData(dataTransfer: DataTransfer, payload: CueDragPayload): void {
   dataTransfer.setData(GSC_CUE_DRAG_TYPE, JSON.stringify(payload));
   dataTransfer.effectAllowed = "move";
 }
 
-export function readCueDragData(
-  dataTransfer: DataTransfer,
-): CueDragPayload | null {
+export function readCueDragData(dataTransfer: DataTransfer): CueDragPayload | null {
   const raw = dataTransfer.getData(GSC_CUE_DRAG_TYPE);
   if (!raw) return null;
   try {

@@ -9,12 +9,7 @@ interface CueRenameInputProps {
   onCancel: () => void;
 }
 
-export function CueRenameInput({
-  value,
-  onChange,
-  onCommit,
-  onCancel,
-}: CueRenameInputProps) {
+export function CueRenameInput({ value, onChange, onCommit, onCancel }: CueRenameInputProps) {
   const tokens = useGscTokens();
 
   return (

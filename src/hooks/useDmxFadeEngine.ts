@@ -2,11 +2,7 @@ import { useEffect } from "react";
 import { sampleDmxFadePlan } from "../lib/dmx-fade";
 import { finalizeLightFade } from "../lib/trigger-fade";
 import { sendDmxUniverses } from "../platform/send-dmx";
-import {
-  getDmxFadeProgress,
-  isDmxFadeComplete,
-  useFadeStore,
-} from "../stores/fade";
+import { getDmxFadeProgress, isDmxFadeComplete, useFadeStore } from "../stores/fade";
 
 /** Drives active DMX fades each frame and sends Art-Net output. */
 export function useDmxFadeEngine(): void {

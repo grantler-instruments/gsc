@@ -5,12 +5,8 @@ import { getPlatform } from "../../platform";
 import { useActiveCueList, useProjectStore } from "../../stores/project";
 import { useUiStore } from "../../stores/ui";
 import { CueTypeBadge } from "../CueTypeIcon";
+import { inspectorFieldsSx, inspectorPanelEmptySx, inspectorPanelSx } from "../inspectorSx";
 import { PanelHeader } from "../layout/PanelHeader";
-import {
-  inspectorFieldsSx,
-  inspectorPanelEmptySx,
-  inspectorPanelSx,
-} from "../inspectorSx";
 import { CueInspectorBody } from "./CueInspectorBody";
 
 export function CueInspector() {

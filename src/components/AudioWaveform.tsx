@@ -1,12 +1,9 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  useMediaWaveform,
-  type MediaWaveformKind,
-} from "../hooks/useMediaWaveform";
-import { getVideoThumbnailDataUrl } from "../lib/video-thumbnail";
+import { type MediaWaveformKind, useMediaWaveform } from "../hooks/useMediaWaveform";
 import { formatTime, normalizePlaybackRange } from "../lib/time";
+import { getVideoThumbnailDataUrl } from "../lib/video-thumbnail";
 import {
   waveformCanvasSx,
   waveformDraggingSx,
@@ -128,11 +125,7 @@ function drawWaveform(
     ctx.fillRect(x, mid - amp, barW, amp * 2);
   }
 
-  if (
-    opts.hoverSec !== undefined &&
-    durationSec > 0 &&
-    Number.isFinite(opts.hoverSec)
-  ) {
+  if (opts.hoverSec !== undefined && durationSec > 0 && Number.isFinite(opts.hoverSec)) {
     const x = (opts.hoverSec / durationSec) * width;
     ctx.strokeStyle = colors.scrub;
     ctx.globalAlpha = 0.75;
@@ -144,11 +137,7 @@ function drawWaveform(
     ctx.globalAlpha = 1;
   }
 
-  if (
-    opts.positionSec !== undefined &&
-    durationSec > 0 &&
-    Number.isFinite(opts.positionSec)
-  ) {
+  if (opts.positionSec !== undefined && durationSec > 0 && Number.isFinite(opts.positionSec)) {
     const x = (opts.positionSec / durationSec) * width;
     ctx.strokeStyle = colors.playhead;
     ctx.lineWidth = 2;
@@ -281,14 +270,11 @@ export function AudioWaveform({
   const durationSec = data?.durationSec ?? 0;
   const effectiveIn = inTime ?? 0;
   const effectiveOut =
-    outTime !== undefined
-      ? Math.min(durationSec, Math.max(effectiveIn, outTime))
-      : durationSec;
+    outTime !== undefined ? Math.min(durationSec, Math.max(effectiveIn, outTime)) : durationSec;
   const inPct = durationSec > 0 ? (effectiveIn / durationSec) * 100 : 0;
   const outPct = durationSec > 0 ? (effectiveOut / durationSec) * 100 : 100;
   const showHandles = editable && !!data && !!onRangeChange;
-  const showThumbnail =
-    hoverPreview && hoverSec !== null && !dragging && thumbnailUrl;
+  const showThumbnail = hoverPreview && hoverSec !== null && !dragging && thumbnailUrl;
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (dragging) {
@@ -332,20 +318,10 @@ export function AudioWaveform({
       )}
       {data && (
         <>
-          <Box
-            component="canvas"
-            ref={canvasRef}
-            aria-hidden
-            sx={waveformCanvasSx}
-          />
+          <Box component="canvas" ref={canvasRef} aria-hidden sx={waveformCanvasSx} />
           {showThumbnail && (
             <Box sx={{ ...waveformThumbnailSx, left: `${hoverPct}%` }}>
-              <Box
-                component="img"
-                src={thumbnailUrl}
-                alt=""
-                draggable={false}
-              />
+              <Box component="img" src={thumbnailUrl} alt="" draggable={false} />
               <Typography component="span" sx={waveformThumbnailTimeSx}>
                 {formatTime(hoverSec!)}
               </Typography>

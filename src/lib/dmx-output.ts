@@ -1,6 +1,6 @@
-import { fixtureChannelAddress } from "./fixtures";
-import { fixtureChannelLabel, getDmxChannelLevel } from "./dmx";
 import type { Fixture } from "../types/fixture";
+import { fixtureChannelLabel, getDmxChannelLevel } from "./dmx";
+import { fixtureChannelAddress } from "./fixtures";
 
 export interface DmxOutputChannel {
   fixtureId: string;

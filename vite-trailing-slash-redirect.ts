@@ -1,6 +1,6 @@
 import fs from "node:fs";
-import path from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import path from "node:path";
 import type { Plugin } from "vite";
 
 /** Redirect `/gsc` → `/gsc/` (and `/gsc/app` → `/gsc/app/`) when base is a subpath. */
@@ -19,11 +19,7 @@ export function trailingSlashRedirectPlugin(siteBase: string): Plugin {
     return null;
   };
 
-  const redirectMiddleware = (
-    req: IncomingMessage,
-    res: ServerResponse,
-    next: () => void,
-  ) => {
+  const redirectMiddleware = (req: IncomingMessage, res: ServerResponse, next: () => void) => {
     const raw = req.url ?? "";
     const q = raw.indexOf("?");
     const pathname = q === -1 ? raw : raw.slice(0, q);

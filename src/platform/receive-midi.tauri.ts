@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { notifyErrorFromUnknown } from "../lib/notifications";
 import type { MidiMessageHandler } from "./receive-midi";
 
 export async function openMidiInput(
@@ -7,7 +8,6 @@ export async function openMidiInput(
   onMessage: MidiMessageHandler,
 ): Promise<() => void> {
   if (!portId) {
-    console.warn("[midi] Select a MIDI input in Settings before receiving");
     return () => {};
   }
 
@@ -20,7 +20,7 @@ export async function openMidiInput(
     });
     await invoke("start_midi_input", { portId });
   } catch (err) {
-    console.warn("[midi] Could not open MIDI input", err);
+    notifyErrorFromUnknown(err);
     if (unlisten) {
       await unlisten();
     }

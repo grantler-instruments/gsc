@@ -1,19 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { triggerGoAndAdvance, triggerGoSelected } from "./transport-actions";
 import { useFadeStore } from "../stores/fade";
 import { useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
-import {
-  resetTestProject,
-  testCue,
-} from "../test/fixtures/cues";
+import { resetTestProject, testCue } from "../test/fixtures/cues";
+import { triggerGoAndAdvance, triggerGoSelected } from "./transport-actions";
 
 function activeListSelection(): string[] {
   const { cueLists, activeCueListId } = useProjectStore.getState();
-  return (
-    cueLists.find((l) => l.id === activeCueListId)?.selectedCueIds ?? []
-  );
+  return cueLists.find((l) => l.id === activeCueListId)?.selectedCueIds ?? [];
 }
 
 function resetTransport() {
@@ -29,10 +24,7 @@ function resetTransport() {
 
 describe("triggerGoAndAdvance", () => {
   beforeEach(() => {
-    resetTestProject([
-      testCue("a", "A", "audio"),
-      testCue("b", "B", "audio"),
-    ]);
+    resetTestProject([testCue("a", "A", "audio"), testCue("b", "B", "audio")]);
     resetTransport();
     useUiStore.setState({ collapsedCueGroupIds: [] });
     useFadeStore.setState({ fadesByTargetId: {}, dmxFadesByFadeCueId: {}, frameMs: 0 });
@@ -41,9 +33,7 @@ describe("triggerGoAndAdvance", () => {
   it("GOs the cue through transport and advances selection", () => {
     useProjectStore.getState().selectCue("a");
 
-    triggerGoAndAdvance(
-      useProjectStore.getState().cueLists[0].cues.find((c) => c.id === "a")!,
-    );
+    triggerGoAndAdvance(useProjectStore.getState().cueLists[0].cues.find((c) => c.id === "a")!);
 
     expect(useTransportStore.getState().activeCueIds).toEqual(["a"]);
     expect(activeListSelection()).toEqual(["b"]);
@@ -55,9 +45,7 @@ describe("triggerGoAndAdvance", () => {
       testCue("a", "A", "audio", { parentId: "g" }),
       testCue("b", "B", "audio"),
     ]);
-    const group = useProjectStore
-      .getState()
-      .cueLists[0].cues.find((c) => c.id === "g")!;
+    const group = useProjectStore.getState().cueLists[0].cues.find((c) => c.id === "g")!;
 
     triggerGoAndAdvance(group);
 
@@ -68,10 +56,7 @@ describe("triggerGoAndAdvance", () => {
 
 describe("triggerGoSelected", () => {
   beforeEach(() => {
-    resetTestProject([
-      testCue("a", "A", "audio"),
-      testCue("b", "B", "audio"),
-    ]);
+    resetTestProject([testCue("a", "A", "audio"), testCue("b", "B", "audio")]);
     resetTransport();
     useUiStore.setState({ collapsedCueGroupIds: [] });
     useFadeStore.setState({ fadesByTargetId: {}, dmxFadesByFadeCueId: {}, frameMs: 0 });

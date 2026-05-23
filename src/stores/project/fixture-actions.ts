@@ -1,7 +1,7 @@
-import type { Fixture } from "../../types/fixture";
-import { createFixture, normalizeFixture } from "../../lib/fixtures";
-import { ensureFixturePlot } from "../../lib/fixture-plot";
 import type { StoreApi } from "zustand";
+import { ensureFixturePlot } from "../../lib/fixture-plot";
+import { createFixture, normalizeFixture } from "../../lib/fixtures";
+import type { Fixture } from "../../types/fixture";
 import type { ProjectState } from "./types";
 
 type ProjectStore = StoreApi<ProjectState>;
@@ -15,10 +15,7 @@ export function createFixtureActions(
       const fixture = createFixture(get().fixtures, overrides);
       set((state) => ({
         fixtures: [...state.fixtures, fixture],
-        fixturePlot: ensureFixturePlot(state.fixturePlot, [
-          ...state.fixtures,
-          fixture,
-        ]),
+        fixturePlot: ensureFixturePlot(state.fixturePlot, [...state.fixtures, fixture]),
       }));
       return fixture;
     },
@@ -28,18 +25,14 @@ export function createFixtureActions(
         fixtures: state.fixtures.filter((fixture) => fixture.id !== id),
         fixturePlot: {
           ...state.fixturePlot,
-          entries: state.fixturePlot.entries.filter(
-            (entry) => entry.fixtureId !== id,
-          ),
+          entries: state.fixturePlot.entries.filter((entry) => entry.fixtureId !== id),
         },
       })),
 
     updateFixture: (id, patch) =>
       set((state) => ({
         fixtures: state.fixtures.map((fixture) =>
-          fixture.id === id
-            ? normalizeFixture({ ...fixture, ...patch, id: fixture.id })
-            : fixture,
+          fixture.id === id ? normalizeFixture({ ...fixture, ...patch, id: fixture.id }) : fixture,
         ),
       })),
 

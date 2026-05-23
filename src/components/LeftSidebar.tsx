@@ -53,15 +53,10 @@ export function LeftSidebar() {
           }}
         >
           <PlayArrowIcon fontSize="small" aria-hidden />
-          <Typography
-            variant="subtitle2"
-            sx={{ flex: 1, m: 0 }}
-          >
+          <Typography variant="subtitle2" sx={{ flex: 1, m: 0 }}>
             Active cues
           </Typography>
-          {activeCount > 0 && (
-            <Chip label={activeCount} size="small" color="success" />
-          )}
+          {activeCount > 0 && <Chip label={activeCount} size="small" color="success" />}
         </Stack>
         <Box
           role="region"

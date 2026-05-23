@@ -1,13 +1,10 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import {
-  dmxCueDataEqual,
-  snapshotDmxCueData,
-} from "../lib/dmx-preview-session";
+import { dmxCueDataEqual, snapshotDmxCueData } from "../lib/dmx-preview-session";
+import type { DmxCueData } from "../types/cue";
 import { getActiveCueListFromState } from "./project/helpers";
 import type { ProjectState } from "./project/types";
 import { useUiStore } from "./ui";
-import type { DmxCueData } from "../types/cue";
 
 export type DmxPreviewPendingAction =
   | { type: "none" }
@@ -63,9 +60,7 @@ function setPreviewCueIds(cueIds: string[]): void {
 }
 
 function endPreviewImmediate(cueId: string): void {
-  const preview = useUiStore
-    .getState()
-    .dmxPreviewCueIds.filter((id) => id !== cueId);
+  const preview = useUiStore.getState().dmxPreviewCueIds.filter((id) => id !== cueId);
   setPreviewCueIds(preview);
   useDmxPreviewSessionStore.setState((state) =>
     state.session?.cueId === cueId ? { session: null } : {},
@@ -84,10 +79,7 @@ function openConfirm(state: DmxPreviewConfirmState): void {
   useDmxPreviewSessionStore.setState({ confirm: state });
 }
 
-function applyConfirmChoice(
-  keepChanges: boolean,
-  confirm: DmxPreviewConfirmState,
-): void {
+function applyConfirmChoice(keepChanges: boolean, confirm: DmxPreviewConfirmState): void {
   if (!keepChanges) {
     projectState().updateCue(confirm.cueId, { dmx: confirm.baselineDmx });
   }
@@ -191,9 +183,7 @@ export const useDmxPreviewSessionStore = create<DmxPreviewSessionState>()(
 
       clearSessionForCue: (cueId) => {
         endPreviewImmediate(cueId);
-        set((state) =>
-          state.confirm?.cueId === cueId ? { confirm: null } : {},
-        );
+        set((state) => (state.confirm?.cueId === cueId ? { confirm: null } : {}));
       },
     }),
     { name: "DmxPreviewSessionStore" },

@@ -8,11 +8,7 @@ type GscLogoProps = SVGProps<SVGSVGElement> & {
   color?: string;
 };
 
-export function GscLogo({
-  size = 32,
-  color = GSC_LOGO_COLOR,
-  ...rest
-}: GscLogoProps) {
+export function GscLogo({ size = 32, color = GSC_LOGO_COLOR, ...rest }: GscLogoProps) {
   const block = 18;
   const gap = 2;
   const rowGap = 2;
@@ -32,6 +28,7 @@ export function GscLogo({
       aria-hidden={rest["aria-label"] ? undefined : true}
       {...rest}
     >
+      <title>GSC</title>
       <rect x={xSquare} y={y} width={block} height={block} fill={color} />
       {rowYs.map((rowY, i) => (
         <rect

@@ -30,11 +30,7 @@ export type AssetKind = Exclude<
   | "lightFade"
 >;
 
-export type MidiMessageKind =
-  | "note-on"
-  | "note-off"
-  | "control-change"
-  | "program-change";
+export type MidiMessageKind = "note-on" | "note-off" | "control-change" | "program-change";
 
 export interface MidiCueData {
   channel: number;

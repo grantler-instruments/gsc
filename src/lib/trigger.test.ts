@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { triggerGo, triggerStopCue } from "./trigger";
 import { useFadeStore } from "../stores/fade";
 import { useTransportStore } from "../stores/transport";
 import { testCue } from "../test/fixtures/cues";
+import { triggerGo, triggerStopCue } from "./trigger";
 
 function resetTransport() {
   useTransportStore.setState({

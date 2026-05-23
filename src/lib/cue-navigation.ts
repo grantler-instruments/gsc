@@ -1,12 +1,8 @@
-import {
-  flattenVisibleCueIds,
-  getPrimarySelectedCueId,
-  isCueDescendantOf,
-} from "./cue-selection";
-import { isContainerCue } from "./cues";
-import { canEditProject } from "./show-mode";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
+import { flattenVisibleCueIds, getPrimarySelectedCueId, isCueDescendantOf } from "./cue-selection";
+import { isContainerCue } from "./cues";
+import { canEditProject } from "./show-mode";
 
 /** Select next/previous cue in visible list order (respects collapsed groups). */
 export function selectAdjacentVisibleCue(direction: 1 | -1): void {
@@ -46,10 +42,7 @@ export function selectNextCueAfterGo(triggeredCueId: string): void {
 
   for (let i = startIndex + 1; i < order.length; i++) {
     const id = order[i];
-    if (
-      skipDescendantsOf &&
-      isCueDescendantOf(cues, skipDescendantsOf, id)
-    ) {
+    if (skipDescendantsOf && isCueDescendantOf(cues, skipDescendantsOf, id)) {
       continue;
     }
     useProjectStore.getState().selectCue(id);

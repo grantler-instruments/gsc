@@ -1,23 +1,20 @@
-import { getLoopPlayCount } from "./loop";
-import { getPlaybackSliceSec } from "./playback-slice";
+import { resolveAssetBlob } from "../platform/vfs-asset";
 import { resolveEffectiveOpacity, resolveEffectiveVolume } from "../stores/fade";
-import type { Cue } from "../types/cue";
-import type { OutputLayer, OutputState } from "../types/output";
 import { usePlaybackStore } from "../stores/playback";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
-import { resolveAssetBlob } from "../platform/vfs-asset";
+import type { Cue } from "../types/cue";
+import type { OutputLayer, OutputState } from "../types/output";
 import { vfsGetObjectUrl } from "../vfs/engine";
+import { getLoopPlayCount } from "./loop";
 import { getMediaDurationSec } from "./media-duration";
+import { getPlaybackSliceSec } from "./playback-slice";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
-async function buildLayer(
-  cue: Cue,
-  goAtMs: number,
-): Promise<OutputLayer | undefined> {
+async function buildLayer(cue: Cue, goAtMs: number): Promise<OutputLayer | undefined> {
   if ((cue.type !== "video" && cue.type !== "image") || !cue.assetPath) {
     return undefined;
   }
@@ -26,8 +23,7 @@ async function buildLayer(
   const objectUrl = vfsGetObjectUrl(cue.assetPath);
   if (!objectUrl) return undefined;
 
-  const sourceDurationSec =
-    cue.type === "video" ? getMediaDurationSec(cue.assetPath) : undefined;
+  const sourceDurationSec = cue.type === "video" ? getMediaDurationSec(cue.assetPath) : undefined;
   const sliceSec = getPlaybackSliceSec(cue, sourceDurationSec);
   const inTime = cue.inTime ?? 0;
   const loopCount = cue.type === "video" ? getLoopPlayCount(cue) : 1;
@@ -63,9 +59,7 @@ export async function buildOutputState(revision: number): Promise<OutputState> {
     if (!cue) continue;
 
     const progress = progressByCueId[cueId];
-    const goAtMs =
-      cueStartedAtMs[cueId] ??
-      (progress ? now - progress.elapsedSec * 1000 : now);
+    const goAtMs = cueStartedAtMs[cueId] ?? (progress ? now - progress.elapsedSec * 1000 : now);
 
     const layer = await buildLayer(cue, goAtMs);
     if (layer) layers.push(layer);

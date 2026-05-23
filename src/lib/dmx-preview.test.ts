@@ -1,12 +1,8 @@
-import { describe, expect, it, beforeEach } from "vitest";
-import {
-  buildDmxPreviewFrames,
-  isDmxPreviewableCue,
-  listDmxPreviewCues,
-} from "./dmx-preview";
-import { getDmxChannelLevel, resetDmxOutputBuffers } from "./dmx";
+import { beforeEach, describe, expect, it } from "vitest";
 import type { Cue } from "../types/cue";
 import type { Fixture } from "../types/fixture";
+import { getDmxChannelLevel, resetDmxOutputBuffers } from "./dmx";
+import { buildDmxPreviewFrames, isDmxPreviewableCue, listDmxPreviewCues } from "./dmx-preview";
 
 function fixture(id: string): Fixture {
   return {
@@ -40,10 +36,7 @@ describe("dmx-preview", () => {
     const fixtures = [fixture("a")];
     expect(isDmxPreviewableCue(lightCue("c1", [1, 2]), fixtures)).toBe(true);
     expect(
-      isDmxPreviewableCue(
-        { id: "c2", number: "2", name: "Fade", type: "lightFade" },
-        fixtures,
-      ),
+      isDmxPreviewableCue({ id: "c2", number: "2", name: "Fade", type: "lightFade" }, fixtures),
     ).toBe(false);
   });
 
@@ -61,9 +54,6 @@ describe("dmx-preview", () => {
     const fixtures = [fixture("a")];
     const cues = [lightCue("b", [0, 0]), lightCue("a", [0, 0])];
 
-    expect(listDmxPreviewCues(cues, ["a", "b"], fixtures).map((cue) => cue.id)).toEqual([
-      "b",
-      "a",
-    ]);
+    expect(listDmxPreviewCues(cues, ["a", "b"], fixtures).map((cue) => cue.id)).toEqual(["b", "a"]);
   });
 });

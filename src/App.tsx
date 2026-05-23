@@ -1,15 +1,15 @@
 import Box from "@mui/material/Box";
+import { AppSnackbar } from "./components/AppSnackbar";
 import { CueInspector } from "./components/CueInspector";
 import { CueList } from "./components/CueList";
+import { DmxPreviewConfirmDialog } from "./components/DmxPreviewConfirmDialog";
 import { LeftSidebar } from "./components/LeftSidebar";
-import { RightSidebar } from "./components/RightSidebar";
 import { ProjectToolbar } from "./components/ProjectToolbar";
+import { RightSidebar } from "./components/RightSidebar";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { TransportBar } from "./components/TransportBar";
 import { useAppRuntime } from "./hooks/useAppRuntime";
 import { getPrimarySelectedCueId } from "./lib/cue-selection";
-import { AppSnackbar } from "./components/AppSnackbar";
-import { DmxPreviewConfirmDialog } from "./components/DmxPreviewConfirmDialog";
 import { useActiveCueList, useProjectStore } from "./stores/project";
 import { useUiStore } from "./stores/ui";
 
@@ -18,8 +18,7 @@ function App() {
   const showMode = useUiStore((s) => s.showMode);
   const fixtures = useProjectStore((s) => s.fixtures);
   const selectedCueIds = useActiveCueList().selectedCueIds;
-  const hasSelectedCue =
-    getPrimarySelectedCueId(selectedCueIds) !== null;
+  const hasSelectedCue = getPrimarySelectedCueId(selectedCueIds) !== null;
   const hasFixtures = fixtures.length > 0;
 
   if (!sessionReady) {

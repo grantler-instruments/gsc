@@ -1,16 +1,11 @@
-import {
-  createContext,
-  useContext,
-  useMemo,
-  type ReactNode,
-} from "react";
-import type { AssetDragPayload } from "../../lib/drag";
+import { createContext, type ReactNode, useContext, useMemo } from "react";
 import { applyAssetPayloads } from "../../lib/asset-drop";
+import type { AssetDragPayload } from "../../lib/drag";
 import { triggerGoAndAdvance } from "../../lib/transport-actions";
-import type { Cue } from "../../types/cue";
-import type { RunningSequence } from "../../stores/transport";
 import { useProjectStore } from "../../stores/project";
+import type { RunningSequence } from "../../stores/transport";
 import { useUiStore } from "../../stores/ui";
+import type { Cue } from "../../types/cue";
 
 export interface CueListActionsContextValue {
   canEdit: boolean;
@@ -24,17 +19,11 @@ export interface CueListActionsContextValue {
   onCreateLightFade: (cueId: string) => void;
   onAssetDrop: (cueId: string, payload: AssetDragPayload) => void;
   onCueDrop: (draggedId: string, groupId: string) => void;
-  onCueReorder: (
-    draggedId: string,
-    targetId: string,
-    place: "before" | "after",
-  ) => void;
+  onCueReorder: (draggedId: string, targetId: string, place: "before" | "after") => void;
   onToggleExpand: (groupId: string) => void;
 }
 
-const CueListActionsContext = createContext<CueListActionsContextValue | null>(
-  null,
-);
+const CueListActionsContext = createContext<CueListActionsContextValue | null>(null);
 
 export function useCueListActions(): CueListActionsContextValue {
   const ctx = useContext(CueListActionsContext);
@@ -72,10 +61,8 @@ export function CueListActionsProvider({
       onGo: (cue) => triggerGoAndAdvance(cue),
       onRemove: removeCue,
       onCreateStop: addStopCueForTarget,
-      onCreateVolumeFade: (cueId) =>
-        addFadeCueForTarget(cueId, "volumeFade"),
-      onCreateOpacityFade: (cueId) =>
-        addFadeCueForTarget(cueId, "opacityFade"),
+      onCreateVolumeFade: (cueId) => addFadeCueForTarget(cueId, "volumeFade"),
+      onCreateOpacityFade: (cueId) => addFadeCueForTarget(cueId, "opacityFade"),
       onCreateLightFade: (cueId) => addFadeCueForTarget(cueId, "lightFade"),
       onAssetDrop: (cueId, payload) => {
         applyAssetPayloads([payload], { kind: "row", cueId });
@@ -97,9 +84,5 @@ export function CueListActionsProvider({
     ],
   );
 
-  return (
-    <CueListActionsContext.Provider value={value}>
-      {children}
-    </CueListActionsContext.Provider>
-  );
+  return <CueListActionsContext.Provider value={value}>{children}</CueListActionsContext.Provider>;
 }

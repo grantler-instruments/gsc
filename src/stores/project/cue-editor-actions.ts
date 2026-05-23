@@ -1,3 +1,4 @@
+import type { StoreApi } from "zustand";
 import { getPrimarySelectedCueId } from "../../lib/cue-selection";
 import {
   appendCueInList,
@@ -7,18 +8,12 @@ import {
   isStopCue,
   reorderSiblingCues,
 } from "../../lib/cues";
-import {
-  defaultFadeCueFields,
-  fadeCueLabel,
-  isValidFadeTarget,
-} from "../../lib/fade";
 import { defaultDmxCueData, normalizeDmxCueData } from "../../lib/dmx";
+import { defaultFadeCueFields, fadeCueLabel, isValidFadeTarget } from "../../lib/fade";
 import { defaultMidiCueData } from "../../lib/midi";
 import { defaultOscCueData } from "../../lib/osc";
 import { canEditProject } from "../../lib/show-mode";
 import type { Cue } from "../../types/cue";
-import type { StoreApi } from "zustand";
-import type { ProjectState } from "./types";
 import {
   applyRenumber,
   firstCueOrStub,
@@ -26,6 +21,7 @@ import {
   isMediaCueType,
   patchActiveList,
 } from "./helpers";
+import type { ProjectState } from "./types";
 
 type ProjectStore = StoreApi<ProjectState>;
 
@@ -188,9 +184,7 @@ export function createCueEditorActions(
         name: fadeCueLabel(fadeType),
         type: fadeType,
         ...defaultFadeCueFields(fadeType),
-        ...(fadeType === "lightFade"
-          ? { dmx: defaultDmxCueData(get().fixtures) }
-          : {}),
+        ...(fadeType === "lightFade" ? { dmx: defaultDmxCueData(get().fixtures) } : {}),
       };
       const next = applyRenumber(appendCueInList(active.cues, fadeCue));
       set({
@@ -249,9 +243,7 @@ export function createCueEditorActions(
       if (!canEditProject()) return;
       set((s) => ({
         ...patchActiveList(s, (list) => ({
-          cues: applyRenumber(
-            list.cues.map((c) => (c.id === id ? { ...c, ...patch } : c)),
-          ),
+          cues: applyRenumber(list.cues.map((c) => (c.id === id ? { ...c, ...patch } : c))),
         })),
       }));
     },
@@ -276,19 +268,12 @@ export function createCueEditorActions(
 
       set((s) =>
         patchActiveList(s, (list) => {
-          const selectedCueIds = list.selectedCueIds.filter(
-            (cid) => !toRemove.has(cid),
-          );
-          const anchorRemoved =
-            list.selectionAnchorId && toRemove.has(list.selectionAnchorId);
+          const selectedCueIds = list.selectedCueIds.filter((cid) => !toRemove.has(cid));
+          const anchorRemoved = list.selectionAnchorId && toRemove.has(list.selectionAnchorId);
           return {
-            cues: applyRenumber(
-              list.cues.filter((c) => !toRemove.has(c.id)),
-            ),
+            cues: applyRenumber(list.cues.filter((c) => !toRemove.has(c.id))),
             selectedCueIds,
-            selectionAnchorId: anchorRemoved
-              ? (selectedCueIds[0] ?? null)
-              : list.selectionAnchorId,
+            selectionAnchorId: anchorRemoved ? (selectedCueIds[0] ?? null) : list.selectionAnchorId,
           };
         }),
       );
@@ -307,9 +292,7 @@ export function createCueEditorActions(
         if (groupId === cueId) return;
         const isDescendant = (ancestorId: string, targetId: string): boolean =>
           getChildCues(cues, ancestorId).some(
-            (c) =>
-              c.id === targetId ||
-              (isContainerCue(c) && isDescendant(c.id, targetId)),
+            (c) => c.id === targetId || (isContainerCue(c) && isDescendant(c.id, targetId)),
           );
         if (isContainerCue(cue) && isDescendant(cueId, groupId)) return;
       }
@@ -317,9 +300,7 @@ export function createCueEditorActions(
       set((s) => ({
         ...patchActiveList(s, (list) => ({
           cues: applyRenumber(
-            list.cues.map((c) =>
-              c.id === cueId ? { ...c, parentId: groupId ?? undefined } : c,
-            ),
+            list.cues.map((c) => (c.id === cueId ? { ...c, parentId: groupId ?? undefined } : c)),
           ),
         })),
       }));
@@ -335,12 +316,7 @@ export function createCueEditorActions(
     reorderCueRelative: (draggedId, targetId, place) => {
       if (!canEditProject()) return;
       const active = getActiveCueListFromState(get());
-      const next = reorderSiblingCues(
-        active.cues,
-        draggedId,
-        targetId,
-        place,
-      );
+      const next = reorderSiblingCues(active.cues, draggedId, targetId, place);
       if (!next) return;
       set({
         ...patchActiveList(get(), () => ({

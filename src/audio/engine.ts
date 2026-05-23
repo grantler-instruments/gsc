@@ -1,9 +1,9 @@
 import { getLoopPlayCount } from "../lib/loop";
-import { resolveEffectiveVolume } from "../stores/fade";
 import { getMediaDurationSec } from "../lib/media-duration";
+import { resolveAssetBlob } from "../platform/vfs-asset";
+import { resolveEffectiveVolume } from "../stores/fade";
 import type { Cue } from "../types/cue";
 import { getCachedAudioBuffer, loadAudioBuffer } from "./buffer-cache";
-import { resolveAssetBlob } from "../platform/vfs-asset";
 import {
   startVideoVoice,
   stopVideoVoice,
@@ -105,8 +105,7 @@ export class AudioEngine {
 
     const gain = ctx.createGain();
     gain.gain.value =
-      clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) *
-      clamp01(masterVolume);
+      clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) * clamp01(masterVolume);
 
     source.connect(gain);
     gain.connect(ctx.destination);
@@ -136,16 +135,11 @@ export class AudioEngine {
     this.voices.set(cue.id, { source, gain, goAtMs });
   }
 
-  private updateVoiceGain(
-    cueId: string,
-    cue: Cue,
-    masterVolume: number,
-  ): void {
+  private updateVoiceGain(cueId: string, cue: Cue, masterVolume: number): void {
     const voice = this.voices.get(cueId);
     if (!voice) return;
     voice.gain.gain.value =
-      clamp01(resolveEffectiveVolume(cueId, cue.volume ?? 1)) *
-      clamp01(masterVolume);
+      clamp01(resolveEffectiveVolume(cueId, cue.volume ?? 1)) * clamp01(masterVolume);
   }
 
   /** Refresh gain for all active voices (e.g. during a volume fade). */
@@ -217,18 +211,12 @@ export class AudioEngine {
         }
         if (generation !== this.syncGeneration) return;
 
-        const voice = startVideoVoice(
-          cue,
-          ctx,
-          masterVolume,
-          goAtMs,
-          (id) => {
-            if (this.videoVoices.get(id) === voice) {
-              this.stopVideoVoice(id);
-              this.handleVoiceEnded(id);
-            }
-          },
-        );
+        const voice = startVideoVoice(cue, ctx, masterVolume, goAtMs, (id) => {
+          if (this.videoVoices.get(id) === voice) {
+            this.stopVideoVoice(id);
+            this.handleVoiceEnded(id);
+          }
+        });
 
         if (!voice) {
           console.warn(`[audio] Missing video asset in VFS: ${cue.assetPath}`);
@@ -281,11 +269,9 @@ export class AudioEngine {
       }
 
       const missingAudio =
-        targetAudio.size > 0 &&
-        [...targetAudio].every((id) => !this.voices.has(id));
+        targetAudio.size > 0 && [...targetAudio].every((id) => !this.voices.has(id));
       const missingVideo =
-        targetVideo.size > 0 &&
-        [...targetVideo].every((id) => !this.videoVoices.has(id));
+        targetVideo.size > 0 && [...targetVideo].every((id) => !this.videoVoices.has(id));
 
       if (missingAudio || missingVideo) {
         console.warn(
@@ -298,10 +284,7 @@ export class AudioEngine {
   }
 
   getAssetDurationSec(assetPath: string): number | undefined {
-    return (
-      getCachedAudioBuffer(assetPath)?.duration ??
-      getMediaDurationSec(assetPath)
-    );
+    return getCachedAudioBuffer(assetPath)?.duration ?? getMediaDurationSec(assetPath);
   }
 
   async stopAll(): Promise<void> {

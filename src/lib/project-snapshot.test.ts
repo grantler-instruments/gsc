@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createCueList } from "./cue-lists";
-import { cueListsToSnapshot, snapshotToCueLists } from "./project-snapshot";
 import { testCue } from "../test/fixtures/cues";
 import type { Fixture } from "../types/fixture";
+import { createCueList } from "./cue-lists";
+import { cueListsToSnapshot, snapshotToCueLists } from "./project-snapshot";
 
 describe("project snapshot round-trip", () => {
   it("preserves cue lists and midi mappings through snapshot", () => {
@@ -16,19 +16,13 @@ describe("project snapshot round-trip", () => {
       }),
     ];
 
-    const snap = cueListsToSnapshot(
-      "project-1",
-      "My Show",
-      [list],
-      list.id,
-      [
-        {
-          id: "map-1",
-          match: { channel: 1, kind: "note-on", note: 36, velocity: 127 },
-          action: { type: "go-cue", cueId: "a" },
-        },
-      ],
-    );
+    const snap = cueListsToSnapshot("project-1", "My Show", [list], list.id, [
+      {
+        id: "map-1",
+        match: { channel: 1, kind: "note-on", note: 36, velocity: 127 },
+        action: { type: "go-cue", cueId: "a" },
+      },
+    ]);
 
     const loaded = snapshotToCueLists(snap);
     expect(loaded.id).toBe("project-1");
@@ -71,14 +65,7 @@ describe("project snapshot round-trip", () => {
       },
     ];
 
-    const snap = cueListsToSnapshot(
-      "project-1",
-      "My Show",
-      [list],
-      list.id,
-      [],
-      fixtures,
-    );
+    const snap = cueListsToSnapshot("project-1", "My Show", [list], list.id, [], fixtures);
 
     const loaded = snapshotToCueLists(snap);
     expect(loaded.fixtures).toEqual(fixtures);

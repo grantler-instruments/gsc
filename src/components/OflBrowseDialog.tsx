@@ -12,6 +12,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { notifyErrorFromUnknown } from "../lib/notifications";
 import {
   fetchOflFixtureList,
   fetchOflManufacturers,
@@ -20,8 +21,12 @@ import {
 } from "../lib/ofl/client";
 import { oflFixturePageUrl, oflFixtureRawUrl } from "../lib/ofl/constants";
 import { importOflFixtureJson } from "../lib/ofl/import-ofl";
-import type { OflFixtureListEntry, OflFixtureSummary, OflManufacturer, OflModeSummary } from "../lib/ofl/types";
-import { notifyErrorFromUnknown } from "../lib/notifications";
+import type {
+  OflFixtureListEntry,
+  OflFixtureSummary,
+  OflManufacturer,
+  OflModeSummary,
+} from "../lib/ofl/types";
 import { inspectorFieldLabelSx, inspectorFieldSx } from "./inspectorSx";
 
 export interface OflBrowseImportPayload {
@@ -292,10 +297,7 @@ export function OflBrowseDialog({
                     <Typography noWrap sx={{ fontSize: 13, m: 0 }}>
                       {entry.name}
                     </Typography>
-                    <Typography
-                      noWrap
-                      sx={{ fontSize: 11, m: 0, color: "text.secondary" }}
-                    >
+                    <Typography noWrap sx={{ fontSize: 11, m: 0, color: "text.secondary" }}>
                       {entry.fixtureKey}
                     </Typography>
                   </Box>

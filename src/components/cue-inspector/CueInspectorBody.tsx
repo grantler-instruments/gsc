@@ -1,14 +1,9 @@
 import Box from "@mui/material/Box";
-import {
-  isContainerCue,
-  isFadeCue,
-  isStopCue,
-  isWaitCue,
-} from "../../lib/cues";
 import { getCueAssetWarning } from "../../lib/cue-asset";
+import { isContainerCue, isFadeCue, isStopCue, isWaitCue } from "../../lib/cues";
 import type { Cue, MidiCueData, OscCueData } from "../../types/cue";
-import { CueAssetAssign } from "../CueAssetAssign";
 import { ContainerInspectorFields } from "../ContainerInspectorFields";
+import { CueAssetAssign } from "../CueAssetAssign";
 import { FadeInspectorFields } from "../FadeInspectorFields";
 import { StopInspectorFields } from "../StopInspectorFields";
 import { WaitInspectorFields } from "../WaitInspectorFields";

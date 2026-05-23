@@ -7,11 +7,7 @@ interface ActiveCueLevelControlProps {
   onChange: (value: number) => void;
 }
 
-export function ActiveCueLevelControl({
-  label,
-  value,
-  onChange,
-}: ActiveCueLevelControlProps) {
+export function ActiveCueLevelControl({ label, value, onChange }: ActiveCueLevelControlProps) {
   return (
     <Box
       component="label"

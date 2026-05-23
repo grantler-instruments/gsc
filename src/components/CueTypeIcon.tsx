@@ -1,21 +1,21 @@
-import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import AudiotrackIcon from "@mui/icons-material/Audiotrack";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import HubIcon from "@mui/icons-material/Hub";
 import ImageIcon from "@mui/icons-material/Image";
 import LayersIcon from "@mui/icons-material/Layers";
+import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import PianoIcon from "@mui/icons-material/Piano";
 import PlaylistPlayIcon from "@mui/icons-material/PlaylistPlay";
-import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
-import VolumeDownIcon from "@mui/icons-material/VolumeDown";
 import VideocamIcon from "@mui/icons-material/Videocam";
+import VolumeDownIcon from "@mui/icons-material/VolumeDown";
 import Box from "@mui/material/Box";
-import type { SxProps, Theme } from "@mui/material/styles";
 import type { SvgIconProps } from "@mui/material/SvgIcon";
+import type { SxProps, Theme } from "@mui/material/styles";
 import type { ElementType } from "react";
-import type { AssetKind, CueType } from "../types/cue";
 import { cueTypeBadgeSx } from "../theme/cueStyles";
+import type { AssetKind, CueType } from "../types/cue";
 
 const CUE_TYPE_ICONS: Record<CueType, ElementType<SvgIconProps>> = {
   audio: AudiotrackIcon,
@@ -49,10 +49,7 @@ const CUE_TYPE_LABELS: Record<CueType, string> = {
   lightFade: "Light fade",
 };
 
-export function CueTypeIcon({
-  type,
-  ...props
-}: { type: CueType | AssetKind } & SvgIconProps) {
+export function CueTypeIcon({ type, ...props }: { type: CueType | AssetKind } & SvgIconProps) {
   const Icon = CUE_TYPE_ICONS[type];
   return <Icon fontSize="inherit" aria-hidden {...props} />;
 }
@@ -69,10 +66,7 @@ export function CueTypeBadge({
   compact?: boolean;
   sx?: SxProps<Theme>;
 }) {
-  const label =
-    type in CUE_TYPE_LABELS
-      ? CUE_TYPE_LABELS[type as CueType]
-      : String(type);
+  const label = type in CUE_TYPE_LABELS ? CUE_TYPE_LABELS[type as CueType] : String(type);
   return (
     <Box
       component="span"

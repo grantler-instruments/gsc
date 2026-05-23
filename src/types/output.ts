@@ -24,8 +24,6 @@ export interface OutputState {
   layers: OutputLayer[];
 }
 
-export type OutputMessage =
-  | { type: "state"; payload: OutputState }
-  | { type: "request-state" };
+export type OutputMessage = { type: "state"; payload: OutputState } | { type: "request-state" };
 
 export const OUTPUT_CHANNEL_NAME = "gsc-output";

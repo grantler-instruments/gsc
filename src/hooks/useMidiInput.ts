@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { handleIncomingMidi } from "../lib/midi-mapping";
 import { parseMidiMessage } from "../lib/midi";
+import { handleIncomingMidi } from "../lib/midi-mapping";
 import { openMidiInput } from "../platform/receive-midi";
 import { usePreferencesStore } from "../stores/preferences";
 import { useProjectStore } from "../stores/project";

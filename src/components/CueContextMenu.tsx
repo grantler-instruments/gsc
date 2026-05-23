@@ -44,9 +44,7 @@ export function CueContextMenu({
       open={menu !== null}
       onClose={onClose}
       anchorReference="anchorPosition"
-      anchorPosition={
-        menu ? { top: menu.mouseY, left: menu.mouseX } : undefined
-      }
+      anchorPosition={menu ? { top: menu.mouseY, left: menu.mouseX } : undefined}
     >
       <MenuItem
         onClick={() => {

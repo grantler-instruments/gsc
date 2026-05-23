@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { syncCueTriggerEngine } from "../lib/cue-trigger-engine-sync";
 import { sendOscMessage } from "../platform/send-osc";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
@@ -23,26 +24,13 @@ export function useOscEngine(): void {
       const list = getActiveCueListFromState(useProjectStore.getState());
       if (!list) return;
 
-      const cueById = new Map(list.cues.map((c) => [c.id, c]));
-      const activeSet = new Set(activeCueIds);
-
-      for (const id of activeCueIds) {
-        const startedAt = cueStartedAtMs[id];
-        if (startedAt === undefined) continue;
-        if (lastFiredAtMsRef.current.get(id) === startedAt) continue;
-
-        const cue = cueById.get(id);
-        if (cue?.type === "osc") {
-          fireOscCue(cue);
-        }
-        lastFiredAtMsRef.current.set(id, startedAt);
-      }
-
-      for (const id of [...lastFiredAtMsRef.current.keys()]) {
-        if (!activeSet.has(id)) {
-          lastFiredAtMsRef.current.delete(id);
-        }
-      }
+      syncCueTriggerEngine({
+        transport: { activeCueIds, cueStartedAtMs },
+        cues: list.cues,
+        cueType: "osc",
+        lastFiredAtMs: lastFiredAtMsRef.current,
+        onFire: fireOscCue,
+      });
     };
 
     sync();

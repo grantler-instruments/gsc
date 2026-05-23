@@ -32,7 +32,7 @@ export function VisualMonitor({ variant = "default" }: VisualMonitorProps) {
       </Typography>
       <VisualStage
         layers={layers}
-        role="control"
+        stageRole="control"
         sx={{
           height: sidebar ? "auto" : 200,
           ...(sidebar && { aspectRatio: "16 / 9", minHeight: 0 }),

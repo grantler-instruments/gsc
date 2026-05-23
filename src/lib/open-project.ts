@@ -1,11 +1,11 @@
-import { setActiveProjectId } from "./active-project-id";
-import { collectSessionAssetPaths } from "./project-session";
-import { snapshotToCueLists } from "./project-snapshot";
-import type { ProjectSnapshot } from "../types/cue";
 import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
 import { useVfsStore } from "../stores/vfs";
+import type { ProjectSnapshot } from "../types/cue";
 import { hydrateVfsFromProjectCache, vfsClear } from "../vfs/engine";
+import { setActiveProjectId } from "./active-project-id";
+import { collectSessionAssetPaths } from "./project-session";
+import { snapshotToCueLists } from "./project-snapshot";
 
 /** Replace the open project and reload any cached assets for it. */
 export async function openProjectSnapshot(snap: ProjectSnapshot): Promise<void> {

@@ -1,5 +1,5 @@
-import { renumberCueList } from "../../lib/cues";
 import type { CueList } from "../../lib/cue-lists";
+import { renumberCueList } from "../../lib/cues";
 import type { Cue, CueType } from "../../types/cue";
 
 export function isMediaCueType(type: CueType): boolean {
@@ -14,10 +14,7 @@ export function getActiveCueListFromState(state: {
   cueLists: CueList[];
   activeCueListId: string;
 }): CueList {
-  return (
-    state.cueLists.find((l) => l.id === state.activeCueListId) ??
-    state.cueLists[0]
-  );
+  return state.cueLists.find((l) => l.id === state.activeCueListId) ?? state.cueLists[0];
 }
 
 export function patchActiveList(

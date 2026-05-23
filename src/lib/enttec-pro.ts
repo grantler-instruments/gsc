@@ -22,10 +22,7 @@ export function enttecProPacketLabel(universe: number): number | null {
   return null;
 }
 
-export function buildEnttecProPacket(
-  universe: number,
-  data: Uint8Array,
-): Uint8Array | null {
+export function buildEnttecProPacket(universe: number, data: Uint8Array): Uint8Array | null {
   const label = enttecProPacketLabel(universe);
   if (label === null) return null;
 

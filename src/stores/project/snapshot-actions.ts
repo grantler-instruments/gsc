@@ -1,10 +1,7 @@
-import { setActiveProjectId } from "../../lib/active-project-id";
-import {
-  cueListsToSnapshot,
-  snapshotToCueLists,
-} from "../../lib/project-snapshot";
-import { canEditProject } from "../../lib/show-mode";
 import type { StoreApi } from "zustand";
+import { setActiveProjectId } from "../../lib/active-project-id";
+import { cueListsToSnapshot, snapshotToCueLists } from "../../lib/project-snapshot";
+import { canEditProject } from "../../lib/show-mode";
 import type { ProjectState } from "./types";
 
 type ProjectStore = StoreApi<ProjectState>;
@@ -22,8 +19,7 @@ export function createSnapshotActions(
     },
 
     getSnapshot: () => {
-      const { id, name, cueLists, activeCueListId, midiMappings, fixtures, fixturePlot } =
-        get();
+      const { id, name, cueLists, activeCueListId, midiMappings, fixtures, fixturePlot } = get();
       return cueListsToSnapshot(
         id,
         name,

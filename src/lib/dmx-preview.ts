@@ -1,17 +1,9 @@
 import type { Cue } from "../types/cue";
 import type { Fixture } from "../types/fixture";
+import { applyDmxCueToBuffers, getDmxUniverseFrame, resetDmxOutputBuffers } from "./dmx";
 import { isLightFadeReady, resolveLightFadeEndDmx } from "./fade";
-import {
-  applyDmxCueToBuffers,
-  getDmxUniverseFrame,
-  resetDmxOutputBuffers,
-} from "./dmx";
 
-export function isDmxPreviewableCue(
-  cue: Cue,
-  fixtures: Fixture[],
-  cues: Cue[] = [],
-): boolean {
+export function isDmxPreviewableCue(cue: Cue, fixtures: Fixture[], cues: Cue[] = []): boolean {
   if (cue.type === "dmx") return Boolean(cue.dmx);
   if (cue.type === "lightFade") return isLightFadeReady(cue, fixtures, cues);
   return false;
@@ -23,15 +15,11 @@ export function listDmxPreviewCues(
   fixtures: Fixture[],
 ): Cue[] {
   const previewSet = new Set(previewCueIds);
-  return cues.filter(
-    (cue) => previewSet.has(cue.id) && isDmxPreviewableCue(cue, fixtures, cues),
-  );
+  return cues.filter((cue) => previewSet.has(cue.id) && isDmxPreviewableCue(cue, fixtures, cues));
 }
 
 function fixtureUniverses(fixtures: Fixture[]): number[] {
-  return [...new Set(fixtures.map((fixture) => fixture.universe))].sort(
-    (a, b) => a - b,
-  );
+  return [...new Set(fixtures.map((fixture) => fixture.universe))].sort((a, b) => a - b);
 }
 
 export function buildDmxPreviewFrames(
@@ -52,7 +40,5 @@ export function buildDmxPreviewFrames(
     }
   }
 
-  return fixtureUniverses(fixtures).map((universe) =>
-    getDmxUniverseFrame(universe),
-  );
+  return fixtureUniverses(fixtures).map((universe) => getDmxUniverseFrame(universe));
 }

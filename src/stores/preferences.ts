@@ -1,9 +1,6 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import {
-  DEFAULT_ART_NET_HOST,
-  DEFAULT_ART_NET_PORT,
-} from "../lib/dmx";
+import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx";
 import { getPlatform, type PlatformKind } from "../platform";
 
 export type DmxOutputBackend = "artnet" | "enttec-pro";

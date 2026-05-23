@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import type { DmxCueData } from "../types/cue";
 import type { DmxFadePlan } from "../lib/dmx-fade";
 import { handleSequenceFadeCueCompleted } from "../lib/sequence-runner";
+import type { DmxCueData } from "../types/cue";
 
 export type FadeProperty = "opacity" | "volume";
 
@@ -118,8 +118,7 @@ export const useFadeStore = create<FadeState>()(
           return changed ? { fadesByTargetId: next } : s;
         }),
 
-      clearAllFades: () =>
-        set({ fadesByTargetId: {}, dmxFadesByFadeCueId: {}, frameMs: 0 }),
+      clearAllFades: () => set({ fadesByTargetId: {}, dmxFadesByFadeCueId: {}, frameMs: 0 }),
 
       completeDmxFade: (fadeCueId, nowMs) => {
         const fade = get().dmxFadesByFadeCueId[fadeCueId];

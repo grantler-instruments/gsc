@@ -2,8 +2,8 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { clampOscPort } from "../../lib/osc";
 import type { Cue, OscCueData } from "../../types/cue";
-import { OscArgsField } from "../OscArgsField";
 import { inspectorFieldSx, inspectorGroupHintSx } from "../inspectorSx";
+import { OscArgsField } from "../OscArgsField";
 
 interface OscInspectorFieldsProps {
   cue: Cue;
@@ -48,9 +48,7 @@ export function OscInspectorFields({
           max={65535}
           value={osc.port}
           disabled={readOnly}
-          onChange={(e) =>
-            onPatch({ port: clampOscPort(Number(e.currentTarget.value)) })
-          }
+          onChange={(e) => onPatch({ port: clampOscPort(Number(e.currentTarget.value)) })}
         />
       </Box>
 

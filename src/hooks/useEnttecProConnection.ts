@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { connectEnttecPro, disconnectEnttecPro } from "../platform/enttec-pro";
 import { getPlatform } from "../platform";
+import { connectEnttecPro, disconnectEnttecPro } from "../platform/enttec-pro";
 import { usePreferencesStore } from "../stores/preferences";
 
 /** Keeps the Enttec Pro serial connection aligned with settings (desktop only). */

@@ -1,3 +1,4 @@
+import type { Cue } from "../types/cue";
 import {
   expandSequenceSteps,
   isParallelGroup,
@@ -5,11 +6,10 @@ import {
   resolveParallelGoIds,
 } from "./cues";
 import { isFadeCue } from "./fade";
-import { getWaitDurationSec, isWaitCue } from "./wait";
 import { getLoopPlayCount, INFINITE_LOOP_ESTIMATE_SEC } from "./loop";
 import { getMediaDurationSec } from "./media-duration";
 import { getPlaybackSliceSec } from "./playback-slice";
-import type { Cue } from "../types/cue";
+import { getWaitDurationSec, isWaitCue } from "./wait";
 
 const DEFAULT_MEDIA_SEC = 5;
 const DEFAULT_MIDI_SEC = 0.15;
@@ -23,18 +23,12 @@ export function estimateCueDurationMs(cue: Cue, cues: Cue[]): number {
   }
   if (isSequenceGroup(cue)) {
     const steps = expandSequenceSteps(cue.id, cues);
-    return steps.reduce(
-      (sum, step) => sum + estimateStepDurationMs(step, cues),
-      0,
-    );
+    return steps.reduce((sum, step) => sum + estimateStepDurationMs(step, cues), 0);
   }
   return leafDurationMs(cue);
 }
 
-export function estimateStepDurationMs(
-  stepCueIds: string[],
-  cues: Cue[],
-): number {
+export function estimateStepDurationMs(stepCueIds: string[], cues: Cue[]): number {
   if (stepCueIds.length === 0) return 0;
   return Math.max(
     MIN_STEP_SEC * 1000,
@@ -69,9 +63,7 @@ function leafDurationMs(cue: Cue): number {
     return Math.max(MIN_STEP_SEC * 1000, cue.outTime * 1000);
   }
 
-  const sourceDur = cue.assetPath
-    ? getMediaDurationSec(cue.assetPath)
-    : undefined;
+  const sourceDur = cue.assetPath ? getMediaDurationSec(cue.assetPath) : undefined;
   const slice = getPlaybackSliceSec(cue, sourceDur);
   const sliceMs = slice * 1000 + fadeIn + fadeOut;
   const plays = getLoopPlayCount(cue);

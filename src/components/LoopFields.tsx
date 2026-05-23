@@ -18,11 +18,7 @@ interface LoopFieldsProps {
   onChange: (patch: Partial<Cue>) => void;
 }
 
-export function LoopFields({
-  cue,
-  readOnly = false,
-  onChange,
-}: LoopFieldsProps) {
+export function LoopFields({ cue, readOnly = false, onChange }: LoopFieldsProps) {
   const loop = cue.loop ?? false;
   const infinite = loop && isInfiniteLoop(cue);
 
@@ -36,10 +32,7 @@ export function LoopFields({
   };
 
   return (
-    <Box
-      component="fieldset"
-      sx={{ ...inspectorGroupSx, ...inspectorGroupCompactSx }}
-    >
+    <Box component="fieldset" sx={{ ...inspectorGroupSx, ...inspectorGroupCompactSx }}>
       <Box component="legend" sx={inspectorGroupLegendSx}>
         Loop
       </Box>
@@ -63,10 +56,7 @@ export function LoopFields({
 
       {loop && (
         <>
-          <Box
-            component="label"
-            sx={{ ...inspectorFieldSx, "& input": inspectorLoopIterationsSx }}
-          >
+          <Box component="label" sx={{ ...inspectorFieldSx, "& input": inspectorLoopIterationsSx }}>
             Iterations
             <input
               type="text"

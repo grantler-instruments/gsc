@@ -2,10 +2,7 @@ import { useMemo, useState } from "react";
 import { getStopTarget, isStopCue } from "../../lib/cues";
 import type { Cue } from "../../types/cue";
 
-export function useCueListStopHighlights(
-  cues: Cue[],
-  primarySelectedId: string | null,
-) {
+export function useCueListStopHighlights(cues: Cue[], primarySelectedId: string | null) {
   const [hoveredCueId, setHoveredCueId] = useState<string | null>(null);
 
   const hoveredStopTargetId = useMemo(() => {

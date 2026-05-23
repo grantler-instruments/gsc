@@ -18,16 +18,10 @@ async function openWebOutputWindow(): Promise<void> {
     return;
   }
 
-  webOutputWindow = window.open(
-    outputUrl(),
-    OUTPUT_WINDOW_NAME,
-    "noopener,noreferrer",
-  );
+  webOutputWindow = window.open(outputUrl(), OUTPUT_WINDOW_NAME, "noopener,noreferrer");
 
   if (!webOutputWindow) {
-    throw new Error(
-      "Could not open output window. Allow popups for this site and try again.",
-    );
+    throw new Error("Could not open output window. Allow popups for this site and try again.");
   }
 }
 

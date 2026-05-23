@@ -1,6 +1,6 @@
+import type { Cue, FadeCueType } from "../types/cue";
 import { fadeCueLabel, isFadeCue, isLightFadeCue, isValidFadeTarget } from "./fade";
 import { formatWaitDurationLabel, isWaitCue } from "./wait";
-import type { Cue, FadeCueType } from "../types/cue";
 
 export { isWaitCue } from "./wait";
 
@@ -28,18 +28,12 @@ export function isContainerCue(cue: Cue): boolean {
   return isParallelGroup(cue) || isSequenceGroup(cue);
 }
 
-export function getStopTarget(
-  stopCue: Cue,
-  cues: Cue[],
-): Cue | undefined {
+export function getStopTarget(stopCue: Cue, cues: Cue[]): Cue | undefined {
   if (!isStopCue(stopCue) || !stopCue.stopTargetId) return undefined;
   return cues.find((c) => c.id === stopCue.stopTargetId);
 }
 
-export function getFadeTarget(
-  fadeCue: Cue,
-  cues: Cue[],
-): Cue | undefined {
+export function getFadeTarget(fadeCue: Cue, cues: Cue[]): Cue | undefined {
   if (!isFadeCue(fadeCue) || !fadeCue.fadeTargetId) {
     return undefined;
   }
@@ -110,10 +104,7 @@ export function cuesShareParent(a: Cue, b: Cue): boolean {
 }
 
 /** Last cue among siblings of `cueId` (same parentId), in list order. */
-export function getLastSiblingOfCue(
-  cues: Cue[],
-  cueId: string,
-): Cue | undefined {
+export function getLastSiblingOfCue(cues: Cue[], cueId: string): Cue | undefined {
   const cue = cues.find((c) => c.id === cueId);
   if (!cue) return undefined;
   const parentKey = cue.parentId ?? null;
@@ -134,9 +125,7 @@ export function reorderSiblingCues(
   if (!cuesShareParent(dragged, target)) return null;
 
   const parentKey = dragged.parentId ?? null;
-  const siblingIds = cues
-    .filter((c) => (c.parentId ?? null) === parentKey)
-    .map((c) => c.id);
+  const siblingIds = cues.filter((c) => (c.parentId ?? null) === parentKey).map((c) => c.id);
 
   const fromIdx = siblingIds.indexOf(draggedId);
   let insertIdx = siblingIds.indexOf(targetId);
@@ -204,10 +193,7 @@ export function resolveParallelGoIds(cue: Cue, cues: Cue[]): string[] {
  * Ordered steps for a sequence. Each step is cue ids to fire in parallel;
  * steps run one after another.
  */
-export function expandSequenceSteps(
-  sequenceId: string,
-  cues: Cue[],
-): string[][] {
+export function expandSequenceSteps(sequenceId: string, cues: Cue[]): string[][] {
   const steps: string[][] = [];
 
   for (const child of getChildCues(cues, sequenceId)) {
@@ -259,9 +245,7 @@ export function isCueActive(
 
   if (isParallelGroup(cue)) {
     const goIds = resolveParallelGoIds(cue, cues);
-    return (
-      goIds.length > 0 && goIds.every((id) => activeCueIds.includes(id))
-    );
+    return goIds.length > 0 && goIds.every((id) => activeCueIds.includes(id));
   }
 
   return false;
@@ -272,9 +256,7 @@ export function renumberCueList(cues: Cue[]): Cue[] {
 
   const applyLevel = (siblings: Cue[], parentNumber?: string) => {
     siblings.forEach((cue, index) => {
-      const number = parentNumber
-        ? `${parentNumber}.${index + 1}`
-        : String(index + 1);
+      const number = parentNumber ? `${parentNumber}.${index + 1}` : String(index + 1);
       result.set(cue.id, { ...cue, number });
       if (isContainerCue(cue)) {
         applyLevel(getChildCues(cues, cue.id), number);

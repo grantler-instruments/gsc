@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  advanceRunningSequence,
-  notifyFadeCueComplete,
-  runSequence,
-} from "./sequence-runner";
 import { useTransportStore } from "../stores/transport";
 import { testCue } from "../test/fixtures/cues";
+import { advanceRunningSequence, notifyFadeCueComplete, runSequence } from "./sequence-runner";
 
 function resetTransport() {
   useTransportStore.setState({

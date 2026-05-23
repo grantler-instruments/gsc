@@ -22,11 +22,7 @@ function pushDmxPreviewOutput(): void {
 
   syncDmxPreviewSessionWithProject();
 
-  const frames = buildDmxPreviewFrames(
-    activeList.cues,
-    validPreviewCueIds,
-    fixtures,
-  );
+  const frames = buildDmxPreviewFrames(activeList.cues, validPreviewCueIds, fixtures);
   void sendDmxUniverses(frames);
 }
 

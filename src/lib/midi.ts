@@ -114,23 +114,11 @@ export function encodeMidiMessage(data: MidiCueData): number[] {
   const ch = clampMidiChannel(data.channel) - 1;
   switch (data.kind) {
     case "note-on":
-      return [
-        0x90 | ch,
-        clampMidiByte(data.note ?? 60),
-        clampMidiByte(data.velocity ?? 127),
-      ];
+      return [0x90 | ch, clampMidiByte(data.note ?? 60), clampMidiByte(data.velocity ?? 127)];
     case "note-off":
-      return [
-        0x80 | ch,
-        clampMidiByte(data.note ?? 60),
-        clampMidiByte(data.velocity ?? 0),
-      ];
+      return [0x80 | ch, clampMidiByte(data.note ?? 60), clampMidiByte(data.velocity ?? 0)];
     case "control-change":
-      return [
-        0xb0 | ch,
-        clampMidiByte(data.controller ?? 0),
-        clampMidiByte(data.value ?? 0),
-      ];
+      return [0xb0 | ch, clampMidiByte(data.controller ?? 0), clampMidiByte(data.value ?? 0)];
     case "program-change":
       return [0xc0 | ch, clampMidiByte(data.program ?? 0)];
     default:

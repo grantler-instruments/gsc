@@ -1,5 +1,5 @@
-import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import GridViewOutlinedIcon from "@mui/icons-material/GridViewOutlined";
+import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -19,32 +19,32 @@ import {
   prepareFixturesProfileImport,
 } from "../lib/fixture-profile";
 import {
+  addManualFixtureChannel,
   clampStartAddress,
   clampUniverse,
-  addManualFixtureChannel,
   fixtureChannelAddress,
+  fixtureEndAddress,
+  fixtureFitsInUniverse,
   formatFixtureListDetail,
   formatFixturePatch,
-  fixtureFitsInUniverse,
-  fixtureEndAddress,
   getFixtureConflicts,
   manualFixtureChannels,
   removeManualFixtureChannel,
   updateManualFixtureChannelName,
 } from "../lib/fixtures";
+import { notifyErrorFromUnknown } from "../lib/notifications";
 import { collectOflPaths } from "../lib/ofl/import-ofl";
 import { loadFixtureOflProfileForMode, loadOflSummaryFromPath } from "../lib/ofl/load-ofl";
 import { buildFixtureOflProfile, oflProfileChannelCount } from "../lib/ofl/profile";
-import { notifyErrorFromUnknown } from "../lib/notifications";
 import { useProjectStore } from "../stores/project";
-import { useVfsStore } from "../stores/vfs";
-import { vfsGet } from "../vfs/engine";
 import { useUiStore } from "../stores/ui";
-import type { Fixture } from "../types/fixture";
+import { useVfsStore } from "../stores/vfs";
 import { useGscTokens } from "../theme/useGscTokens";
+import type { Fixture } from "../types/fixture";
+import { vfsGet } from "../vfs/engine";
 import { AddFixtureMenu } from "./AddFixtureMenu";
-import { OflBrowseDialog, type OflBrowseImportPayload } from "./OflBrowseDialog";
 import { inspectorFieldLabelSx, inspectorFieldSx } from "./inspectorSx";
+import { OflBrowseDialog, type OflBrowseImportPayload } from "./OflBrowseDialog";
 
 const emptyListSx = {
   py: 2,
@@ -90,10 +90,7 @@ export function FixturesPanel() {
   const handleExportProfile = useCallback(async () => {
     if (!canEdit) return;
     try {
-      const { zip, missing } = await buildFixturesProfileZip(
-        fixtures,
-        readProfileBlob,
-      );
+      const { zip, missing } = await buildFixturesProfileZip(fixtures, readProfileBlob);
       if (missing.length > 0) {
         throw new Error(
           `Missing ${missing.length} fixture profile file${missing.length === 1 ? "" : "s"}.`,
@@ -134,13 +131,7 @@ export function FixturesPanel() {
         notifyErrorFromUnknown(err);
       }
     },
-    [
-      appendFixtures,
-      canEdit,
-      existingProfilePaths,
-      fixtures,
-      syncVfsFromEngine,
-    ],
+    [appendFixtures, canEdit, existingProfilePaths, fixtures, syncVfsFromEngine],
   );
 
   const handleAddFixture = useCallback(() => {
@@ -169,11 +160,7 @@ export function FixturesPanel() {
 
   const handleBrowseImported = useCallback(
     (payload: OflBrowseImportPayload) => {
-      const profile = buildFixtureOflProfile(
-        payload.path,
-        payload.summary,
-        payload.mode,
-      );
+      const profile = buildFixtureOflProfile(payload.path, payload.summary, payload.mode);
       const fixture = addFixture({
         name: `${profile.manufacturer} ${profile.model}`.trim(),
         channelCount: oflProfileChannelCount(profile),
@@ -378,12 +365,7 @@ interface FixtureEditorProps {
   onUpdate: (patch: Partial<Omit<Fixture, "id">>) => void;
 }
 
-function FixtureEditor({
-  fixture,
-  fixtures,
-  readOnly,
-  onUpdate,
-}: FixtureEditorProps) {
+function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorProps) {
   const conflicts = getFixtureConflicts(fixture, fixtures);
   const outOfRange = !fixtureFitsInUniverse(fixture);
   const hasOfl = Boolean(fixture.ofl);
@@ -411,21 +393,18 @@ function FixtureEditor({
 
   const handleModeChange = (modeName: string) => {
     if (!fixture.ofl || readOnly) return;
-    void loadFixtureOflProfileForMode(fixture.ofl, modeName).then(
-      (profile) => {
-        if (!profile) return;
-        onUpdate({
-          ofl: profile,
-          channelCount: oflProfileChannelCount(profile),
-        });
-      },
-    );
+    void loadFixtureOflProfileForMode(fixture.ofl, modeName).then((profile) => {
+      if (!profile) return;
+      onUpdate({
+        ofl: profile,
+        channelCount: oflProfileChannelCount(profile),
+      });
+    });
   };
 
   const handleClearOfl = () => {
     if (readOnly) return;
-    const channels =
-      fixture.ofl?.channels.map((channel) => ({ name: channel.key })) ?? [{}];
+    const channels = fixture.ofl?.channels.map((channel) => ({ name: channel.key })) ?? [{}];
     onUpdate({ ofl: undefined, channels });
   };
 
@@ -523,9 +502,7 @@ function FixtureEditor({
           min={1}
           max={512}
           readOnly={readOnly}
-          onCommit={(value) =>
-            onUpdate({ startAddress: clampStartAddress(value) })
-          }
+          onCommit={(value) => onUpdate({ startAddress: clampStartAddress(value) })}
         />
       </Stack>
 
@@ -587,13 +564,13 @@ function FixtureEditor({
             <Button
               size="small"
               variant="text"
-              disabled={!fixtureFitsInUniverse({
-                ...fixture,
-                channelCount: manualChannels.length + 1,
-              })}
-              onClick={() =>
-                onUpdate({ channels: addManualFixtureChannel(fixture) })
+              disabled={
+                !fixtureFitsInUniverse({
+                  ...fixture,
+                  channelCount: manualChannels.length + 1,
+                })
               }
+              onClick={() => onUpdate({ channels: addManualFixtureChannel(fixture) })}
               sx={{ alignSelf: "flex-start", px: 0, minWidth: 0 }}
             >
               + Channel

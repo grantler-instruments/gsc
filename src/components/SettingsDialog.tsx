@@ -12,6 +12,7 @@ import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
+import { getPlatform } from "../platform";
 import { listAudioOutputDevices } from "../platform/audio-devices";
 import {
   connectEnttecPro,
@@ -19,15 +20,14 @@ import {
   isEnttecProConnected,
   isEnttecProWebSerialAvailable,
 } from "../platform/enttec-pro";
-import { listMidiInputDevices } from "../platform/midi-input-devices";
 import { listMidiOutputDevices } from "../platform/midi-devices";
+import { listMidiInputDevices } from "../platform/midi-input-devices";
 import { listSerialPorts } from "../platform/serial-ports";
-import { getPlatform } from "../platform";
-import { usePreferencesStore, type DmxOutputBackend } from "../stores/preferences";
+import { type DmxOutputBackend, usePreferencesStore } from "../stores/preferences";
 import { useUiStore } from "../stores/ui";
 import type { DeviceOption } from "../types/device";
-import { MidiMapPanel } from "./MidiMapPanel";
 import { inspectorFieldLabelSx, inspectorFieldSx } from "./inspectorSx";
+import { MidiMapPanel } from "./MidiMapPanel";
 
 const DEFAULT_VALUE = "";
 
@@ -158,11 +158,7 @@ export function SettingsDialog() {
             ) : null}
 
             <Box sx={inspectorFieldSx}>
-              <Typography
-                component="label"
-                htmlFor="midi-output-select"
-                sx={inspectorFieldLabelSx}
-              >
+              <Typography component="label" htmlFor="midi-output-select" sx={inspectorFieldLabelSx}>
                 MIDI output
               </Typography>
               <Select
@@ -193,11 +189,7 @@ export function SettingsDialog() {
             </Box>
 
             <Box sx={inspectorFieldSx}>
-              <Typography
-                component="label"
-                htmlFor="midi-input-select"
-                sx={inspectorFieldLabelSx}
-              >
+              <Typography component="label" htmlFor="midi-input-select" sx={inspectorFieldLabelSx}>
                 MIDI input
               </Typography>
               <Select
@@ -258,11 +250,7 @@ export function SettingsDialog() {
             {isTauri && dmxOutputBackend === "artnet" ? (
               <>
                 <Box sx={inspectorFieldSx}>
-                  <Typography
-                    component="label"
-                    htmlFor="artnet-host"
-                    sx={inspectorFieldLabelSx}
-                  >
+                  <Typography component="label" htmlFor="artnet-host" sx={inspectorFieldLabelSx}>
                     Art-Net host
                   </Typography>
                   <TextField
@@ -275,11 +263,7 @@ export function SettingsDialog() {
                   />
                 </Box>
                 <Box sx={inspectorFieldSx}>
-                  <Typography
-                    component="label"
-                    htmlFor="artnet-port"
-                    sx={inspectorFieldLabelSx}
-                  >
+                  <Typography component="label" htmlFor="artnet-port" sx={inspectorFieldLabelSx}>
                     Art-Net port
                   </Typography>
                   <TextField
@@ -327,8 +311,7 @@ export function SettingsDialog() {
                     </Select>
                     {serialPorts.length === 0 && !loadError ? (
                       <Typography variant="caption" color="text.secondary">
-                        No serial ports found. Plug in the Enttec interface and
-                        reopen Settings.
+                        No serial ports found. Plug in the Enttec interface and reopen Settings.
                       </Typography>
                     ) : null}
                     <Typography variant="caption" color="text.secondary">
@@ -337,9 +320,7 @@ export function SettingsDialog() {
                   </Box>
                 ) : (
                   <Box sx={inspectorFieldSx}>
-                    <Typography sx={inspectorFieldLabelSx}>
-                      Enttec Pro (Web Serial)
-                    </Typography>
+                    <Typography sx={inspectorFieldLabelSx}>Enttec Pro (Web Serial)</Typography>
                     <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                       <Button
                         size="small"

@@ -2,17 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setCueClipboard } from "../../lib/cue-clipboard";
 import { useProjectStore } from "../../stores/project";
 import { useUiStore } from "../../stores/ui";
-import {
-  activeCues,
-  resetTestProject,
-  testCue,
-} from "../../test/fixtures/cues";
+import { activeCues, resetTestProject, testCue } from "../../test/fixtures/cues";
 
 function activeListSelection(): string[] {
   const { cueLists, activeCueListId } = useProjectStore.getState();
-  return (
-    cueLists.find((l) => l.id === activeCueListId)?.selectedCueIds ?? []
-  );
+  return cueLists.find((l) => l.id === activeCueListId)?.selectedCueIds ?? [];
 }
 
 describe("selection actions", () => {
@@ -61,9 +55,7 @@ describe("selection actions", () => {
 
     expect(group?.type).toBe("group");
     expect(activeListSelection()).toEqual([group!.id]);
-    expect(activeCues().filter((c) => c.parentId === group!.id)).toHaveLength(
-      2,
-    );
+    expect(activeCues().filter((c) => c.parentId === group!.id)).toHaveLength(2);
   });
 
   it("copy and paste selected cues", () => {

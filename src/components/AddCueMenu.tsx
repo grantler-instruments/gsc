@@ -1,3 +1,4 @@
+import PublicOffIcon from "@mui/icons-material/PublicOff";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
@@ -6,7 +7,6 @@ import ListSubheader from "@mui/material/ListSubheader";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
-import PublicOffIcon from "@mui/icons-material/PublicOff";
 import { Fragment, useState } from "react";
 import { getPlatform } from "../platform";
 import { useProjectStore } from "../stores/project";
@@ -32,15 +32,14 @@ type AddCueMenuType = Extract<
   | "lightFade"
 >;
 
-const ADD_CUE_SECTIONS: { subheader?: string; types: readonly AddCueMenuType[] }[] =
-  [
-    { types: ["audio", "video", "image", "midi", "osc", "dmx"] },
-    { subheader: "Group", types: ["sequence", "group"] },
-    {
-      subheader: "Utility",
-      types: ["wait", "stop", "volumeFade", "opacityFade", "lightFade"],
-    },
-  ];
+const ADD_CUE_SECTIONS: { subheader?: string; types: readonly AddCueMenuType[] }[] = [
+  { types: ["audio", "video", "image", "midi", "osc", "dmx"] },
+  { subheader: "Group", types: ["sequence", "group"] },
+  {
+    subheader: "Utility",
+    types: ["wait", "stop", "volumeFade", "opacityFade", "lightFade"],
+  },
+];
 
 const ADD_CUE_LABELS: Record<AddCueMenuType, string> = {
   audio: "Audio",
@@ -81,11 +80,7 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
       addGroupCue();
     } else if (type === "sequence") {
       addSequenceCue();
-    } else if (
-      type === "volumeFade" ||
-      type === "opacityFade" ||
-      type === "lightFade"
-    ) {
+    } else if (type === "volumeFade" || type === "opacityFade" || type === "lightFade") {
       addFadeCue(type);
     } else if (type === "wait") {
       addCue({ name: "Wait", type: "wait" });
@@ -150,48 +145,47 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
             ) : null}
             {section.types.map((type) => {
               const disabledOnWeb =
-                (type === "osc" || type === "dmx" || type === "lightFade") &&
-                !isTauri;
+                (type === "osc" || type === "dmx" || type === "lightFade") && !isTauri;
               return (
-              <MenuItem
-                key={type}
-                disabled={disabledOnWeb}
-                onClick={() => handleAddCue(type)}
-                sx={disabledOnWeb ? { opacity: 0.72 } : undefined}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 28,
-                    color: ADD_CUE_ICON_COLORS[type] ?? "inherit",
-                    "& .MuiSvgIcon-root": { fontSize: 20, opacity: 0.9 },
-                    ...(disabledOnWeb && { opacity: 0.45 }),
-                  }}
+                <MenuItem
+                  key={type}
+                  disabled={disabledOnWeb}
+                  onClick={() => handleAddCue(type)}
+                  sx={disabledOnWeb ? { opacity: 0.72 } : undefined}
                 >
-                  <CueTypeIcon type={type} />
-                </ListItemIcon>
-                <Box component="span" sx={{ flex: 1 }}>
-                  {ADD_CUE_LABELS[type]}
-                </Box>
-                {disabledOnWeb ? (
-                  <Tooltip title={WEB_UNAVAILABLE_TOOLTIP} placement="right" arrow>
-                    <Box
-                      component="span"
-                      aria-label={WEB_UNAVAILABLE_TOOLTIP}
-                      sx={{
-                        ml: 1.5,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        flexShrink: 0,
-                        pointerEvents: "auto",
-                        cursor: "help",
-                        color: "text.disabled",
-                      }}
-                    >
-                      <PublicOffIcon sx={{ fontSize: 18 }} />
-                    </Box>
-                  </Tooltip>
-                ) : null}
-              </MenuItem>
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 28,
+                      color: ADD_CUE_ICON_COLORS[type] ?? "inherit",
+                      "& .MuiSvgIcon-root": { fontSize: 20, opacity: 0.9 },
+                      ...(disabledOnWeb && { opacity: 0.45 }),
+                    }}
+                  >
+                    <CueTypeIcon type={type} />
+                  </ListItemIcon>
+                  <Box component="span" sx={{ flex: 1 }}>
+                    {ADD_CUE_LABELS[type]}
+                  </Box>
+                  {disabledOnWeb ? (
+                    <Tooltip title={WEB_UNAVAILABLE_TOOLTIP} placement="right" arrow>
+                      <Box
+                        component="span"
+                        aria-label={WEB_UNAVAILABLE_TOOLTIP}
+                        sx={{
+                          ml: 1.5,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          flexShrink: 0,
+                          pointerEvents: "auto",
+                          cursor: "help",
+                          color: "text.disabled",
+                        }}
+                      >
+                        <PublicOffIcon sx={{ fontSize: 18 }} />
+                      </Box>
+                    </Tooltip>
+                  ) : null}
+                </MenuItem>
               );
             })}
           </Fragment>
