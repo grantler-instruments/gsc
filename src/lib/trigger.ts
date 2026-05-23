@@ -6,9 +6,9 @@ import {
   isSequenceGroup,
   isStopCue,
   isWaitCue,
-  resolveParallelGoIds,
   resolveStopCueIds,
 } from "./cues";
+import { fireParallelGroupChildren } from "./parallel-group-fire";
 import { cancelAllSequences, runSequence } from "./sequence-runner";
 import { triggerFadeCue } from "./trigger-fade";
 import type { Cue } from "../types/cue";
@@ -22,27 +22,9 @@ function triggerParallelGroup(
   cues: Cue[],
   actions: { goMany: GoMany; stopMany: StopMany },
 ): string[] {
-  const leafIds: string[] = [];
-
-  for (const child of getChildCues(cues, cue.id)) {
-    if (isStopCue(child)) {
-      const target = getStopTarget(child, cues);
-      if (target) triggerStopCue(target, cues, actions.stopMany);
-    } else if (isWaitCue(child)) {
-      /* no-op — duration handled by parent sequence timer */
-    } else if (isFadeCue(child)) {
-      triggerFadeCue(child, cues);
-    } else if (isSequenceGroup(child)) {
-      runSequence(child, cues);
-    } else if (isParallelGroup(child)) {
-      leafIds.push(...resolveParallelGoIds(child, cues));
-    } else {
-      leafIds.push(child.id);
-    }
-  }
-
-  if (leafIds.length > 0) actions.goMany(leafIds);
-  return leafIds;
+  return fireParallelGroupChildren(cue, cues, actions, {
+    onSequenceStop: cancelAllSequences,
+  });
 }
 
 export function triggerGo(

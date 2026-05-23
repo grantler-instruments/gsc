@@ -113,6 +113,23 @@ describe("fireStepCues", () => {
     expect(actions.goMany).toHaveBeenCalledWith(["a", "b"]);
   });
 
+  it("applies first-wins inside a parallel group in the step", () => {
+    const cues = [
+      testCue("par", "Par", "group"),
+      testCue("stop", "Stop", "stop", {
+        parentId: "par",
+        stopTargetId: "a",
+      }),
+      testCue("a", "A", "audio", { parentId: "par" }),
+    ];
+    const actions = mockActions();
+
+    fireStepCues(["par"], cues, actions);
+
+    expect(actions.stopMany).toHaveBeenCalledWith(["a"]);
+    expect(actions.goMany).not.toHaveBeenCalled();
+  });
+
   it("clears running sequence when stopping a sequence target", () => {
     const cues = [
       testCue("seq", "Seq", "sequence"),

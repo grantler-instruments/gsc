@@ -129,7 +129,24 @@ describe("triggerGo", () => {
     expect(actions.goMany).not.toHaveBeenCalled();
   });
 
-  it("fires nested stop cues inside a parallel group", () => {
+  it("fires nested stop cues inside a parallel group when stop is first", () => {
+    const cues = [
+      testCue("par", "Par", "group"),
+      testCue("stop", "Stop", "stop", {
+        parentId: "par",
+        stopTargetId: "a",
+      }),
+      testCue("a", "A", "audio", { parentId: "par" }),
+    ];
+    const actions = mockActions();
+
+    triggerGo(cues[0], cues, actions);
+
+    expect(actions.stopMany).toHaveBeenCalledWith(["a"]);
+    expect(actions.goMany).not.toHaveBeenCalled();
+  });
+
+  it("GOs playback when listed before a stop on the same target", () => {
     const cues = [
       testCue("par", "Par", "group"),
       testCue("a", "A", "audio", { parentId: "par" }),
@@ -142,8 +159,8 @@ describe("triggerGo", () => {
 
     triggerGo(cues[0], cues, actions);
 
-    expect(actions.stopMany).toHaveBeenCalledWith(["a"]);
     expect(actions.goMany).toHaveBeenCalledWith(["a"]);
+    expect(actions.stopMany).not.toHaveBeenCalled();
   });
 });
 

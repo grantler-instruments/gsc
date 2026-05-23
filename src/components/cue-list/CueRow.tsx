@@ -3,6 +3,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { memo, type MouseEvent } from "react";
 import { getCueAssetWarning } from "../../lib/cue-asset";
@@ -17,9 +18,11 @@ import {
   getStopTarget,
   isContainerCue,
   isFadeCue,
+  isParallelGroup,
   isSequenceGroup,
   isStopCue,
 } from "../../lib/cues";
+import { getParallelGroupOrderConflict } from "../../lib/parallel-group-fire";
 import type { Cue } from "../../types/cue";
 import { usePlaybackStore } from "../../stores/playback";
 import {
@@ -124,22 +127,32 @@ export const CueRow = memo(function CueRow({
   const isStop = isStopCue(cue);
   const isFade = isFadeCue(cue);
   const isSequence = isSequenceGroup(cue);
+  const isParallel = isParallelGroup(cue);
   const stopTarget = isStop ? getStopTarget(cue, allCues) : undefined;
   const fadeTarget = isFade ? getFadeTarget(cue, allCues) : undefined;
   const stopTargetMissing = isStop && !stopTarget;
   const fadeTargetMissing = isFade && !fadeTarget;
   const assetWarning = getCueAssetWarning(cue);
+  const parallelConflict = isParallel
+    ? getParallelGroupOrderConflict(cue, allCues)
+    : null;
   const isCurrentSequenceStep =
     runningSequence?.stepCueIds.includes(cue.id) ?? false;
 
-  const hasWarning = missingAsset || stopTargetMissing || fadeTargetMissing;
-  const warningTitle = fadeTargetMissing
-    ? "Fade target missing"
-    : stopTargetMissing
-      ? "Stop target missing"
-      : assetWarning
-        ? `${assetWarning.title} — drag from Assets onto this cue or the list`
-        : "Warning";
+  const hasWarning =
+    missingAsset ||
+    stopTargetMissing ||
+    fadeTargetMissing ||
+    !!parallelConflict;
+  const warningTitle = parallelConflict
+    ? parallelConflict.tooltip
+    : fadeTargetMissing
+      ? "Fade target missing"
+      : stopTargetMissing
+        ? "Stop target missing"
+        : assetWarning
+          ? `${assetWarning.title} — drag from Assets onto this cue or the list`
+          : "Warning";
 
   const { dropActive, insertPlace, onDragOver, onDragLeave, onDrop } =
     useCueRowDrop({
@@ -204,11 +217,9 @@ export const CueRow = memo(function CueRow({
       onDrop={onDrop}
     >
       {hasWarning ? (
-        <WarningAmberIcon
-          fontSize="inherit"
-          sx={cueRowWarningIconSx}
-          titleAccess={warningTitle}
-        />
+        <Tooltip title={warningTitle} arrow placement="right">
+          <WarningAmberIcon fontSize="inherit" sx={cueRowWarningIconSx} />
+        </Tooltip>
       ) : null}
       {isContainer ? (
         <IconButton

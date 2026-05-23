@@ -5,34 +5,14 @@ import { LeftSidebar } from "./components/LeftSidebar";
 import { ProjectToolbar } from "./components/ProjectToolbar";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { TransportBar } from "./components/TransportBar";
-import { useAppKeyboard } from "./hooks/useAppKeyboard";
-import { useAudioEngine } from "./hooks/useAudioEngine";
-import { useMidiEngine } from "./hooks/useMidiEngine";
-import { useOscEngine } from "./hooks/useOscEngine";
-import { useMidiInput } from "./hooks/useMidiInput";
-import { useFadeAnimation } from "./hooks/useFadeAnimation";
-import { useOutputPublisher } from "./hooks/useOutputPublisher";
-import { usePlaybackProgress } from "./hooks/usePlaybackProgress";
-import { useProjectSession } from "./hooks/useProjectSession";
-import { usePreventBrowserFileDrop } from "./hooks/usePreventBrowserFileDrop";
-import { useTauriAppMenu } from "./hooks/useTauriAppMenu";
+import { useAppRuntime } from "./hooks/useAppRuntime";
 import { getPrimarySelectedCueId } from "./lib/cue-selection";
 import { AppSnackbar } from "./components/AppSnackbar";
 import { useActiveCueList } from "./stores/project";
 import { useUiStore } from "./stores/ui";
 
 function App() {
-  const sessionReady = useProjectSession();
-  useAppKeyboard();
-  useAudioEngine();
-  useMidiEngine();
-  useOscEngine();
-  useMidiInput();
-  useFadeAnimation();
-  useOutputPublisher();
-  usePlaybackProgress();
-  usePreventBrowserFileDrop();
-  useTauriAppMenu();
+  const sessionReady = useAppRuntime();
   const showMode = useUiStore((s) => s.showMode);
   const selectedCueIds = useActiveCueList().selectedCueIds;
   const hasSelectedCue =

@@ -12,6 +12,7 @@ import {
   isUtilityCue,
   isWaitCue,
 } from "../../lib/cues";
+import { getParallelGroupOrderConflict } from "../../lib/parallel-group-fire";
 import { resolveFadeFromLevel } from "../../lib/fade";
 import { formatMidiCue } from "../../lib/midi";
 import { formatOscCue } from "../../lib/osc";
@@ -69,6 +70,9 @@ export function CueRowDetails({
       ? formatLoopLabel(cue)
       : null;
   const assetWarning = getCueAssetWarning(cue);
+  const parallelConflict = isParallel
+    ? getParallelGroupOrderConflict(cue, allCues)
+    : null;
 
   return (
     <>
@@ -77,6 +81,11 @@ export function CueRowDetails({
           {childCount === 0
             ? "Empty — drag cues here (parallel)"
             : `${childCount} cue${childCount === 1 ? "" : "s"} · parallel`}
+        </Typography>
+      )}
+      {parallelConflict && (
+        <Typography component="span" sx={cueDetailSx}>
+          {parallelConflict.detail}
         </Typography>
       )}
       {isSequence && (

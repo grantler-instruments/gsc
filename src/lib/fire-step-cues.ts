@@ -1,6 +1,5 @@
 import type { Cue } from "../types/cue";
 import {
-  getChildCues,
   getStopTarget,
   isContainerCue,
   isFadeCue,
@@ -11,6 +10,7 @@ import {
   isWaitCue,
   resolveStopCueIds,
 } from "./cues";
+import { walkParallelGroupChildren } from "./parallel-group-fire";
 import { triggerFadeCue } from "./trigger-fade";
 import { clearSequenceTimers } from "./sequence-timers";
 import { useTransportStore } from "../stores/transport";
@@ -58,7 +58,16 @@ export function fireStepCues(
     } else if (isSequenceGroup(cue)) {
       options.runSequence?.(cue, cues);
     } else if (isParallelGroup(cue)) {
-      playbackIds.push(...fireParallelGroup(cue, cues, actions, options));
+      const resolved = new Map<string, "go" | "stop">();
+      playbackIds.push(
+        ...walkParallelGroupChildren(cue, cues, resolved, actions, {
+          runSequence: options.runSequence,
+          onSequenceStop: () => {
+            clearSequenceTimers();
+            useTransportStore.getState().setRunningSequence(null);
+          },
+        }),
+      );
     } else {
       playbackIds.push(id);
     }
@@ -67,33 +76,6 @@ export function fireStepCues(
   if (playbackIds.length > 0) {
     actions.goMany(playbackIds);
   }
-}
-
-function fireParallelGroup(
-  cue: Cue,
-  cues: Cue[],
-  actions: StepTransportActions,
-  options: FireStepOptions,
-): string[] {
-  const leafIds: string[] = [];
-
-  for (const child of getChildCues(cues, cue.id)) {
-    if (isStopCue(child)) {
-      fireStopCue(child, cues, actions.stopMany);
-    } else if (isWaitCue(child)) {
-      /* no-op */
-    } else if (isFadeCue(child)) {
-      triggerFadeCue(child, cues);
-    } else if (isSequenceGroup(child)) {
-      options.runSequence?.(child, cues);
-    } else if (isParallelGroup(child)) {
-      leafIds.push(...fireParallelGroup(child, cues, actions, options));
-    } else {
-      leafIds.push(child.id);
-    }
-  }
-
-  return leafIds;
 }
 
 /** Playback cue ids in a step — utility/container cues are excluded. */
