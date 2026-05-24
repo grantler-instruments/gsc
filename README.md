@@ -45,19 +45,6 @@ npm run preview:pages  # preview the Pages build locally
 
 Published URL: `https://grantler-instruments.github.io/gsc/`.
 
-### One-time setup (fixes deploy `404 Not Found`)
-
-**Visibility:** On the free GitHub plan, Pages only works for **public** repositories (or keep the repo private with a paid plan). To publish the site:
-
-1. **[Settings → General → Danger zone](https://github.com/grantler-instruments/gsc-app/settings)** → **Change repository visibility** → **Public**
-2. **[Settings → Pages](https://github.com/grantler-instruments/gsc-app/settings/pages)** → under **Build and deployment**, set **Source** to **GitHub Actions** (not “Deploy from a branch”) → Save
-
-The `github-pages` environment is created when Pages is enabled.
-
-If your org restricts Pages, an admin must allow Pages for this repository under **Organization → Settings → Pages**.
-
-### Deploy
-
 Push to `main` or run **Deploy to GitHub Pages** manually. The workflow builds with `VITE_BASE=/gsc/` and publishes `dist/`.
 
 The GitHub repository should be named **`gsc`** so Pages serves at that path (Settings → General → Repository name).
