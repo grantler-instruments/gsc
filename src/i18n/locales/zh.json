@@ -143,6 +143,13 @@
     "cue": "提示",
     "dmx": "DMX"
   },
+  "mobileWorkspace": {
+    "cues": "提示列表",
+    "library": "资源库",
+    "active": "活跃",
+    "inspector": "检查器",
+    "tabBarAria": "工作区面板"
+  },
   "startup": {
     "title": "打开项目",
     "unsavedDraft": "未保存草稿",

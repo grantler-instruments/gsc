@@ -143,6 +143,13 @@
     "cue": "Cue",
     "dmx": "DMX"
   },
+  "mobileWorkspace": {
+    "cues": "Cues",
+    "library": "Library",
+    "active": "Active",
+    "inspector": "Inspector",
+    "tabBarAria": "Workspace panels"
+  },
   "startup": {
     "title": "Open Project",
     "unsavedDraft": "Unsaved draft",

@@ -143,6 +143,13 @@
     "cue": "Cue",
     "dmx": "DMX"
   },
+  "mobileWorkspace": {
+    "cues": "Cues",
+    "library": "Biblioteca",
+    "active": "Activos",
+    "inspector": "Inspector",
+    "tabBarAria": "Paneles del espacio de trabajo"
+  },
   "startup": {
     "title": "Abrir proyecto",
     "unsavedDraft": "Borrador sin guardar",

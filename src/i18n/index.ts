@@ -35,6 +35,10 @@ function readLocaleFromPreferences(): SupportedLocale | null {
 function detectInitialLocale(): SupportedLocale {
   const fromPreferences = readLocaleFromPreferences();
   if (fromPreferences) return fromPreferences;
+
+  // Existing preferences without a locale field (pre-i18n) — default English.
+  if (localStorage.getItem(PREFERENCES_STORAGE_KEY)) return "en";
+
   const browser = navigator.language.split("-")[0];
   if (SUPPORTED_LOCALES.includes(browser as SupportedLocale)) {
     return browser as SupportedLocale;

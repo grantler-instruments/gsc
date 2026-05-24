@@ -143,6 +143,13 @@
     "cue": "Cue",
     "dmx": "DMX"
   },
+  "mobileWorkspace": {
+    "cues": "Cues",
+    "library": "Bibliothek",
+    "active": "Aktiv",
+    "inspector": "Inspektor",
+    "tabBarAria": "Arbeitsbereich"
+  },
   "startup": {
     "title": "Projekt öffnen",
     "unsavedDraft": "Ungespeicherter Entwurf",
