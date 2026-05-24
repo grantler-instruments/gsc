@@ -5,9 +5,9 @@ import {
   hydrateVfsFromBundleAssets,
   parseProjectBundleZip,
 } from "../lib/project-bundle";
+import { replaceProjectWithoutHistory } from "../lib/project-history";
 import { BUNDLE_EXTENSION } from "../lib/project-paths";
 import { collectSessionAssetPaths } from "../lib/project-session";
-import { replaceProjectWithoutHistory } from "../lib/project-history";
 import { snapshotToCueLists } from "../lib/project-snapshot";
 import { useProjectStore } from "../stores/project";
 import type { VfsEntry } from "../stores/vfs";

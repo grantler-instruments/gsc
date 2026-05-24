@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import { getPlatform } from "../platform";
 import {
   bindTemporaryProjectRoot,
@@ -8,21 +9,21 @@ import { useFadeStore } from "../stores/fade";
 import { usePlaybackStore } from "../stores/playback";
 import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
-import { requestUnsavedProjectChoice } from "../stores/unsaved-project-prompt";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
+import { requestUnsavedProjectChoice } from "../stores/unsaved-project-prompt";
 import { useVfsStore } from "../stores/vfs";
 import { vfsClear } from "../vfs/engine";
 import { setActiveProjectId } from "./active-project-id";
 import { createCueList } from "./cue-lists";
-import { replaceProjectWithoutHistory } from "./project-history";
 import { saveProjectFile } from "./project-file-actions";
+import { replaceProjectWithoutHistory } from "./project-history";
 import { isProjectUnsaved } from "./unsaved-project";
 
 const TAURI_LAST_ROOT_KEY = "gsc-tauri-last-project-root";
 
-function createFreshProjectState(projectName = "Untitled Show") {
-  const list = createCueList("Main");
+function createFreshProjectState(projectName = t("project.defaultName")) {
+  const list = createCueList(t("project.defaultListName"));
   const id = crypto.randomUUID();
   setActiveProjectId(id);
   return {

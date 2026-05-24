@@ -1,10 +1,10 @@
-import { setActiveProjectId } from "./active-project-id";
-import type { CueList } from "./cue-lists";
-import { projectPersistStateChanged, type ProjectPersistSlice } from "./project-persist";
-import { cueListsToSnapshot, snapshotToCueLists } from "./project-snapshot";
-import { canEditProject } from "./show-mode";
 import { useProjectStore } from "../stores/project";
 import type { ProjectSnapshot } from "../types/cue";
+import { setActiveProjectId } from "./active-project-id";
+import type { CueList } from "./cue-lists";
+import { type ProjectPersistSlice, projectPersistStateChanged } from "./project-persist";
+import { cueListsToSnapshot, snapshotToCueLists } from "./project-snapshot";
+import { canEditProject } from "./show-mode";
 
 const MAX_UNDO_STACK = 50;
 const COALESCE_MS = 400;

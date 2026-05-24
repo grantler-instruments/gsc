@@ -12,6 +12,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { notifyErrorFromUnknown } from "../lib/notifications";
 import {
   fetchOflFixtureList,
@@ -49,6 +50,7 @@ export function OflBrowseDialog({
   onClose,
   onImported,
 }: OflBrowseDialogProps) {
+  const { t } = useTranslation();
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [loadingFixtures, setLoadingFixtures] = useState(false);
   const [loadingFixture, setLoadingFixture] = useState(false);
@@ -107,7 +109,7 @@ export function OflBrowseDialog({
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Could not load OFL catalog.");
+        setError(err instanceof Error ? err.message : t("ofl.loadCatalogError"));
       })
       .finally(() => {
         if (!cancelled) setLoadingCatalog(false);
@@ -116,7 +118,7 @@ export function OflBrowseDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, resetDialog]);
+  }, [open, resetDialog, t]);
 
   useEffect(() => {
     if (!open || !manufacturerKey) return;
@@ -136,7 +138,7 @@ export function OflBrowseDialog({
       .catch((err) => {
         if (cancelled) return;
         setFixtureEntries([]);
-        setError(err instanceof Error ? err.message : "Could not load fixtures.");
+        setError(err instanceof Error ? err.message : t("ofl.loadFixturesError"));
       })
       .finally(() => {
         if (!cancelled) setLoadingFixtures(false);
@@ -145,7 +147,7 @@ export function OflBrowseDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, manufacturerKey]);
+  }, [open, manufacturerKey, t]);
 
   const handleSelectFixture = async (entry: OflFixtureListEntry) => {
     if (!selectedManufacturer) return;
@@ -154,7 +156,13 @@ export function OflBrowseDialog({
     try {
       const response = await fetch(oflFixtureRawUrl(entry.manufacturerKey, entry.fixtureKey));
       if (!response.ok) {
-        throw new Error(`Could not load ${entry.fixtureKey} (${response.status})`);
+        throw new Error(
+          t("ofl.fixtureError", {
+            manufacturer: entry.manufacturerKey,
+            fixture: entry.fixtureKey,
+            status: response.status,
+          }),
+        );
       }
       const raw = await response.json();
       const summary = parseOflFixtureJson(
@@ -168,7 +176,7 @@ export function OflBrowseDialog({
       setModeName(summary.modes[0]?.name ?? "");
     } catch (err) {
       notifyErrorFromUnknown(err);
-      setError(err instanceof Error ? err.message : "Could not load fixture.");
+      setError(err instanceof Error ? err.message : t("ofl.loadFixtureError"));
     } finally {
       setLoadingFixture(false);
     }
@@ -195,7 +203,7 @@ export function OflBrowseDialog({
       });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not import fixture.");
+      setError(err instanceof Error ? err.message : t("ofl.importFixtureError"));
     } finally {
       setLoadingFixture(false);
     }
@@ -203,7 +211,7 @@ export function OflBrowseDialog({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Open Fixture Library</DialogTitle>
+      <DialogTitle>{t("ofl.title")}</DialogTitle>
       <DialogContent
         sx={{
           display: "flex",
@@ -214,11 +222,7 @@ export function OflBrowseDialog({
         }}
       >
         <Typography variant="body2" color="text.secondary" sx={{ m: 0 }}>
-          Browse fixtures from{" "}
-          <Link href="https://open-fixture-library.org/" target="_blank" rel="noreferrer">
-            open-fixture-library.org
-          </Link>
-          .
+          {t("ofl.description")}
         </Typography>
 
         {loadingCatalog ? (
@@ -230,7 +234,7 @@ export function OflBrowseDialog({
             <Stack direction="row" sx={{ gap: 1 }}>
               <Box component="label" sx={{ ...inspectorFieldSx, minWidth: 180 }}>
                 <Typography component="span" sx={inspectorFieldLabelSx}>
-                  Manufacturer
+                  {t("ofl.manufacturer")}
                 </Typography>
                 <Select
                   size="small"
@@ -246,7 +250,7 @@ export function OflBrowseDialog({
                 </Select>
               </Box>
               <TextField
-                label="Search fixtures"
+                label={t("ofl.searchFixtures")}
                 size="small"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -256,8 +260,8 @@ export function OflBrowseDialog({
 
             <Typography variant="caption" color="text.secondary" sx={{ m: 0 }}>
               {loadingFixtures
-                ? "Loading fixtures…"
-                : `${filteredFixtures.length} fixture${filteredFixtures.length === 1 ? "" : "s"}`}
+                ? t("ofl.loadingFixtures")
+                : t("ofl.fixtureCount", { count: filteredFixtures.length })}
             </Typography>
 
             <Box
@@ -273,7 +277,7 @@ export function OflBrowseDialog({
             >
               {!loadingFixtures && filteredFixtures.length === 0 && (
                 <Typography sx={{ p: 2, m: 0, color: "text.secondary", fontSize: 13 }}>
-                  No fixtures match your search.
+                  {t("ofl.noMatches")}
                 </Typography>
               )}
               {filteredFixtures.map((entry) => {
@@ -319,11 +323,11 @@ export function OflBrowseDialog({
                   rel="noreferrer"
                   variant="caption"
                 >
-                  View on open-fixture-library.org
+                  {t("ofl.viewOnSite")}
                 </Link>
                 <Box component="label" sx={inspectorFieldSx}>
                   <Typography component="span" sx={inspectorFieldLabelSx}>
-                    DMX mode
+                    {t("fixtures.dmxMode")}
                   </Typography>
                   <Select
                     size="small"
@@ -333,8 +337,11 @@ export function OflBrowseDialog({
                   >
                     {pendingSummary.modes.map((mode) => (
                       <MenuItem key={mode.name} value={mode.name}>
-                        {mode.shortName ? `${mode.name} (${mode.shortName})` : mode.name} ·{" "}
-                        {mode.channelCount} ch
+                        {t("ofl.dmxModeLabel", {
+                          name: mode.name,
+                          shortName: mode.shortName ?? mode.name,
+                          count: mode.channelCount,
+                        })}
                       </MenuItem>
                     ))}
                   </Select>
@@ -356,13 +363,13 @@ export function OflBrowseDialog({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t("common.action.cancel")}</Button>
         <Button
           variant="contained"
           disabled={!pendingSummary || !selectedMode || loadingFixture}
           onClick={() => void handleConfirmImport()}
         >
-          {loadingFixture ? "Importing…" : "Add fixture"}
+          {loadingFixture ? t("common.action.importing") : t("ofl.addFixture")}
         </Button>
       </DialogActions>
     </Dialog>

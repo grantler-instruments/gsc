@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { type MediaWaveformKind, useMediaWaveform } from "../hooks/useMediaWaveform";
 import { formatTime, normalizePlaybackRange } from "../lib/time";
 import { getVideoThumbnailDataUrl } from "../lib/video-thumbnail";
@@ -160,6 +161,7 @@ export function AudioWaveform({
   mediaKind = "audio",
   hoverPreview = false,
 }: AudioWaveformProps) {
+  const { t } = useTranslation();
   const { data, loading, missing } = useMediaWaveform(assetPath, mediaKind);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -308,12 +310,12 @@ export function AudioWaveform({
     >
       {loading && (
         <Typography component="span" sx={waveformStatusSx}>
-          {mediaKind === "video" ? "Loading video…" : "Loading waveform…"}
+          {mediaKind === "video" ? t("playback.loadingVideo") : t("playback.loadingWaveform")}
         </Typography>
       )}
       {missing && !loading && (
         <Typography component="span" sx={waveformStatusSx}>
-          Asset not loaded — import the file in Assets.
+          {t("playback.assetNotLoadedImport")}
         </Typography>
       )}
       {data && (
@@ -333,7 +335,7 @@ export function AudioWaveform({
                 data-waveform-handle
                 sx={{ ...waveformHandleInSx, left: `${inPct}%` }}
                 role="slider"
-                aria-label="In point"
+                aria-label={t("playback.inPointAria")}
                 aria-valuemin={0}
                 aria-valuemax={Math.round(effectiveOut * 100) / 100}
                 aria-valuenow={Math.round(effectiveIn * 100) / 100}
@@ -352,7 +354,7 @@ export function AudioWaveform({
                 data-waveform-handle
                 sx={{ ...waveformHandleOutSx, left: `${outPct}%` }}
                 role="slider"
-                aria-label="Out point"
+                aria-label={t("playback.outPointAria")}
                 aria-valuemin={Math.round((effectiveIn + MIN_SLICE_SEC) * 100) / 100}
                 aria-valuemax={Math.round(durationSec * 100) / 100}
                 aria-valuenow={Math.round(effectiveOut * 100) / 100}

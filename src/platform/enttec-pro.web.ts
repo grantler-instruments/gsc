@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import type { DmxUniverseFrame } from "../lib/dmx";
 import { buildEnttecProPacket, ENTTEC_PRO_BAUD_RATE } from "../lib/enttec-pro";
 import { notifyErrorFromUnknown, notifyWarning, notifyWarningDeduped } from "../lib/notifications";
@@ -19,7 +20,7 @@ export function isEnttecProWebSerialAvailable(): boolean {
 
 export async function connectEnttecProWeb(): Promise<boolean> {
   if (!isWebSerialAvailable()) {
-    notifyWarning("Web Serial is not available in this browser.");
+    notifyWarning(t("notification.webSerialUnavailable"));
     return false;
   }
 
@@ -31,7 +32,7 @@ export async function connectEnttecProWeb(): Promise<boolean> {
     writer = port.writable?.getWriter() ?? null;
     if (!writer) {
       await disconnectEnttecProWeb();
-      notifyWarning("Enttec Pro port has no writable stream.");
+      notifyWarning(t("notification.enttecNoWritableStream"));
       return false;
     }
     return true;
@@ -73,9 +74,7 @@ export async function sendEnttecProUniversesWeb(frames: DmxUniverseFrame[]): Pro
     for (const frame of frames) {
       const packet = buildEnttecProPacket(frame.universe, frame.data);
       if (!packet) {
-        notifyWarningDeduped(
-          `Enttec Pro only supports universes 1 and 2 (got U${frame.universe}).`,
-        );
+        notifyWarningDeduped(t("notification.enttecUniverseLimit", { universe: frame.universe }));
         continue;
       }
       await writer!.write(packet);

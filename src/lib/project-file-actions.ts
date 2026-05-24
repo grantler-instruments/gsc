@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import { getPlatform } from "../platform";
 import {
   discardTemporaryProjectRoot,
@@ -60,7 +61,7 @@ export async function openRecentProjectPath(path: string): Promise<void> {
 
   const opened = await openDroppedProjectDir(path);
   if (!opened) {
-    notifyWarning("Could not open the selected project.");
+    notifyWarning(t("notification.openProjectFailed"));
   }
 }
 
@@ -72,6 +73,6 @@ export async function saveProjectFile(): Promise<void> {
   }
   const { missing } = await exportProjectBundle();
   if (missing.length > 0) {
-    notifyWarning(`Exported, but ${missing.length} asset(s) were missing from storage.`);
+    notifyWarning(t("notification.exportMissingAssets", { count: missing.length }));
   }
 }

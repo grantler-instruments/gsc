@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import { notifyWarningDeduped } from "../lib/notifications";
 import type { MidiMessageHandler } from "./receive-midi";
 import { getWebMidiAccess, resolveWebMidiInput } from "./web-midi";
@@ -12,13 +13,13 @@ export async function openMidiInput(
 
   const access = await getWebMidiAccess();
   if (!access) {
-    notifyWarningDeduped("Web MIDI is not available in this browser.");
+    notifyWarningDeduped(t("notification.webMidiUnavailable"));
     return () => {};
   }
 
   const input = resolveWebMidiInput(access, portId);
   if (!input) {
-    notifyWarningDeduped("The selected MIDI input device is not available.");
+    notifyWarningDeduped(t("notification.midiInputUnavailable"));
     return () => {};
   }
 

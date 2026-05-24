@@ -1,9 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
+import { t } from "../i18n/t";
 import { notifyErrorFromUnknown, notifyWarningDeduped } from "../lib/notifications";
 
 export async function sendMidiMessage(portId: string | null, message: number[]): Promise<void> {
   if (!portId) {
-    notifyWarningDeduped("Select a MIDI output in Settings before sending.");
+    notifyWarningDeduped(t("notification.selectMidiOutput"));
     return;
   }
   try {

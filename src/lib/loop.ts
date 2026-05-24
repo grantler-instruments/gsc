@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import type { Cue } from "../types/cue";
 
 export function isLoopableMediaCue(cue: Cue): boolean {
@@ -36,8 +37,8 @@ export function parseLoopIterationsInput(raw: string): number | "inf" {
 export function formatLoopLabel(cue: Cue): string | null {
   if (!cue.loop || !isLoopableMediaCue(cue)) return null;
   const plays = getLoopPlayCount(cue);
-  if (plays === "inf") return "∞ loops";
-  return `${plays}× loop`;
+  if (plays === "inf") return t("playback.infiniteLoops");
+  return t("playback.loopCount", { count: plays });
 }
 
 /** Upper bound for sequence timing when a cue loops forever. */

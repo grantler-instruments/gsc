@@ -1,5 +1,5 @@
-import { getCachedAsset } from "../lib/asset-cache";
 import { tryGetActiveProjectId } from "../lib/active-project-id";
+import { getCachedAsset } from "../lib/asset-cache";
 import { useVfsStore } from "../stores/vfs";
 import { normalizePath, vfsPut } from "../vfs/engine";
 

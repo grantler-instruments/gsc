@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import type { Cue } from "../../types/cue";
 import { CueAssetPreview } from "../CueAssetPreview";
 import { inspectorFieldLabelSx, inspectorFieldSx } from "../inspectorSx";
@@ -14,6 +15,7 @@ interface MediaInspectorFieldsProps {
 }
 
 export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspectorFieldsProps) {
+  const { t } = useTranslation();
   const isMedia = cue.type === "audio" || cue.type === "video" || cue.type === "image";
   if (!isMedia) return null;
 
@@ -22,7 +24,7 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
       {(cue.type === "video" || cue.type === "image") && cue.assetPath && (
         <Box sx={inspectorFieldSx}>
           <Typography component="span" sx={inspectorFieldLabelSx}>
-            Preview
+            {t("inspector.preview")}
           </Typography>
           <CueAssetPreview cue={cue} />
         </Box>
@@ -34,7 +36,7 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
         <>
           <LoopFields cue={cue} readOnly={readOnly} onChange={onChange} />
           <Box component="label" sx={inspectorFieldSx}>
-            Fade in (s)
+            {t("inspector.fadeInSeconds")}
             <input
               type="number"
               min={0}
@@ -49,7 +51,7 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
             />
           </Box>
           <Box component="label" sx={inspectorFieldSx}>
-            Fade out (s)
+            {t("inspector.fadeOutSeconds")}
             <input
               type="number"
               min={0}
@@ -64,7 +66,7 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
             />
           </Box>
           <SliderNumberField
-            label="Volume"
+            label={t("inspector.volume")}
             value={cue.volume ?? 1}
             min={0}
             max={1}
@@ -78,7 +80,7 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
 
       {(cue.type === "video" || cue.type === "image") && (
         <SliderNumberField
-          label="Opacity"
+          label={t("inspector.opacity")}
           value={cue.opacity ?? 1}
           min={0}
           max={1}
@@ -91,7 +93,7 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
 
       {cue.assetPath && (
         <Box component="label" sx={inspectorFieldSx}>
-          Asset
+          {t("inspector.asset")}
           <input type="text" value={cue.assetPath} readOnly />
         </Box>
       )}

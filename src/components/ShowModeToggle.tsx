@@ -1,4 +1,5 @@
 import Button from "@mui/material/Button";
+import { useTranslation } from "react-i18next";
 import { formatShortcut } from "../lib/keyboard";
 import { useUiStore } from "../stores/ui";
 import { showModeToggleSx } from "../theme/gscTheme";
@@ -7,11 +8,12 @@ import { useGscTokens } from "../theme/useGscTokens";
 const toolbarActionButtonMinWidth = 148;
 
 export function ShowModeToggle() {
+  const { t } = useTranslation();
   const showMode = useUiStore((s) => s.showMode);
   const toggleShowMode = useUiStore((s) => s.toggleShowMode);
   const tokens = useGscTokens();
   const shortcut = formatShortcut("e");
-  const modeLabel = showMode ? "Show mode" : "Edit mode";
+  const modeLabel = showMode ? t("showMode.showMode") : t("showMode.editMode");
 
   return (
     <Button
@@ -19,9 +21,7 @@ export function ShowModeToggle() {
       size="small"
       onClick={toggleShowMode}
       title={
-        showMode
-          ? `Show mode on — editing disabled. ${shortcut} to exit.`
-          : `Enter show mode — lock editing for performance. ${shortcut}`
+        showMode ? t("showMode.onTooltip", { shortcut }) : t("showMode.enterTooltip", { shortcut })
       }
       aria-pressed={showMode}
       sx={{

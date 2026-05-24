@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { cueListDropActiveSx, cueListEmptySx } from "../../theme/cueStyles";
 import type { GscTokenSet } from "../../theme/tokens";
 import { CueListTrailingDrop } from "./CueListTrailingDrop";
@@ -25,6 +26,8 @@ export function CueListBody({
   onListDrop,
   children,
 }: CueListBodyProps) {
+  const { t } = useTranslation();
+
   return (
     <Box
       component="ul"
@@ -47,9 +50,7 @@ export function CueListBody({
     >
       {isEmpty && (
         <Box component="li" sx={cueListEmptySx}>
-          {canEdit
-            ? "Drag assets here to create cues, or use + Cue below."
-            : "No cues in this list."}
+          {canEdit ? t("cueList.emptyHint") : t("cueList.noCues")}
         </Box>
       )}
       {children}

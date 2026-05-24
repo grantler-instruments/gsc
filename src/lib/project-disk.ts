@@ -2,8 +2,8 @@ import { useProjectLocationStore } from "../stores/project-location";
 import { normalizePath, vfsGet, vfsPut, vfsRegisterDiskPaths } from "../vfs/engine";
 import {
   assetRelativePath,
-  PROJECT_JSON,
   isAssetsRelativePath,
+  PROJECT_JSON,
   virtualPathFromRelativeAssetFile,
 } from "./project-paths";
 

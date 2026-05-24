@@ -1,3 +1,5 @@
+import { t } from "../i18n/t";
+
 /** Format seconds as M:SS.s (e.g. 65.5 → "1:05.5") */
 export function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -59,7 +61,7 @@ export function formatPlaybackRangeLabel(
   const hasOut = outTime !== undefined;
 
   if (!hasIn && !hasOut) {
-    return isImage ? "∞" : null;
+    return isImage ? t("playback.infinite") : null;
   }
 
   if (isImage && hasOut) {
@@ -67,9 +69,12 @@ export function formatPlaybackRangeLabel(
   }
 
   if (hasIn && hasOut) {
-    return `${formatTime(inVal)} → ${formatTime(outTime!)}`;
+    return t("playback.inOutRange", {
+      inTime: formatTime(inVal),
+      outTime: formatTime(outTime!),
+    });
   }
-  if (hasIn) return `In ${formatTime(inVal)}`;
-  if (hasOut) return `Out ${formatTime(outTime!)}`;
+  if (hasIn) return t("playback.inTime", { time: formatTime(inVal) });
+  if (hasOut) return t("playback.outTime", { time: formatTime(outTime!) });
   return null;
 }

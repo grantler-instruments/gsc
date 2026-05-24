@@ -6,6 +6,7 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { type MouseEvent, memo } from "react";
+import { useTranslation } from "react-i18next";
 import { getCueAssetWarning } from "../../lib/cue-asset";
 import {
   getCueDisplayName,
@@ -104,6 +105,7 @@ export const CueRow = memo(function CueRow({
   onRenameCommit,
   onRenameCancel,
 }: CueRowProps) {
+  const { t } = useTranslation();
   const tokens = useGscTokens();
   const {
     canEdit,
@@ -150,18 +152,18 @@ export const CueRow = memo(function CueRow({
     lightFadeMissing ||
     !!parallelConflict;
   const warningTitle = parallelConflict
-    ? parallelConflict.tooltip
+    ? t("cueRow.orderConflictTooltip")
     : lightFadeTargetMissing
-      ? "Reference cue missing"
+      ? t("cueRow.referenceMissing")
       : lightFadeMissing
-        ? "Add fixtures and levels to this light fade"
+        ? t("cueRow.addFixturesToLightFade")
         : fadeTargetMissing
-          ? "Fade target missing"
+          ? t("cueRow.fadeTargetMissing")
           : stopTargetMissing
-            ? "Stop target missing"
+            ? t("cueRow.stopTargetMissing")
             : assetWarning
-              ? `${assetWarning.title} — drag from Assets onto this cue or the list`
-              : "Warning";
+              ? t("cueRow.assetWarningHint", { title: assetWarning.title })
+              : t("common.state.warning");
 
   const { dropActive, insertPlace, onDragOver, onDragLeave, onDrop } = useCueRowDrop({
     cue,
@@ -297,7 +299,7 @@ export const CueRow = memo(function CueRow({
       {canEdit && (
         <IconButton
           size="small"
-          title="Delete cue"
+          title={t("cueList.deleteCue")}
           onClick={(e) => {
             e.stopPropagation();
             onRemove(cue.id);

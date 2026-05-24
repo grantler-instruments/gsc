@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { useVisualOutputLayers } from "../hooks/useVisualOutputLayers";
 import { VisualStage } from "./VisualStage";
 
@@ -10,6 +11,7 @@ interface VisualMonitorProps {
 
 /** Live preview monitor for active video/image cues. */
 export function VisualMonitor({ variant = "default" }: VisualMonitorProps) {
+  const { t } = useTranslation();
   const layers = useVisualOutputLayers();
   const sidebar = variant === "sidebar";
 
@@ -28,7 +30,7 @@ export function VisualMonitor({ variant = "default" }: VisualMonitorProps) {
         color="text.secondary"
         sx={{ px: 1.5, py: 0.5, display: "block" }}
       >
-        Preview
+        {t("output.preview")}
       </Typography>
       <VisualStage
         layers={layers}

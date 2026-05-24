@@ -8,6 +8,7 @@ import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { tryGetActiveProjectId } from "../lib/active-project-id";
 import { getCachedAsset } from "../lib/asset-cache";
 import {
@@ -54,6 +55,7 @@ const emptyListSx = {
 } as const;
 
 export function FixturesPanel() {
+  const { t } = useTranslation();
   const tokens = useGscTokens();
   const showMode = useUiStore((s) => s.showMode);
   const setSidebarTab = useUiStore((s) => s.setSidebarTab);
@@ -92,9 +94,7 @@ export function FixturesPanel() {
     try {
       const { zip, missing } = await buildFixturesProfileZip(fixtures, readProfileBlob);
       if (missing.length > 0) {
-        throw new Error(
-          `Missing ${missing.length} fixture profile file${missing.length === 1 ? "" : "s"}.`,
-        );
+        throw new Error(t("fixtures.missingProfiles", { count: missing.length }));
       }
       downloadFixturesProfile(zip, `${projectName}-fixtures`);
     } catch (err) {
@@ -182,9 +182,7 @@ export function FixturesPanel() {
       }}
     >
       <Typography variant="caption" sx={{ px: 1.5, py: 1, m: 0, flexShrink: 0 }}>
-        {canEdit
-          ? "Patch fixtures manually or browse Open Fixture Library, then set universe and address."
-          : "Fixtures are view-only in show mode."}
+        {canEdit ? t("fixtures.dropHint") : t("fixtures.showModeHint")}
       </Typography>
 
       <Box
@@ -208,7 +206,7 @@ export function FixturesPanel() {
         >
           {fixtures.length === 0 && (
             <Box component="li" sx={emptyListSx}>
-              No fixtures yet
+              {t("fixtures.empty")}
             </Box>
           )}
           {fixtures.map((fixture) => {
@@ -267,13 +265,13 @@ export function FixturesPanel() {
                     }}
                   >
                     {formatFixtureListDetail(fixture)}
-                    {conflicts.length > 0 ? " · address conflict" : ""}
+                    {conflicts.length > 0 ? t("fixtures.addressConflict") : ""}
                   </Typography>
                 </Box>
                 {canEdit && (
                   <IconButton
                     size="small"
-                    title="Remove fixture"
+                    title={t("fixtures.removeFixture")}
                     onClick={(event) => {
                       event.stopPropagation();
                       handleRemove(fixture.id);
@@ -309,7 +307,7 @@ export function FixturesPanel() {
                 setSidebarTab("active");
               }}
             >
-              {canEdit ? "Edit fixture preview" : "View fixture preview"}
+              {canEdit ? t("fixtures.editPreview") : t("fixtures.viewPreview")}
             </Button>
           </Box>
         )}
@@ -366,6 +364,7 @@ interface FixtureEditorProps {
 }
 
 function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorProps) {
+  const { t } = useTranslation();
   const conflicts = getFixtureConflicts(fixture, fixtures);
   const outOfRange = !fixtureFitsInUniverse(fixture);
   const hasOfl = Boolean(fixture.ofl);
@@ -434,12 +433,12 @@ function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorP
           color: "text.secondary",
         }}
       >
-        Fixture patch
+        {t("fixtures.patchSection")}
       </Typography>
 
       <Box component="label" sx={inspectorFieldSx}>
         <Typography component="span" sx={inspectorFieldLabelSx}>
-          Name
+          {t("fixtures.name")}
         </Typography>
         <input
           type="text"
@@ -456,7 +455,7 @@ function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorP
           </Typography>
           <Box component="label" sx={inspectorFieldSx}>
             <Typography component="span" sx={inspectorFieldLabelSx}>
-              DMX mode
+              {t("fixtures.dmxMode")}
             </Typography>
             <Select
               size="small"
@@ -482,7 +481,7 @@ function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorP
               onClick={handleClearOfl}
               sx={{ alignSelf: "flex-start", px: 0, minWidth: 0 }}
             >
-              Use manual channel count
+              {t("fixtures.manualChannelCount")}
             </Button>
           )}
         </>
@@ -490,14 +489,14 @@ function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorP
 
       <Stack direction="row" sx={{ gap: 1 }}>
         <FixtureNumberField
-          label="Universe"
+          label={t("fixtures.universe")}
           value={fixture.universe}
           min={1}
           readOnly={readOnly}
           onCommit={(value) => onUpdate({ universe: clampUniverse(value) })}
         />
         <FixtureNumberField
-          label="Address"
+          label={t("fixtures.address")}
           value={fixture.startAddress}
           min={1}
           max={512}
@@ -509,7 +508,7 @@ function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorP
       {!hasProfile && (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
           <Typography component="span" sx={inspectorFieldLabelSx}>
-            Channels
+            {t("fixtures.channels")}
           </Typography>
           {manualChannels.map((channel, index) => (
             <Stack
@@ -533,7 +532,7 @@ function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorP
                   type="text"
                   value={channel.name ?? ""}
                   readOnly={readOnly}
-                  placeholder="Optional name"
+                  placeholder={t("fixtures.optionalName")}
                   onChange={(event) =>
                     onUpdate({
                       channels: updateManualFixtureChannelName(
@@ -548,7 +547,7 @@ function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorP
               {!readOnly && manualChannels.length > 1 && (
                 <IconButton
                   size="small"
-                  title="Remove channel"
+                  title={t("fixtures.removeChannel")}
                   onClick={() =>
                     onUpdate({
                       channels: removeManualFixtureChannel(fixture, index),
@@ -573,7 +572,7 @@ function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorP
               onClick={() => onUpdate({ channels: addManualFixtureChannel(fixture) })}
               sx={{ alignSelf: "flex-start", px: 0, minWidth: 0 }}
             >
-              + Channel
+              {t("fixtures.addChannel")}
             </Button>
           )}
         </Box>
@@ -587,18 +586,18 @@ function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorP
             ? ` · channels ${fixture.startAddress}–${fixtureEndAddress(fixture)}`
             : manualChannels[0]?.name
               ? ` · ${manualChannels[0].name}`
-              : " · single-channel dimmer"}
+              : t("fixtures.singleChannelDimmer")}
       </Typography>
 
       {outOfRange && (
         <Typography variant="caption" sx={{ m: 0, color: "warning.main" }}>
-          Fixture extends past channel 512 in this universe.
+          {t("fixtures.extendsPast512")}
         </Typography>
       )}
 
       {conflicts.length > 0 && (
         <Typography variant="caption" sx={{ m: 0, color: "warning.main" }}>
-          Overlaps with {conflicts.map((other) => other.name).join(", ")}.
+          {t("fixtures.overlapsWith", { names: conflicts.map((other) => other.name).join(", ") })}
         </Typography>
       )}
     </Box>

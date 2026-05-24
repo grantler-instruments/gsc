@@ -13,11 +13,10 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { GscLogo } from "../brand/GscLogo";
 import { CueTypeBadge } from "../components/CueTypeIcon";
-import { featureCategories } from "./features";
-
-const siteName = "Grantler Stage Control";
+import { featureCategoryKeys } from "./features";
 
 /**
  * Logo mark and hero title cap height (matched). Fluid below `md` so the full
@@ -37,6 +36,7 @@ const DESKTOP_DOWNLOAD_URL = "#";
 
 export default function WebsiteApp() {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -51,12 +51,12 @@ export default function WebsiteApp() {
         }}
       >
         <Toolbar>
-          <GscLogo size={28} aria-label="GSC" />
+          <GscLogo size={28} aria-label={t("common.brand.gsc")} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600, ml: 1.5 }}>
-            GSC
+            {t("common.brand.gsc")}
           </Typography>
           <Button color="inherit" href="#contact" sx={{ color: "text.primary" }}>
-            Contact
+            {t("website.contact")}
           </Button>
         </Toolbar>
       </AppBar>
@@ -126,7 +126,7 @@ export default function WebsiteApp() {
                       minWidth: 0,
                     }}
                   >
-                    {siteName}
+                    {t("common.brand.appName")}
                   </Typography>
                 </Stack>
                 <Typography
@@ -134,8 +134,7 @@ export default function WebsiteApp() {
                   color="text.secondary"
                   sx={{ fontWeight: 400, maxWidth: 640 }}
                 >
-                  Cue-based stage control software — run it in the browser or install the desktop
-                  app.
+                  {t("website.tagline")}
                 </Typography>
               </Stack>
 
@@ -151,7 +150,7 @@ export default function WebsiteApp() {
                   startIcon={<DownloadOutlinedIcon />}
                   sx={{ flex: 1, py: 1.75, fontSize: "1.05rem" }}
                 >
-                  Download desktop version
+                  {t("website.downloadDesktop")}
                 </Button>
                 <Button
                   variant="outlined"
@@ -160,7 +159,7 @@ export default function WebsiteApp() {
                   startIcon={<OpenInBrowserOutlinedIcon />}
                   sx={{ flex: 1, py: 1.75, fontSize: "1.05rem" }}
                 >
-                  Try it in the web
+                  {t("website.tryWeb")}
                 </Button>
               </Stack>
             </Stack>
@@ -179,22 +178,22 @@ export default function WebsiteApp() {
           <Container maxWidth="lg">
             <Stack spacing={6}>
               <Typography variant="h4" component="h2" color="primary">
-                Features
+                {t("website.featuresHeading")}
               </Typography>
 
-              {featureCategories.map((category) => (
-                <Stack key={category.name} spacing={3}>
+              {featureCategoryKeys.map((category) => (
+                <Stack key={category.key} spacing={3}>
                   <Typography
                     variant="h6"
                     component="h3"
                     color="text.secondary"
                     sx={{ fontWeight: 600 }}
                   >
-                    {category.name}
+                    {t(`website.${category.key}`)}
                   </Typography>
                   <Grid container spacing={3}>
                     {category.features.map((feature) => (
-                      <Grid key={feature.title} size={{ xs: 12, sm: 6, md: 4 }}>
+                      <Grid key={feature.key} size={{ xs: 12, sm: 6, md: 4 }}>
                         <Paper
                           variant="outlined"
                           sx={{
@@ -206,11 +205,11 @@ export default function WebsiteApp() {
                           <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
                             {feature.cueType && <CueTypeBadge type={feature.cueType} compact />}
                             <Typography variant="subtitle1" component="h4" sx={{ fontWeight: 600 }}>
-                              {feature.title}
+                              {t(`website.${feature.key}`)}
                             </Typography>
                           </Stack>
                           <Typography variant="body2" color="text.secondary">
-                            {feature.description}
+                            {t(`website.${feature.descKey}`)}
                           </Typography>
                         </Paper>
                       </Grid>
@@ -235,7 +234,7 @@ export default function WebsiteApp() {
       >
         <Container>
           <Typography variant="body2" color="text.secondary">
-            © {new Date().getFullYear()} Grantler Instruments.{" "}
+            {t("website.copyright", { year: new Date().getFullYear() })}{" "}
             <Link href="mailto:info@example.com" color="text.primary" underline="hover">
               info@example.com
             </Link>

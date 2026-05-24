@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import "../i18n";
 import App from "../App";
 import { OutputApp } from "../components/OutputApp";
 import { isOutputMode } from "../platform/output-window";

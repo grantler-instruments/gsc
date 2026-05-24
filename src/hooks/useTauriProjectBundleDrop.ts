@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
+import { t } from "../i18n/t";
 import { diskPathsMayHaveMedia, handleTauriMediaDrop } from "../lib/asset-drop";
 import { notifyWarning } from "../lib/notifications";
-import { isGscProjectDirPath, isProjectBundlePath } from "../lib/project-paths";
 import { openProjectPath } from "../lib/open-project-path";
+import { isGscProjectDirPath, isProjectBundlePath } from "../lib/project-paths";
 import { dropTargetAtPhysicalPosition, tauriDragHighlightState } from "../lib/tauri-drop";
 import { dispatchTauriCueListDrag, dispatchTauriFileDrag } from "../lib/tauri-file-drag";
 import { getPlatform } from "../platform";
@@ -97,7 +98,7 @@ export function useTauriProjectBundleDrop(): void {
         });
       } catch (err) {
         console.warn("[tauri] drag-drop listener unavailable", err);
-        notifyWarning("Native drag-and-drop is unavailable.");
+        notifyWarning(t("notification.nativeDropUnavailable"));
       }
     })();
 

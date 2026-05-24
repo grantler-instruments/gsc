@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import type { Cue } from "../types/cue";
 
 export interface CueList {
@@ -32,10 +33,10 @@ export function findCueInLists(
 export function nextCueListName(cueLists: CueList[]): string {
   const used = new Set(cueLists.map((l) => l.name));
   let n = cueLists.length + 1;
-  let name = `List ${n}`;
+  let name = t("project.generatedListName", { number: n });
   while (used.has(name)) {
     n += 1;
-    name = `List ${n}`;
+    name = t("project.generatedListName", { number: n });
   }
   return name;
 }

@@ -1,4 +1,5 @@
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { getCueAssetWarning } from "../../lib/cue-asset";
 import {
   getFadeTarget,
@@ -49,6 +50,7 @@ export function CueRowDetails({
   runningSequence,
   playback,
 }: CueRowDetailsProps) {
+  const { t } = useTranslation();
   const fixtures = useProjectStore((s) => s.fixtures);
   const isContainer = isContainerCue(cue);
   const isParallel = isParallelGroup(cue);
@@ -87,47 +89,50 @@ export function CueRowDetails({
       {isParallel && (
         <Typography component="span" sx={cueDetailSx}>
           {childCount === 0
-            ? "Empty — drag cues here (parallel)"
-            : `${childCount} cue${childCount === 1 ? "" : "s"} · parallel`}
+            ? t("cueRow.emptyParallel")
+            : t("cueRow.parallelCount", { count: childCount })}
         </Typography>
       )}
       {parallelConflict && (
         <Typography component="span" sx={cueDetailSx}>
-          {parallelConflict.detail}
+          {t("cueRow.stopGoOverlap")}
         </Typography>
       )}
       {isSequence && (
         <Typography component="span" sx={cueDetailSx}>
           {sequenceProgress
-            ? `Playing step ${sequenceProgress.currentStep + 1} of ${sequenceProgress.stepCount}`
+            ? t("cueRow.playingStep", {
+                current: sequenceProgress.currentStep + 1,
+                total: sequenceProgress.stepCount,
+              })
             : childCount === 0
-              ? "Empty — drag cues here (sequential)"
-              : `${childCount} cue${childCount === 1 ? "" : "s"} · sequential`}
+              ? t("cueRow.emptySequential")
+              : t("cueRow.sequentialCount", { count: childCount })}
         </Typography>
       )}
       {stopTargetMissing && (
         <Typography component="span" sx={cueDetailSx}>
-          Target cue missing
+          {t("cueRow.targetCueMissing")}
         </Typography>
       )}
       {fadeTargetMissing && (
         <Typography component="span" sx={cueDetailSx}>
-          Fade target missing
+          {t("cueRow.fadeTargetMissing")}
         </Typography>
       )}
       {lightFadeTargetMissing && (
         <Typography component="span" sx={cueDetailSx}>
-          Reference cue missing
+          {t("cueRow.referenceMissing")}
         </Typography>
       )}
       {lightFadeMissing && (
         <Typography component="span" sx={cueDetailSx}>
-          Add fixtures and channel levels
+          {t("cueRow.addFixturesAndLevels")}
         </Typography>
       )}
       {isWait && (
         <Typography component="span" sx={cueDetailSx}>
-          Hold {formatWaitDurationLabel(cue)}
+          {t("cueRow.holdDuration", { duration: formatWaitDurationLabel(cue) })}
         </Typography>
       )}
       {assetWarning && (

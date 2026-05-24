@@ -1,3 +1,4 @@
+import { t } from "../../i18n/t";
 import { OFL_MANUFACTURERS_URL, oflFixtureRawUrl, oflManufacturerContentsUrl } from "./constants";
 import type {
   OflFixtureListEntry,
@@ -29,7 +30,7 @@ function titleCaseFromKey(key: string): string {
 export async function fetchOflManufacturers(): Promise<OflManufacturer[]> {
   const response = await fetch(OFL_MANUFACTURERS_URL);
   if (!response.ok) {
-    throw new Error(`Could not load OFL manufacturers (${response.status})`);
+    throw new Error(t("ofl.manufacturersError", { status: response.status }));
   }
 
   const data = (await response.json()) as Record<string, { name?: string } | string>;
@@ -45,7 +46,7 @@ export async function fetchOflManufacturers(): Promise<OflManufacturer[]> {
 export async function fetchOflFixtureList(manufacturerKey: string): Promise<OflFixtureListEntry[]> {
   const response = await fetch(oflManufacturerContentsUrl(manufacturerKey));
   if (!response.ok) {
-    throw new Error(`Could not load fixtures for ${manufacturerKey} (${response.status})`);
+    throw new Error(t("ofl.fixturesError", { key: manufacturerKey, status: response.status }));
   }
 
   const entries = (await response.json()) as GitHubContentEntry[];
@@ -102,7 +103,7 @@ export function parseOflFixtureJson(
     raw && typeof raw === "object" ? (raw as { name?: string; categories?: unknown }) : {};
   const modes = parseOflModes(raw);
   if (modes.length === 0) {
-    throw new Error("Fixture has no DMX modes");
+    throw new Error(t("ofl.noDmxModes"));
   }
 
   const categories = Array.isArray(record.categories)
@@ -126,7 +127,13 @@ export async function fetchOflFixtureSummary(
 ): Promise<OflFixtureSummary> {
   const response = await fetch(oflFixtureRawUrl(manufacturerKey, fixtureKey));
   if (!response.ok) {
-    throw new Error(`Could not load ${manufacturerKey}/${fixtureKey} (${response.status})`);
+    throw new Error(
+      t("ofl.fixtureError", {
+        manufacturer: manufacturerKey,
+        fixture: fixtureKey,
+        status: response.status,
+      }),
+    );
   }
   const raw = await response.json();
   return parseOflFixtureJson(manufacturerKey, manufacturerName, fixtureKey, raw);

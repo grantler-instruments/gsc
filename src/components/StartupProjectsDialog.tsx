@@ -12,6 +12,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import ListSubheader from "@mui/material/ListSubheader";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import {
   resolveStartupProjectsChoice,
   useStartupProjectsPromptStore,
@@ -25,6 +26,7 @@ function truncatePath(path: string, maxLength = 56): string {
 }
 
 export function StartupProjectsDialog() {
+  const { t } = useTranslation();
   const open = useStartupProjectsPromptStore((s) => s.open);
   const draft = useStartupProjectsPromptStore((s) => s.draft);
   const recents = useStartupProjectsPromptStore((s) => s.recents);
@@ -36,29 +38,24 @@ export function StartupProjectsDialog() {
       maxWidth="sm"
       fullWidth
     >
-      <DialogTitle>Open Project</DialogTitle>
+      <DialogTitle>{t("startup.title")}</DialogTitle>
       <DialogContent sx={{ px: 0, pt: 0 }}>
         {draft ? (
-          <List subheader={<ListSubheader component="div">Unsaved draft</ListSubheader>}>
+          <List
+            subheader={<ListSubheader component="div">{t("startup.unsavedDraft")}</ListSubheader>}
+          >
             <ListItemButton onClick={() => resolveStartupProjectsChoice({ type: "restore-draft" })}>
               <ListItemIcon sx={{ minWidth: 36 }}>
                 <EditNoteOutlinedIcon fontSize="small" color="warning" />
               </ListItemIcon>
-              <ListItemText
-                primary={draft.name}
-                secondary="Restore work from your last session"
-              />
+              <ListItemText primary={draft.name} secondary={t("startup.restoreDraftHint")} />
             </ListItemButton>
           </List>
         ) : null}
 
         {recents.length > 0 ? (
           <List
-            subheader={
-              <ListSubheader component="div">
-                Recent projects
-              </ListSubheader>
-            }
+            subheader={<ListSubheader component="div">{t("startup.recentProjects")}</ListSubheader>}
           >
             {recents.map((entry) => (
               <ListItemButton
@@ -78,18 +75,20 @@ export function StartupProjectsDialog() {
 
         {!draft && recents.length === 0 ? (
           <Typography sx={{ px: 3, py: 1, fontSize: 14, color: "text.secondary" }}>
-            Choose a recent project, browse for a file, or start a new show.
+            {t("startup.description")}
           </Typography>
         ) : null}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={() => resolveStartupProjectsChoice({ type: "new-show" })}>New Show</Button>
+        <Button onClick={() => resolveStartupProjectsChoice({ type: "new-show" })}>
+          {t("startup.newShow")}
+        </Button>
         <Button
           variant="contained"
           startIcon={<FolderOpenOutlinedIcon />}
           onClick={() => resolveStartupProjectsChoice({ type: "browse" })}
         >
-          Browse…
+          {t("common.action.browse")}
         </Button>
       </DialogActions>
     </Dialog>

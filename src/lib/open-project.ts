@@ -4,8 +4,8 @@ import { useVfsStore } from "../stores/vfs";
 import type { ProjectSnapshot } from "../types/cue";
 import { hydrateVfsFromProjectCache, vfsClear } from "../vfs/engine";
 import { setActiveProjectId } from "./active-project-id";
-import { collectSessionAssetPaths } from "./project-session";
 import { replaceProjectWithoutHistory } from "./project-history";
+import { collectSessionAssetPaths } from "./project-session";
 import { snapshotToCueLists } from "./project-snapshot";
 
 /** Replace the open project and reload any cached assets for it. */

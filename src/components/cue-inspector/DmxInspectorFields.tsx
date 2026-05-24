@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { getFadeTarget } from "../../lib/cues";
 import {
   addAllDmxFixturesToCue,
@@ -35,6 +36,7 @@ export function DmxInspectorFields({
   dmxDisabled,
   onUpdate,
 }: DmxInspectorFieldsProps) {
+  const { t } = useTranslation();
   const fixtures = useProjectStore((s) => s.fixtures);
 
   if ((cue.type !== "dmx" && cue.type !== "lightFade") || !cue.dmx) return null;
@@ -53,7 +55,7 @@ export function DmxInspectorFields({
       <>
         <DmxPreviewField cue={cue} readOnly={readOnly} dmxDisabled={dmxDisabled} />
         <Typography component="p" sx={{ m: 0, fontSize: 13, color: "text.secondary" }}>
-          Patch fixtures in the Fixtures panel before editing light levels.
+          {t("inspector.patchFixturesFirst")}
         </Typography>
       </>
     );
@@ -91,7 +93,7 @@ export function DmxInspectorFields({
 
       {dmxDisabled && (
         <Typography component="p" sx={{ m: 0, fontSize: 13, color: "text.secondary" }}>
-          DMX output requires the desktop app.
+          {t("inspector.dmxDesktopOnly")}
         </Typography>
       )}
 
@@ -105,19 +107,11 @@ export function DmxInspectorFields({
         />
       )}
 
-      <Typography component="p" sx={{ m: 0, fontSize: 12, color: "text.secondary" }}>
-        {isLightFade
-          ? isReferencedLightFade
-            ? "Fixtures come from the reference cue. Adjust target levels below."
-            : "Fades listed fixtures to these levels. Other channels stay as they are."
-          : "Updates only the fixtures listed below. Other levels are unchanged."}
-      </Typography>
-
       {dmx.fixtures.length === 0 && (
         <Typography component="p" sx={{ m: 0, fontSize: 13, color: "text.secondary" }}>
           {isReferencedLightFade
-            ? "Reference cue has no fixtures."
-            : "Add fixtures to define this cue's levels."}
+            ? t("inspector.referenceNoFixtures")
+            : t("inspector.addFixturesForLevels")}
         </Typography>
       )}
 
@@ -144,7 +138,7 @@ export function DmxInspectorFields({
               {!readOnly && !isReferencedLightFade && (
                 <IconButton
                   size="small"
-                  title="Remove fixture from cue"
+                  title={t("inspector.removeFixtureFromCue")}
                   onClick={() => patchDmx(removeDmxFixtureFromCue(dmx, entry.fixtureId))}
                 >
                   ×
@@ -182,7 +176,7 @@ export function DmxInspectorFields({
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {channelLabel ?? "Level"}
+                    {channelLabel ?? t("inspector.level")}
                   </Typography>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <SliderNumberField

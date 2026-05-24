@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import type { Cue } from "../types/cue";
 import {
   getChildCues,
@@ -94,9 +95,6 @@ export function fireParallelGroupChildren(
   return leafIds;
 }
 
-export const PARALLEL_ORDER_CONFLICT_TOOLTIP =
-  "A stop cue and a playback cue target the same cue in this group. Siblings run in list order — only the first one applies. Reorder children to change the outcome.";
-
 /** True when stop and GO would affect the same cue id (order determines the winner). */
 export function getParallelGroupOrderConflict(
   group: Cue,
@@ -131,9 +129,9 @@ export function getParallelGroupOrderConflict(
   for (const id of goIds) {
     if (stopIds.has(id)) {
       return {
-        title: "Order conflict",
-        detail: "Stop and GO overlap — first in list wins",
-        tooltip: PARALLEL_ORDER_CONFLICT_TOOLTIP,
+        title: t("cueRow.orderConflict"),
+        detail: t("cueRow.stopGoOverlap"),
+        tooltip: t("cueRow.orderConflictTooltip"),
       };
     }
   }

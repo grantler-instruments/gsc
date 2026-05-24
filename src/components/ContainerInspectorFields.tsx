@@ -5,6 +5,8 @@ import Stack from "@mui/material/Stack";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
+import { getCueTypeLabel } from "../i18n/cueTypeLabels";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
 import { getChildCues, isSequenceGroup } from "../lib/cues";
 import { useActiveCueList, useProjectStore } from "../stores/project";
@@ -32,6 +34,7 @@ interface ContainerInspectorFieldsProps {
 }
 
 export function ContainerInspectorFields({ container }: ContainerInspectorFieldsProps) {
+  const { t } = useTranslation();
   const canEdit = !useUiStore((s) => s.showMode);
   const activeList = useActiveCueList();
   const cues = activeList.cues;
@@ -52,11 +55,11 @@ export function ContainerInspectorFields({ container }: ContainerInspectorFields
   return (
     <Box component="fieldset" sx={inspectorGroupSx}>
       <Box component="legend" sx={inspectorGroupLegendSx}>
-        {isSequence ? "Sequence" : "Parallel group"}
+        {isSequence ? t("inspector.sequence") : t("inspector.parallelGroup")}
       </Box>
       <Stack sx={{ ...inspectorFieldSx, gap: 0.75 }}>
         <Typography component="span" sx={inspectorFieldLabelSx}>
-          Playback
+          {t("inspector.playback")}
         </Typography>
         <ToggleButtonGroup
           exclusive
@@ -64,26 +67,24 @@ export function ContainerInspectorFields({ container }: ContainerInspectorFields
           sx={inspectorToggleGroupSx}
           value={isSequence ? "sequence" : "group"}
           disabled={!canEdit}
-          aria-label="Container playback mode"
+          aria-label={t("inspector.containerModeAria")}
           onChange={(_, value: "group" | "sequence" | null) => {
             if (!canEdit || !value) return;
             updateCue(container.id, { type: value });
           }}
         >
-          <ToggleButton value="group">Parallel</ToggleButton>
-          <ToggleButton value="sequence">Sequential</ToggleButton>
+          <ToggleButton value="group">{getCueTypeLabel("group")}</ToggleButton>
+          <ToggleButton value="sequence">{t("cueType.sequential")}</ToggleButton>
         </ToggleButtonGroup>
       </Stack>
 
       <Typography component="p" sx={inspectorGroupHintSx}>
-        {isSequence
-          ? "Child cues run one after another when you GO this sequence. Each cue starts when the previous finishes (using In/Out duration until playback is wired up)."
-          : "Child cues run at the same time when you GO this group. Drag cues onto the row in the list, or add the selected cue below."}
+        {isSequence ? t("inspector.sequenceHint") : t("inspector.parallelHint")}
       </Typography>
 
       {canEdit && canAddSelected && (
         <Button variant="text" size="small" onClick={() => addSelectedCueToGroup(container.id)}>
-          Add selected cue to {isSequence ? "sequence" : "group"}
+          {t("inspector.addSelectedToContainer")}
         </Button>
       )}
 
@@ -91,16 +92,18 @@ export function ContainerInspectorFields({ container }: ContainerInspectorFields
         <Button
           variant="text"
           size="small"
-          onClick={() => addCue({ name: "Wait", type: "wait", parentId: container.id })}
+          onClick={() =>
+            addCue({ name: getCueTypeLabel("wait"), type: "wait", parentId: container.id })
+          }
         >
-          Add wait step
+          {t("inspector.addWaitStep")}
         </Button>
       )}
 
       <Box component="ul" sx={groupChildrenListSx}>
         {children.length === 0 && (
           <Box component="li" sx={inspectorHintSx}>
-            No cues in this {isSequence ? "sequence" : "group"} yet.
+            {t("inspector.noCuesInContainer")}
           </Box>
         )}
         {children.map((child, index) => (
@@ -127,7 +130,7 @@ export function ContainerInspectorFields({ container }: ContainerInspectorFields
             {canEdit && (
               <IconButton
                 size="small"
-                title="Remove from container"
+                title={t("inspector.removeFromContainer")}
                 onClick={() => moveCueToGroup(child.id, null)}
               >
                 ↑

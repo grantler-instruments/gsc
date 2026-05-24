@@ -1,4 +1,5 @@
 import { exists, readFile } from "@tauri-apps/plugin-fs";
+import { t } from "../i18n/t";
 import { notifyWarningDeduped } from "../lib/notifications";
 import { diskPathForAsset } from "../lib/project-disk";
 import { useProjectLocationStore } from "../stores/project-location";
@@ -19,7 +20,7 @@ export async function readAssetBlobFromProjectDisk(virtualPath: string): Promise
     return mime ? new Blob([data], { type: mime }) : new Blob([data]);
   } catch (err) {
     console.warn(`[tauri] Could not read asset ${normalized}`, err);
-    notifyWarningDeduped(`Could not read asset: ${normalized}`);
+    notifyWarningDeduped(t("notification.assetReadFailed", { path: normalized }));
     return undefined;
   }
 }

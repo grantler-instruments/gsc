@@ -12,6 +12,8 @@ import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { LOCALE_LABELS, SUPPORTED_LOCALES, type SupportedLocale } from "../i18n";
 import { getPlatform } from "../platform";
 import { listAudioOutputDevices } from "../platform/audio-devices";
 import {
@@ -34,10 +36,13 @@ const DEFAULT_VALUE = "";
 type SettingsTab = "devices" | "midi-map";
 
 export function SettingsDialog() {
+  const { t } = useTranslation();
   const open = useUiStore((s) => s.settingsDialogOpen);
   const setOpen = useUiStore((s) => s.setSettingsDialogOpen);
   const isTauri = getPlatform() === "tauri";
 
+  const locale = usePreferencesStore((s) => s.locale);
+  const setLocale = usePreferencesStore((s) => s.setLocale);
   const soundCardId = usePreferencesStore((s) => s.soundCardId);
   const midiInterfaceId = usePreferencesStore((s) => s.midiInterfaceId);
   const midiInputId = usePreferencesStore((s) => s.midiInputId);
@@ -92,14 +97,14 @@ export function SettingsDialog() {
         setWebSerialAvailable(await isEnttecProWebSerialAvailable());
       } catch (err) {
         if (cancelled) return;
-        setLoadError(err instanceof Error ? err.message : "Failed to load devices");
+        setLoadError(err instanceof Error ? err.message : t("settings.loadDevicesError"));
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [open, isTauri]);
+  }, [open, isTauri, t]);
 
   return (
     <Dialog
@@ -109,14 +114,14 @@ export function SettingsDialog() {
       fullWidth
       aria-labelledby="settings-dialog-title"
     >
-      <DialogTitle id="settings-dialog-title">Settings</DialogTitle>
+      <DialogTitle id="settings-dialog-title">{t("settings.title")}</DialogTitle>
       <Tabs
         value={tab}
         onChange={(_, v: SettingsTab) => setTab(v)}
         sx={{ px: 2, borderBottom: 1, borderColor: "divider" }}
       >
-        <Tab value="devices" label="Devices" />
-        <Tab value="midi-map" label="MIDI map" />
+        <Tab value="devices" label={t("settings.tabDevices")} />
+        <Tab value="midi-map" label={t("settings.tabMidiMap")} />
       </Tabs>
       <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
         {loadError ? (
@@ -127,6 +132,25 @@ export function SettingsDialog() {
 
         {tab === "devices" ? (
           <>
+            <Box sx={inspectorFieldSx}>
+              <Typography component="label" htmlFor="language-select" sx={inspectorFieldLabelSx}>
+                {t("language.label")}
+              </Typography>
+              <Select
+                id="language-select"
+                size="small"
+                fullWidth
+                value={locale}
+                onChange={(e) => setLocale(e.target.value as SupportedLocale)}
+              >
+                {SUPPORTED_LOCALES.map((code) => (
+                  <MenuItem key={code} value={code}>
+                    {LOCALE_LABELS[code]}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+
             {isTauri ? (
               <Box sx={inspectorFieldSx}>
                 <Typography
@@ -134,7 +158,7 @@ export function SettingsDialog() {
                   htmlFor="sound-card-select"
                   sx={inspectorFieldLabelSx}
                 >
-                  Sound card
+                  {t("settings.soundCard")}
                 </Typography>
                 <Select
                   id="sound-card-select"
@@ -147,7 +171,7 @@ export function SettingsDialog() {
                   }}
                   displayEmpty
                 >
-                  <MenuItem value={DEFAULT_VALUE}>System default</MenuItem>
+                  <MenuItem value={DEFAULT_VALUE}>{t("settings.systemDefault")}</MenuItem>
                   {audioDevices.map((d) => (
                     <MenuItem key={d.id} value={d.id}>
                       {d.label}
@@ -159,7 +183,7 @@ export function SettingsDialog() {
 
             <Box sx={inspectorFieldSx}>
               <Typography component="label" htmlFor="midi-output-select" sx={inspectorFieldLabelSx}>
-                MIDI output
+                {t("settings.midiOutput")}
               </Typography>
               <Select
                 id="midi-output-select"
@@ -172,7 +196,7 @@ export function SettingsDialog() {
                 }}
                 displayEmpty
               >
-                <MenuItem value={DEFAULT_VALUE}>None</MenuItem>
+                <MenuItem value={DEFAULT_VALUE}>{t("common.action.none")}</MenuItem>
                 {midiOutDevices.map((d) => (
                   <MenuItem key={d.id} value={d.id}>
                     {d.label}
@@ -181,16 +205,14 @@ export function SettingsDialog() {
               </Select>
               {midiOutDevices.length === 0 && !loadError ? (
                 <Typography variant="caption" color="text.secondary">
-                  {isTauri
-                    ? "No MIDI outputs found."
-                    : "No MIDI outputs found. Grant access when the browser prompts."}
+                  {isTauri ? t("settings.noMidiOutputs") : t("settings.noMidiOutputsBrowser")}
                 </Typography>
               ) : null}
             </Box>
 
             <Box sx={inspectorFieldSx}>
               <Typography component="label" htmlFor="midi-input-select" sx={inspectorFieldLabelSx}>
-                MIDI input
+                {t("settings.midiInput")}
               </Typography>
               <Select
                 id="midi-input-select"
@@ -203,7 +225,7 @@ export function SettingsDialog() {
                 }}
                 displayEmpty
               >
-                <MenuItem value={DEFAULT_VALUE}>None</MenuItem>
+                <MenuItem value={DEFAULT_VALUE}>{t("common.action.none")}</MenuItem>
                 {midiInDevices.map((d) => (
                   <MenuItem key={d.id} value={d.id}>
                     {d.label}
@@ -212,9 +234,7 @@ export function SettingsDialog() {
               </Select>
               {midiInDevices.length === 0 && !loadError ? (
                 <Typography variant="caption" color="text.secondary">
-                  {isTauri
-                    ? "No MIDI inputs found."
-                    : "No MIDI inputs found. Grant access when the browser prompts."}
+                  {isTauri ? t("settings.noMidiInputs") : t("settings.noMidiInputsBrowser")}
                 </Typography>
               ) : null}
             </Box>
@@ -227,7 +247,7 @@ export function SettingsDialog() {
                     htmlFor="dmx-output-select"
                     sx={inspectorFieldLabelSx}
                   >
-                    DMX output
+                    {t("settings.dmxOutput")}
                   </Typography>
                   <Select
                     id="dmx-output-select"
@@ -238,12 +258,12 @@ export function SettingsDialog() {
                       setDmxOutputBackend(e.target.value as DmxOutputBackend);
                     }}
                   >
-                    <MenuItem value="artnet">Art-Net (UDP)</MenuItem>
-                    <MenuItem value="enttec-pro">Enttec DMX USB Pro</MenuItem>
+                    <MenuItem value="artnet">{t("settings.artNetUdp")}</MenuItem>
+                    <MenuItem value="enttec-pro">{t("settings.enttecDmxUsbPro")}</MenuItem>
                   </Select>
                 </>
               ) : (
-                <Typography sx={inspectorFieldLabelSx}>DMX output</Typography>
+                <Typography sx={inspectorFieldLabelSx}>{t("settings.dmxOutput")}</Typography>
               )}
             </Box>
 
@@ -251,7 +271,7 @@ export function SettingsDialog() {
               <>
                 <Box sx={inspectorFieldSx}>
                   <Typography component="label" htmlFor="artnet-host" sx={inspectorFieldLabelSx}>
-                    Art-Net host
+                    {t("settings.artNetHost")}
                   </Typography>
                   <TextField
                     id="artnet-host"
@@ -264,7 +284,7 @@ export function SettingsDialog() {
                 </Box>
                 <Box sx={inspectorFieldSx}>
                   <Typography component="label" htmlFor="artnet-port" sx={inspectorFieldLabelSx}>
-                    Art-Net port
+                    {t("settings.artNetPort")}
                   </Typography>
                   <TextField
                     id="artnet-port"
@@ -289,7 +309,7 @@ export function SettingsDialog() {
                       htmlFor="enttec-port-select"
                       sx={inspectorFieldLabelSx}
                     >
-                      Enttec Pro serial port
+                      {t("settings.enttecSerialPort")}
                     </Typography>
                     <Select
                       id="enttec-port-select"
@@ -302,7 +322,7 @@ export function SettingsDialog() {
                       }}
                       displayEmpty
                     >
-                      <MenuItem value={DEFAULT_VALUE}>None</MenuItem>
+                      <MenuItem value={DEFAULT_VALUE}>{t("common.action.none")}</MenuItem>
                       {serialPorts.map((d) => (
                         <MenuItem key={d.id} value={d.id}>
                           {d.label}
@@ -311,16 +331,20 @@ export function SettingsDialog() {
                     </Select>
                     {serialPorts.length === 0 && !loadError ? (
                       <Typography variant="caption" color="text.secondary">
-                        No serial ports found. Plug in the Enttec interface and reopen Settings.
+                        {t("settings.noSerialPorts")}
                       </Typography>
                     ) : null}
                     <Typography variant="caption" color="text.secondary">
-                      {enttecConnected ? "Connected" : "Not connected"}
+                      {enttecConnected
+                        ? t("common.state.connected")
+                        : t("common.state.notConnected")}
                     </Typography>
                   </Box>
                 ) : (
                   <Box sx={inspectorFieldSx}>
-                    <Typography sx={inspectorFieldLabelSx}>Enttec Pro (Web Serial)</Typography>
+                    <Typography sx={inspectorFieldLabelSx}>
+                      {t("settings.enttecWebSerial")}
+                    </Typography>
                     <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                       <Button
                         size="small"
@@ -338,20 +362,22 @@ export function SettingsDialog() {
                           })();
                         }}
                       >
-                        {enttecConnected ? "Disconnect" : "Connect"}
+                        {enttecConnected
+                          ? t("common.action.disconnect")
+                          : t("common.action.connect")}
                       </Button>
                       <Typography variant="caption" color="text.secondary">
                         {enttecConnected
-                          ? "Connected"
+                          ? t("common.state.connected")
                           : webSerialAvailable
-                            ? "Grant access when Chrome prompts"
-                            : "Web Serial is not available in this browser"}
+                            ? t("settings.grantChromeAccess")
+                            : t("settings.webSerialUnavailable")}
                       </Typography>
                     </Stack>
                   </Box>
                 )}
                 <Typography variant="caption" color="text.secondary">
-                  57600 baud · universe 1 (Pro) · universes 1–2 (Pro MK2)
+                  {t("settings.enttecBaudHint")}
                 </Typography>
               </>
             )}
@@ -361,7 +387,7 @@ export function SettingsDialog() {
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpen(false)}>Close</Button>
+        <Button onClick={() => setOpen(false)}>{t("common.action.close")}</Button>
       </DialogActions>
     </Dialog>
   );

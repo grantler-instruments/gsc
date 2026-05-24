@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import type { Cue, FadeCueType } from "../types/cue";
 import { fadeCueLabel, isFadeCue, isLightFadeCue, isValidFadeTarget } from "./fade";
 import { formatWaitDurationLabel, isWaitCue } from "./wait";
@@ -52,8 +53,8 @@ export function formatStopTargetLabel(target: Cue): string {
 export function getCueDisplayName(cue: Cue, cues: Cue[]): string {
   if (isStopCue(cue)) {
     const target = getStopTarget(cue, cues);
-    if (!target) return "Stop (no target)";
-    return `Stop ${formatStopTargetLabel(target)}`;
+    if (!target) return t("cueRow.stopNoTarget");
+    return t("cueRow.stopTarget", { label: formatStopTargetLabel(target) });
   }
   if (isFadeCue(cue)) {
     if (isLightFadeCue(cue)) {
@@ -64,8 +65,8 @@ export function getCueDisplayName(cue: Cue, cues: Cue[]): string {
     }
     const target = getFadeTarget(cue, cues);
     const label = fadeCueLabel(cue.type as FadeCueType);
-    if (!target) return `${label} (no target)`;
-    return `${label} ${target.name}`;
+    if (!target) return t("cueRow.fadeNoTarget", { fadeLabel: label });
+    return t("cueRow.fadeTarget", { fadeLabel: label, name: target.name });
   }
   if (isWaitCue(cue)) {
     return `${cue.name} · ${formatWaitDurationLabel(cue)}`;

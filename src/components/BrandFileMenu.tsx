@@ -9,16 +9,21 @@ import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { formatShortcut } from "../lib/keyboard";
+import { notifyWarning } from "../lib/notifications";
 import { openSettings } from "../lib/open-settings";
-import { openProjectFile, openRecentProjectPath, saveProjectFile } from "../lib/project-file-actions";
-import type { RecentProjectEntry } from "../lib/recent-projects";
+import {
+  openProjectFile,
+  openRecentProjectPath,
+  saveProjectFile,
+} from "../lib/project-file-actions";
 import { BUNDLE_EXTENSION } from "../lib/project-paths";
+import type { RecentProjectEntry } from "../lib/recent-projects";
 import { getPlatform } from "../platform";
 import { exportProjectBundle, listRecentProjects } from "../platform/project-storage";
 import { projectDisplayName, useProjectLocationStore } from "../stores/project-location";
 import { useUiStore } from "../stores/ui";
-import { notifyWarning } from "../lib/notifications";
 
 const isTauri = getPlatform() === "tauri";
 
@@ -30,6 +35,7 @@ function truncatePath(path: string, maxLength = 48): string {
 }
 
 export function BrandFileMenu() {
+  const { t } = useTranslation();
   const rootDir = useProjectLocationStore((s) => s.rootDir);
   const isTemporaryRoot = useProjectLocationStore((s) => s.isTemporaryRoot);
   const showMode = useUiStore((s) => s.showMode);
@@ -48,16 +54,16 @@ export function BrandFileMenu() {
     close();
     const { missing } = await exportProjectBundle();
     if (missing.length > 0) {
-      notifyWarning(`Exported, but ${missing.length} asset(s) were missing from storage.`);
+      notifyWarning(t("notification.exportMissingAssets", { count: missing.length }));
     }
   };
 
   const projectFolderLabel = projectDisplayName(rootDir);
   const saveLocationHint =
     isTauri && isTemporaryRoot
-      ? " · Draft (save to choose location)"
+      ? t("project.draftHint")
       : projectFolderLabel
-        ? ` · Saving to ${projectFolderLabel}`
+        ? t("project.savingToHint", { folder: projectFolderLabel })
         : "";
   const saveShortcut = formatShortcut("S");
 
@@ -67,7 +73,7 @@ export function BrandFileMenu() {
         onClick={(e) => setAnchorEl(e.currentTarget)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="File menu"
+        aria-label={t("fileMenu.ariaLabel")}
         sx={{
           flexShrink: 0,
           borderRadius: 1,
@@ -80,7 +86,7 @@ export function BrandFileMenu() {
           "&:hover": { bgcolor: "action.hover" },
         }}
       >
-        GSC
+        {t("common.brand.gsc")}
       </ButtonBase>
 
       <Menu
@@ -99,7 +105,7 @@ export function BrandFileMenu() {
           <ListItemIcon>
             <SettingsOutlinedIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText primary="Settings…" secondary={formatShortcut(",")} />
+          <ListItemText primary={t("fileMenu.settings")} secondary={formatShortcut(",")} />
         </MenuItem>
 
         <MenuItem
@@ -113,13 +119,13 @@ export function BrandFileMenu() {
             <FolderOpenOutlinedIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText
-            primary="Open…"
+            primary={t("fileMenu.open")}
             secondary={
               showMode
-                ? "Disabled in show mode"
+                ? t("common.state.disabledInShowMode")
                 : isTauri
                   ? `${formatShortcut("O")}${saveLocationHint}`
-                  : `${formatShortcut("O")} · Import a ${BUNDLE_EXTENSION} file`
+                  : `${formatShortcut("O")} · ${t("fileMenu.openWebHint", { extension: BUNDLE_EXTENSION })}`
             }
           />
         </MenuItem>
@@ -156,12 +162,12 @@ export function BrandFileMenu() {
               <ArchiveOutlinedIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText
-              primary="Save"
+              primary={t("fileMenu.save")}
               secondary={
                 showMode
-                  ? "Disabled in show mode"
+                  ? t("common.state.disabledInShowMode")
                   : isTemporaryRoot
-                    ? `${saveShortcut} · Choose location…`
+                    ? `${saveShortcut} · ${t("fileMenu.saveChooseLocation")}`
                     : saveShortcut
               }
             />
@@ -173,13 +179,13 @@ export function BrandFileMenu() {
             <ArchiveOutlinedIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText
-            primary="Export…"
+            primary={t("fileMenu.export")}
             secondary={
               showMode
-                ? "Disabled in show mode"
+                ? t("common.state.disabledInShowMode")
                 : isTauri
-                  ? `Download ${BUNDLE_EXTENSION} with all assets`
-                  : `${saveShortcut} · Download ${BUNDLE_EXTENSION} with all assets`
+                  ? t("fileMenu.exportHint", { extension: BUNDLE_EXTENSION })
+                  : `${saveShortcut} · ${t("fileMenu.exportHint", { extension: BUNDLE_EXTENSION })}`
             }
           />
         </MenuItem>

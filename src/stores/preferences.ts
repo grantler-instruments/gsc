@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
+import { type SupportedLocale, setAppLocale } from "../i18n";
 import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx";
 import { getPlatform, type PlatformKind } from "../platform";
 
@@ -15,6 +16,7 @@ export function resolveDmxOutputBackend(
 }
 
 interface PreferencesState {
+  locale: SupportedLocale;
   /** Tauri: selected audio output device id (device name from cpal). */
   soundCardId: string | null;
   /** Web MIDI output id or Tauri MIDI port index (output). */
@@ -26,6 +28,7 @@ interface PreferencesState {
   artNetPort: number;
   /** Tauri serial port path for Enttec Pro. */
   enttecProPortId: string | null;
+  setLocale: (locale: SupportedLocale) => void;
   setSoundCardId: (soundCardId: string | null) => void;
   setMidiInterfaceId: (midiInterfaceId: string | null) => void;
   setMidiInputId: (midiInputId: string | null) => void;
@@ -39,6 +42,7 @@ export const usePreferencesStore = create<PreferencesState>()(
   devtools(
     persist(
       (set) => ({
+        locale: "en",
         soundCardId: null,
         midiInterfaceId: null,
         midiInputId: null,
@@ -46,6 +50,10 @@ export const usePreferencesStore = create<PreferencesState>()(
         artNetHost: DEFAULT_ART_NET_HOST,
         artNetPort: DEFAULT_ART_NET_PORT,
         enttecProPortId: null,
+        setLocale: (locale) => {
+          setAppLocale(locale);
+          set({ locale });
+        },
         setSoundCardId: (soundCardId) => set({ soundCardId }),
         setMidiInterfaceId: (midiInterfaceId) => set({ midiInterfaceId }),
         setMidiInputId: (midiInputId) => set({ midiInputId }),
@@ -57,6 +65,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       {
         name: "gsc-preferences",
         partialize: (s) => ({
+          locale: s.locale,
           soundCardId: s.soundCardId,
           midiInterfaceId: s.midiInterfaceId,
           midiInputId: s.midiInputId,

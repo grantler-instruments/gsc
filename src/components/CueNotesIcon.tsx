@@ -1,12 +1,14 @@
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
+import { useTranslation } from "react-i18next";
 
 interface CueNotesIconProps {
   notes: string | undefined;
 }
 
 export function CueNotesIcon({ notes }: CueNotesIconProps) {
+  const { t } = useTranslation();
   const text = notes?.trim();
   if (!text) return null;
 
@@ -29,7 +31,7 @@ export function CueNotesIcon({ notes }: CueNotesIconProps) {
       <Box
         component="span"
         role="img"
-        aria-label="Cue notes"
+        aria-label={t("cueNotes.ariaLabel")}
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
         sx={{

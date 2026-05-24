@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
@@ -81,14 +82,20 @@ export function buildNoteToCueMappings(cues: Cue[], startNote = 36): MidiMapping
 export function formatMidiActionLabel(action: MidiAction, cues: Cue[]): string {
   switch (action.type) {
     case "go-selected":
-      return "GO (selected cue)";
+      return t("midiMap.goSelected");
     case "panic":
-      return "Panic";
-    case "go-cue":
+      return t("midiMap.panic");
+    case "go-cue": {
+      const cue = cues.find((c) => c.id === action.cueId);
+      return cue
+        ? t("midiMap.goCueWithName", { number: cue.number, name: cue.name })
+        : t("midiMap.goMissingCue");
+    }
     case "select-cue": {
       const cue = cues.find((c) => c.id === action.cueId);
-      const prefix = action.type === "go-cue" ? "GO" : "Select";
-      return cue ? `${prefix} ${cue.number} — ${cue.name}` : `${prefix} (missing cue)`;
+      return cue
+        ? t("midiMap.selectCueWithName", { number: cue.number, name: cue.name })
+        : t("midiMap.selectMissingCue");
     }
   }
 }

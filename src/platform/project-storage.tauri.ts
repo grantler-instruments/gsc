@@ -10,7 +10,9 @@ import {
   writeFile,
   writeTextFile,
 } from "@tauri-apps/plugin-fs";
+import { t } from "../i18n/t";
 import { setActiveProjectId } from "../lib/active-project-id";
+import { isMacPlatform } from "../lib/keyboard";
 import { prefetchMediaDurations } from "../lib/media-duration";
 import { notifyErrorFromUnknown, notifyWarning, notifyWarningDeduped } from "../lib/notifications";
 import {
@@ -26,31 +28,33 @@ import {
   virtualPathsFromRelativeFiles,
   writeAssetToDisk,
 } from "../lib/project-disk";
-import { isMacPlatform } from "../lib/keyboard";
+import { replaceProjectWithoutHistory } from "../lib/project-history";
 import {
   BUNDLE_EXTENSION,
   isGscProjectDirPath,
   isProjectBundlePath,
   PROJECT_DIR_EXTENSION,
-  PROJECT_JSON,
   projectDirNameFromShowName,
   projectRootFromSavePath,
 } from "../lib/project-paths";
-import { recordRecentProject, readRecentProjects, removeRecentProject } from "../lib/recent-projects";
-import { hasMeaningfulProjectContent, snapshotHasMeaningfulContent } from "../lib/unsaved-project";
 import { collectSessionAssetPaths } from "../lib/project-session";
-import { requestStartupProjectsChoice } from "../stores/startup-projects-prompt";
-import type { PendingDraftProject } from "../stores/startup-projects-prompt";
-import type { RecentProjectEntry } from "../lib/recent-projects";
-import { replaceProjectWithoutHistory } from "../lib/project-history";
 import { snapshotToCueLists } from "../lib/project-snapshot";
-import { markGscProjectPackage } from "./macos-package";
+import type { RecentProjectEntry } from "../lib/recent-projects";
+import {
+  readRecentProjects,
+  recordRecentProject,
+  removeRecentProject,
+} from "../lib/recent-projects";
+import { hasMeaningfulProjectContent, snapshotHasMeaningfulContent } from "../lib/unsaved-project";
 import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
+import type { PendingDraftProject } from "../stores/startup-projects-prompt";
+import { requestStartupProjectsChoice } from "../stores/startup-projects-prompt";
 import type { VfsEntry } from "../stores/vfs";
 import { useVfsStore } from "../stores/vfs";
 import { vfsClear, vfsGet, vfsHas } from "../vfs/engine";
 import { assetKindFromPath } from "../vfs/import";
+import { markGscProjectPackage } from "./macos-package";
 
 const LAST_ROOT_KEY = "gsc-tauri-last-project-root";
 const DRAFT_ROOT_KEY = "gsc-tauri-draft-root";
@@ -145,9 +149,7 @@ export async function promptTauriProjectFolder(
 
   if (await exists(rootDir)) {
     if (!(await isDirectoryEmpty(rootDir))) {
-      throw new Error(
-        `“${rootDir}” already exists and is not empty. Choose another name or location.`,
-      );
+      throw new Error(t("notification.pathExistsError", { path: rootDir }));
     }
     return rootDir;
   }
@@ -217,7 +219,7 @@ export async function loadProjectFromFolder(
   options?: { temporary?: boolean },
 ): Promise<void> {
   if (!isGscProjectDirPath(rootDir)) {
-    throw new Error(`Select a ${PROJECT_DIR_EXTENSION} project folder (e.g. MyShow${PROJECT_DIR_EXTENSION}).`);
+    throw new Error(t("notification.selectGscFolder"));
   }
 
   const { rootDir: previousRoot, isTemporaryRoot } = useProjectLocationStore.getState();
@@ -225,13 +227,13 @@ export async function loadProjectFromFolder(
 
   const jsonPath = projectJsonDiskPath(rootDir);
   if (!(await exists(jsonPath))) {
-    throw new Error(`No ${PROJECT_JSON} in selected folder`);
+    throw new Error(t("notification.noProjectJson"));
   }
 
   const text = await readTextFile(jsonPath);
   const snap = JSON.parse(text);
   if (snap.version !== 2) {
-    throw new Error("Unsupported project version");
+    throw new Error(t("notification.unsupportedVersion"));
   }
 
   vfsClear();
@@ -293,7 +295,10 @@ export async function saveProjectToFolder(rootDir: string): Promise<void> {
 
 async function openProjectBundleFromZipData(zipData: Uint8Array): Promise<boolean> {
   const { snapshot } = parseProjectBundleZip(zipData);
-  const destDir = await promptTauriProjectFolder("Save project as", snapshot.name);
+  const destDir = await promptTauriProjectFolder(
+    t("notification.dialogSaveProjectAs"),
+    snapshot.name,
+  );
   if (!destDir) return false;
 
   await writeBundleFilesToFolder(destDir, zipData);
@@ -353,7 +358,12 @@ async function openPickedProjectPath(path: string): Promise<boolean> {
   if (isGscProjectDirPath(path)) {
     return openProjectDirFromPath(path);
   }
-  notifyWarning(`Choose a ${PROJECT_DIR_EXTENSION} project or ${BUNDLE_EXTENSION} bundle.`);
+  notifyWarning(
+    t("notification.chooseProjectType", {
+      projectExt: PROJECT_DIR_EXTENSION,
+      bundleExt: BUNDLE_EXTENSION,
+    }),
+  );
   return false;
 }
 
@@ -364,7 +374,7 @@ export async function pickAndOpenProject(): Promise<boolean> {
   if (isMacPlatform()) {
     const selected = await open({
       multiple: false,
-      title: "Open project",
+      title: t("notification.dialogOpenProject"),
       filters: [
         { name: "GSC project", extensions: ["gsc"] },
         { name: "GSC project bundle", extensions: ["gsc.zip", "zip"] },
@@ -382,7 +392,7 @@ export async function pickAndOpenProject(): Promise<boolean> {
   const folderPath = await open({
     directory: true,
     multiple: false,
-    title: `Open project (${PROJECT_DIR_EXTENSION} folder)`,
+    title: t("notification.dialogOpenProjectFolder"),
   });
   if (typeof folderPath === "string") {
     return openProjectDirFromPath(folderPath);
@@ -390,7 +400,7 @@ export async function pickAndOpenProject(): Promise<boolean> {
 
   const bundlePath = await open({
     multiple: false,
-    title: "Import project bundle",
+    title: t("notification.dialogImportBundle"),
     filters: [{ name: "GSC project bundle", extensions: ["gsc.zip", "zip"] }],
   });
   if (typeof bundlePath !== "string") return false;
@@ -408,7 +418,10 @@ async function promptAndCommitProjectLocation(): Promise<string | null> {
     bindFolderPromise = (async () => {
       const { rootDir: previousRoot, isTemporaryRoot } = useProjectLocationStore.getState();
       const showName = useProjectStore.getState().name;
-      const folder = await promptTauriProjectFolder("Save project as", showName);
+      const folder = await promptTauriProjectFolder(
+        t("notification.dialogSaveProjectAs"),
+        showName,
+      );
       if (!folder) return null;
       useProjectLocationStore.getState().setRootDir(folder, { temporary: false });
       localStorage.setItem(LAST_ROOT_KEY, folder);
@@ -473,7 +486,7 @@ async function getPendingDraftInfo(): Promise<PendingDraftProject | null> {
     return null;
   }
 
-  let projectName = "Untitled Show";
+  let projectName = t("project.defaultName");
   try {
     const snap = JSON.parse(await readTextFile(projectJsonDiskPath(draftRoot)));
     if (typeof snap.name === "string" && snap.name.trim()) {
@@ -499,10 +512,11 @@ async function ensureRecentsMigratedFromLastRoot(): Promise<void> {
 
   try {
     const snap = JSON.parse(await readTextFile(projectJsonDiskPath(lastRoot)));
-    const name = typeof snap.name === "string" && snap.name.trim() ? snap.name : "Untitled Show";
+    const name =
+      typeof snap.name === "string" && snap.name.trim() ? snap.name : t("project.defaultName");
     recordRecentProject(lastRoot, name);
   } catch {
-    recordRecentProject(lastRoot, "Untitled Show");
+    recordRecentProject(lastRoot, t("project.defaultName"));
   }
 }
 
@@ -579,7 +593,9 @@ export async function restoreLastTauriProject(): Promise<boolean> {
 
 let restorePromise: Promise<boolean> | undefined;
 
-export async function persistTauriProject(options?: { promptForLocation?: boolean }): Promise<void> {
+export async function persistTauriProject(options?: {
+  promptForLocation?: boolean;
+}): Promise<void> {
   try {
     const rootDir = await resolveProjectRootDir(options);
     if (!rootDir) return;
@@ -589,7 +605,7 @@ export async function persistTauriProject(options?: { promptForLocation?: boolea
     if (err instanceof Error && err.message.includes("already exists")) {
       showError(err);
     } else {
-      notifyWarningDeduped("Could not autosave the project.");
+      notifyWarningDeduped(t("notification.autosaveFailed"));
     }
   }
 }
@@ -602,12 +618,12 @@ export async function exportProjectBundleTauri(): Promise<boolean> {
 
   const { zip, missing } = await buildProjectBundleZip(snapshot, paths, vfsGet);
   if (missing.length > 0) {
-    notifyWarning(`Exported, but ${missing.length} asset(s) were missing from storage.`);
+    notifyWarning(t("notification.exportMissingAssets", { count: missing.length }));
   }
 
   const base = snapshot.name.replace(/[^\w.-]+/g, "_") || "show";
   const path = await save({
-    title: "Export project",
+    title: t("notification.dialogExportProject"),
     defaultPath: `${base}${BUNDLE_EXTENSION}`,
     filters: [{ name: "GSC project bundle", extensions: ["gsc.zip", "zip"] }],
   });

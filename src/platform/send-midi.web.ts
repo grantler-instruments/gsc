@@ -1,15 +1,16 @@
+import { t } from "../i18n/t";
 import { notifyWarningDeduped } from "../lib/notifications";
 import { getWebMidiAccess, resolveWebMidiOutput } from "./web-midi";
 
 export async function sendMidiMessage(portId: string | null, message: number[]): Promise<void> {
   const access = await getWebMidiAccess();
   if (!access) {
-    notifyWarningDeduped("Web MIDI is not available in this browser.");
+    notifyWarningDeduped(t("notification.webMidiUnavailable"));
     return;
   }
   const output = resolveWebMidiOutput(access, portId);
   if (!output) {
-    notifyWarningDeduped("No MIDI output device is available.");
+    notifyWarningDeduped(t("notification.noMidiOutput"));
     return;
   }
   output.send(message);

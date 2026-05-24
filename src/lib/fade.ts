@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import type { Cue, FadeCueType } from "../types/cue";
 import type { Fixture } from "../types/fixture";
 import { normalizeDmxCueData, resolveLightFadeDmx } from "./dmx";
@@ -41,9 +42,9 @@ export function isValidFadeTarget(fadeType: FadeCueType, target: Cue | undefined
 }
 
 export function fadeCueLabel(fadeType: FadeCueType): string {
-  if (fadeType === "volumeFade") return "Volume fade";
-  if (fadeType === "lightFade") return "Light fade";
-  return "Opacity fade";
+  if (fadeType === "volumeFade") return t("cueType.volumeFade");
+  if (fadeType === "lightFade") return t("cueType.lightFade");
+  return t("cueType.opacityFade");
 }
 
 export function defaultFadeCueFields(fadeType: FadeCueType): {

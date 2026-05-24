@@ -2,6 +2,7 @@ import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { isDmxPreviewableCue } from "../../lib/dmx-preview";
 import { useDmxPreviewSessionStore } from "../../stores/dmx-preview-session";
 import { useActiveCueList, useProjectStore } from "../../stores/project";
@@ -26,6 +27,7 @@ const previewIdleSx = {
 } as const;
 
 export function DmxPreviewField({ cue, readOnly, dmxDisabled }: DmxPreviewFieldProps) {
+  const { t } = useTranslation();
   const fixtures = useProjectStore((s) => s.fixtures);
   const cues = useActiveCueList().cues;
   const previewActive = useUiStore((s) => s.dmxPreviewCueIds.includes(cue.id));
@@ -39,13 +41,13 @@ export function DmxPreviewField({ cue, readOnly, dmxDisabled }: DmxPreviewFieldP
 
   let hint: string | null = null;
   if (fixtures.length === 0) {
-    hint = "Patch fixtures before previewing on DMX.";
+    hint = t("inspector.previewPatchHint");
   } else if (!previewable) {
-    hint = "Add fixture levels to this cue before previewing.";
+    hint = t("inspector.previewAddLevelsHint");
   } else if (dmxDisabled) {
-    hint = "DMX preview requires the desktop app.";
+    hint = t("inspector.previewDesktopHint");
   } else if (active) {
-    hint = "Levels are snapshotted when preview starts. Turn preview off to keep or revert edits.";
+    hint = t("inspector.previewSnapshotHint");
   }
 
   const handleClick = () => {
@@ -77,7 +79,7 @@ export function DmxPreviewField({ cue, readOnly, dmxDisabled }: DmxPreviewFieldP
           ...(active ? {} : previewIdleSx),
         }}
       >
-        {active ? "Previewing on DMX" : "Preview on DMX"}
+        {active ? t("inspector.previewingOnDmx") : t("inspector.previewOnDmx")}
       </Button>
 
       {hint && (

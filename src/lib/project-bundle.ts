@@ -1,7 +1,14 @@
 import { strFromU8, strToU8, unzipSync, type Zippable, zipSync } from "fflate";
+import { t } from "../i18n/t";
 import type { ProjectSnapshot } from "../types/cue";
 import { vfsPut } from "../vfs/engine";
-import { isAssetsRelativePath, ASSETS_DIR, PROJECT_JSON, virtualPathFromRelativeAssetFile, virtualToRelative } from "./project-paths";
+import {
+  ASSETS_DIR,
+  isAssetsRelativePath,
+  PROJECT_JSON,
+  virtualPathFromRelativeAssetFile,
+  virtualToRelative,
+} from "./project-paths";
 
 /** Relative paths and bytes for every file in a bundle (including project.json). */
 export interface ProjectBundleDiskFile {
@@ -59,7 +66,7 @@ export function parseProjectBundleZip(data: Uint8Array): {
   }
 
   if (!snapshot || snapshot.version !== 2) {
-    throw new Error("Invalid project bundle: missing project.json");
+    throw new Error(t("notification.invalidBundle"));
   }
 
   return { snapshot, assets };

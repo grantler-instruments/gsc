@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { getPrimarySelectedCueId } from "../../lib/cue-selection";
 import { getPlatform } from "../../platform";
 import { useActiveCueList, useProjectStore } from "../../stores/project";
@@ -10,6 +11,7 @@ import { PanelHeader } from "../layout/PanelHeader";
 import { CueInspectorBody } from "./CueInspectorBody";
 
 export function CueInspector() {
+  const { t } = useTranslation();
   const activeList = useActiveCueList();
   const updateCue = useProjectStore((s) => s.updateCue);
   const showMode = useUiStore((s) => s.showMode);
@@ -26,7 +28,7 @@ export function CueInspector() {
     return (
       <Box component="aside" sx={inspectorPanelEmptySx}>
         <Typography variant="caption" color="text.secondary" sx={{ m: 0 }}>
-          Select a cue to edit its properties.
+          {t("inspector.emptyState")}
         </Typography>
       </Box>
     );
@@ -36,7 +38,7 @@ export function CueInspector() {
 
   return (
     <Box component="aside" sx={inspectorPanelSx}>
-      <PanelHeader title={showMode ? "Inspector (view)" : "Inspector"}>
+      <PanelHeader title={showMode ? t("inspector.titleView") : t("inspector.title")}>
         <CueTypeBadge type={cue.type} />
       </PanelHeader>
 

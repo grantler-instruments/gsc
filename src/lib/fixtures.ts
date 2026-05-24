@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import type { Fixture, FixtureChannel } from "../types/fixture";
 import { normalizeFixtureOflProfile, oflProfileChannelCount } from "./ofl/profile";
 
@@ -81,10 +82,12 @@ export function suggestNextFixtureAddress(fixtures: Fixture[], universe = 1): nu
 
 export function defaultFixtureName(fixtures: Fixture[]): string {
   let index = fixtures.length + 1;
-  while (fixtures.some((fixture) => fixture.name === `Fixture ${index}`)) {
+  while (
+    fixtures.some((fixture) => fixture.name === t("fixtures.defaultName", { number: index }))
+  ) {
     index += 1;
   }
-  return `Fixture ${index}`;
+  return t("fixtures.defaultName", { number: index });
 }
 
 function applyFixtureProfile(fixture: Fixture, overrides: Partial<Omit<Fixture, "id">>): void {

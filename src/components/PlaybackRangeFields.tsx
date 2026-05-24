@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { formatTime, normalizePlaybackRange } from "../lib/time";
 import type { Cue } from "../types/cue";
 import { AudioWaveform } from "./AudioWaveform";
@@ -27,12 +28,13 @@ interface PlaybackRangeFieldsProps {
  * Audio and video cues use the waveform; images keep numeric fields.
  */
 export function PlaybackRangeFields({ cue, readOnly = false, onChange }: PlaybackRangeFieldsProps) {
+  const { t } = useTranslation();
   const inTime = cue.inTime ?? 0;
   const outTime = cue.outTime;
   const isImage = cue.type === "image";
   const isVideo = cue.type === "video";
   const hasWaveform = (cue.type === "audio" || isVideo) && !!cue.assetPath;
-  const effectiveOutLabel = outTime !== undefined ? formatTime(outTime) : "End of file";
+  const effectiveOutLabel = outTime !== undefined ? formatTime(outTime) : t("inspector.endOfFile");
   const sliceSec = outTime !== undefined && outTime > inTime ? outTime - inTime : null;
 
   const patchIn = (value: number) => {
@@ -54,16 +56,14 @@ export function PlaybackRangeFields({ cue, readOnly = false, onChange }: Playbac
   return (
     <Box component="fieldset" sx={inspectorGroupSx}>
       <Box component="legend" sx={inspectorGroupLegendSx}>
-        Playback range
+        {t("inspector.playbackRange")}
       </Box>
       <Typography component="p" sx={inspectorGroupHintSx}>
         {hasWaveform
-          ? isVideo
-            ? "Drag the markers to set In and Out. Hover the waveform for a frame preview."
-            : "Drag the markers on the waveform to set In and Out. Drag Out to the end to play through."
+          ? t("inspector.waveformRangeHint")
           : isImage
-            ? "Clear duration or click ∞ to hold until a stop cue. Set seconds to auto-hide."
-            : "In and Out are positions within the file (seconds). Leave Out empty to play to the end."}
+            ? t("inspector.imageRangeHint")
+            : t("inspector.numericRangeHint")}
       </Typography>
 
       {hasWaveform && (
@@ -79,15 +79,18 @@ export function PlaybackRangeFields({ cue, readOnly = false, onChange }: Playbac
             hoverPreview={isVideo && !readOnly}
           />
           <Typography component="p" sx={inspectorWaveformRangeSummarySx}>
-            In {formatTime(inTime)} · Out {effectiveOutLabel}
-            {sliceSec !== null && ` · ${formatTime(sliceSec)} slice`}
+            {t("inspector.rangeSummary", {
+              inTime: formatTime(inTime),
+              outLabel: effectiveOutLabel,
+              slice: sliceSec !== null ? formatTime(sliceSec) : "",
+            })}
           </Typography>
         </Box>
       )}
 
       {!hasWaveform && !isImage && (
         <Box component="label" sx={inspectorFieldSx}>
-          In
+          {t("inspector.inPoint")}
           <Box sx={inspectorTimeRowSx}>
             <input
               type="number"
@@ -106,13 +109,13 @@ export function PlaybackRangeFields({ cue, readOnly = false, onChange }: Playbac
 
       {!hasWaveform && (
         <Box component="label" sx={inspectorFieldSx}>
-          {isImage ? "Duration (seconds)" : "Out"}
+          {isImage ? t("inspector.durationSecondsField") : t("inspector.outPoint")}
           <Box sx={inspectorTimeRowSx}>
             <input
               type="number"
               min={0}
               step={0.1}
-              placeholder={isImage ? "∞" : "End of file"}
+              placeholder={isImage ? t("playback.infinite") : t("inspector.endOfFile")}
               value={outTime ?? ""}
               disabled={readOnly}
               onChange={(e) => {
@@ -127,14 +130,14 @@ export function PlaybackRangeFields({ cue, readOnly = false, onChange }: Playbac
             {isImage ? (
               <>
                 <Box component="span" sx={inspectorTimeFormattedSx}>
-                  {outTime !== undefined ? formatTime(outTime) : "∞"}
+                  {outTime !== undefined ? formatTime(outTime) : t("playback.infinite")}
                 </Box>
                 {!readOnly && outTime !== undefined && (
                   <Box
                     component="button"
                     type="button"
                     sx={inspectorInfiniteBtnSx}
-                    title="Hold until stop cue"
+                    title={t("inspector.holdUntilStop")}
                     onClick={() => patchOut(undefined)}
                   >
                     ∞
@@ -154,7 +157,7 @@ export function PlaybackRangeFields({ cue, readOnly = false, onChange }: Playbac
 
       {!hasWaveform && !isImage && sliceSec !== null && (
         <Typography component="p" sx={inspectorDerivedSx}>
-          Slice length: {formatTime(sliceSec)}
+          {t("inspector.sliceLength", { time: formatTime(sliceSec) })}
         </Typography>
       )}
     </Box>

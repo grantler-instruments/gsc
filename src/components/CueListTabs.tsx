@@ -1,10 +1,12 @@
 import Box from "@mui/material/Box";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import { useGscTokens } from "../theme/useGscTokens";
 
 export function CueListTabs() {
+  const { t } = useTranslation();
   const tokens = useGscTokens();
   const showMode = useUiStore((s) => s.showMode);
   const canEdit = !showMode;
@@ -30,7 +32,7 @@ export function CueListTabs() {
   return (
     <Box
       role="tablist"
-      aria-label="Cue lists"
+      aria-label={t("cueList.tabsAria")}
       sx={{
         display: "flex",
         alignItems: "stretch",
@@ -95,8 +97,8 @@ export function CueListTabs() {
             }
             title={
               canEdit
-                ? `${list.name} (${topLevelCount} cues). Double-click to rename.`
-                : `${list.name} (${topLevelCount} cues)`
+                ? t("cueList.tabTitleEditable", { name: list.name, count: topLevelCount })
+                : t("cueList.tabTitle", { name: list.name, count: topLevelCount })
             }
             sx={{
               display: "inline-flex",
@@ -157,7 +159,7 @@ export function CueListTabs() {
                 component="span"
                 role="button"
                 tabIndex={-1}
-                aria-label={`Close ${list.name}`}
+                aria-label={t("cueList.closeTabAria", { name: list.name })}
                 onClick={(e) => {
                   e.stopPropagation();
                   removeCueList(list.id);
@@ -188,8 +190,8 @@ export function CueListTabs() {
         <Box
           component="button"
           type="button"
-          title="New cue list"
-          aria-label="New cue list"
+          title={t("cueList.newListTitle")}
+          aria-label={t("cueList.newListAria")}
           onClick={() => addCueList()}
           sx={{
             display: "inline-flex",

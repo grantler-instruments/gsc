@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { formatStopTargetLabel, getStopTarget, isStopCue, isWaitCue } from "../lib/cues";
 import { isFadeCue } from "../lib/fade";
 import { useActiveCueList, useProjectStore } from "../stores/project";
@@ -21,6 +22,7 @@ interface StopInspectorFieldsProps {
 }
 
 export function StopInspectorFields({ stopCue }: StopInspectorFieldsProps) {
+  const { t } = useTranslation();
   const readOnly = useUiStore((s) => s.showMode);
   const cues = useActiveCueList().cues;
   const updateCue = useProjectStore((s) => s.updateCue);
@@ -34,15 +36,14 @@ export function StopInspectorFields({ stopCue }: StopInspectorFieldsProps) {
   return (
     <Box component="fieldset" sx={inspectorGroupSx}>
       <Box component="legend" sx={inspectorGroupLegendSx}>
-        Stop cue
+        {t("inspector.stopCue")}
       </Box>
       <Typography component="p" sx={inspectorGroupHintSx}>
-        When triggered (GO), this cue stops the target cue and any cues running as part of it (e.g.
-        children in a parallel group).
+        {t("inspector.stopHint")}
       </Typography>
 
       <Box component="label" sx={inspectorFieldSx}>
-        Stops cue
+        {t("inspector.stopsCue")}
         <select
           value={stopCue.stopTargetId ?? ""}
           disabled={readOnly}
@@ -52,7 +53,7 @@ export function StopInspectorFields({ stopCue }: StopInspectorFieldsProps) {
             })
           }
         >
-          <option value="">— Select cue —</option>
+          <option value="">{t("inspector.selectCuePlaceholder")}</option>
           {stoppableCues.map((c) => (
             <option key={c.id} value={c.id}>
               {formatStopTargetLabel(c)} ({c.type})
@@ -69,11 +70,11 @@ export function StopInspectorFields({ stopCue }: StopInspectorFieldsProps) {
           sx={inspectorTargetLinkSx}
         >
           <CueTypeBadge type={target.type} showLabel={false} />
-          Go to target: {formatStopTargetLabel(target)}
+          {t("inspector.goToTarget", { label: formatStopTargetLabel(target) })}
         </Button>
       ) : (
         <Typography component="p" sx={inspectorHintWarningSx}>
-          Target cue missing — choose another cue or delete this stop cue.
+          {t("inspector.stopTargetMissing")}
         </Typography>
       )}
     </Box>

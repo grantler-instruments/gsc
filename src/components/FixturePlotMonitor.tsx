@@ -7,6 +7,7 @@ import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import { FixturePlotCanvas } from "./FixturePlotCanvas";
@@ -22,6 +23,7 @@ export function FixturePlotMonitor({
   expanded = false,
   onEditModeChange,
 }: FixturePlotMonitorProps) {
+  const { t } = useTranslation();
   const showMode = useUiStore((s) => s.showMode);
   const fixturePlotEditMode = useUiStore((s) => s.fixturePlotEditMode);
   const setFixturePlotEditMode = useUiStore((s) => s.setFixturePlotEditMode);
@@ -94,7 +96,7 @@ export function FixturePlotMonitor({
         }}
       >
         <Typography variant="caption" color="text.secondary" sx={{ m: 0 }}>
-          Fixture preview
+          {t("fixtures.previewTitle")}
         </Typography>
         <Stack direction="row" sx={{ alignItems: "center", gap: 0.25 }}>
           {editMode ? (
@@ -104,7 +106,7 @@ export function FixturePlotMonitor({
               onClick={() => setEditMode(false)}
               sx={{ minWidth: 0, py: 0, px: 0.5, fontSize: 12 }}
             >
-              Done
+              {t("common.action.done")}
             </Button>
           ) : (
             !showMode && (
@@ -114,16 +116,22 @@ export function FixturePlotMonitor({
                 onClick={() => setEditMode(true)}
                 sx={{ minWidth: 0, py: 0, px: 0.5, fontSize: 12 }}
               >
-                Edit
+                {t("common.action.edit")}
               </Button>
             )
           )}
           {!expanded && (
-            <Tooltip title={fixturePlotExpanded ? "Collapse" : "Expand above cue list"}>
+            <Tooltip
+              title={
+                fixturePlotExpanded ? t("common.action.collapse") : t("fixtures.expandAboveCueList")
+              }
+            >
               <IconButton
                 size="small"
                 aria-label={
-                  fixturePlotExpanded ? "Collapse fixture preview" : "Expand fixture preview"
+                  fixturePlotExpanded
+                    ? t("fixtures.collapsePreview")
+                    : t("fixtures.expandAboveCueList")
                 }
                 onClick={toggleFixturePlotExpanded}
                 sx={{ p: 0.25 }}
@@ -137,10 +145,10 @@ export function FixturePlotMonitor({
             </Tooltip>
           )}
           {expanded && (
-            <Tooltip title="Collapse">
+            <Tooltip title={t("common.action.collapse")}>
               <IconButton
                 size="small"
-                aria-label="Collapse fixture preview"
+                aria-label={t("fixtures.collapsePreview")}
                 onClick={toggleFixturePlotExpanded}
                 sx={{ p: 0.25 }}
               >
@@ -165,7 +173,7 @@ export function FixturePlotMonitor({
           color="text.secondary"
           sx={{ px: 1.5, py: 0.5, display: "block" }}
         >
-          Drag fixtures to reposition. Press Done or Esc when finished.
+          {t("fixtures.dragToReposition")}
         </Typography>
       )}
     </Box>

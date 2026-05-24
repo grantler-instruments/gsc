@@ -7,6 +7,7 @@ import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
 import { SIDEBAR_TABS, SIDEBAR_WIDTH, type SidebarTabId } from "../types/sidebar";
@@ -18,6 +19,12 @@ const TAB_ICONS: Record<SidebarTabId, React.ReactNode> = {
   assets: <FolderOutlinedIcon fontSize="small" />,
   fixtures: <LightbulbOutlinedIcon fontSize="small" />,
   active: <PlayArrowIcon fontSize="small" />,
+};
+
+const SIDEBAR_TAB_LABEL_KEYS: Record<SidebarTabId, string> = {
+  assets: "sidebar.assets",
+  fixtures: "sidebar.fixtures",
+  active: "sidebar.active",
 };
 
 const sidebarShellSx = {
@@ -32,6 +39,7 @@ const sidebarShellSx = {
 } as const;
 
 export function LeftSidebar() {
+  const { t } = useTranslation();
   const showMode = useUiStore((s) => s.showMode);
   const sidebarTab = useUiStore((s) => s.sidebarTab);
   const setSidebarTab = useUiStore((s) => s.setSidebarTab);
@@ -54,13 +62,13 @@ export function LeftSidebar() {
         >
           <PlayArrowIcon fontSize="small" aria-hidden />
           <Typography variant="subtitle2" sx={{ flex: 1, m: 0 }}>
-            Active cues
+            {t("sidebar.activeCues")}
           </Typography>
           {activeCount > 0 && <Chip label={activeCount} size="small" color="success" />}
         </Stack>
         <Box
           role="region"
-          aria-label="Active cues"
+          aria-label={t("sidebar.activeCues")}
           sx={{
             flex: 1,
             display: "flex",
@@ -81,17 +89,17 @@ export function LeftSidebar() {
         value={sidebarTab}
         onChange={(_, value: SidebarTabId) => setSidebarTab(value)}
         variant="fullWidth"
-        aria-label="Sidebar"
+        aria-label={t("sidebar.sidebarAria")}
       >
-        {SIDEBAR_TABS.map((tab) => (
+        {SIDEBAR_TABS.map((tabId) => (
           <Tab
-            key={tab.id}
-            value={tab.id}
+            key={tabId}
+            value={tabId}
             label={
               <Stack direction="row" sx={{ alignItems: "center", gap: 0.75 }}>
-                {TAB_ICONS[tab.id]}
-                <span>{tab.label}</span>
-                {tab.id === "active" && activeCount > 0 && (
+                {TAB_ICONS[tabId]}
+                <span>{t(SIDEBAR_TAB_LABEL_KEYS[tabId])}</span>
+                {tabId === "active" && activeCount > 0 && (
                   <Chip label={activeCount} size="small" color="success" />
                 )}
               </Stack>

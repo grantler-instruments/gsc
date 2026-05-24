@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import type { VfsEntry } from "../stores/vfs";
 import { useVfsStore } from "../stores/vfs";
 import type { AssetKind, Cue } from "../types/cue";
@@ -35,21 +36,21 @@ export function getCueAssetWarning(
   if (!cueNeedsAsset(cue)) return null;
   if (!cue.assetPath) {
     return {
-      title: "No asset assigned",
-      detail: "Select an asset",
+      title: t("assets.noAssetAssigned"),
+      detail: t("assets.selectAnAsset"),
     };
   }
   if (!vfsHas(cue.assetPath)) {
     const entry = findAssetEntry(entries, cue.assetPath);
     if (entry) {
       return {
-        title: "Asset not loaded",
-        detail: "File not available — re-import in Assets",
+        title: t("assets.assetNotLoaded"),
+        detail: t("assets.fileNotAvailable"),
       };
     }
     return {
-      title: "Asset not loaded",
-      detail: "Asset missing from project",
+      title: t("assets.assetNotLoaded"),
+      detail: t("assets.assetMissingFromProject"),
     };
   }
   return null;

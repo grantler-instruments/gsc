@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { clampOscPort } from "../../lib/osc";
 import type { Cue, OscCueData } from "../../types/cue";
 import { inspectorFieldSx, inspectorGroupHintSx } from "../inspectorSx";
@@ -18,6 +19,8 @@ export function OscInspectorFields({
   oscDisabled,
   onPatch,
 }: OscInspectorFieldsProps) {
+  const { t } = useTranslation();
+
   if (cue.type !== "osc" || !cue.osc) return null;
 
   const osc = cue.osc;
@@ -26,12 +29,12 @@ export function OscInspectorFields({
     <>
       {oscDisabled && (
         <Typography component="p" sx={inspectorGroupHintSx}>
-          OSC sending requires the desktop app.
+          {t("inspector.oscDesktopOnly")}
         </Typography>
       )}
 
       <Box component="label" sx={inspectorFieldSx}>
-        Host
+        {t("inspector.host")}
         <input
           type="text"
           value={osc.host}
@@ -41,7 +44,7 @@ export function OscInspectorFields({
       </Box>
 
       <Box component="label" sx={inspectorFieldSx}>
-        Port
+        {t("inspector.port")}
         <input
           type="number"
           min={1}
@@ -53,12 +56,12 @@ export function OscInspectorFields({
       </Box>
 
       <Box component="label" sx={inspectorFieldSx}>
-        Address
+        {t("inspector.address")}
         <input
           type="text"
           value={osc.address}
           disabled={readOnly}
-          placeholder="/cue/1/start"
+          placeholder={t("inspector.oscAddressPlaceholder")}
           onChange={(e) => onPatch({ address: e.currentTarget.value })}
         />
       </Box>

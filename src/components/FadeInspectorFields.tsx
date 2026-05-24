@@ -1,16 +1,16 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
+import { getCueTypeLabel } from "../i18n/cueTypeLabels";
 import { formatStopTargetLabel, getFadeTarget, isStopCue, isWaitCue } from "../lib/cues";
 import { defaultDmxCueData, syncLightFadeDmxFromTarget } from "../lib/dmx";
 import {
   canLightFadeTarget,
   canOpacityFadeTarget,
   canVolumeFadeTarget,
-  fadeCueLabel,
   isFadeCue,
   isLightFadeCue,
-  isVolumeFadeCue,
   resolveFadeFromLevel,
 } from "../lib/fade";
 import { useActiveCueList, useProjectStore } from "../stores/project";
@@ -34,6 +34,7 @@ interface FadeInspectorFieldsProps {
 }
 
 export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
+  const { t } = useTranslation();
   const readOnly = useUiStore((s) => s.showMode);
   const fixtures = useProjectStore((s) => s.fixtures);
   const cues = useActiveCueList().cues;
@@ -58,15 +59,14 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
     return (
       <Box component="fieldset" sx={inspectorGroupSx}>
         <Box component="legend" sx={inspectorGroupLegendSx}>
-          {fadeCueLabel(fadeType)}
+          {getCueTypeLabel(fadeType)}
         </Box>
         <Typography component="p" sx={inspectorGroupHintSx}>
-          When triggered (GO), fades from the current DMX output to the target levels below over the
-          given duration.
+          {t("inspector.lightFadeHint")}
         </Typography>
 
         <Box component="label" sx={inspectorFieldSx}>
-          Reference cue
+          {t("inspector.referenceCue")}
           <select
             value={fadeCue.fadeTargetId ?? ""}
             disabled={readOnly}
@@ -89,7 +89,7 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
               });
             }}
           >
-            <option value="">— Select cue —</option>
+            <option value="">{t("inspector.selectCuePlaceholder")}</option>
             {eligibleTargets.map((c) => (
               <option key={c.id} value={c.id}>
                 {formatStopTargetLabel(c)} ({c.type})
@@ -99,7 +99,7 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
         </Box>
 
         <Box component="label" sx={inspectorFieldSx}>
-          Duration (s)
+          {t("inspector.durationSecondsField")}
           <input
             type="number"
             min={0.1}
@@ -122,11 +122,11 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
             sx={inspectorTargetLinkSx}
           >
             <CueTypeBadge type={target.type} showLabel={false} />
-            Go to reference: {formatStopTargetLabel(target)}
+            {t("inspector.goToTarget", { label: formatStopTargetLabel(target) })}
           </Button>
         ) : (
           <Typography component="p" sx={inspectorHintWarningSx}>
-            Choose a light cue to load its fixtures, or add fixtures manually below.
+            {t("inspector.lightFadeChooseHint")}
           </Typography>
         )}
       </Box>
@@ -136,16 +136,14 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
   return (
     <Box component="fieldset" sx={inspectorGroupSx}>
       <Box component="legend" sx={inspectorGroupLegendSx}>
-        {fadeCueLabel(fadeType)}
+        {getCueTypeLabel(fadeType)}
       </Box>
       <Typography component="p" sx={inspectorGroupHintSx}>
-        When triggered (GO), fades the target cue&apos;s{" "}
-        {fadeType === "volumeFade" ? "volume" : "opacity"} from its current level at that moment to
-        the end level over the given duration.
+        {fadeType === "volumeFade" ? t("inspector.volumeFadeHint") : t("inspector.opacityFadeHint")}
       </Typography>
 
       <Box component="label" sx={inspectorFieldSx}>
-        Target cue
+        {t("inspector.targetCue")}
         <select
           value={fadeCue.fadeTargetId ?? ""}
           disabled={readOnly}
@@ -155,7 +153,7 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
             })
           }
         >
-          <option value="">— Select cue —</option>
+          <option value="">{t("inspector.selectCuePlaceholder")}</option>
           {eligibleTargets.map((c) => (
             <option key={c.id} value={c.id}>
               {formatStopTargetLabel(c)} ({c.type})
@@ -165,7 +163,7 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
       </Box>
 
       <Box component="label" sx={inspectorFieldSx}>
-        Duration (s)
+        {t("inspector.durationSecondsField")}
         <input
           type="number"
           min={0.1}
@@ -183,17 +181,17 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
       {target ? (
         <Box sx={inspectorFieldSx}>
           <Typography component="span" sx={inspectorFieldLabelSx}>
-            Starts from (at GO)
+            {t("inspector.startsFromAtGo")}
           </Typography>
           <Typography component="p" sx={inspectorReadonlySx}>
             {resolveFadeFromLevel(fadeCue, target).toFixed(2)}
-            {isVolumeFadeCue(fadeCue) ? " — target cue volume now" : " — target cue opacity now"}
+            {t("inspector.startsFromCurrent")}
           </Typography>
         </Box>
       ) : null}
 
       <SliderNumberField
-        label="To"
+        label={t("inspector.to")}
         value={fadeCue.fadeTo ?? 0}
         min={0}
         max={1}
@@ -211,12 +209,11 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
           sx={inspectorTargetLinkSx}
         >
           <CueTypeBadge type={target.type} showLabel={false} />
-          Go to target: {formatStopTargetLabel(target)}
+          {t("inspector.goToTarget", { label: formatStopTargetLabel(target) })}
         </Button>
       ) : (
         <Typography component="p" sx={inspectorHintWarningSx}>
-          Target missing or invalid — choose a{" "}
-          {fadeType === "volumeFade" ? "audio/video" : "video/image"} cue.
+          {t("inspector.fadeTargetInvalid")}
         </Typography>
       )}
     </Box>

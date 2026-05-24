@@ -1,4 +1,5 @@
 import { strFromU8, strToU8, unzipSync, type Zippable, zipSync } from "fflate";
+import { t } from "../i18n/t";
 import type { Fixture } from "../types/fixture";
 import { normalizePath, vfsHas, vfsPut } from "../vfs/engine";
 import {
@@ -8,7 +9,11 @@ import {
   suggestNextFixtureAddress,
 } from "./fixtures";
 import { collectOflPaths } from "./ofl/import-ofl";
-import { assetRelativePath, isAssetsRelativePath, virtualPathFromRelativeAssetFile } from "./project-paths";
+import {
+  assetRelativePath,
+  isAssetsRelativePath,
+  virtualPathFromRelativeAssetFile,
+} from "./project-paths";
 
 export const FIXTURES_PROFILE_JSON = "fixtures.json";
 export const FIXTURES_PROFILE_EXTENSION = ".gsc-fixtures.zip";
@@ -74,7 +79,7 @@ export function parseFixturesProfileZip(data: Uint8Array): {
   }
 
   if (!snapshot || snapshot.version !== 1 || !Array.isArray(snapshot.fixtures)) {
-    throw new Error("Invalid fixtures profile: missing fixtures.json");
+    throw new Error(t("notification.invalidFixturesProfile"));
   }
 
   return {

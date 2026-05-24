@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import { formatDmxCue } from "../../lib/dmx";
 import { canOpacityFadeTarget, canVolumeFadeTarget } from "../../lib/fade";
 import { formatMidiCue } from "../../lib/midi";
@@ -33,6 +34,7 @@ export const ActiveCueRow = memo(function ActiveCueRow({
   onSelect,
   onStop,
 }: ActiveCueRowProps) {
+  const { t } = useTranslation();
   const tokens = useGscTokens();
   const updateCue = useProjectStore((s) => s.updateCue);
   const clearFade = useFadeStore((s) => s.clearFade);
@@ -130,7 +132,7 @@ export const ActiveCueRow = memo(function ActiveCueRow({
         {playback && cueShowsPlaybackProgress(cue) && <PlaybackProgress progress={playback} />}
         {canVolumeFadeTarget(cue) && (
           <ActiveCueLevelControl
-            label="Vol"
+            label={t("activeCues.volumeShort")}
             value={resolveEffectiveVolume(cue.id, cue.volume ?? 1, fadeFrameMs || undefined)}
             onChange={(volume) => {
               if (volumeFade) clearFade(cue.id);
@@ -140,7 +142,7 @@ export const ActiveCueRow = memo(function ActiveCueRow({
         )}
         {canOpacityFadeTarget(cue) && (
           <ActiveCueLevelControl
-            label="Opac"
+            label={t("activeCues.opacityShort")}
             value={resolveEffectiveOpacity(cue.id, cue.opacity ?? 1, fadeFrameMs || undefined)}
             onChange={(opacity) => {
               if (opacityFade) clearFade(cue.id);
@@ -152,7 +154,7 @@ export const ActiveCueRow = memo(function ActiveCueRow({
       {isPrimary && (
         <Box
           component="span"
-          title="Last triggered"
+          title={t("activeCues.lastTriggered")}
           sx={{
             color: "success.main",
             fontSize: 10,
@@ -165,13 +167,13 @@ export const ActiveCueRow = memo(function ActiveCueRow({
       <Button
         variant="text"
         size="small"
-        title="Stop this cue"
+        title={t("activeCues.stopThisCue")}
         onClick={(e) => {
           e.stopPropagation();
           onStop();
         }}
       >
-        Stop
+        {t("common.action.stop")}
       </Button>
     </Box>
   );

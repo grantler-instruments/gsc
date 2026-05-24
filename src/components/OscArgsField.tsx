@@ -1,10 +1,8 @@
 import TextField from "@mui/material/TextField";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { formatOscArgsText, parseOscArgsText } from "../lib/osc";
 import type { OscArg } from "../types/cue";
-
-const INVALID_ARGS_HINT =
-  'Use a JSON array like [1, "hello"], a quoted string, or comma-separated values.';
 
 interface OscArgsFieldProps {
   cueId: string;
@@ -14,6 +12,7 @@ interface OscArgsFieldProps {
 }
 
 export function OscArgsField({ cueId, args, readOnly, onChange }: OscArgsFieldProps) {
+  const { t } = useTranslation();
   const [text, setText] = useState(() => formatOscArgsText(args));
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +24,7 @@ export function OscArgsField({ cueId, args, readOnly, onChange }: OscArgsFieldPr
   const commit = (value: string, showError = true) => {
     const parsed = parseOscArgsText(value);
     if (parsed === null) {
-      if (showError) setError(INVALID_ARGS_HINT);
+      if (showError) setError(t("inspector.oscArgsError"));
       return;
     }
     setError(null);
@@ -34,13 +33,13 @@ export function OscArgsField({ cueId, args, readOnly, onChange }: OscArgsFieldPr
 
   return (
     <TextField
-      label="Args"
+      label={t("inspector.args")}
       fullWidth
       value={text}
       disabled={readOnly}
-      placeholder='[1, "hello"] or hello, 1, true'
+      placeholder={t("inspector.oscArgsPlaceholder")}
       error={Boolean(error)}
-      helperText={error ?? "Numbers, strings (in quotes), or booleans."}
+      helperText={error ?? t("inspector.oscArgsHint")}
       slotProps={{ input: { readOnly } }}
       onChange={(e) => {
         const next = e.target.value;

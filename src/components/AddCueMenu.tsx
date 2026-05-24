@@ -8,6 +8,8 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
 import { Fragment, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { getCueTypeLabel } from "../i18n/cueTypeLabels";
 import { getPlatform } from "../platform";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
@@ -32,32 +34,23 @@ type AddCueMenuType = Extract<
   | "lightFade"
 >;
 
-const ADD_CUE_SECTIONS: { subheader?: string; types: readonly AddCueMenuType[] }[] = [
+const ADD_CUE_SECTIONS: { subheaderKey?: string; types: readonly AddCueMenuType[] }[] = [
   { types: ["audio", "video", "image", "midi", "osc", "dmx"] },
-  { subheader: "Group", types: ["sequence", "group"] },
+  { subheaderKey: "cueMenu.sectionGroup", types: ["sequence", "group"] },
   {
-    subheader: "Utility",
+    subheaderKey: "cueMenu.sectionUtility",
     types: ["wait", "stop", "volumeFade", "opacityFade", "lightFade"],
   },
 ];
 
-const ADD_CUE_LABELS: Record<AddCueMenuType, string> = {
-  audio: "Audio",
-  video: "Video",
-  image: "Image",
-  midi: "MIDI",
-  osc: "OSC",
-  dmx: "Light",
-  group: "Parallel",
-  sequence: "Sequential",
-  wait: "Wait",
-  stop: "Stop",
-  volumeFade: "Volume fade",
-  opacityFade: "Opacity fade",
-  lightFade: "Light fade",
+const DEFAULT_CUE_NAME_KEYS: Partial<Record<AddCueMenuType, string>> = {
+  audio: "cueMenu.defaultAudio",
+  video: "cueMenu.defaultVideo",
+  image: "cueMenu.defaultImage",
+  midi: "cueMenu.defaultMidi",
+  osc: "cueMenu.defaultOsc",
+  dmx: "cueMenu.defaultDmx",
 };
-
-const WEB_UNAVAILABLE_TOOLTIP = "Not available in the web app";
 
 interface AddCueMenuProps {
   /** Opens the dropdown above the button (for footer placement). */
@@ -66,6 +59,7 @@ interface AddCueMenuProps {
 }
 
 export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProps) {
+  const { t } = useTranslation();
   const addCue = useProjectStore((s) => s.addCue);
   const addGroupCue = useProjectStore((s) => s.addGroupCue);
   const addSequenceCue = useProjectStore((s) => s.addSequenceCue);
@@ -83,19 +77,12 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
     } else if (type === "volumeFade" || type === "opacityFade" || type === "lightFade") {
       addFadeCue(type);
     } else if (type === "wait") {
-      addCue({ name: "Wait", type: "wait" });
+      addCue({ name: getCueTypeLabel("wait"), type: "wait" });
     } else if (type === "stop") {
-      addCue({ name: "Stop", type: "stop" });
+      addCue({ name: getCueTypeLabel("stop"), type: "stop" });
     } else {
-      const labels = {
-        audio: "Audio cue",
-        video: "Video cue",
-        image: "Image cue",
-        midi: "MIDI cue",
-        osc: "OSC cue",
-        dmx: "Light cue",
-      } as const;
-      addCue({ name: labels[type], type });
+      const nameKey = DEFAULT_CUE_NAME_KEYS[type];
+      addCue({ name: nameKey ? t(nameKey) : getCueTypeLabel(type), type });
     }
     setAnchorEl(null);
   };
@@ -106,12 +93,12 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
         variant="text"
         fullWidth={fullWidth}
         disabled={showMode}
-        title={showMode ? "Disabled in show mode" : undefined}
+        title={showMode ? t("common.state.disabledInShowMode") : undefined}
         onClick={(e) => setAnchorEl(e.currentTarget)}
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        + Cue ▾
+        {t("cueMenu.addCue")}
       </Button>
       <Menu
         anchorEl={anchorEl}
@@ -127,9 +114,9 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
         }}
       >
         {ADD_CUE_SECTIONS.map((section, sectionIndex) => (
-          <Fragment key={section.subheader ?? section.types.join("-")}>
+          <Fragment key={section.subheaderKey ?? section.types.join("-")}>
             {sectionIndex > 0 ? <Divider /> : null}
-            {section.subheader ? (
+            {section.subheaderKey ? (
               <ListSubheader
                 disableSticky
                 sx={{
@@ -140,7 +127,7 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
                   color: "text.secondary",
                 }}
               >
-                {section.subheader}
+                {t(section.subheaderKey)}
               </ListSubheader>
             ) : null}
             {section.types.map((type) => {
@@ -164,13 +151,13 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
                     <CueTypeIcon type={type} />
                   </ListItemIcon>
                   <Box component="span" sx={{ flex: 1 }}>
-                    {ADD_CUE_LABELS[type]}
+                    {getCueTypeLabel(type)}
                   </Box>
                   {disabledOnWeb ? (
-                    <Tooltip title={WEB_UNAVAILABLE_TOOLTIP} placement="right" arrow>
+                    <Tooltip title={t("common.state.notAvailableOnWeb")} placement="right" arrow>
                       <Box
                         component="span"
-                        aria-label={WEB_UNAVAILABLE_TOOLTIP}
+                        aria-label={t("common.state.notAvailableOnWeb")}
                         sx={{
                           ml: 1.5,
                           display: "inline-flex",

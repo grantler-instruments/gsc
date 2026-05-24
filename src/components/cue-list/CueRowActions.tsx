@@ -3,6 +3,7 @@ import OpacityIcon from "@mui/icons-material/Opacity";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import VolumeDownIcon from "@mui/icons-material/VolumeDown";
 import IconButton from "@mui/material/IconButton";
+import { useTranslation } from "react-i18next";
 import { isUtilityCue } from "../../lib/cues";
 import { canLightFadeTarget, canOpacityFadeTarget, canVolumeFadeTarget } from "../../lib/fade";
 import { cueRowFadeActionSx, cueRowStopActionSx } from "../../theme/cueStyles";
@@ -25,6 +26,8 @@ export function CueRowActions({
   onCreateOpacityFade,
   onCreateLightFade,
 }: CueRowActionsProps) {
+  const { t } = useTranslation();
+
   if (!canEdit) return null;
 
   const isUtility = isUtilityCue(cue);
@@ -38,8 +41,8 @@ export function CueRowActions({
         <IconButton
           size="small"
           sx={cueRowFadeActionSx}
-          title={`Create volume fade for ${cue.number}`}
-          aria-label={`Create volume fade for ${cue.name}`}
+          title={t("cueList.createVolumeFade", { label: cue.number })}
+          aria-label={t("cueList.createVolumeFade", { label: cue.name })}
           onClick={(e) => {
             e.stopPropagation();
             onCreateVolumeFade();
@@ -52,8 +55,8 @@ export function CueRowActions({
         <IconButton
           size="small"
           sx={cueRowFadeActionSx}
-          title={`Create opacity fade for ${cue.number}`}
-          aria-label={`Create opacity fade for ${cue.name}`}
+          title={t("cueList.createOpacityFade", { label: cue.number })}
+          aria-label={t("cueList.createOpacityFade", { label: cue.name })}
           onClick={(e) => {
             e.stopPropagation();
             onCreateOpacityFade();
@@ -66,8 +69,8 @@ export function CueRowActions({
         <IconButton
           size="small"
           sx={cueRowFadeActionSx}
-          title={`Create light fade for ${cue.number}`}
-          aria-label={`Create light fade for ${cue.name}`}
+          title={t("cueList.createLightFade", { label: cue.number })}
+          aria-label={t("cueList.createLightFade", { label: cue.name })}
           onClick={(e) => {
             e.stopPropagation();
             onCreateLightFade();
@@ -80,8 +83,8 @@ export function CueRowActions({
         <IconButton
           size="small"
           sx={cueRowStopActionSx}
-          title={`Create stop cue for ${cue.number}`}
-          aria-label={`Create stop cue for ${cue.name}`}
+          title={t("cueList.createStopCue", { label: cue.number })}
+          aria-label={t("cueList.createStopCue", { label: cue.name })}
           onClick={(e) => {
             e.stopPropagation();
             onCreateStop();

@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { isInfiniteLoop, parseLoopIterationsInput } from "../lib/loop";
 import type { Cue } from "../types/cue";
 import {
@@ -19,6 +20,7 @@ interface LoopFieldsProps {
 }
 
 export function LoopFields({ cue, readOnly = false, onChange }: LoopFieldsProps) {
+  const { t } = useTranslation();
   const loop = cue.loop ?? false;
   const infinite = loop && isInfiniteLoop(cue);
 
@@ -34,7 +36,7 @@ export function LoopFields({ cue, readOnly = false, onChange }: LoopFieldsProps)
   return (
     <Box component="fieldset" sx={{ ...inspectorGroupSx, ...inspectorGroupCompactSx }}>
       <Box component="legend" sx={inspectorGroupLegendSx}>
-        Loop
+        {t("inspector.loop")}
       </Box>
 
       <Box component="label" sx={inspectorFieldCheckboxSx}>
@@ -51,18 +53,18 @@ export function LoopFields({ cue, readOnly = false, onChange }: LoopFieldsProps)
             );
           }}
         />
-        Loop playback
+        {t("inspector.loopPlayback")}
       </Box>
 
       {loop && (
         <>
           <Box component="label" sx={{ ...inspectorFieldSx, "& input": inspectorLoopIterationsSx }}>
-            Iterations
+            {t("inspector.iterations")}
             <input
               type="text"
               inputMode="numeric"
               value={infinite ? "" : String(cue.loopCount ?? "")}
-              placeholder="∞"
+              placeholder={t("playback.infinite")}
               disabled={readOnly}
               onChange={(e) => applyIterations(e.currentTarget.value)}
               onBlur={(e) => applyIterations(e.currentTarget.value)}
@@ -70,9 +72,7 @@ export function LoopFields({ cue, readOnly = false, onChange }: LoopFieldsProps)
           </Box>
 
           <Typography component="p" sx={inspectorGroupHintSx}>
-            {infinite
-              ? "Repeats the In/Out slice until stopped. Enter a number (min 2) for a fixed count."
-              : `Plays the In/Out slice ${cue.loopCount} times in a row. Clear for ∞.`}
+            {infinite ? t("inspector.loopInfiniteHint") : t("inspector.loopFiniteHint")}
           </Typography>
         </>
       )}

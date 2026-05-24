@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import InputBase from "@mui/material/InputBase";
+import { useTranslation } from "react-i18next";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import { BrandFileMenu } from "./BrandFileMenu";
@@ -7,6 +8,7 @@ import { OpenOutputButton } from "./OpenOutputButton";
 import { ShowModeToggle } from "./ShowModeToggle";
 
 export function ProjectToolbar() {
+  const { t } = useTranslation();
   const name = useProjectStore((s) => s.name);
   const setName = useProjectStore((s) => s.setName);
   const showMode = useUiStore((s) => s.showMode);
@@ -30,8 +32,8 @@ export function ProjectToolbar() {
       <InputBase
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Untitled show"
-        inputProps={{ "aria-label": "Show name" }}
+        placeholder={t("project.namePlaceholder")}
+        inputProps={{ "aria-label": t("project.nameAriaLabel") }}
         sx={{
           flex: 1,
           minWidth: 0,

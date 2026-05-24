@@ -3,8 +3,8 @@ import { deletePrimarySelectedCue, selectAdjacentVisibleCue } from "../lib/cue-n
 import { isEditableKeyboardTarget } from "../lib/keyboard";
 import { startNewProject } from "../lib/new-project";
 import { openSettings } from "../lib/open-settings";
-import { redoProjectEdit, undoProjectEdit } from "../lib/project-history";
 import { openProjectFile, saveProjectFile } from "../lib/project-file-actions";
+import { redoProjectEdit, undoProjectEdit } from "../lib/project-history";
 import { canEditProject } from "../lib/show-mode";
 import { triggerGoSelected } from "../lib/transport-actions";
 import { toggleWindowFullscreen } from "../platform/window-fullscreen";

@@ -1,5 +1,6 @@
 import { basename, join } from "@tauri-apps/api/path";
 import { readDir, readFile } from "@tauri-apps/plugin-fs";
+import { t } from "../i18n/t";
 import { notifyWarning } from "../lib/notifications";
 import { isProjectBundlePath } from "../lib/project-paths";
 import { useVfsStore } from "../stores/vfs";
@@ -59,8 +60,8 @@ export async function filesFromDiskPaths(paths: string[]): Promise<File[]> {
   if (readFailures > 0) {
     notifyWarning(
       readFailures === 1
-        ? "Could not read 1 dropped file."
-        : `Could not read ${readFailures} dropped files.`,
+        ? t("notification.droppedFileReadFailed")
+        : t("notification.droppedFilesReadFailed", { count: readFailures }),
     );
   }
 

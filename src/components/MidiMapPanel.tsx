@@ -4,6 +4,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { formatMidiCue } from "../lib/midi";
 import { formatMidiActionLabel } from "../lib/midi-mapping";
 import { useActiveCueList, useProjectStore } from "../stores/project";
@@ -14,6 +15,7 @@ import { inspectorFieldLabelSx, inspectorFieldSx } from "./inspectorSx";
 const DEFAULT_LEARN_ACTION: MidiAction = { type: "go-selected" };
 
 export function MidiMapPanel() {
+  const { t } = useTranslation();
   const list = useActiveCueList();
   const midiMappings = useProjectStore((s) => s.midiMappings);
   const removeMidiMapping = useProjectStore((s) => s.removeMidiMapping);
@@ -47,13 +49,13 @@ export function MidiMapPanel() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <Typography variant="body2" color="text.secondary">
-        Map incoming MIDI to transport actions. Mappings are saved with the project.
+        {t("midiMap.description")}
       </Typography>
 
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
         <Box sx={{ ...inspectorFieldSx, flex: "1 1 140px", minWidth: 120 }}>
           <Typography component="span" sx={inspectorFieldLabelSx}>
-            Learn action
+            {t("midiMap.learnAction")}
           </Typography>
           <Select
             size="small"
@@ -71,17 +73,17 @@ export function MidiMapPanel() {
               }
             }}
           >
-            <MenuItem value="go-selected">GO (selected cue)</MenuItem>
-            <MenuItem value="go-cue">GO cue…</MenuItem>
-            <MenuItem value="select-cue">Select cue…</MenuItem>
-            <MenuItem value="panic">Panic</MenuItem>
+            <MenuItem value="go-selected">{t("midiMap.goSelected")}</MenuItem>
+            <MenuItem value="go-cue">{t("midiMap.goCue")}</MenuItem>
+            <MenuItem value="select-cue">{t("midiMap.selectCue")}</MenuItem>
+            <MenuItem value="panic">{t("midiMap.panic")}</MenuItem>
           </Select>
         </Box>
 
         {(learnAction.type === "go-cue" || learnAction.type === "select-cue") && (
           <Box sx={{ ...inspectorFieldSx, flex: "1 1 160px", minWidth: 140 }}>
             <Typography component="span" sx={inspectorFieldLabelSx}>
-              Cue
+              {t("midiMap.cue")}
             </Typography>
             <Select
               size="small"
@@ -111,13 +113,13 @@ export function MidiMapPanel() {
           onClick={() => (midiLearnAction ? setMidiLearnAction(null) : startLearn())}
           sx={{ alignSelf: "flex-end" }}
         >
-          {midiLearnAction ? "Cancel learn" : "Learn"}
+          {midiLearnAction ? t("common.action.cancelLearn") : t("common.action.learn")}
         </Button>
       </Box>
 
       {midiLearnAction ? (
         <Typography variant="body2" color="warning.main">
-          Press a control on your MIDI device…
+          {t("midiMap.pressControl")}
         </Typography>
       ) : null}
 
@@ -128,7 +130,7 @@ export function MidiMapPanel() {
           onClick={() => autoMapNotesToCues(36)}
           disabled={topLevelCues.length === 0}
         >
-          Map notes → cues (from C2)
+          {t("midiMap.autoMapNotes")}
         </Button>
         <Button
           size="small"
@@ -137,13 +139,13 @@ export function MidiMapPanel() {
           onClick={() => setMidiMappings([])}
           disabled={midiMappings.length === 0}
         >
-          Clear all
+          {t("common.action.clearAll")}
         </Button>
       </Box>
 
       {midiMappings.length === 0 ? (
         <Typography variant="body2" color="text.secondary">
-          No mappings yet. Use Learn or auto-map.
+          {t("midiMap.noMappings")}
         </Typography>
       ) : (
         <Box
@@ -202,10 +204,10 @@ export function MidiMapPanel() {
                 }}
                 sx={{ minWidth: 120, maxWidth: 140 }}
               >
-                <MenuItem value="go-selected">GO sel.</MenuItem>
-                <MenuItem value="go-cue">GO cue</MenuItem>
-                <MenuItem value="select-cue">Select</MenuItem>
-                <MenuItem value="panic">Panic</MenuItem>
+                <MenuItem value="go-selected">{t("midiMap.goSelShort")}</MenuItem>
+                <MenuItem value="go-cue">{t("midiMap.goCueShort")}</MenuItem>
+                <MenuItem value="select-cue">{t("midiMap.selectShort")}</MenuItem>
+                <MenuItem value="panic">{t("midiMap.panic")}</MenuItem>
               </Select>
               {(m.action.type === "go-cue" || m.action.type === "select-cue") && (
                 <Select
@@ -230,7 +232,7 @@ export function MidiMapPanel() {
                 </Select>
               )}
               <Button size="small" color="inherit" onClick={() => removeMidiMapping(m.id)}>
-                Remove
+                {t("common.action.remove")}
               </Button>
             </Box>
           ))}

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { t } from "../i18n/t";
 import type { Fixture } from "../types/fixture";
 import {
   addAllDmxFixturesToCue,
@@ -81,7 +82,7 @@ describe("dmx", () => {
         { mode: "partial", fixtures: [{ fixtureId: "f1", values: [255, 0] }] },
         fixtures,
       ),
-    ).toBe("Par 1 · 1/2 ch");
+    ).toBe(t("dmxPanel.fixtureChannels", { name: "Par 1", active: 1, total: 2 }));
     expect(
       formatDmxCue(
         {
@@ -93,7 +94,7 @@ describe("dmx", () => {
         },
         fixtures,
       ),
-    ).toBe("Scene · 2 fixtures");
+    ).toBe(t("dmxPanel.sceneFixtures", { count: 2 }));
   });
 
   it("normalizes snapshot cues to the full patch", () => {

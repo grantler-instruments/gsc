@@ -1,6 +1,6 @@
-import { VFS_ASSETS_ROOT } from "../project-paths";
 import { getPlatform } from "../../platform";
 import { joinPath, normalizePath, vfsHas, vfsPut } from "../../vfs/engine";
+import { VFS_ASSETS_ROOT } from "../project-paths";
 import { parseOflFixtureJson } from "./client";
 import type { OflFixtureSummary } from "./types";
 

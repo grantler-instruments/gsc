@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import type { SxProps, Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   isOutputLayerLooping,
   isOutputLayerPlaybackComplete,
@@ -160,6 +161,7 @@ interface VisualStageProps {
 
 /** Composites active video/image layers (picture only — audio via Web Audio in control app). */
 export function VisualStage({ layers, stageRole, className, sx }: VisualStageProps) {
+  const { t } = useTranslation();
   const stopCue = useTransportStore((s) => s.stopCue);
 
   const handleEnded = useCallback(
@@ -186,7 +188,7 @@ export function VisualStage({ layers, stageRole, className, sx }: VisualStagePro
     >
       {layers.length === 0 && stageRole === "control" && (
         <Typography component="span" sx={visualStageEmptySx}>
-          No active video or image cues
+          {t("output.noActiveVisualCues")}
         </Typography>
       )}
       {layers.map((layer, index) => (

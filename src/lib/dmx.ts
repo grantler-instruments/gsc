@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import { bumpDmxOutputRevision } from "../stores/dmx-output";
 import type { DmxCueData, DmxCueMode, DmxFixtureValues } from "../types/cue";
 import type { Fixture } from "../types/fixture";
@@ -112,18 +113,24 @@ export function removeDmxFixtureFromCue(data: DmxCueData, fixtureId: string): Dm
 
 export function formatDmxCue(data: DmxCueData, fixtures: Fixture[]): string {
   if (data.mode === "snapshot") {
-    return `Scene · ${data.fixtures.length} fixture${data.fixtures.length === 1 ? "" : "s"}`;
+    return t("dmxPanel.sceneFixtures", { count: data.fixtures.length });
   }
-  if (data.fixtures.length === 0) return "No fixtures";
+  if (data.fixtures.length === 0) return t("dmxPanel.noFixtures");
   const labels = data.fixtures
     .map((entry) => {
       const fixture = fixtures.find((item) => item.id === entry.fixtureId);
       if (!fixture) return null;
       const active = entry.values.filter((value) => value > 0).length;
-      return `${fixture.name} · ${active}/${entry.values.length} ch`;
+      return t("dmxPanel.fixtureChannels", {
+        name: fixture.name,
+        active,
+        total: entry.values.length,
+      });
     })
     .filter((label): label is string => label !== null);
-  return labels.length > 0 ? labels.join(" · ") : `${data.fixtures.length} fixtures`;
+  return labels.length > 0
+    ? labels.join(" · ")
+    : t("dmxPanel.fixtureCount", { count: data.fixtures.length });
 }
 
 export function fixtureChannelLabel(fixture: Fixture, channelIndex: number): string | undefined {

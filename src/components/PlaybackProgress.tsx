@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { formatPlaybackClock } from "../lib/time";
 import type { CuePlaybackProgress } from "../stores/playback";
 
@@ -16,6 +17,7 @@ export function PlaybackProgress({
   compact = false,
   tone = "media",
 }: PlaybackProgressProps) {
+  const { t } = useTranslation();
   const fillPct = Math.max(0, Math.min(100, progress.progress * 100));
   const ariaPct = Math.round(fillPct);
   const timeLabel = `${formatPlaybackClock(progress.positionSec)} / ${formatPlaybackClock(progress.endSec)}`;
@@ -26,13 +28,15 @@ export function PlaybackProgress({
         : `${progress.loopIteration}/${progress.loopTotal}`
       : null;
 
+  const loopPart = loopLabel ? `, loop ${loopLabel}` : "";
+
   return (
     <Box
       role="progressbar"
       aria-valuenow={ariaPct}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-label={`Playback ${timeLabel}${loopLabel ? `, loop ${loopLabel}` : ""}`}
+      aria-label={t("playback.progressAria", { time: timeLabel, loopPart })}
       sx={{
         display: "flex",
         alignItems: "center",
@@ -79,8 +83,11 @@ export function PlaybackProgress({
           component="span"
           title={
             progress.loopTotal === "inf"
-              ? `Loop iteration ${progress.loopIteration}`
-              : `Loop ${progress.loopIteration} of ${progress.loopTotal}`
+              ? t("playback.loopIteration", { number: progress.loopIteration })
+              : t("playback.loopOfTotal", {
+                  current: progress.loopIteration,
+                  total: progress.loopTotal,
+                })
           }
           sx={{
             flexShrink: 0,

@@ -6,6 +6,8 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import { useCallback, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { getAssetKindLabel } from "../i18n/cueTypeLabels";
 import { isExternalFileDrag, resolveAssetDropPayloads } from "../lib/asset-drop";
 import {
   ASSET_FILE_ACCEPT,
@@ -31,6 +33,7 @@ interface CueAssetAssignProps {
 }
 
 export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
+  const { t } = useTranslation();
   const tokens = useGscTokens();
   const entries = useVfsStore((s) => s.entries);
   const importFromFileList = useVfsStore((s) => s.importFromFileList);
@@ -47,7 +50,7 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
   const assignPayload = useCallback(
     (payload: AssetDragPayload) => {
       if (!assetPayloadMatchesCue(cue, payload)) {
-        setError(`This cue needs a ${cue.type} file.`);
+        setError(t("assets.needsFile", { kind: getAssetKindLabel(cue.type as AssetKind) }));
         return false;
       }
       setError(null);
@@ -77,7 +80,7 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
         const match = payloads.find((p) => assetPayloadMatchesCue(cue, p));
         if (!match) {
           if (payloads.length > 0) {
-            setError(`This cue needs a ${cue.type} file.`);
+            setError(t("assets.needsFile", { kind: getAssetKindLabel(cue.type as AssetKind) }));
           }
           return;
         }
@@ -118,7 +121,9 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
       const imported = await importFromFileList(files);
       const match = imported.find((a) => assetPayloadMatchesCue(cue, a));
       if (!match) {
-        setError(`No ${cue.type} files in selection.`);
+        setError(
+          t("assets.noFilesInSelection", { kind: getAssetKindLabel(cue.type as AssetKind) }),
+        );
         return;
       }
       assignPayload(match);
@@ -128,7 +133,7 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
 
   if (!warning) return null;
 
-  const kindLabel = cue.type;
+  const kindLabel = getAssetKindLabel(cue.type as AssetKind);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -144,7 +149,7 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
             onClick={(e) => setMenuAnchor(e.currentTarget)}
             sx={{ alignSelf: "flex-start" }}
           >
-            Select asset
+            {t("assets.selectAsset")}
           </Button>
 
           <Menu
@@ -156,8 +161,8 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
             {matchingAssets.length === 0 ? (
               <MenuItem disabled>
                 <ListItemText
-                  primary={`No ${kindLabel} files in Assets`}
-                  secondary="Drop a file below or import in Assets"
+                  primary={t("assets.noFilesInAssets", { kind: kindLabel })}
+                  secondary={t("assets.dropOrImportHint")}
                 />
               </MenuItem>
             ) : (
@@ -198,10 +203,10 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
             }}
           >
             <Typography component="p" sx={{ ...inspectorGroupHintSx, m: 0 }}>
-              Drop a {kindLabel} file here
+              {t("assets.dropFileHere", { kind: kindLabel })}
             </Typography>
             <Typography component="p" sx={{ ...inspectorHintSx, m: 0, mt: 0.5 }}>
-              From Assets or your computer
+              {t("assets.fromAssetsOrComputer")}
             </Typography>
             <Button
               variant="text"
@@ -209,7 +214,7 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
               sx={{ mt: 1 }}
               onClick={() => fileInputRef.current?.click()}
             >
-              Browse files…
+              {t("assets.browseFiles")}
             </Button>
             <input
               ref={fileInputRef}

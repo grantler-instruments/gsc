@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { getCueDisplayName, isFadeCue, isStopCue } from "../../lib/cues";
 import type { Cue } from "../../types/cue";
 import {
@@ -25,23 +26,25 @@ export function CueInspectorNameFields({
   onNameChange,
   onNotesChange,
 }: CueInspectorNameFieldsProps) {
+  const { t } = useTranslation();
+
   return (
     <>
       {isStopCue(cue) || isFadeCue(cue) ? (
         <Box component="label" sx={inspectorFieldSx}>
           <Typography component="span" sx={inspectorFieldLabelSx}>
-            Display name
+            {t("inspector.displayName")}
           </Typography>
           <Typography component="p" sx={inspectorReadonlySx}>
             {getCueDisplayName(cue, cues)}
           </Typography>
           <Typography component="p" sx={inspectorGroupHintSx}>
-            Always follows the target cue&apos;s name when that cue is renamed.
+            {t("inspector.displayNameHint")}
           </Typography>
         </Box>
       ) : (
         <TextField
-          label="Name"
+          label={t("inspector.name")}
           value={cue.name}
           fullWidth
           slotProps={{ input: { readOnly } }}
@@ -51,14 +54,14 @@ export function CueInspectorNameFields({
       )}
 
       <TextField
-        label="Notes"
+        label={t("inspector.notes")}
         multiline
         minRows={1}
         maxRows={4}
         size="small"
         fullWidth
         value={cue.notes ?? ""}
-        placeholder="Production notes, lines, reminders…"
+        placeholder={t("inspector.notesPlaceholder")}
         slotProps={{ input: { readOnly } }}
         onChange={(e) => onNotesChange(e.target.value)}
         sx={{ mb: 1 }}

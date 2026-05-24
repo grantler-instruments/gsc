@@ -10,6 +10,7 @@ import ListSubheader from "@mui/material/ListSubheader";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useUiStore } from "../stores/ui";
 
 interface AddFixtureMenuProps {
@@ -30,6 +31,7 @@ export function AddFixtureMenu({
   onExportProfile,
   onImportProfile,
 }: AddFixtureMenuProps) {
+  const { t } = useTranslation();
   const showMode = useUiStore((s) => s.showMode);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -62,12 +64,12 @@ export function AddFixtureMenu({
         variant="text"
         fullWidth={fullWidth}
         disabled={showMode}
-        title={showMode ? "Disabled in show mode" : undefined}
+        title={showMode ? t("common.state.disabledInShowMode") : undefined}
         onClick={(event) => setAnchorEl(event.currentTarget)}
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        + Fixture ▾
+        {t("fixtures.addMenu")}
       </Button>
       <Menu
         anchorEl={anchorEl}
@@ -92,7 +94,7 @@ export function AddFixtureMenu({
           >
             <LightbulbOutlinedIcon />
           </ListItemIcon>
-          Generic fixture
+          {t("fixtures.genericFixture")}
         </MenuItem>
         <Divider />
         <ListSubheader
@@ -105,7 +107,7 @@ export function AddFixtureMenu({
             color: "text.secondary",
           }}
         >
-          Library
+          {t("fixtures.library")}
         </ListSubheader>
         <MenuItem onClick={handleBrowseOfl}>
           <ListItemIcon
@@ -117,7 +119,7 @@ export function AddFixtureMenu({
           >
             <MenuBookOutlinedIcon />
           </ListItemIcon>
-          Browse Open Fixture Library
+          {t("fixtures.browseOfl")}
         </MenuItem>
         <Divider />
         <ListSubheader
@@ -130,7 +132,7 @@ export function AddFixtureMenu({
             color: "text.secondary",
           }}
         >
-          Profile
+          {t("fixtures.profile")}
         </ListSubheader>
         <MenuItem onClick={handleExportProfile}>
           <ListItemIcon
@@ -142,7 +144,7 @@ export function AddFixtureMenu({
           >
             <FileDownloadOutlinedIcon />
           </ListItemIcon>
-          Export fixtures profile…
+          {t("fixtures.exportProfile")}
         </MenuItem>
         <MenuItem onClick={handleImportProfile}>
           <ListItemIcon
@@ -154,7 +156,7 @@ export function AddFixtureMenu({
           >
             <FileUploadOutlinedIcon />
           </ListItemIcon>
-          Import fixtures profile…
+          {t("fixtures.importProfile")}
         </MenuItem>
       </Menu>
     </Box>

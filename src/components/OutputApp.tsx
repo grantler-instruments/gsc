@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import GlobalStyles from "@mui/material/GlobalStyles";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useResolvedOutputLayers } from "../hooks/useResolvedOutputLayers";
 import { createOutputChannel, isOutputMessage, postRequestState } from "../lib/output-channel";
 import type { OutputState } from "../types/output";
@@ -8,6 +9,7 @@ import { VisualStage } from "./VisualStage";
 
 /** Full-screen output window — subscribes to cross-window state. */
 export function OutputApp() {
+  const { t } = useTranslation();
   const [state, setState] = useState<OutputState>({
     revision: 0,
     projectId: "",
@@ -17,7 +19,7 @@ export function OutputApp() {
   const channelRef = useRef<BroadcastChannel | null>(null);
 
   useEffect(() => {
-    document.title = "GSC Output";
+    document.title = t("common.brand.outputWindowTitle");
     const html = document.documentElement;
     const { body } = document;
     html.style.background = "#000";
@@ -33,7 +35,7 @@ export function OutputApp() {
       body.style.margin = "";
       body.style.overflow = "";
     };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const channel = createOutputChannel();

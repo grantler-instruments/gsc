@@ -4,6 +4,7 @@ import Chip from "@mui/material/Chip";
 import Slider from "@mui/material/Slider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
 import { getCueDisplayName } from "../lib/cues";
 import { triggerGoSelected } from "../lib/transport-actions";
@@ -68,6 +69,7 @@ function CueSummary({ cue, allCues }: { cue: Cue; allCues?: Cue[] }) {
 }
 
 export function TransportBar() {
+  const { t } = useTranslation();
   const cueLists = useProjectStore((s) => s.cueLists);
   const activeList = useActiveCueList();
   const selectedCueIds = activeList.selectedCueIds;
@@ -115,10 +117,10 @@ export function TransportBar() {
           onClick={triggerGoSelected}
           disabled={cues.length === 0}
         >
-          GO
+          {t("transport.go")}
         </Button>
         <Button variant="outlined" color="error" onClick={panic}>
-          Panic
+          {t("transport.panic")}
         </Button>
       </Stack>
 
@@ -154,7 +156,11 @@ export function TransportBar() {
             <CueSummary cue={activeCue} allCues={cues} />
           ) : isPlaying && activeCount > 0 ? (
             <Chip
-              label={activeCount === 1 ? "Playing" : `${activeCount} active`}
+              label={
+                activeCount === 1
+                  ? t("common.state.playing")
+                  : t("common.state.activeCount", { count: activeCount })
+              }
               size="small"
               sx={{
                 bgcolor: "var(--playing-badge-bg)",
@@ -182,7 +188,7 @@ export function TransportBar() {
         }}
       >
         <Typography variant="caption" color="inherit">
-          Master
+          {t("transport.master")}
         </Typography>
         <Slider
           size="small"

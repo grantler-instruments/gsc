@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import { normalizePath } from "../vfs/engine";
 import { notifyWarningDeduped } from "./notifications";
 
@@ -28,7 +29,7 @@ export async function getCachedAsset(projectId: string, path: string): Promise<B
     return await scoped.blob();
   } catch (err) {
     console.warn(`[asset-cache] Could not read ${path}`, err);
-    notifyWarningDeduped(`Could not load asset: ${path}`);
+    notifyWarningDeduped(t("notification.assetLoadFailed", { path }));
     return undefined;
   }
 }

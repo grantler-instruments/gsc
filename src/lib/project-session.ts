@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import { useProjectStore } from "../stores/project";
 import { useVfsStore, type VfsEntry } from "../stores/vfs";
 import type { AssetKind, ProjectSnapshot } from "../types/cue";
@@ -66,7 +67,7 @@ export function persistProjectSession(): void {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   } catch (err) {
     console.warn("[project-session] Could not persist session", err);
-    notifyWarningDeduped("Could not save the project to browser storage.");
+    notifyWarningDeduped(t("notification.browserSaveFailed"));
   }
 }
 

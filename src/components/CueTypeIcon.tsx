@@ -14,6 +14,7 @@ import Box from "@mui/material/Box";
 import type { SvgIconProps } from "@mui/material/SvgIcon";
 import type { SxProps, Theme } from "@mui/material/styles";
 import type { ElementType } from "react";
+import { useTranslation } from "react-i18next";
 import { cueTypeBadgeSx } from "../theme/cueStyles";
 import type { AssetKind, CueType } from "../types/cue";
 
@@ -33,22 +34,6 @@ const CUE_TYPE_ICONS: Record<CueType, ElementType<SvgIconProps>> = {
   lightFade: LightbulbOutlinedIcon,
 };
 
-const CUE_TYPE_LABELS: Record<CueType, string> = {
-  audio: "Audio",
-  video: "Video",
-  image: "Image",
-  midi: "MIDI",
-  osc: "OSC",
-  dmx: "Light",
-  group: "Parallel",
-  sequence: "Sequence",
-  stop: "Stop",
-  wait: "Wait",
-  volumeFade: "Volume fade",
-  opacityFade: "Opacity fade",
-  lightFade: "Light fade",
-};
-
 export function CueTypeIcon({ type, ...props }: { type: CueType | AssetKind } & SvgIconProps) {
   const Icon = CUE_TYPE_ICONS[type];
   return <Icon fontSize="inherit" aria-hidden {...props} />;
@@ -66,7 +51,8 @@ export function CueTypeBadge({
   compact?: boolean;
   sx?: SxProps<Theme>;
 }) {
-  const label = type in CUE_TYPE_LABELS ? CUE_TYPE_LABELS[type as CueType] : String(type);
+  const { t } = useTranslation();
+  const label = type in CUE_TYPE_ICONS ? t(`cueType.${type as CueType}`) : String(type);
   return (
     <Box
       component="span"

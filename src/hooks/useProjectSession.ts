@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { t } from "../i18n/t";
 import { notifyWarning } from "../lib/notifications";
 import { projectPersistStateChanged, vfsPersistStateChanged } from "../lib/project-persist";
 import { persistPlatformProject, restorePlatformProject } from "../platform/project-storage";
@@ -36,7 +37,7 @@ export function useProjectSession(): boolean {
         await restorePlatformProject();
       } catch (err) {
         console.error("[session] restore failed", err);
-        notifyWarning("Could not restore the last project.");
+        notifyWarning(t("notification.restoreProjectFailed"));
       }
       if (cancelled) return;
       unsubs.push(

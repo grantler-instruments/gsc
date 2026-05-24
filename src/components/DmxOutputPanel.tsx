@@ -3,6 +3,7 @@ import LinearProgress from "@mui/material/LinearProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { groupDmxOutputChannelsByFixture, listDmxOutputChannels } from "../lib/dmx-output";
 import { formatFixturePatch } from "../lib/fixtures";
 import { useDmxOutputStore } from "../stores/dmx-output";
@@ -12,6 +13,7 @@ import { inspectorFieldLabelSx, inspectorFieldsSx } from "./inspectorSx";
 import { PanelHeader } from "./layout/PanelHeader";
 
 export function DmxOutputPanel() {
+  const { t } = useTranslation();
   const fixtures = useProjectStore((s) => s.fixtures);
   const revision = useDmxOutputStore((s) => s.revision);
   const fadeFrameMs = useFadeStore((s) => s.frameMs);
@@ -25,10 +27,10 @@ export function DmxOutputPanel() {
   if (fixtures.length === 0) {
     return (
       <>
-        <PanelHeader title="DMX" />
+        <PanelHeader title={t("sidebar.dmx")} />
         <Box sx={{ ...inspectorFieldsSx, justifyContent: "center" }}>
           <Typography variant="caption" color="text.secondary" sx={{ m: 0 }}>
-            Patch fixtures in the Fixtures panel to monitor DMX output.
+            {t("dmxPanel.patchHint")}
           </Typography>
         </Box>
       </>
@@ -37,11 +39,11 @@ export function DmxOutputPanel() {
 
   return (
     <>
-      <PanelHeader title="DMX" />
+      <PanelHeader title={t("sidebar.dmx")} />
 
       <Box sx={{ ...inspectorFieldsSx, flex: 1, overflow: "auto" }}>
         <Typography component="p" sx={{ m: 0, fontSize: 12, color: "text.secondary" }}>
-          Live output levels from the current rig state, including active light cues and fades.
+          {t("dmxPanel.liveOutputHint")}
         </Typography>
 
         {groups.map((group) => {
@@ -98,7 +100,7 @@ export function DmxOutputPanel() {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {channel.label ?? "Level"}
+                    {channel.label ?? t("inspector.level")}
                   </Typography>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <LinearProgress
@@ -134,7 +136,7 @@ export function DmxOutputPanel() {
 
         {groups.length === 0 && (
           <Typography component="span" sx={inspectorFieldLabelSx}>
-            No patched channels
+            {t("dmxPanel.noChannels")}
           </Typography>
         )}
       </Box>

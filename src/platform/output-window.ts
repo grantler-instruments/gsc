@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import { getPlatform } from "./index";
 
 const OUTPUT_LABEL = "output";
@@ -21,7 +22,7 @@ async function openWebOutputWindow(): Promise<void> {
   webOutputWindow = window.open(outputUrl(), OUTPUT_WINDOW_NAME, "noopener,noreferrer");
 
   if (!webOutputWindow) {
-    throw new Error("Could not open output window. Allow popups for this site and try again.");
+    throw new Error(t("output.popupBlocked"));
   }
 }
 
@@ -36,7 +37,7 @@ async function openTauriOutputWindow(): Promise<void> {
 
   new WebviewWindow(OUTPUT_LABEL, {
     url: outputUrl(),
-    title: "GSC Output",
+    title: t("common.brand.outputWindowTitle"),
     decorations: false,
     fullscreen: false,
     width: 1280,

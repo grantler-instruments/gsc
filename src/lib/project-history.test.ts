@@ -19,7 +19,18 @@ describe("project history", () => {
     resetProjectHistoryForTests();
     resetTestProject([testCue("a", "A", "audio"), testCue("b", "B", "audio")]);
     useUiStore.setState({ showMode: false });
-    useVfsStore.setState({ entries: [{ path: "assets/clip.wav", name: "clip.wav", size: 1, mimeType: "audio/wav", kind: "audio", loaded: true }] });
+    useVfsStore.setState({
+      entries: [
+        {
+          path: "assets/clip.wav",
+          name: "clip.wav",
+          size: 1,
+          mimeType: "audio/wav",
+          kind: "audio",
+          loaded: true,
+        },
+      ],
+    });
     unsubscribe = subscribeProjectHistory();
   });
 

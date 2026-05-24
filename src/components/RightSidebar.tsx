@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
+import { useTranslation } from "react-i18next";
 import { useUiStore } from "../stores/ui";
 import {
   RIGHT_SIDEBAR_TABS,
@@ -16,6 +17,11 @@ import { DmxOutputPanel } from "./DmxOutputPanel";
 const TAB_ICONS: Record<RightSidebarTabId, React.ReactNode> = {
   cue: <EditNoteOutlinedIcon fontSize="small" />,
   dmx: <LightbulbOutlinedIcon fontSize="small" />,
+};
+
+const RIGHT_SIDEBAR_TAB_LABEL_KEYS: Record<RightSidebarTabId, string> = {
+  cue: "sidebar.cue",
+  dmx: "sidebar.dmx",
 };
 
 const rightSidebarShellSx = {
@@ -34,6 +40,7 @@ function normalizeRightSidebarTab(tab: string): RightSidebarTabId {
 }
 
 export function RightSidebar() {
+  const { t } = useTranslation();
   const rightSidebarTab = useUiStore((s) => normalizeRightSidebarTab(s.rightSidebarTab));
   const setRightSidebarTab = useUiStore((s) => s.setRightSidebarTab);
 
@@ -43,7 +50,7 @@ export function RightSidebar() {
         value={rightSidebarTab}
         onChange={(_, value: RightSidebarTabId) => setRightSidebarTab(value)}
         variant="fullWidth"
-        aria-label="Inspector"
+        aria-label={t("sidebar.inspector")}
       >
         {RIGHT_SIDEBAR_TABS.map((tab) => (
           <Tab
@@ -52,7 +59,7 @@ export function RightSidebar() {
             label={
               <Stack direction="row" sx={{ alignItems: "center", gap: 0.75 }}>
                 {TAB_ICONS[tab.id]}
-                <span>{tab.label}</span>
+                <span>{t(RIGHT_SIDEBAR_TAB_LABEL_KEYS[tab.id])}</span>
               </Stack>
             }
             sx={{ minHeight: 40 }}

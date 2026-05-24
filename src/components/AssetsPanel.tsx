@@ -4,6 +4,7 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useCallback, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { isExternalFileDrag } from "../lib/asset-drop";
 import { pointerLeftElement } from "../lib/dom";
 import { isAssetDrag, setActiveAssetDrag, setAssetDragData } from "../lib/drag";
@@ -23,6 +24,7 @@ const emptyListSx = {
 } as const;
 
 export function AssetsPanel() {
+  const { t } = useTranslation();
   const tokens = useGscTokens();
   const showMode = useUiStore((s) => s.showMode);
   const canEdit = !showMode;
@@ -103,9 +105,7 @@ export function AssetsPanel() {
       }}
     >
       <Typography variant="caption" sx={{ px: 1.5, py: 1, m: 0, flexShrink: 0 }}>
-        {canEdit
-          ? "Drop audio, video, or image files here. Drag assets to the cue list to add cues."
-          : "Assets are view-only in show mode."}
+        {canEdit ? t("assets.dropHint") : t("assets.showModeHint")}
       </Typography>
 
       <Box
@@ -122,7 +122,7 @@ export function AssetsPanel() {
       >
         {entries.length === 0 && (
           <Box component="li" sx={emptyListSx}>
-            No assets yet
+            {t("assets.empty")}
           </Box>
         )}
         {entries.map((entry) => (
@@ -160,10 +160,10 @@ export function AssetsPanel() {
           <Button
             variant="text"
             fullWidth
-            title={canEdit ? undefined : "Disabled in show mode"}
+            title={canEdit ? undefined : t("common.state.disabledInShowMode")}
             onClick={() => inputRef.current?.click()}
           >
-            Import
+            {t("assets.import")}
           </Button>
         </Box>
       )}
@@ -204,10 +204,9 @@ function AssetRow({
   onAddCue: () => void;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation();
   const unavailable = !entry.loaded;
-  const title = unavailable
-    ? `${entry.path}\nFile not available — re-import this asset`
-    : entry.path;
+  const title = unavailable ? `${entry.path}\n${t("assets.fileUnavailableTooltip")}` : entry.path;
 
   return (
     <Box
@@ -242,7 +241,7 @@ function AssetRow({
             component="span"
             sx={{ display: "block", fontSize: 11, color: "warning.main", lineHeight: 1.2 }}
           >
-            File not available
+            {t("assets.fileUnavailable")}
           </Typography>
         )}
       </Box>
@@ -250,13 +249,13 @@ function AssetRow({
         <Stack direction="row" sx={{ gap: 0.25, flexShrink: 0 }}>
           <IconButton
             size="small"
-            title={unavailable ? "Re-import the file before adding as a cue" : "Add as cue"}
+            title={unavailable ? t("assets.reimportBeforeCue") : t("assets.addAsCue")}
             disabled={unavailable}
             onClick={onAddCue}
           >
             +
           </IconButton>
-          <IconButton size="small" title="Remove" onClick={onRemove}>
+          <IconButton size="small" title={t("common.action.remove")} onClick={onRemove}>
             ×
           </IconButton>
         </Stack>

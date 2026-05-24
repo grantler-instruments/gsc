@@ -1,3 +1,5 @@
+import { t } from "../i18n/t";
+
 export const RECENT_PROJECTS_KEY = "gsc-tauri-recent-projects";
 export const MAX_RECENT_PROJECTS = 10;
 
@@ -30,14 +32,11 @@ export function readRecentProjects(): RecentProjectEntry[] {
 }
 
 export function writeRecentProjects(entries: RecentProjectEntry[]): void {
-  localStorage.setItem(
-    RECENT_PROJECTS_KEY,
-    JSON.stringify(entries.slice(0, MAX_RECENT_PROJECTS)),
-  );
+  localStorage.setItem(RECENT_PROJECTS_KEY, JSON.stringify(entries.slice(0, MAX_RECENT_PROJECTS)));
 }
 
 export function recordRecentProject(path: string, name: string): void {
-  const trimmedName = name.trim() || "Untitled Show";
+  const trimmedName = name.trim() || t("project.defaultName");
   const entries = readRecentProjects().filter((entry) => entry.path !== path);
   entries.unshift({ path, name: trimmedName, openedAt: Date.now() });
   writeRecentProjects(entries);

@@ -7,6 +7,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { formatShortcut } from "../lib/keyboard";
 
 export interface CueContextMenuState {
@@ -42,6 +43,8 @@ export function CueContextMenu({
   onDuplicate,
   onRename,
 }: CueContextMenuProps) {
+  const { t } = useTranslation();
+
   return (
     <Menu
       open={menu !== null}
@@ -58,7 +61,7 @@ export function CueContextMenu({
         <ListItemIcon>
           <ContentCopyOutlinedIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText>Copy</ListItemText>
+        <ListItemText>{t("common.action.copy")}</ListItemText>
         <Shortcut label={formatShortcut("c")} />
       </MenuItem>
       <MenuItem
@@ -70,7 +73,7 @@ export function CueContextMenu({
         <ListItemIcon>
           <ContentCutOutlinedIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText>Cut</ListItemText>
+        <ListItemText>{t("common.action.cut")}</ListItemText>
         <Shortcut label={formatShortcut("x")} />
       </MenuItem>
       <MenuItem
@@ -82,7 +85,7 @@ export function CueContextMenu({
         <ListItemIcon>
           <ControlPointDuplicateOutlinedIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText>Duplicate</ListItemText>
+        <ListItemText>{t("common.action.duplicate")}</ListItemText>
         <Shortcut label={formatShortcut("d")} />
       </MenuItem>
       <MenuItem
@@ -95,7 +98,7 @@ export function CueContextMenu({
         <ListItemIcon>
           <DriveFileRenameOutlineOutlinedIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText>Rename</ListItemText>
+        <ListItemText>{t("common.action.rename")}</ListItemText>
       </MenuItem>
     </Menu>
   );

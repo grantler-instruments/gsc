@@ -5,6 +5,7 @@ import ListSubheader from "@mui/material/ListSubheader";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { Fragment, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { formatFixturePatch } from "../../lib/fixtures";
 import type { Fixture } from "../../types/fixture";
 
@@ -25,6 +26,7 @@ export function AddDmxFixturesMenu({
   onAddAll,
   onAdd,
 }: AddDmxFixturesMenuProps) {
+  const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const hasAddable = addableFixtures.length > 0;
@@ -39,16 +41,16 @@ export function AddDmxFixturesMenu({
         disabled={readOnly || !hasAddable}
         title={
           !hasAddable
-            ? "All patched fixtures are already in this cue"
+            ? t("inspector.allFixturesInCue")
             : readOnly
-              ? "Disabled in show mode"
+              ? t("common.state.disabledInShowMode")
               : undefined
         }
         onClick={(event) => setAnchorEl(event.currentTarget)}
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        + Fixtures ▾
+        {t("inspector.addFixturesMenu")}
       </Button>
       <Menu
         anchorEl={anchorEl}
@@ -69,7 +71,7 @@ export function AddDmxFixturesMenu({
             closeMenu();
           }}
         >
-          Add all fixtures
+          {t("inspector.addAllFixtures")}
         </MenuItem>
         {hasAddable && (
           <Fragment>
@@ -84,7 +86,7 @@ export function AddDmxFixturesMenu({
                 color: "text.secondary",
               }}
             >
-              Fixture
+              {t("inspector.fixtureSubheader")}
             </ListSubheader>
             {addableFixtures.map((fixture) => (
               <MenuItem

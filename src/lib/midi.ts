@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import type { MidiCueData, MidiMessageKind } from "../types/cue";
 import type { MidiMatch } from "../types/midi-mapping";
 
@@ -25,18 +26,31 @@ export function noteNumberToName(note: number): string {
 }
 
 export function formatMidiCue(data: MidiCueData): string {
-  const ch = `Ch${data.channel}`;
   switch (data.kind) {
     case "note-on":
-      return `${ch} Note On ${noteNumberToName(data.note ?? 60)} ${data.velocity ?? 0}`;
+      return t("midi.noteOn", {
+        channel: data.channel,
+        note: noteNumberToName(data.note ?? 60),
+        velocity: data.velocity ?? 0,
+      });
     case "note-off":
-      return `${ch} Note Off ${noteNumberToName(data.note ?? 60)}`;
+      return t("midi.noteOff", {
+        channel: data.channel,
+        note: noteNumberToName(data.note ?? 60),
+      });
     case "control-change":
-      return `${ch} CC ${data.controller ?? 0} = ${data.value ?? 0}`;
+      return t("midi.controlChange", {
+        channel: data.channel,
+        controller: data.controller ?? 0,
+        value: data.value ?? 0,
+      });
     case "program-change":
-      return `${ch} Program ${data.program ?? 0}`;
+      return t("midi.programChange", {
+        channel: data.channel,
+        program: data.program ?? 0,
+      });
     default:
-      return ch;
+      return `Ch${data.channel}`;
   }
 }
 

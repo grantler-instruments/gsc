@@ -1,7 +1,15 @@
 import Box from "@mui/material/Box";
+import { useTranslation } from "react-i18next";
 import { clampMidiByte, clampMidiChannel, MIDI_MESSAGE_KINDS } from "../../lib/midi";
 import type { Cue, MidiCueData, MidiMessageKind } from "../../types/cue";
 import { inspectorFieldSx } from "../inspectorSx";
+
+const MIDI_KIND_KEYS: Record<(typeof MIDI_MESSAGE_KINDS)[number], string> = {
+  "note-on": "inspector.midiNoteOn",
+  "note-off": "inspector.midiNoteOff",
+  "control-change": "inspector.midiControlChange",
+  "program-change": "inspector.midiProgramChange",
+};
 
 interface MidiInspectorFieldsProps {
   cue: Cue;
@@ -10,6 +18,8 @@ interface MidiInspectorFieldsProps {
 }
 
 export function MidiInspectorFields({ cue, readOnly, onPatch }: MidiInspectorFieldsProps) {
+  const { t } = useTranslation();
+
   if (cue.type !== "midi" || !cue.midi) return null;
 
   const midi = cue.midi;
@@ -17,7 +27,7 @@ export function MidiInspectorFields({ cue, readOnly, onPatch }: MidiInspectorFie
   return (
     <>
       <Box component="label" sx={inspectorFieldSx}>
-        Channel
+        {t("inspector.channel")}
         <input
           type="number"
           min={1}
@@ -29,7 +39,7 @@ export function MidiInspectorFields({ cue, readOnly, onPatch }: MidiInspectorFie
       </Box>
 
       <Box component="label" sx={inspectorFieldSx}>
-        Message
+        {t("inspector.message")}
         <select
           value={midi.kind}
           disabled={readOnly}
@@ -37,7 +47,7 @@ export function MidiInspectorFields({ cue, readOnly, onPatch }: MidiInspectorFie
         >
           {MIDI_MESSAGE_KINDS.map((k) => (
             <option key={k} value={k}>
-              {k}
+              {t(MIDI_KIND_KEYS[k])}
             </option>
           ))}
         </select>
@@ -46,7 +56,7 @@ export function MidiInspectorFields({ cue, readOnly, onPatch }: MidiInspectorFie
       {(midi.kind === "note-on" || midi.kind === "note-off") && (
         <>
           <Box component="label" sx={inspectorFieldSx}>
-            Note
+            {t("inspector.note")}
             <input
               type="number"
               min={0}
@@ -58,7 +68,7 @@ export function MidiInspectorFields({ cue, readOnly, onPatch }: MidiInspectorFie
           </Box>
           {midi.kind === "note-on" && (
             <Box component="label" sx={inspectorFieldSx}>
-              Velocity
+              {t("inspector.velocity")}
               <input
                 type="number"
                 min={0}
@@ -79,7 +89,7 @@ export function MidiInspectorFields({ cue, readOnly, onPatch }: MidiInspectorFie
       {midi.kind === "control-change" && (
         <>
           <Box component="label" sx={inspectorFieldSx}>
-            Controller
+            {t("inspector.controller")}
             <input
               type="number"
               min={0}
@@ -94,7 +104,7 @@ export function MidiInspectorFields({ cue, readOnly, onPatch }: MidiInspectorFie
             />
           </Box>
           <Box component="label" sx={inspectorFieldSx}>
-            Value
+            {t("inspector.value")}
             <input
               type="number"
               min={0}
@@ -109,7 +119,7 @@ export function MidiInspectorFields({ cue, readOnly, onPatch }: MidiInspectorFie
 
       {midi.kind === "program-change" && (
         <Box component="label" sx={inspectorFieldSx}>
-          Program
+          {t("inspector.program")}
           <input
             type="number"
             min={0}

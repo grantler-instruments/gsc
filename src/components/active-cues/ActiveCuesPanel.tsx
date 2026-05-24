@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { findCueInLists } from "../../lib/cue-lists";
 import { getPrimarySelectedCueId } from "../../lib/cue-selection";
 import { triggerStopCue } from "../../lib/trigger";
@@ -14,6 +15,7 @@ import { activeCuesEmptyListSx } from "./activeCuesSx";
 import { useActivePlaybackCues } from "./useActivePlaybackCues";
 
 export function ActiveCuesPanel() {
+  const { t } = useTranslation();
   const cueLists = useProjectStore((s) => s.cueLists);
   const selectedCueId = useProjectStore((s) =>
     getPrimarySelectedCueId(getActiveCueListFromState(s).selectedCueIds),
@@ -60,7 +62,7 @@ export function ActiveCuesPanel() {
           }}
         >
           <Button variant="text" size="small" onClick={stop}>
-            Stop all
+            {t("common.action.stopAll")}
           </Button>
         </Stack>
       )}
@@ -77,7 +79,7 @@ export function ActiveCuesPanel() {
       >
         {activeCues.length === 0 && (
           <Box component="li" sx={activeCuesEmptyListSx}>
-            No active cues. Press GO to run the selected cue.
+            {t("activeCues.empty")}
           </Box>
         )}
         {activeCues.map((cue) => (
