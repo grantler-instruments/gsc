@@ -14,7 +14,7 @@ const sampleFixture: Fixture = {
   startAddress: 1,
   channelCount: 6,
   ofl: {
-    filePath: "/project/fixtures/ofl/generic/rgb-par.json",
+    filePath: "/assets/fixtures/ofl/generic/rgb-par.json",
     manufacturerKey: "generic",
     manufacturer: "Generic",
     fixtureKey: "rgb-par",
@@ -29,7 +29,7 @@ describe("fixture-profile", () => {
     const profileBytes = new TextEncoder().encode('{"name":"RGB Par"}');
     const blobs = new Map<string, Blob>([
       [
-        "/project/fixtures/ofl/generic/rgb-par.json",
+        "/assets/fixtures/ofl/generic/rgb-par.json",
         new Blob([profileBytes], { type: "application/json" }),
       ],
     ]);
@@ -40,7 +40,7 @@ describe("fixture-profile", () => {
     expect(parsed.snapshot.fixtures).toHaveLength(1);
     expect(parsed.snapshot.fixtures[0]?.name).toBe("Par 1");
     expect(parsed.profiles).toHaveLength(1);
-    expect(parsed.profiles[0]?.path).toBe("/project/fixtures/ofl/generic/rgb-par.json");
+    expect(parsed.profiles[0]?.path).toBe("/assets/fixtures/ofl/generic/rgb-par.json");
   });
 
   it("remaps ids and conflicting addresses on import", () => {
@@ -57,7 +57,7 @@ describe("fixture-profile", () => {
       { version: 1, fixtures: [sampleFixture] },
       [
         {
-          path: "/project/fixtures/ofl/generic/rgb-par.json",
+          path: "/assets/fixtures/ofl/generic/rgb-par.json",
           data: new TextEncoder().encode("{}"),
         },
       ],
@@ -68,7 +68,7 @@ describe("fixture-profile", () => {
     expect(imported.fixtures).toHaveLength(1);
     expect(imported.fixtures[0]?.id).not.toBe("f1");
     expect(imported.fixtures[0]?.startAddress).toBe(7);
-    expect(imported.profiles[0]?.path).toBe("/project/fixtures/ofl/generic/rgb-par.json");
+    expect(imported.profiles[0]?.path).toBe("/assets/fixtures/ofl/generic/rgb-par.json");
   });
 
   it("avoids profile path collisions with existing project files", () => {
@@ -76,16 +76,16 @@ describe("fixture-profile", () => {
       { version: 1, fixtures: [sampleFixture] },
       [
         {
-          path: "/project/fixtures/ofl/generic/rgb-par.json",
+          path: "/assets/fixtures/ofl/generic/rgb-par.json",
           data: new TextEncoder().encode("{}"),
         },
       ],
       [],
-      ["/project/fixtures/ofl/generic/rgb-par.json"],
+      ["/assets/fixtures/ofl/generic/rgb-par.json"],
     );
 
-    expect(result.profiles[0]?.path).toBe("/project/fixtures/ofl/generic/rgb-par_2.json");
-    expect(result.fixtures[0]?.ofl?.filePath).toBe("/project/fixtures/ofl/generic/rgb-par_2.json");
+    expect(result.profiles[0]?.path).toBe("/assets/fixtures/ofl/generic/rgb-par_2.json");
+    expect(result.fixtures[0]?.ofl?.filePath).toBe("/assets/fixtures/ofl/generic/rgb-par_2.json");
   });
 
   it("merges imported fixtures after existing ones", () => {

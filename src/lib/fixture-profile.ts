@@ -8,7 +8,7 @@ import {
   suggestNextFixtureAddress,
 } from "./fixtures";
 import { collectOflPaths } from "./ofl/import-ofl";
-import { assetRelativePath } from "./project-paths";
+import { assetRelativePath, isAssetsRelativePath, virtualPathFromRelativeAssetFile } from "./project-paths";
 
 export const FIXTURES_PROFILE_JSON = "fixtures.json";
 export const FIXTURES_PROFILE_EXTENSION = ".gsc-fixtures.zip";
@@ -65,9 +65,9 @@ export function parseFixturesProfileZip(data: Uint8Array): {
       snapshot = JSON.parse(strFromU8(bytes)) as FixturesProfileSnapshot;
       continue;
     }
-    if (name.startsWith("project/fixtures/") && !name.endsWith("/")) {
+    if (isAssetsRelativePath(name) && !name.endsWith("/")) {
       profiles.push({
-        path: normalizePath(`/${name}`),
+        path: virtualPathFromRelativeAssetFile(name),
         data: bytes,
       });
     }

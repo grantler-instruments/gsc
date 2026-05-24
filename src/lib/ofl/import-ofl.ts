@@ -1,9 +1,10 @@
+import { VFS_ASSETS_ROOT } from "../project-paths";
 import { getPlatform } from "../../platform";
 import { joinPath, normalizePath, vfsHas, vfsPut } from "../../vfs/engine";
 import { parseOflFixtureJson } from "./client";
 import type { OflFixtureSummary } from "./types";
 
-const OFL_FIXTURES_DIR = "/project/fixtures/ofl";
+const OFL_FIXTURES_DIR = `${VFS_ASSETS_ROOT}/fixtures/ofl`;
 
 export interface ImportedOflFile {
   path: string;

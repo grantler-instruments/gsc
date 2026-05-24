@@ -9,7 +9,7 @@ Web-based show playback for audio and video cues. Same codebase runs in the brow
 
 - **Frontend:** React, TypeScript, Vite, Zustand, MUI
 - **Desktop:** Tauri 2
-- **Browser:** Virtual filesystem (drag-and-drop assets), `.gsc` project files
+- **Browser:** Virtual filesystem (drag-and-drop assets), browser storage + `.gsc.zip` bundles
 
 ## Development
 
@@ -80,22 +80,39 @@ See **[docs/architecture.md](docs/architecture.md)** for how playback, stores, a
 
 ## .gsc projects
 
-### JSON (legacy / cues only)
+### Desktop project (`.gsc` folder)
 
-Single `.gsc` JSON file with virtual asset paths (e.g. `/project/audio/intro.wav`). Does not include media bytes.
+Native desktop projects are **package directories** named `ShowName.gsc`. In Finder they appear as a single file; inside:
 
-### Project bundle (`.gsc.zip`)
+```
+MyShow.gsc/
+├── project.json    # cues, fixtures, MIDI maps, etc.
+└── assets/         # media files
+    ├── intro.wav
+    └── clip.mp4
+```
 
-Portable zip used to move a show between web and desktop:
+- **New project (⌘N):** pick a location and name — GSC creates `ShowName.gsc/` and autosaves there.
+- **Double-click** a `.gsc` project in Finder to open it in GSC (requires the installed `.app`).
+- **Open…:** select a `.gsc` folder, or import a `.gsc.zip` bundle (extracted into a new `.gsc` folder).
+- **Drag-and-drop:** drop a `.gsc` folder or `.gsc.zip` onto the window to open/import.
+
+### Web project
+
+The web app autosaves to browser storage. Use **Open…** / **Export…** to import or download a `.gsc.zip` bundle (with media) when moving shows between machines or backing up.
+
+### Portable bundle (`.gsc.zip`)
+
+Zip archive with the same layout as a desktop project — used to share or back up a show:
 
 ```
 MyShow.gsc.zip
-├── project.json    # ProjectSnapshotV2
-└── project/        # media files
+├── project.json
+└── assets/
 ```
 
-- **Web:** File → Export / Import project bundle
-- **Tauri:** File → **Open…** (project folder or `.gsc.zip` bundle). **New Project** (⌘N) and first save use a **save dialog** (pick location + folder name); GSC creates that directory and autosaves there.
+- **Web:** File → Open… / Export…
+- **Desktop:** File → Export…, or Open… to import a bundle into a new `.gsc` folder
 
 ## Contributing
 

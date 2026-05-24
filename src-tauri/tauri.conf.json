@@ -33,6 +33,19 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["gsc"],
+        "name": "GSC Project",
+        "mimeType": "application/x-gsc-project",
+        "role": "Editor",
+        "rank": "Owner",
+        "exportedType": {
+          "identifier": "com.grantler-instruments.gsc.project",
+          "conformsTo": ["com.apple.package", "public.composite-content"]
+        }
+      }
     ]
   }
 }

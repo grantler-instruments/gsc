@@ -8,11 +8,11 @@ describe("project snapshot round-trip", () => {
   it("preserves cue lists and midi mappings through snapshot", () => {
     const list = createCueList("Main");
     list.cues = [
-      testCue("a", "Intro", "audio", { assetPath: "assets/intro.wav" }),
+      testCue("a", "Intro", "audio", { assetPath: "/assets/intro.wav" }),
       testCue("g", "Group", "group"),
       testCue("b", "Nested", "video", {
         parentId: "g",
-        assetPath: "assets/nested.mp4",
+        assetPath: "/assets/nested.mp4",
       }),
     ];
 
@@ -29,7 +29,7 @@ describe("project snapshot round-trip", () => {
     expect(loaded.name).toBe("My Show");
     expect(loaded.cueLists).toHaveLength(1);
     expect(loaded.cueLists[0].cues).toHaveLength(3);
-    expect(loaded.cueLists[0].cues[0].assetPath).toBe("assets/intro.wav");
+    expect(loaded.cueLists[0].cues[0].assetPath).toBe("/assets/intro.wav");
     expect(loaded.midiMappings).toHaveLength(1);
     expect(loaded.activeCueListId).toBe(list.id);
   });
@@ -54,7 +54,7 @@ describe("project snapshot round-trip", () => {
         startAddress: 1,
         channelCount: 3,
         ofl: {
-          filePath: "/project/fixtures/ofl/generic/rgb-par.json",
+          filePath: "/assets/fixtures/ofl/generic/rgb-par.json",
           manufacturerKey: "generic",
           manufacturer: "Generic",
           fixtureKey: "rgb-par",

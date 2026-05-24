@@ -1,8 +1,10 @@
 mod devices;
 mod dmx;
 mod enttec_pro;
+mod macos_package;
 mod midi_input;
 mod osc;
+mod project_open;
 
 use std::sync::Mutex;
 
@@ -12,18 +14,23 @@ use enttec_pro::{
     connect_enttec_pro, disconnect_enttec_pro, is_enttec_pro_connected, list_serial_ports,
     send_enttec_pro_dmx, EnttecProState,
 };
+use macos_package::mark_gsc_project_package;
 use midi_input::{
     list_midi_input_ports, start_midi_input, stop_midi_input, MidiInputState,
 };
 use osc::send_osc;
+use project_open::{
+    handle_cli_open_files, handle_opened_urls, take_pending_open_paths, PendingOpenPaths,
+};
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
-use tauri::Emitter;
+use tauri::{Emitter, RunEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .manage(MidiInputState(Mutex::new(None)))
         .manage(EnttecProState(Mutex::new(None)))
+        .manage(PendingOpenPaths(Mutex::new(Vec::new())))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
@@ -41,8 +48,14 @@ pub fn run() {
             list_midi_input_ports,
             start_midi_input,
             stop_midi_input,
+            take_pending_open_paths,
+            mark_gsc_project_package,
         ])
-        .setup(setup_app_menu)
+        .setup(|app| {
+            handle_cli_open_files(app.handle());
+            setup_app_menu(app)?;
+            Ok(())
+        })
         .on_menu_event(|app, event| {
             match event.id().as_ref() {
                 "new_project" => {
@@ -51,11 +64,23 @@ pub fn run() {
                 "open_settings" => {
                     let _ = app.emit("gsc://open-settings", ());
                 }
+                "open_project" => {
+                    let _ = app.emit("gsc://open-project", ());
+                }
+                "save_project" => {
+                    let _ = app.emit("gsc://save-project", ());
+                }
                 _ => {}
             }
         })
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    app.run(|app, event| {
+        if let RunEvent::Opened { urls } = event {
+            handle_opened_urls(app, urls);
+        }
+    });
 }
 
 fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
@@ -68,13 +93,17 @@ fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
 
     let new_project =
         MenuItem::with_id(handle, "new_project", "New Project", true, Some("CmdOrCtrl+N"))?;
+    let open_project =
+        MenuItem::with_id(handle, "open_project", "Open…", true, Some("CmdOrCtrl+O"))?;
+    let save_project =
+        MenuItem::with_id(handle, "save_project", "Save", true, Some("CmdOrCtrl+S"))?;
     let settings =
         MenuItem::with_id(handle, "open_settings", "Settings…", true, Some("CmdOrCtrl+,"))?;
     let file_submenu = Submenu::with_items(
         handle,
         "File",
         true,
-        &[&new_project, &settings],
+        &[&new_project, &open_project, &save_project, &settings],
     )?;
 
     let undo = PredefinedMenuItem::undo(handle, None)?;

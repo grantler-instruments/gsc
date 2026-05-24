@@ -111,6 +111,12 @@ export async function restoreProjectSessionOnce(): Promise<void> {
   const paths = collectSessionAssetPaths(session.snapshot, session.assets);
   await hydrateVfsFromProjectCache(loaded.id, paths);
 
+  const stillMissing = session.assets.filter((asset) => !vfsHas(asset.path));
+  if (stillMissing.length > 0) {
+    const { resolveAssetBlob } = await import("../platform/vfs-asset");
+    await Promise.all(stillMissing.map((asset) => resolveAssetBlob(asset.path)));
+  }
+
   useVfsStore.setState({
     entries: vfsEntriesFromSession(session.assets),
   });

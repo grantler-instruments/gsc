@@ -44,6 +44,7 @@ export interface ProjectState {
   selectCueRange: (id: string, visibleOrder: string[]) => void;
   groupSelectedCues: () => Cue | null;
   copySelectedCues: () => boolean;
+  cutSelectedCues: () => boolean;
   pasteSelectedCues: () => boolean;
   duplicateSelectedCues: () => boolean;
   addCueList: (name?: string) => CueList;

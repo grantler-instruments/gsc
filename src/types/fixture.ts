@@ -7,7 +7,7 @@ export interface FixtureOflChannel {
 }
 
 export interface FixtureOflProfile {
-  /** Virtual project path, e.g. /project/fixtures/ofl/generic/4-channel-dimmer-pack.json */
+  /** Virtual asset path, e.g. /assets/fixtures/ofl/generic/4-channel-dimmer-pack.json */
   filePath: string;
   manufacturerKey: string;
   manufacturer: string;

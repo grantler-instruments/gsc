@@ -1,16 +1,17 @@
 import { useEffect, useRef } from "react";
 import { diskPathsMayHaveMedia, handleTauriMediaDrop } from "../lib/asset-drop";
 import { notifyWarning } from "../lib/notifications";
-import { isProjectBundlePath } from "../lib/project-paths";
+import { isGscProjectDirPath, isProjectBundlePath } from "../lib/project-paths";
+import { openProjectPath } from "../lib/open-project-path";
 import { dropTargetAtPhysicalPosition, tauriDragHighlightState } from "../lib/tauri-drop";
 import { dispatchTauriCueListDrag, dispatchTauriFileDrag } from "../lib/tauri-file-drag";
 import { getPlatform } from "../platform";
-import { openDroppedProjectBundle } from "../platform/project-storage";
 import { useUiStore } from "../stores/ui";
 
 /**
  * Tauri: native window drag-drop (OS file paths, not HTML5 DataTransfer).
- * - `.gsc.zip` → open project bundle
+ * - `.gsc` directory → open project
+ * - `.gsc.zip` → import project bundle
  * - Media on cue list → import + create cues (same as web)
  * - Media on assets panel → import only
  */
@@ -82,7 +83,13 @@ export function useTauriProjectBundleDrop(): void {
 
           const bundlePath = paths.find(isProjectBundlePath);
           if (bundlePath) {
-            void openDroppedProjectBundle(bundlePath);
+            void openProjectPath(bundlePath);
+            return;
+          }
+
+          const projectDir = paths.find(isGscProjectDirPath);
+          if (projectDir) {
+            void openProjectPath(projectDir);
             return;
           }
 

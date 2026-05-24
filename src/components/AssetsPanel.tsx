@@ -126,57 +126,20 @@ export function AssetsPanel() {
           </Box>
         )}
         {entries.map((entry) => (
-          <Box
-            component="li"
+          <AssetRow
             key={entry.path}
-            draggable={canEdit}
-            onDragStart={canEdit ? (e) => onAssetDragStart(e, entry) : undefined}
-            onDragEnd={canEdit ? () => setActiveAssetDrag(null) : undefined}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              py: 0.75,
-              px: 1.5,
-              borderBottom: 1,
-              borderColor: "divider",
-              "&:hover": { bgcolor: tokens.bgHover },
-              ...(canEdit && {
-                cursor: "grab",
-                "&:active": { cursor: "grabbing" },
-              }),
-            }}
-          >
-            <CueTypeBadge type={entry.kind} showLabel={false} compact />
-            <Typography
-              component="span"
-              noWrap
-              title={entry.path}
-              sx={{ flex: 1, minWidth: 0, fontSize: 13 }}
-            >
-              {entry.name}
-            </Typography>
-            {canEdit && (
-              <Stack direction="row" sx={{ gap: 0.25, flexShrink: 0 }}>
-                <IconButton
-                  size="small"
-                  title="Add as cue"
-                  onClick={() =>
-                    addCue({
-                      name: entry.name,
-                      type: entry.kind,
-                      assetPath: entry.path,
-                    })
-                  }
-                >
-                  +
-                </IconButton>
-                <IconButton size="small" title="Remove" onClick={() => removeEntry(entry.path)}>
-                  ×
-                </IconButton>
-              </Stack>
-            )}
-          </Box>
+            entry={entry}
+            canEdit={canEdit}
+            tokens={tokens}
+            onAddCue={() =>
+              addCue({
+                name: entry.name,
+                type: entry.kind,
+                assetPath: entry.path,
+              })
+            }
+            onRemove={() => removeEntry(entry.path)}
+          />
         ))}
       </Box>
 
@@ -220,9 +183,84 @@ export function AssetsPanel() {
 }
 
 function onAssetDragStart(e: React.DragEvent, entry: VfsEntry) {
+  if (!entry.loaded) return;
   setAssetDragData(e.dataTransfer, {
     path: entry.path,
     name: entry.name,
     kind: entry.kind,
   });
+}
+
+function AssetRow({
+  entry,
+  canEdit,
+  tokens,
+  onAddCue,
+  onRemove,
+}: {
+  entry: VfsEntry;
+  canEdit: boolean;
+  tokens: ReturnType<typeof useGscTokens>;
+  onAddCue: () => void;
+  onRemove: () => void;
+}) {
+  const unavailable = !entry.loaded;
+  const title = unavailable
+    ? `${entry.path}\nFile not available — re-import this asset`
+    : entry.path;
+
+  return (
+    <Box
+      component="li"
+      draggable={canEdit && !unavailable}
+      onDragStart={canEdit && !unavailable ? (e) => onAssetDragStart(e, entry) : undefined}
+      onDragEnd={canEdit && !unavailable ? () => setActiveAssetDrag(null) : undefined}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
+        py: 0.75,
+        px: 1.5,
+        borderBottom: 1,
+        borderColor: "divider",
+        opacity: unavailable ? 0.55 : 1,
+        "&:hover": { bgcolor: unavailable ? undefined : tokens.bgHover },
+        ...(canEdit &&
+          !unavailable && {
+            cursor: "grab",
+            "&:active": { cursor: "grabbing" },
+          }),
+      }}
+    >
+      <CueTypeBadge type={entry.kind} showLabel={false} compact />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography component="span" noWrap title={title} sx={{ display: "block", fontSize: 13 }}>
+          {entry.name}
+        </Typography>
+        {unavailable && (
+          <Typography
+            component="span"
+            sx={{ display: "block", fontSize: 11, color: "warning.main", lineHeight: 1.2 }}
+          >
+            File not available
+          </Typography>
+        )}
+      </Box>
+      {canEdit && (
+        <Stack direction="row" sx={{ gap: 0.25, flexShrink: 0 }}>
+          <IconButton
+            size="small"
+            title={unavailable ? "Re-import the file before adding as a cue" : "Add as cue"}
+            disabled={unavailable}
+            onClick={onAddCue}
+          >
+            +
+          </IconButton>
+          <IconButton size="small" title="Remove" onClick={onRemove}>
+            ×
+          </IconButton>
+        </Stack>
+      )}
+    </Box>
+  );
 }

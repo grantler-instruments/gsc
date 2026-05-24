@@ -1,4 +1,5 @@
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
+import ContentCutOutlinedIcon from "@mui/icons-material/ContentCutOutlined";
 import ControlPointDuplicateOutlinedIcon from "@mui/icons-material/ControlPointDuplicateOutlined";
 import DriveFileRenameOutlineOutlinedIcon from "@mui/icons-material/DriveFileRenameOutlineOutlined";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -19,6 +20,7 @@ interface CueContextMenuProps {
   canRename: boolean;
   onClose: () => void;
   onCopy: () => void;
+  onCut: () => void;
   onDuplicate: () => void;
   onRename: () => void;
 }
@@ -36,6 +38,7 @@ export function CueContextMenu({
   canRename,
   onClose,
   onCopy,
+  onCut,
   onDuplicate,
   onRename,
 }: CueContextMenuProps) {
@@ -57,6 +60,18 @@ export function CueContextMenu({
         </ListItemIcon>
         <ListItemText>Copy</ListItemText>
         <Shortcut label={formatShortcut("c")} />
+      </MenuItem>
+      <MenuItem
+        onClick={() => {
+          onCut();
+          onClose();
+        }}
+      >
+        <ListItemIcon>
+          <ContentCutOutlinedIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText>Cut</ListItemText>
+        <Shortcut label={formatShortcut("x")} />
       </MenuItem>
       <MenuItem
         onClick={() => {

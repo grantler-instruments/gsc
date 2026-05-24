@@ -3,6 +3,7 @@ import { deletePrimarySelectedCue, selectAdjacentVisibleCue } from "../lib/cue-n
 import { isEditableKeyboardTarget } from "../lib/keyboard";
 import { startNewProject } from "../lib/new-project";
 import { openSettings } from "../lib/open-settings";
+import { openProjectFile, saveProjectFile } from "../lib/project-file-actions";
 import { canEditProject } from "../lib/show-mode";
 import { triggerGoSelected } from "../lib/transport-actions";
 import { toggleWindowFullscreen } from "../platform/window-fullscreen";
@@ -13,6 +14,7 @@ import { useUiStore } from "../stores/ui";
 export function useAppKeyboard(): void {
   const groupSelectedCues = useProjectStore((s) => s.groupSelectedCues);
   const copySelectedCues = useProjectStore((s) => s.copySelectedCues);
+  const cutSelectedCues = useProjectStore((s) => s.cutSelectedCues);
   const pasteSelectedCues = useProjectStore((s) => s.pasteSelectedCues);
   const duplicateSelectedCues = useProjectStore((s) => s.duplicateSelectedCues);
   const toggleShowMode = useUiStore((s) => s.toggleShowMode);
@@ -29,6 +31,18 @@ export function useAppKeyboard(): void {
       if ((e.metaKey || e.ctrlKey) && e.key === "," && !e.shiftKey && !e.altKey) {
         e.preventDefault();
         openSettings();
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "o" && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        if (canEditProject()) void openProjectFile();
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s" && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        if (canEditProject()) void saveProjectFile();
         return;
       }
 
@@ -90,6 +104,18 @@ export function useAppKeyboard(): void {
       if (
         canEditProject() &&
         (e.metaKey || e.ctrlKey) &&
+        e.key.toLowerCase() === "x" &&
+        !e.shiftKey
+      ) {
+        if (cutSelectedCues()) {
+          e.preventDefault();
+        }
+        return;
+      }
+
+      if (
+        canEditProject() &&
+        (e.metaKey || e.ctrlKey) &&
         e.key.toLowerCase() === "v" &&
         !e.shiftKey
       ) {
@@ -121,6 +147,7 @@ export function useAppKeyboard(): void {
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [
     copySelectedCues,
+    cutSelectedCues,
     duplicateSelectedCues,
     groupSelectedCues,
     panic,

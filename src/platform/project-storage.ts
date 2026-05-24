@@ -23,6 +23,13 @@ export async function openProject(): Promise<boolean> {
   return pickAndOpenProject();
 }
 
+/** Tauri: open a `.gsc` project directory from an OS file path (e.g. native drag-and-drop). */
+export async function openDroppedProjectDir(dirPath: string): Promise<boolean> {
+  if (getPlatform() !== "tauri") return false;
+  const { openProjectDirFromPath } = await import("./project-storage.tauri");
+  return openProjectDirFromPath(dirPath);
+}
+
 /** Tauri: open a .gsc.zip from an OS file path (e.g. native drag-and-drop). */
 export async function openDroppedProjectBundle(bundlePath: string): Promise<boolean> {
   if (getPlatform() !== "tauri") return false;

@@ -19,7 +19,8 @@ function showNameFromFolderPath(rootDir: string): string {
       .replace(/[/\\]+$/, "")
       .split(/[/\\]/)
       .pop() ?? "Untitled_Show";
-  const name = base.replace(/_/g, " ").trim();
+  const withoutExt = base.replace(/\.gsc$/i, "");
+  const name = withoutExt.replace(/_/g, " ").trim();
   return name || "Untitled Show";
 }
 

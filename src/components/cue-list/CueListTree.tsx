@@ -2,6 +2,7 @@ import type { MouseEvent } from "react";
 import { cueMissingAsset } from "../../lib/cue-asset";
 import { type CueListNode, getChildCues, isContainerCue, isCueActive } from "../../lib/cues";
 import type { RunningSequence } from "../../stores/transport";
+import { useVfsStore } from "../../stores/vfs";
 import type { Cue } from "../../types/cue";
 import { CueRow } from "./CueRow";
 
@@ -44,6 +45,8 @@ export function CueListTree({
   onRenameCommit,
   onRenameCancel,
 }: CueListTreeProps) {
+  const assetEntries = useVfsStore((s) => s.entries);
+
   return nodes.flatMap((node) => {
     const expanded = !collapsedGroups.has(node.cue.id);
     const childCount = isContainerCue(node.cue) ? getChildCues(cues, node.cue.id).length : 0;
@@ -58,7 +61,7 @@ export function CueListTree({
         selected={selectedCueIdSet.has(node.cue.id)}
         primarySelected={node.cue.id === primarySelectedId}
         active={isCueActive(node.cue, cues, activeCueIds, runningSequence)}
-        missingAsset={cueMissingAsset(node.cue)}
+        missingAsset={cueMissingAsset(node.cue, assetEntries)}
         pulseAsStopTarget={node.cue.id === hoveredStopTargetId}
         staticAsStopTarget={node.cue.id === selectedStopTargetId}
         onHoverChange={onHoverChange}

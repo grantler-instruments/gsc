@@ -44,7 +44,7 @@ src/
 | **Preferences** | `stores/preferences.ts` | MIDI/OSC/DMX device settings (persisted). |
 | **VFS** | `stores/vfs.ts` | In-memory virtual filesystem mirror for web projects. |
 | **Notifications** | `stores/notifications.ts` | Snackbar queue for user-visible errors. |
-| **Project location** | `stores/project-location.ts` | Tauri project folder path. |
+| **Project location** | `stores/project-location.ts` | Desktop `.gsc` project directory path. |
 | **DMX preview session** | `stores/dmx-preview-session.ts` | Temporary DMX preview state in the inspector. |
 
 The **transport store is intentionally dumb.** It records which cues are active and when each was triggered. Output engines *react* to transport changes rather than being called from `go()` directly.
@@ -165,9 +165,9 @@ The Rust layer (`src-tauri/`) is thin: list devices, send MIDI/DMX/OSC, serial (
 | Platform | Storage | Module |
 |----------|---------|--------|
 | Web | `localStorage` + Cache API for assets | `platform/project-storage.web.ts` |
-| Tauri | Project folder on disk; `.gsc.zip` bundles | `platform/project-storage.tauri.ts` |
+| Tauri | `.gsc` project directories on disk; `.gsc.zip` bundles for import/export | `platform/project-storage.tauri.ts` |
 
-Project shape is defined in `lib/project-snapshot.ts` (`ProjectSnapshotV2`). Bundles add a `project/` media folder via `lib/project-bundle.ts`. The VFS (`vfs/`) maps asset paths like `/project/audio/intro.wav` to blobs or disk files depending on platform.
+Project shape is defined in `lib/project-snapshot.ts` (`ProjectSnapshotV2`). Bundles add an `assets/` media folder via `lib/project-bundle.ts`. The VFS (`vfs/`) maps asset paths like `/assets/audio/intro.wav` to blobs or disk files depending on platform.
 
 ## UI structure
 

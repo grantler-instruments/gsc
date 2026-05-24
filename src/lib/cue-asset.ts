@@ -1,6 +1,7 @@
 import type { VfsEntry } from "../stores/vfs";
+import { useVfsStore } from "../stores/vfs";
 import type { AssetKind, Cue } from "../types/cue";
-import { vfsHas } from "../vfs/engine";
+import { normalizePath, vfsHas } from "../vfs/engine";
 import type { AssetDragPayload } from "./drag";
 
 export function assetPayloadMatchesCue(cue: Cue, payload: AssetDragPayload): boolean {
@@ -9,7 +10,7 @@ export function assetPayloadMatchesCue(cue: Cue, payload: AssetDragPayload): boo
 
 export function filterAssetsForCue(entries: VfsEntry[], cue: Cue): VfsEntry[] {
   if (!cueNeedsAsset(cue)) return [];
-  return entries.filter((e) => e.kind === cue.type);
+  return entries.filter((e) => e.kind === cue.type && e.loaded);
 }
 
 export const ASSET_FILE_ACCEPT: Record<AssetKind, string> = {
@@ -22,7 +23,15 @@ export function cueNeedsAsset(cue: Cue): boolean {
   return cue.type === "audio" || cue.type === "video" || cue.type === "image";
 }
 
-export function getCueAssetWarning(cue: Cue): { title: string; detail: string } | null {
+function findAssetEntry(entries: VfsEntry[], assetPath: string): VfsEntry | undefined {
+  const normalized = normalizePath(assetPath);
+  return entries.find((entry) => normalizePath(entry.path) === normalized);
+}
+
+export function getCueAssetWarning(
+  cue: Cue,
+  entries: VfsEntry[] = useVfsStore.getState().entries,
+): { title: string; detail: string } | null {
   if (!cueNeedsAsset(cue)) return null;
   if (!cue.assetPath) {
     return {
@@ -31,6 +40,13 @@ export function getCueAssetWarning(cue: Cue): { title: string; detail: string } 
     };
   }
   if (!vfsHas(cue.assetPath)) {
+    const entry = findAssetEntry(entries, cue.assetPath);
+    if (entry) {
+      return {
+        title: "Asset not loaded",
+        detail: "File not available — re-import in Assets",
+      };
+    }
     return {
       title: "Asset not loaded",
       detail: "Asset missing from project",
@@ -39,6 +55,9 @@ export function getCueAssetWarning(cue: Cue): { title: string; detail: string } 
   return null;
 }
 
-export function cueMissingAsset(cue: Cue): boolean {
-  return getCueAssetWarning(cue) !== null;
+export function cueMissingAsset(
+  cue: Cue,
+  entries: VfsEntry[] = useVfsStore.getState().entries,
+): boolean {
+  return getCueAssetWarning(cue, entries) !== null;
 }

@@ -1,6 +1,11 @@
 import { useProjectLocationStore } from "../stores/project-location";
 import { normalizePath, vfsGet, vfsPut, vfsRegisterDiskPaths } from "../vfs/engine";
-import { assetRelativePath, PROJECT_JSON } from "./project-paths";
+import {
+  assetRelativePath,
+  PROJECT_JSON,
+  isAssetsRelativePath,
+  virtualPathFromRelativeAssetFile,
+} from "./project-paths";
 
 export function getProjectRootDir(): string | null {
   return useProjectLocationStore.getState().rootDir;
@@ -78,9 +83,9 @@ export function projectJsonDiskPath(rootDir: string): string {
   return `${rootDir.replace(/[/\\]+$/, "")}${sep}${PROJECT_JSON}`;
 }
 
-/** List asset files under project/ on disk (returns virtual paths). */
+/** List asset files under assets/ on disk (returns virtual paths). */
 export function virtualPathsFromRelativeFiles(relativeFiles: string[]): string[] {
   return relativeFiles
-    .filter((f) => f.startsWith("project/") && !f.endsWith("/"))
-    .map((f) => normalizePath(`/${f}`));
+    .filter((f) => isAssetsRelativePath(f) && !f.endsWith("/"))
+    .map((f) => virtualPathFromRelativeAssetFile(f));
 }

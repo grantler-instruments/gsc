@@ -49,9 +49,9 @@ export const DEMO_CUE_IDS = {
   act2Intro: CUE_ACT2_INTRO,
 };
 
-const AUDIO_OPENING = "/project/audio/opening-theme.wav";
-const AUDIO_STING = "/project/audio/sting.wav";
-const IMAGE_TITLE = "/project/images/title-card.png";
+const AUDIO_OPENING = "/assets/audio/opening-theme.wav";
+const AUDIO_STING = "/assets/audio/sting.wav";
+const IMAGE_TITLE = "/assets/images/title-card.png";
 
 function crc32(buffer) {
   let crc = 0xffffffff;
@@ -176,7 +176,7 @@ export function buildDemoSnapshot() {
       startAddress: 1,
       channelCount: 3,
       ofl: {
-        filePath: "/project/fixtures/ofl/generic/rgb-par.json",
+        filePath: "/assets/fixtures/ofl/generic/rgb-par.json",
         manufacturerKey: "generic",
         manufacturer: "Generic",
         fixtureKey: "rgb-par",
@@ -422,7 +422,7 @@ export function buildDemoBundleZip() {
 
   for (const asset of assets) {
     const relative = asset.path.replace(/^\//, "");
-    zipEntries[`project/${relative.replace(/^project\//, "")}`] = Uint8Array.from(asset.data);
+    zipEntries[`assets/${relative.replace(/^assets\//, "")}`] = Uint8Array.from(asset.data);
   }
 
   return zipSync(zipEntries);

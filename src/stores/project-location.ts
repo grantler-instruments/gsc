@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
 interface ProjectLocationState {
-  /** Absolute path to the project folder (contains project.json). */
+  /** Absolute path to the `.gsc` project directory (contains project.json). */
   rootDir: string | null;
   setRootDir: (rootDir: string | null) => void;
 }

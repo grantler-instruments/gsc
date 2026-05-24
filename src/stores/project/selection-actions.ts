@@ -5,13 +5,42 @@ import {
   prepareCuePaste,
   setCueClipboard,
 } from "../../lib/cue-clipboard";
-import { buildParallelGroupFromSelection, getPrimarySelectedCueId } from "../../lib/cue-selection";
+import {
+  buildParallelGroupFromSelection,
+  flattenVisibleCueIds,
+  getPrimarySelectedCueId,
+} from "../../lib/cue-selection";
+import { getChildCues, isContainerCue, isFadeCue, isStopCue } from "../../lib/cues";
 import { canEditProject } from "../../lib/show-mode";
+import { useUiStore } from "../../stores/ui";
+import type { Cue } from "../../types/cue";
 import { guardDmxPreviewSelection } from "../../stores/dmx-preview-session";
 import { applyRenumber, getActiveCueListFromState, patchActiveList } from "./helpers";
 import type { ProjectState } from "./types";
 
 type ProjectStore = StoreApi<ProjectState>;
+
+function collectSelectedRootIds(selectedIds: string[], cues: Cue[]): string[] {
+  const selectedSet = new Set(selectedIds);
+  return selectedIds.filter((id) => {
+    const cue = cues.find((c) => c.id === id);
+    if (!cue) return false;
+    return !cue.parentId || !selectedSet.has(cue.parentId);
+  });
+}
+
+function collectCueRemovalIds(cues: Cue[], rootId: string): Set<string> {
+  const toRemove = new Set<string>([rootId]);
+  const collect = (cueId: string) => {
+    for (const child of getChildCues(cues, cueId)) {
+      toRemove.add(child.id);
+      if (isContainerCue(child)) collect(child.id);
+    }
+  };
+  const target = cues.find((c) => c.id === rootId);
+  if (target && isContainerCue(target)) collect(rootId);
+  return toRemove;
+}
 
 export function createSelectionActions(
   set: ProjectStore["setState"],
@@ -23,6 +52,7 @@ export function createSelectionActions(
   | "selectCueRange"
   | "groupSelectedCues"
   | "copySelectedCues"
+  | "cutSelectedCues"
   | "pasteSelectedCues"
   | "duplicateSelectedCues"
 > {
@@ -107,6 +137,60 @@ export function createSelectionActions(
       const collected = collectCuesForCopy(active.selectedCueIds, active.cues);
       if (collected.length === 0) return false;
       setCueClipboard(collected);
+      return true;
+    },
+
+    cutSelectedCues: () => {
+      if (!canEditProject()) return false;
+      const active = getActiveCueListFromState(get());
+      const collected = collectCuesForCopy(active.selectedCueIds, active.cues);
+      if (collected.length === 0) return false;
+
+      setCueClipboard(collected);
+
+      const roots = collectSelectedRootIds(active.selectedCueIds, active.cues);
+      const toRemove = new Set<string>();
+      for (const rootId of roots) {
+        for (const id of collectCueRemovalIds(active.cues, rootId)) {
+          toRemove.add(id);
+        }
+      }
+      for (const c of active.cues) {
+        if (isStopCue(c) && c.stopTargetId && toRemove.has(c.stopTargetId)) toRemove.add(c.id);
+        if (isFadeCue(c) && c.fadeTargetId && toRemove.has(c.fadeTargetId)) toRemove.add(c.id);
+      }
+
+      const collapsed = new Set(useUiStore.getState().collapsedCueGroupIds);
+      const order = flattenVisibleCueIds(active.cues, collapsed);
+      const primary = getPrimarySelectedCueId(active.selectedCueIds);
+      let nextId: string | null = null;
+      if (primary) {
+        const index = order.indexOf(primary);
+        if (index !== -1) {
+          for (let i = index + 1; i < order.length; i++) {
+            if (!toRemove.has(order[i])) {
+              nextId = order[i];
+              break;
+            }
+          }
+          if (!nextId) {
+            for (let i = index - 1; i >= 0; i--) {
+              if (!toRemove.has(order[i])) {
+                nextId = order[i];
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      set({
+        ...patchActiveList(get(), () => ({
+          cues: applyRenumber(active.cues.filter((c) => !toRemove.has(c.id))),
+          selectedCueIds: nextId ? [nextId] : [],
+          selectionAnchorId: nextId,
+        })),
+      });
       return true;
     },
 

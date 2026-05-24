@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getCachedAudioBuffer, loadAudioBuffer } from "../audio/buffer-cache";
 import { ensureMediaDurationSec, getMediaDurationSec } from "../lib/media-duration";
 import { computeWaveformPeaks, WAVEFORM_PEAK_COUNT } from "../lib/waveform";
+import { resolveAssetBlob } from "../platform/vfs-asset";
 import { vfsHas } from "../vfs/engine";
 
 export type MediaWaveformKind = "audio" | "video";
@@ -62,16 +63,20 @@ export function useMediaWaveform(
       return;
     }
 
-    if (!vfsHas(assetPath)) {
-      setData(null);
-      setLoading(false);
-      setMissing(true);
-      return;
-    }
-
     let cancelled = false;
 
     const run = async () => {
+      if (!vfsHas(assetPath)) {
+        await resolveAssetBlob(assetPath);
+        if (cancelled) return;
+        if (!vfsHas(assetPath)) {
+          setData(null);
+          setLoading(false);
+          setMissing(true);
+          return;
+        }
+      }
+
       if (mediaKind === "audio") {
         const cached = getCachedAudioBuffer(assetPath);
         if (cached) {

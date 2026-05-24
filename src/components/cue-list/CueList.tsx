@@ -33,6 +33,7 @@ export function CueList() {
   const activeCueIds = useTransportStore((s) => s.activeCueIds);
   const runningSequence = useTransportStore((s) => s.runningSequence);
   const copySelectedCues = useProjectStore((s) => s.copySelectedCues);
+  const cutSelectedCues = useProjectStore((s) => s.cutSelectedCues);
   const duplicateSelectedCues = useProjectStore((s) => s.duplicateSelectedCues);
 
   const selection = useCueListSelection(cues, collapsedGroups);
@@ -104,6 +105,7 @@ export function CueList() {
           canRename={contextMenu.canRenameFromMenu}
           onClose={() => contextMenu.setContextMenu(null)}
           onCopy={copySelectedCues}
+          onCut={cutSelectedCues}
           onDuplicate={duplicateSelectedCues}
           onRename={() => {
             if (contextMenu.contextMenu) {

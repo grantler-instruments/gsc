@@ -23,20 +23,24 @@ interface VfsState {
   importFromDrop: (dataTransfer: DataTransfer) => Promise<ImportedAsset[]>;
   removeEntry: (path: string) => void;
   syncFromEngine: () => void;
+  refreshEntriesLoaded: () => void;
+}
+
+function entryFromPath(path: string, existing?: VfsEntry): VfsEntry {
+  const blob = vfsGet(path);
+  const name = path.split("/").pop() ?? path;
+  return {
+    path,
+    name,
+    size: blob?.size ?? existing?.size ?? 0,
+    mimeType: blob?.type ?? existing?.mimeType ?? "",
+    kind: existing?.kind ?? assetKindFromPath(path),
+    loaded: vfsHas(path),
+  };
 }
 
 function entriesFromPaths(paths: string[]): VfsEntry[] {
-  return paths.map((path) => {
-    const name = path.split("/").pop() ?? path;
-    return {
-      path,
-      name,
-      size: 0,
-      mimeType: "",
-      kind: assetKindFromPath(path),
-      loaded: vfsHas(path),
-    };
-  });
+  return paths.map((path) => entryFromPath(path));
 }
 
 export const useVfsStore = create<VfsState>()(
@@ -85,6 +89,14 @@ export const useVfsStore = create<VfsState>()(
 
       syncFromEngine: () => {
         set({ entries: entriesFromPaths(vfsAllPaths()) });
+      },
+
+      refreshEntriesLoaded: () => {
+        set((s) => ({
+          entries: s.entries
+            .map((entry) => entryFromPath(entry.path, entry))
+            .sort((a, b) => a.path.localeCompare(b.path)),
+        }));
       },
     }),
     { name: "VfsStore" },

@@ -1,4 +1,5 @@
 import type { FixtureOflProfile } from "../../types/fixture";
+import { normalizePath } from "../../vfs/engine";
 import type { OflFixtureSummary, OflModeSummary } from "./types";
 
 export function buildFixtureOflProfile(
@@ -23,7 +24,7 @@ export function normalizeFixtureOflProfile(
   raw: Partial<FixtureOflProfile> & Pick<FixtureOflProfile, "filePath">,
 ): FixtureOflProfile {
   return {
-    filePath: raw.filePath,
+    filePath: normalizePath(raw.filePath),
     manufacturerKey: raw.manufacturerKey?.trim() || "unknown",
     manufacturer: raw.manufacturer?.trim() || "Unknown",
     fixtureKey: raw.fixtureKey?.trim() || "fixture",

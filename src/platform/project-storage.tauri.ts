@@ -26,14 +26,24 @@ import {
   virtualPathsFromRelativeFiles,
   writeAssetToDisk,
 } from "../lib/project-disk";
-import { BUNDLE_EXTENSION, PROJECT_JSON } from "../lib/project-paths";
+import { isMacPlatform } from "../lib/keyboard";
+import {
+  BUNDLE_EXTENSION,
+  isGscProjectDirPath,
+  isProjectBundlePath,
+  PROJECT_DIR_EXTENSION,
+  PROJECT_JSON,
+  projectDirNameFromShowName,
+  projectRootFromSavePath,
+} from "../lib/project-paths";
 import { collectSessionAssetPaths } from "../lib/project-session";
 import { snapshotToCueLists } from "../lib/project-snapshot";
+import { markGscProjectPackage } from "./macos-package";
 import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
 import type { VfsEntry } from "../stores/vfs";
 import { useVfsStore } from "../stores/vfs";
-import { vfsClear, vfsGet } from "../vfs/engine";
+import { vfsClear, vfsGet, vfsHas } from "../vfs/engine";
 import { assetKindFromPath } from "../vfs/import";
 
 const LAST_ROOT_KEY = "gsc-tauri-last-project-root";
@@ -47,24 +57,14 @@ function showError(err: unknown): void {
   notifyErrorFromUnknown(err);
 }
 
-function projectDirNameFromShowName(name: string): string {
-  const sanitized = name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "");
-  return sanitized || "Untitled_Show";
-}
-
 async function isDirectoryEmpty(dir: string): Promise<boolean> {
   if (!(await exists(dir))) return true;
   const entries = await readDir(dir);
   return entries.filter((e) => !IGNORED_DIR_ENTRIES.has(e.name)).length === 0;
 }
 
-/** Turn a save-dialog path into a project directory (strip accidental file extensions). */
-function projectRootFromSavePath(savePath: string): string {
-  return savePath.replace(/[/\\]+$/, "").replace(/\.(gsc\.zip|gsc|zip)$/i, "");
-}
-
 /**
- * Save dialog: user picks location and folder name; GSC creates that directory.
+ * Save dialog: user picks location and folder name; GSC creates a `.gsc` directory.
  */
 export async function promptTauriProjectFolder(
   title: string,
@@ -89,6 +89,7 @@ export async function promptTauriProjectFolder(
   }
 
   await mkdir(rootDir, { recursive: true });
+  await markGscProjectPackage(rootDir);
   return rootDir;
 }
 
@@ -141,13 +142,17 @@ function vfsEntriesFromPaths(paths: string[]): VfsEntry[] {
         size: blob?.size ?? 0,
         mimeType: blob?.type ?? "",
         kind: assetKindFromPath(path),
-        loaded: Boolean(blob),
+        loaded: vfsHas(path),
       };
     })
     .sort((a, b) => a.path.localeCompare(b.path));
 }
 
 export async function loadProjectFromFolder(rootDir: string): Promise<void> {
+  if (!isGscProjectDirPath(rootDir)) {
+    throw new Error(`Select a ${PROJECT_DIR_EXTENSION} project folder (e.g. MyShow${PROJECT_DIR_EXTENSION}).`);
+  }
+
   const jsonPath = projectJsonDiskPath(rootDir);
   if (!(await exists(jsonPath))) {
     throw new Error(`No ${PROJECT_JSON} in selected folder`);
@@ -165,11 +170,12 @@ export async function loadProjectFromFolder(rootDir: string): Promise<void> {
   useProjectStore.setState(loaded);
   useProjectLocationStore.getState().setRootDir(rootDir);
   localStorage.setItem(LAST_ROOT_KEY, rootDir);
+  await markGscProjectPackage(rootDir);
 
-  const assetsDir = await join(rootDir, "project");
+  const assetsDir = await join(rootDir, "assets");
   let diskPaths: string[] = [];
   if (await exists(assetsDir)) {
-    const relFiles = await collectRelativeFiles(assetsDir, "project");
+    const relFiles = await collectRelativeFiles(assetsDir, "assets");
     diskPaths = virtualPathsFromRelativeFiles(relFiles);
   }
 
@@ -200,6 +206,7 @@ export async function saveProjectToFolder(rootDir: string): Promise<void> {
 
   const jsonPath = projectJsonDiskPath(rootDir);
   await writeTextFile(jsonPath, JSON.stringify(snapshot, null, 2));
+  await markGscProjectPackage(rootDir);
 }
 
 async function openProjectBundleFromZipData(zipData: Uint8Array): Promise<boolean> {
@@ -212,7 +219,18 @@ async function openProjectBundleFromZipData(zipData: Uint8Array): Promise<boolea
   return true;
 }
 
-/** Extract a dropped or chosen bundle into a new project folder and load it. */
+/** Open a `.gsc` project directory from an OS file path (e.g. drag-and-drop). */
+export async function openProjectDirFromPath(dirPath: string): Promise<boolean> {
+  try {
+    await loadProjectFromFolder(dirPath);
+    return true;
+  } catch (err) {
+    showError(err);
+    return false;
+  }
+}
+
+/** Extract a dropped or chosen bundle into a new `.gsc` folder and load it. */
 export async function openProjectBundleFromPath(bundlePath: string): Promise<boolean> {
   if (bundleOpenInProgress) return false;
   bundleOpenInProgress = true;
@@ -246,26 +264,51 @@ async function openProjectFromBundleFile(bundlePath: string): Promise<boolean> {
   return openProjectBundleFromPath(bundlePath);
 }
 
-/** Open an on-disk project folder or a .gsc.zip bundle (extracted into a new folder). */
+async function openPickedProjectPath(path: string): Promise<boolean> {
+  if (isProjectBundlePath(path)) {
+    return openProjectFromBundleFile(path);
+  }
+  if (isGscProjectDirPath(path)) {
+    return openProjectDirFromPath(path);
+  }
+  notifyWarning(`Choose a ${PROJECT_DIR_EXTENSION} project or ${BUNDLE_EXTENSION} bundle.`);
+  return false;
+}
+
+/** Open a `.gsc` project directory or import a `.gsc.zip` bundle. */
 export async function pickAndOpenProject(): Promise<boolean> {
-  const folderPath = await open({
-    directory: true,
-    multiple: false,
-    title: "Open project",
-  });
-  if (typeof folderPath === "string") {
+  // macOS `.gsc` folders are packages (LSTypeIsPackage) and cannot be chosen in a
+  // directory-only picker — use a file picker so packages appear as selectable `.gsc` items.
+  if (isMacPlatform()) {
+    const selected = await open({
+      multiple: false,
+      title: "Open project",
+      filters: [
+        { name: "GSC project", extensions: ["gsc"] },
+        { name: "GSC project bundle", extensions: ["gsc.zip", "zip"] },
+      ],
+    });
+    if (typeof selected !== "string") return false;
     try {
-      await loadProjectFromFolder(folderPath);
-      return true;
+      return await openPickedProjectPath(selected);
     } catch (err) {
       showError(err);
       return false;
     }
   }
 
+  const folderPath = await open({
+    directory: true,
+    multiple: false,
+    title: `Open project (${PROJECT_DIR_EXTENSION} folder)`,
+  });
+  if (typeof folderPath === "string") {
+    return openProjectDirFromPath(folderPath);
+  }
+
   const bundlePath = await open({
     multiple: false,
-    title: "Open project bundle",
+    title: "Import project bundle",
     filters: [{ name: "GSC project bundle", extensions: ["gsc.zip", "zip"] }],
   });
   if (typeof bundlePath !== "string") return false;

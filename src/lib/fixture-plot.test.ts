@@ -31,7 +31,7 @@ describe("fixture plot", () => {
         fixture("rgb", {
           channelCount: 4,
           ofl: {
-            filePath: "/project/fixtures/ofl/generic/rgb.json",
+            filePath: "/assets/fixtures/ofl/generic/rgb.json",
             manufacturerKey: "generic",
             manufacturer: "Generic",
             fixtureKey: "rgb",
