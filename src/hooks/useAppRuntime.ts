@@ -11,6 +11,7 @@ import { useOscEngine } from "./useOscEngine";
 import { useOutputPublisher } from "./useOutputPublisher";
 import { usePlaybackProgress } from "./usePlaybackProgress";
 import { usePreventBrowserFileDrop } from "./usePreventBrowserFileDrop";
+import { useProjectHistory } from "./useProjectHistory";
 import { useProjectSession } from "./useProjectSession";
 import { useTauriAppMenu } from "./useTauriAppMenu";
 import { useTauriOpenProject } from "./useTauriOpenProject";
@@ -19,6 +20,7 @@ import { useTauriOpenProject } from "./useTauriOpenProject";
 export function useAppRuntime(): boolean {
   const sessionReady = useProjectSession();
 
+  useProjectHistory();
   useAppKeyboard();
   useAudioEngine();
   useMidiEngine();

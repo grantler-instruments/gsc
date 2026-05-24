@@ -5,6 +5,7 @@ import { hydrateVfsFromProjectCache, vfsClear, vfsHas } from "../vfs/engine";
 import { setActiveProjectId } from "./active-project-id";
 import { notifyWarningDeduped } from "./notifications";
 import { collectOflPaths } from "./ofl/import-ofl";
+import { replaceProjectWithoutHistory } from "./project-history";
 import { snapshotToCueLists } from "./project-snapshot";
 
 const SESSION_KEY = "gsc-project-session";
@@ -105,8 +106,10 @@ export async function restoreProjectSessionOnce(): Promise<void> {
 
   vfsClear();
   const loaded = snapshotToCueLists(session.snapshot);
-  setActiveProjectId(loaded.id);
-  useProjectStore.setState(loaded);
+  replaceProjectWithoutHistory(() => {
+    setActiveProjectId(loaded.id);
+    useProjectStore.setState(loaded);
+  });
 
   const paths = collectSessionAssetPaths(session.snapshot, session.assets);
   await hydrateVfsFromProjectCache(loaded.id, paths);

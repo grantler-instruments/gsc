@@ -12,6 +12,7 @@ import { defaultDmxCueData, normalizeDmxCueData } from "../../lib/dmx";
 import { defaultFadeCueFields, fadeCueLabel, isValidFadeTarget } from "../../lib/fade";
 import { defaultMidiCueData } from "../../lib/midi";
 import { defaultOscCueData } from "../../lib/osc";
+import { runWithoutHistory } from "../../lib/project-history";
 import { canEditProject } from "../../lib/show-mode";
 import type { Cue } from "../../types/cue";
 import {
@@ -244,11 +245,18 @@ export function createCueEditorActions(
         Object.keys(patch).length > 0 &&
         Object.keys(patch).every((key) => key === "volume" || key === "opacity");
       if (!canEditProject() && !isRuntimeLevelPatch) return;
-      set((s) => ({
-        ...patchActiveList(s, (list) => ({
-          cues: applyRenumber(list.cues.map((c) => (c.id === id ? { ...c, ...patch } : c))),
-        })),
-      }));
+      const apply = () => {
+        set((s) => ({
+          ...patchActiveList(s, (list) => ({
+            cues: applyRenumber(list.cues.map((c) => (c.id === id ? { ...c, ...patch } : c))),
+          })),
+        }));
+      };
+      if (isRuntimeLevelPatch && !canEditProject()) {
+        runWithoutHistory(apply);
+        return;
+      }
+      apply();
     },
 
     removeCue: (id) => {

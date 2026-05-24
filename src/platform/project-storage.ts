@@ -1,5 +1,12 @@
 import { notifyErrorFromUnknown } from "../lib/notifications";
+import type { RecentProjectEntry } from "../lib/recent-projects";
 import { getPlatform } from "./index";
+
+export async function listRecentProjects(): Promise<RecentProjectEntry[]> {
+  if (getPlatform() !== "tauri") return [];
+  const { listValidRecentProjects } = await import("./project-storage.tauri");
+  return listValidRecentProjects();
+}
 
 export async function exportProjectBundle(): Promise<{ missing: string[] }> {
   if (getPlatform() === "tauri") {
@@ -69,10 +76,26 @@ export async function promptProjectFolder(
   }
 }
 
-export async function persistPlatformProject(): Promise<void> {
+/** Tauri: bind a draft project folder in app cache until the user saves. */
+export async function bindTemporaryProjectRoot(showName?: string): Promise<string | null> {
+  if (getPlatform() !== "tauri") return null;
+  const { bindTemporaryProjectRoot: bindDraft } = await import("./project-storage.tauri");
+  return bindDraft(showName);
+}
+
+/** Tauri: remove a draft project folder from app cache. */
+export async function discardTemporaryProjectRoot(rootDir: string): Promise<void> {
+  if (getPlatform() !== "tauri") return;
+  const { discardTemporaryProjectRoot: discardDraft } = await import("./project-storage.tauri");
+  await discardDraft(rootDir);
+}
+
+export async function persistPlatformProject(options?: {
+  promptForLocation?: boolean;
+}): Promise<void> {
   if (getPlatform() === "tauri") {
     const { persistTauriProject } = await import("./project-storage.tauri");
-    await persistTauriProject();
+    await persistTauriProject(options);
     return;
   }
   const { persistProjectSession } = await import("../lib/project-session");

@@ -1,28 +1,25 @@
 import { getPlatform } from "../platform";
-import { persistPlatformProject, promptProjectFolder } from "../platform/project-storage";
+import {
+  bindTemporaryProjectRoot,
+  discardTemporaryProjectRoot,
+  persistPlatformProject,
+} from "../platform/project-storage";
 import { useFadeStore } from "../stores/fade";
 import { usePlaybackStore } from "../stores/playback";
 import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
+import { requestUnsavedProjectChoice } from "../stores/unsaved-project-prompt";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
 import { useVfsStore } from "../stores/vfs";
 import { vfsClear } from "../vfs/engine";
 import { setActiveProjectId } from "./active-project-id";
 import { createCueList } from "./cue-lists";
+import { replaceProjectWithoutHistory } from "./project-history";
+import { saveProjectFile } from "./project-file-actions";
+import { isProjectUnsaved } from "./unsaved-project";
 
 const TAURI_LAST_ROOT_KEY = "gsc-tauri-last-project-root";
-
-function showNameFromFolderPath(rootDir: string): string {
-  const base =
-    rootDir
-      .replace(/[/\\]+$/, "")
-      .split(/[/\\]/)
-      .pop() ?? "Untitled_Show";
-  const withoutExt = base.replace(/\.gsc$/i, "");
-  const name = withoutExt.replace(/_/g, " ").trim();
-  return name || "Untitled Show";
-}
 
 function createFreshProjectState(projectName = "Untitled Show") {
   const list = createCueList("Main");
@@ -38,12 +35,18 @@ function createFreshProjectState(projectName = "Untitled Show") {
 
 /** Save the open project, then replace it with a new empty show in edit mode. */
 export async function startNewProject(): Promise<void> {
-  await persistPlatformProject();
+  const previousRoot = useProjectLocationStore.getState().rootDir;
+  const wasTemporary = useProjectLocationStore.getState().isTemporaryRoot;
 
-  let rootDir: string | null = null;
-  if (getPlatform() === "tauri") {
-    rootDir = await promptProjectFolder("New Project", "Untitled Show");
-    if (!rootDir) return;
+  if (isProjectUnsaved()) {
+    const choice = await requestUnsavedProjectChoice(useProjectStore.getState().name);
+    if (choice === "cancel") return;
+    if (choice === "save") {
+      await saveProjectFile();
+      if (useProjectLocationStore.getState().isTemporaryRoot) return;
+    }
+  } else if (!wasTemporary && previousRoot) {
+    await persistPlatformProject();
   }
 
   useTransportStore.getState().panic();
@@ -56,19 +59,19 @@ export async function startNewProject(): Promise<void> {
   });
 
   vfsClear();
-  const projectName = rootDir ? showNameFromFolderPath(rootDir) : "Untitled Show";
-  useProjectStore.setState(createFreshProjectState(projectName));
+  replaceProjectWithoutHistory(() => {
+    useProjectStore.setState(createFreshProjectState());
+  });
   useVfsStore.setState({ entries: [] });
   useUiStore.getState().setShowMode(false);
 
-  if (rootDir) {
-    useProjectLocationStore.getState().setRootDir(rootDir);
-    localStorage.setItem(TAURI_LAST_ROOT_KEY, rootDir);
-    await persistPlatformProject();
+  if (getPlatform() === "tauri") {
+    if (wasTemporary && previousRoot) {
+      await discardTemporaryProjectRoot(previousRoot);
+    }
+    await bindTemporaryProjectRoot();
   } else {
     useProjectLocationStore.getState().setRootDir(null);
-    if (getPlatform() === "tauri") {
-      localStorage.removeItem(TAURI_LAST_ROOT_KEY);
-    }
+    localStorage.removeItem(TAURI_LAST_ROOT_KEY);
   }
 }

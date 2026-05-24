@@ -7,6 +7,7 @@ import {
 } from "../lib/project-bundle";
 import { BUNDLE_EXTENSION } from "../lib/project-paths";
 import { collectSessionAssetPaths } from "../lib/project-session";
+import { replaceProjectWithoutHistory } from "../lib/project-history";
 import { snapshotToCueLists } from "../lib/project-snapshot";
 import { useProjectStore } from "../stores/project";
 import type { VfsEntry } from "../stores/vfs";
@@ -65,8 +66,10 @@ export async function importProjectBundleWeb(file: File): Promise<void> {
 
   vfsClear();
   const loaded = snapshotToCueLists(snapshot);
-  setActiveProjectId(loaded.id);
-  useProjectStore.setState(loaded);
+  replaceProjectWithoutHistory(() => {
+    setActiveProjectId(loaded.id);
+    useProjectStore.setState(loaded);
+  });
 
   hydrateVfsFromBundleAssets(assets);
 

@@ -3,6 +3,7 @@ import { deletePrimarySelectedCue, selectAdjacentVisibleCue } from "../lib/cue-n
 import { isEditableKeyboardTarget } from "../lib/keyboard";
 import { startNewProject } from "../lib/new-project";
 import { openSettings } from "../lib/open-settings";
+import { redoProjectEdit, undoProjectEdit } from "../lib/project-history";
 import { openProjectFile, saveProjectFile } from "../lib/project-file-actions";
 import { canEditProject } from "../lib/show-mode";
 import { triggerGoSelected } from "../lib/transport-actions";
@@ -86,6 +87,17 @@ export function useAppKeyboard(): void {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "e") {
         e.preventDefault();
         toggleShowMode();
+        return;
+      }
+
+      if (canEditProject() && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
+        if (e.shiftKey) {
+          if (redoProjectEdit()) {
+            e.preventDefault();
+          }
+        } else if (undoProjectEdit()) {
+          e.preventDefault();
+        }
         return;
       }
 

@@ -1,4 +1,4 @@
-import { join } from "@tauri-apps/api/path";
+import { appCacheDir, join } from "@tauri-apps/api/path";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import {
   exists,
@@ -36,7 +36,13 @@ import {
   projectDirNameFromShowName,
   projectRootFromSavePath,
 } from "../lib/project-paths";
+import { recordRecentProject, readRecentProjects, removeRecentProject } from "../lib/recent-projects";
+import { hasMeaningfulProjectContent, snapshotHasMeaningfulContent } from "../lib/unsaved-project";
 import { collectSessionAssetPaths } from "../lib/project-session";
+import { requestStartupProjectsChoice } from "../stores/startup-projects-prompt";
+import type { PendingDraftProject } from "../stores/startup-projects-prompt";
+import type { RecentProjectEntry } from "../lib/recent-projects";
+import { replaceProjectWithoutHistory } from "../lib/project-history";
 import { snapshotToCueLists } from "../lib/project-snapshot";
 import { markGscProjectPackage } from "./macos-package";
 import { useProjectStore } from "../stores/project";
@@ -47,8 +53,66 @@ import { vfsClear, vfsGet, vfsHas } from "../vfs/engine";
 import { assetKindFromPath } from "../vfs/import";
 
 const LAST_ROOT_KEY = "gsc-tauri-last-project-root";
+const DRAFT_ROOT_KEY = "gsc-tauri-draft-root";
 
 const IGNORED_DIR_ENTRIES = new Set([".DS_Store", "Thumbs.db", "desktop.ini"]);
+
+async function createDraftProjectRoot(showName: string): Promise<string> {
+  const sessionDir = await join(await appCacheDir(), "drafts", crypto.randomUUID());
+  const rootDir = await join(sessionDir, projectDirNameFromShowName(showName));
+  await mkdir(rootDir, { recursive: true });
+  await markGscProjectPackage(rootDir);
+  return rootDir;
+}
+
+async function removeDraftProjectRoot(rootDir: string): Promise<void> {
+  try {
+    const normalized = rootDir.replace(/\\/g, "/");
+    const draftsMarker = "/drafts/";
+    const draftsIdx = normalized.indexOf(draftsMarker);
+    if (draftsIdx < 0) return;
+
+    const afterDrafts = normalized.slice(draftsIdx + draftsMarker.length);
+    const sessionId = afterDrafts.split("/")[0];
+    if (!sessionId) return;
+
+    const sessionRoot = `${normalized.slice(0, draftsIdx + draftsMarker.length)}${sessionId}`;
+    await remove(sessionRoot, { recursive: true });
+  } catch {
+    /* ignore cleanup failures */
+  }
+}
+
+/** Bind a draft `.gsc` folder in app cache (autosaved until the user picks a location). */
+export async function bindTemporaryProjectRoot(showName?: string): Promise<string> {
+  const name = showName ?? useProjectStore.getState().name;
+  const rootDir = await createDraftProjectRoot(name);
+  useProjectLocationStore.getState().setRootDir(rootDir, { temporary: true });
+  await saveProjectToFolder(rootDir);
+  return rootDir;
+}
+
+export async function discardTemporaryProjectRoot(rootDir: string): Promise<void> {
+  clearDraftRootKey(rootDir);
+  await removeDraftProjectRoot(rootDir);
+}
+
+function clearDraftRootKey(rootDir?: string): void {
+  const stored = localStorage.getItem(DRAFT_ROOT_KEY);
+  if (!stored) return;
+  if (!rootDir || stored === rootDir) {
+    localStorage.removeItem(DRAFT_ROOT_KEY);
+  }
+}
+
+function syncDraftRootKey(): void {
+  const { rootDir, isTemporaryRoot } = useProjectLocationStore.getState();
+  if (isTemporaryRoot && rootDir && hasMeaningfulProjectContent()) {
+    localStorage.setItem(DRAFT_ROOT_KEY, rootDir);
+    return;
+  }
+  localStorage.removeItem(DRAFT_ROOT_KEY);
+}
 
 let bindFolderPromise: Promise<string | null> | undefined;
 let bundleOpenInProgress = false;
@@ -148,10 +212,16 @@ function vfsEntriesFromPaths(paths: string[]): VfsEntry[] {
     .sort((a, b) => a.path.localeCompare(b.path));
 }
 
-export async function loadProjectFromFolder(rootDir: string): Promise<void> {
+export async function loadProjectFromFolder(
+  rootDir: string,
+  options?: { temporary?: boolean },
+): Promise<void> {
   if (!isGscProjectDirPath(rootDir)) {
     throw new Error(`Select a ${PROJECT_DIR_EXTENSION} project folder (e.g. MyShow${PROJECT_DIR_EXTENSION}).`);
   }
+
+  const { rootDir: previousRoot, isTemporaryRoot } = useProjectLocationStore.getState();
+  const temporary = options?.temporary ?? false;
 
   const jsonPath = projectJsonDiskPath(rootDir);
   if (!(await exists(jsonPath))) {
@@ -166,10 +236,18 @@ export async function loadProjectFromFolder(rootDir: string): Promise<void> {
 
   vfsClear();
   const loaded = snapshotToCueLists(snap);
-  setActiveProjectId(loaded.id);
-  useProjectStore.setState(loaded);
-  useProjectLocationStore.getState().setRootDir(rootDir);
-  localStorage.setItem(LAST_ROOT_KEY, rootDir);
+  replaceProjectWithoutHistory(() => {
+    setActiveProjectId(loaded.id);
+    useProjectStore.setState(loaded);
+  });
+  useProjectLocationStore.getState().setRootDir(rootDir, { temporary });
+  if (temporary) {
+    syncDraftRootKey();
+  } else {
+    localStorage.setItem(LAST_ROOT_KEY, rootDir);
+    localStorage.removeItem(DRAFT_ROOT_KEY);
+    recordRecentProject(rootDir, loaded.name);
+  }
   await markGscProjectPackage(rootDir);
 
   const assetsDir = await join(rootDir, "assets");
@@ -194,6 +272,10 @@ export async function loadProjectFromFolder(rootDir: string): Promise<void> {
       return kind === "audio" || kind === "video";
     }),
   );
+
+  if (previousRoot && isTemporaryRoot && previousRoot !== rootDir) {
+    await removeDraftProjectRoot(previousRoot);
+  }
 }
 
 export async function saveProjectToFolder(rootDir: string): Promise<void> {
@@ -321,17 +403,20 @@ export async function pickAndOpenProject(): Promise<boolean> {
   }
 }
 
-async function ensureProjectRootDirForSave(): Promise<string | null> {
-  const current = useProjectLocationStore.getState().rootDir;
-  if (current) return current;
-
+async function promptAndCommitProjectLocation(): Promise<string | null> {
   if (!bindFolderPromise) {
     bindFolderPromise = (async () => {
+      const { rootDir: previousRoot, isTemporaryRoot } = useProjectLocationStore.getState();
       const showName = useProjectStore.getState().name;
       const folder = await promptTauriProjectFolder("Save project as", showName);
       if (!folder) return null;
-      useProjectLocationStore.getState().setRootDir(folder);
+      useProjectLocationStore.getState().setRootDir(folder, { temporary: false });
       localStorage.setItem(LAST_ROOT_KEY, folder);
+      localStorage.removeItem(DRAFT_ROOT_KEY);
+      recordRecentProject(folder, showName);
+      if (previousRoot && isTemporaryRoot) {
+        await removeDraftProjectRoot(previousRoot);
+      }
       return folder;
     })().finally(() => {
       bindFolderPromise = undefined;
@@ -340,34 +425,166 @@ async function ensureProjectRootDirForSave(): Promise<string | null> {
   return bindFolderPromise;
 }
 
-export async function restoreLastTauriProject(): Promise<boolean> {
-  const rootDir = localStorage.getItem(LAST_ROOT_KEY);
-  if (!rootDir) {
-    setActiveProjectId(useProjectStore.getState().id);
-    return false;
+async function resolveProjectRootDir(options?: {
+  promptForLocation?: boolean;
+}): Promise<string | null> {
+  const { rootDir, isTemporaryRoot } = useProjectLocationStore.getState();
+
+  if (options?.promptForLocation) {
+    if (rootDir && !isTemporaryRoot) return rootDir;
+    return promptAndCommitProjectLocation();
   }
 
+  if (rootDir) return rootDir;
+  return bindTemporaryProjectRoot();
+}
+
+async function draftHasRestorableContent(rootDir: string): Promise<boolean> {
+  const jsonPath = projectJsonDiskPath(rootDir);
+  if (!(await exists(jsonPath))) return false;
+
   try {
-    if (!(await exists(projectJsonDiskPath(rootDir)))) {
-      localStorage.removeItem(LAST_ROOT_KEY);
-      setActiveProjectId(useProjectStore.getState().id);
-      return false;
-    }
-    await loadProjectFromFolder(rootDir);
-    return true;
-  } catch (err) {
-    notifyWarning("Could not restore the last project.");
-    localStorage.removeItem(LAST_ROOT_KEY);
-    setActiveProjectId(useProjectStore.getState().id);
+    const snap = JSON.parse(await readTextFile(jsonPath));
+    if (snap.version !== 2) return false;
+    if (snapshotHasMeaningfulContent(snap)) return true;
+
+    const assetsDir = await join(rootDir, "assets");
+    if (!(await exists(assetsDir))) return false;
+    const entries = await readDir(assetsDir);
+    return entries.some((entry) => !IGNORED_DIR_ENTRIES.has(entry.name));
+  } catch {
     return false;
   }
 }
 
-export async function persistTauriProject(): Promise<void> {
+async function getPendingDraftInfo(): Promise<PendingDraftProject | null> {
+  const draftRoot = localStorage.getItem(DRAFT_ROOT_KEY);
+  if (!draftRoot) return null;
+
+  if (!(await exists(projectJsonDiskPath(draftRoot)))) {
+    localStorage.removeItem(DRAFT_ROOT_KEY);
+    await removeDraftProjectRoot(draftRoot);
+    return null;
+  }
+
+  if (!(await draftHasRestorableContent(draftRoot))) {
+    localStorage.removeItem(DRAFT_ROOT_KEY);
+    await removeDraftProjectRoot(draftRoot);
+    return null;
+  }
+
+  let projectName = "Untitled Show";
   try {
-    const rootDir = await ensureProjectRootDirForSave();
+    const snap = JSON.parse(await readTextFile(projectJsonDiskPath(draftRoot)));
+    if (typeof snap.name === "string" && snap.name.trim()) {
+      projectName = snap.name;
+    }
+  } catch {
+    /* use default name */
+  }
+
+  return { path: draftRoot, name: projectName };
+}
+
+async function discardPendingDraft(draftPath: string): Promise<void> {
+  localStorage.removeItem(DRAFT_ROOT_KEY);
+  await removeDraftProjectRoot(draftPath);
+}
+
+async function ensureRecentsMigratedFromLastRoot(): Promise<void> {
+  if (readRecentProjects().length > 0) return;
+
+  const lastRoot = localStorage.getItem(LAST_ROOT_KEY);
+  if (!lastRoot || !(await exists(projectJsonDiskPath(lastRoot)))) return;
+
+  try {
+    const snap = JSON.parse(await readTextFile(projectJsonDiskPath(lastRoot)));
+    const name = typeof snap.name === "string" && snap.name.trim() ? snap.name : "Untitled Show";
+    recordRecentProject(lastRoot, name);
+  } catch {
+    recordRecentProject(lastRoot, "Untitled Show");
+  }
+}
+
+export async function listValidRecentProjects(): Promise<RecentProjectEntry[]> {
+  await ensureRecentsMigratedFromLastRoot();
+
+  const valid: RecentProjectEntry[] = [];
+  for (const entry of readRecentProjects()) {
+    if (await exists(projectJsonDiskPath(entry.path))) {
+      valid.push(entry);
+    } else {
+      removeRecentProject(entry.path);
+    }
+  }
+  return valid;
+}
+
+async function doRestoreLastTauriProject(): Promise<boolean> {
+  const draft = await getPendingDraftInfo();
+
+  if (!draft) {
+    setActiveProjectId(useProjectStore.getState().id);
+    await bindTemporaryProjectRoot();
+    return false;
+  }
+
+  const recents = await listValidRecentProjects();
+  const choice = await requestStartupProjectsChoice({ draft, recents });
+
+  if (draft && choice.type !== "restore-draft") {
+    await discardPendingDraft(draft.path);
+  }
+
+  switch (choice.type) {
+    case "restore-draft":
+      if (!draft) {
+        await bindTemporaryProjectRoot();
+        return false;
+      }
+      await loadProjectFromFolder(draft.path, { temporary: true });
+      return true;
+    case "open-recent":
+      try {
+        await loadProjectFromFolder(choice.path);
+        return true;
+      } catch (err) {
+        showError(err);
+        removeRecentProject(choice.path);
+        setActiveProjectId(useProjectStore.getState().id);
+        await bindTemporaryProjectRoot();
+        return false;
+      }
+    case "browse": {
+      const opened = await pickAndOpenProject();
+      if (!opened) {
+        setActiveProjectId(useProjectStore.getState().id);
+        await bindTemporaryProjectRoot();
+      }
+      return opened;
+    }
+    case "new-show":
+      setActiveProjectId(useProjectStore.getState().id);
+      await bindTemporaryProjectRoot();
+      return false;
+  }
+}
+
+export async function restoreLastTauriProject(): Promise<boolean> {
+  if (!restorePromise) {
+    restorePromise = doRestoreLastTauriProject();
+  }
+  return restorePromise;
+}
+
+let restorePromise: Promise<boolean> | undefined;
+
+export async function persistTauriProject(options?: { promptForLocation?: boolean }): Promise<void> {
+  try {
+    const rootDir = await resolveProjectRootDir(options);
     if (!rootDir) return;
     await saveProjectToFolder(rootDir);
+    syncDraftRootKey();
   } catch (err) {
     if (err instanceof Error && err.message.includes("already exists")) {
       showError(err);
