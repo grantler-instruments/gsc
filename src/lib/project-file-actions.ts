@@ -23,7 +23,18 @@ function openWebBundlePicker(): void {
   input.onchange = () => {
     const file = input.files?.[0];
     if (file) {
-      void importProjectBundle(file);
+      void (async () => {
+        if (isProjectUnsaved()) {
+          const choice = await requestUnsavedProjectChoice(useProjectStore.getState().name);
+          if (choice === "cancel") return;
+          if (choice === "save") {
+            await saveProjectFile();
+          }
+        } else {
+          await persistPlatformProject();
+        }
+        await importProjectBundle(file);
+      })();
     }
     input.remove();
   };

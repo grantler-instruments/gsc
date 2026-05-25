@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { getFadeTarget, getStopTarget, isFadeCue, isStopCue } from "../../lib/cues";
+import { getFadeTarget, getStopTarget, isFadeCue, isLightFadeCue, isStopCue } from "../../lib/cues";
 import type { Cue } from "../../types/cue";
 
 export function useCueListStopHighlights(cues: Cue[], primarySelectedId: string | null) {
@@ -19,13 +19,13 @@ export function useCueListStopHighlights(cues: Cue[], primarySelectedId: string 
 
   const hoveredFadeTargetId = useMemo(() => {
     const cue = cues.find((c) => c.id === hoveredCueId);
-    if (!cue || !isFadeCue(cue)) return null;
+    if (!cue || !isFadeCue(cue) || isLightFadeCue(cue)) return null;
     return getFadeTarget(cue, cues)?.id ?? null;
   }, [cues, hoveredCueId]);
 
   const selectedFadeTargetId = useMemo(() => {
     const cue = cues.find((c) => c.id === primarySelectedId);
-    if (!cue || !isFadeCue(cue)) return null;
+    if (!cue || !isFadeCue(cue) || isLightFadeCue(cue)) return null;
     return getFadeTarget(cue, cues)?.id ?? null;
   }, [cues, primarySelectedId]);
 

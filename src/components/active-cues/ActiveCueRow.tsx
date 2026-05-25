@@ -1,14 +1,21 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDmxCue } from "../../lib/dmx";
-import { canOpacityFadeTarget, canPanFadeTarget, canVolumeFadeTarget } from "../../lib/fade";
+import {
+  canOpacityFadeTarget,
+  canPanFadeTarget,
+  canVolumeFadeTarget,
+  isLightFadeCue,
+  resolveLightFadeEndDmx,
+} from "../../lib/fade";
 import { formatMidiCue } from "../../lib/midi";
 import { formatOscCue } from "../../lib/osc";
 import { cueShowsPlaybackProgress } from "../../lib/playback-slice";
 import { formatPlaybackRangeLabel } from "../../lib/time";
+import { useDmxFadeCueProgress } from "../../hooks/useDmxFadeCueProgress";
 import {
   resolveEffectiveOpacity,
   resolveEffectivePan,
@@ -41,13 +48,18 @@ export const ActiveCueRow = memo(function ActiveCueRow({
 }: ActiveCueRowProps) {
   const { t } = useTranslation();
   const tokens = useGscTokens();
+  const cueLists = useProjectStore((s) => s.cueLists);
   const updateCue = useProjectStore((s) => s.updateCue);
   const clearFade = useFadeStore((s) => s.clearFade);
   const playback = usePlaybackStore((s) => s.byCueId[cue.id]);
   const fadeProperty = useFadeStore((s) => s.fadesByTargetId[cue.id]?.property);
   const fadeFrameMs = useFadeStore((s) => (cue.id in s.fadesByTargetId ? s.frameMs : 0));
+  const lightFadeProgress = useDmxFadeCueProgress(cue.id);
 
   const fixtures = useProjectStore((s) => s.fixtures);
+  const allCues = useMemo(() => cueLists.flatMap((list) => list.cues), [cueLists]);
+  const lightFadeEndDmx =
+    isLightFadeCue(cue) && cue.dmx ? resolveLightFadeEndDmx(cue, allCues, fixtures) : null;
   const rangeLabel =
     cue.type !== "midi" && cue.type !== "osc" && cue.type !== "dmx"
       ? formatPlaybackRangeLabel(cue.inTime, cue.outTime, cue.type === "image")
@@ -113,6 +125,11 @@ export const ActiveCueRow = memo(function ActiveCueRow({
             {formatDmxCue(cue.dmx, fixtures)}
           </Typography>
         )}
+        {isLightFadeCue(cue) && lightFadeEndDmx && (
+          <Typography component="span" noWrap sx={{ fontSize: 11, color: "text.secondary" }}>
+            {formatDmxCue(lightFadeEndDmx, fixtures)}
+          </Typography>
+        )}
         {cue.type === "audio" && cue.assetPath && (
           <Box sx={{ mt: 0.5 }}>
             <AudioWaveform
@@ -130,6 +147,7 @@ export const ActiveCueRow = memo(function ActiveCueRow({
           </Typography>
         )}
         {playback && cueShowsPlaybackProgress(cue) && <PlaybackProgress progress={playback} />}
+        {lightFadeProgress && <PlaybackProgress progress={lightFadeProgress} />}
         {canVolumeFadeTarget(cue) && (
           <ActiveCueLevelControl
             label={t("activeCues.volumeShort")}

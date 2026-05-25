@@ -13,6 +13,7 @@ import {
 } from "./cues";
 import { walkParallelGroupChildren } from "./parallel-group-fire";
 import { clearSequenceTimers } from "./sequence-timers";
+import { triggerDmxCue } from "./trigger-dmx";
 import { triggerFadeCue } from "./trigger-fade";
 
 export interface StepTransportActions {
@@ -55,6 +56,8 @@ export function fireStepCues(
       /* no-op — sequence timer advances after wait duration */
     } else if (isFadeCue(cue)) {
       triggerFadeCue(cue, cues);
+    } else if (cue.type === "dmx") {
+      triggerDmxCue(cue);
     } else if (isSequenceGroup(cue)) {
       options.runSequence?.(cue, cues);
     } else if (isParallelGroup(cue)) {

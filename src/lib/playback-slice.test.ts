@@ -133,8 +133,9 @@ describe("cueShowsPlaybackProgress", () => {
     expect(cueShowsPlaybackProgress(testCue("w", "Wait", "wait"))).toBe(true);
   });
 
-  it("hides progress for infinite image hold", () => {
+  it("hides progress for infinite image hold and light cues", () => {
     expect(cueShowsPlaybackProgress(testCue("i", "I", "image"))).toBe(false);
+    expect(cueShowsPlaybackProgress(testCue("l", "Look", "dmx"))).toBe(false);
   });
 });
 

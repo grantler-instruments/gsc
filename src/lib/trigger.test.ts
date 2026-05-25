@@ -4,6 +4,12 @@ import { useTransportStore } from "../stores/transport";
 import { testCue } from "../test/fixtures/cues";
 import { triggerGo, triggerStopCue } from "./trigger";
 
+vi.mock("../platform/send-dmx", () => ({
+  sendDmxUniverses: vi.fn(),
+}));
+
+import { sendDmxUniverses } from "../platform/send-dmx";
+
 function resetTransport() {
   useTransportStore.setState({
     isPlaying: false,
@@ -27,6 +33,7 @@ describe("triggerGo", () => {
   beforeEach(() => {
     resetTransport();
     useFadeStore.setState({ fadesByTargetId: {}, dmxFadesByFadeCueId: {}, frameMs: 0 });
+    vi.mocked(sendDmxUniverses).mockClear();
   });
 
   it("GOs a leaf cue", () => {
@@ -93,6 +100,22 @@ describe("triggerGo", () => {
       to: 0,
       durationSec: 3,
     });
+  });
+
+  it("fires light cues without adding them to transport", () => {
+    const cues = [
+      testCue("l", "Look", "dmx", {
+        dmx: { mode: "snapshot", fixtures: [] },
+      }),
+    ];
+    const actions = mockActions();
+
+    const result = triggerGo(cues[0], cues, actions);
+
+    expect(result).toEqual({ triggered: [], emptyContainer: false });
+    expect(sendDmxUniverses).toHaveBeenCalledOnce();
+    expect(actions.go).not.toHaveBeenCalled();
+    expect(actions.goMany).not.toHaveBeenCalled();
   });
 
   it("starts a sequence and reports empty when it has no steps", () => {

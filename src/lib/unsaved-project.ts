@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import { getPlatform } from "../platform";
 import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
@@ -7,7 +8,7 @@ import type { ProjectSnapshot } from "../types/cue";
 /** True when a project snapshot has content beyond a blank show. */
 export function snapshotHasMeaningfulContent(snapshot: ProjectSnapshot): boolean {
   if (snapshot.version !== 2) return false;
-  if (snapshot.name !== "Untitled Show") return true;
+  if (snapshot.name !== t("project.defaultName")) return true;
   if ((snapshot.fixtures ?? []).length > 0) return true;
   if ((snapshot.midiMappings ?? []).length > 0) return true;
   for (const list of snapshot.cueLists) {
@@ -25,6 +26,8 @@ export function hasMeaningfulProjectContent(): boolean {
 
 /** True when the user should be prompted before replacing the open project. */
 export function isProjectUnsaved(): boolean {
-  if (getPlatform() !== "tauri") return false;
-  return useProjectLocationStore.getState().isTemporaryRoot && hasMeaningfulProjectContent();
+  if (getPlatform() === "tauri") {
+    return useProjectLocationStore.getState().isTemporaryRoot && hasMeaningfulProjectContent();
+  }
+  return hasMeaningfulProjectContent();
 }

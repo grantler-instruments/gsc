@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { t } from "../i18n/t";
 import { notifyWarning } from "../lib/notifications";
 import { projectPersistStateChanged, vfsPersistStateChanged } from "../lib/project-persist";
+import { persistProjectSession, persistProjectSessionAsync } from "../lib/project-session";
+import { getPlatform } from "../platform";
 import { persistPlatformProject, restorePlatformProject } from "../platform/project-storage";
 import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
@@ -27,10 +29,26 @@ export function useProjectSession(): boolean {
       void persistPlatformProject();
     }, 500);
 
-    const onUnload = () => {
-      void persistPlatformProject();
+    const flushWebSession = () => {
+      persistProjectSession();
+      void persistProjectSessionAsync();
     };
+
+    const onUnload = () => {
+      if (getPlatform() === "tauri") {
+        void persistPlatformProject();
+        return;
+      }
+      flushWebSession();
+    };
+
+    const onPageHide = () => {
+      if (getPlatform() === "tauri") return;
+      void persistProjectSessionAsync();
+    };
+
     window.addEventListener("beforeunload", onUnload);
+    window.addEventListener("pagehide", onPageHide);
 
     void (async () => {
       try {
@@ -64,6 +82,7 @@ export function useProjectSession(): boolean {
       cancelled = true;
       for (const unsub of unsubs) unsub();
       window.removeEventListener("beforeunload", onUnload);
+      window.removeEventListener("pagehide", onPageHide);
     };
   }, []);
 

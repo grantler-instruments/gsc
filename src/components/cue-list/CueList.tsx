@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import { useMemo } from "react";
 import { getPrimarySelectedCueId } from "../../lib/cue-selection";
 import { buildCueTree } from "../../lib/cues";
+import { useFadeStore } from "../../stores/fade";
 import { useActiveCueList, useProjectStore } from "../../stores/project";
 import { useTransportStore } from "../../stores/transport";
 import { useUiStore } from "../../stores/ui";
@@ -32,6 +33,7 @@ export function CueList() {
   const collapsedGroups = useMemo(() => new Set(collapsedCueGroupIds), [collapsedCueGroupIds]);
   const activeCueIds = useTransportStore((s) => s.activeCueIds);
   const runningSequence = useTransportStore((s) => s.runningSequence);
+  const dmxFadesByFadeCueId = useFadeStore((s) => s.dmxFadesByFadeCueId);
   const copySelectedCues = useProjectStore((s) => s.copySelectedCues);
   const cutSelectedCues = useProjectStore((s) => s.cutSelectedCues);
   const duplicateSelectedCues = useProjectStore((s) => s.duplicateSelectedCues);
@@ -83,6 +85,7 @@ export function CueList() {
             collapsedGroups={collapsedGroups}
             activeCueIds={activeCueIds}
             runningSequence={runningSequence}
+            dmxFadesByFadeCueId={dmxFadesByFadeCueId}
             selectedCueIdSet={selection.selectedCueIdSet}
             primarySelectedId={selection.primarySelectedId}
             hoveredStopTargetId={stopHighlights.hoveredStopTargetId}

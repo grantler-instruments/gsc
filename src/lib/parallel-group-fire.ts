@@ -11,6 +11,7 @@ import {
   isWaitCue,
   resolveStopCueIds,
 } from "./cues";
+import { triggerDmxCue } from "./trigger-dmx";
 import { triggerFadeCue } from "./trigger-fade";
 
 type CueOutcome = "go" | "stop";
@@ -70,6 +71,8 @@ export function walkParallelGroupChildren(
       /* no-op */
     } else if (isFadeCue(child)) {
       triggerFadeCue(child, cues);
+    } else if (child.type === "dmx") {
+      triggerDmxCue(child);
     } else if (isSequenceGroup(child)) {
       options.runSequence?.(child, cues);
     } else if (isParallelGroup(child)) {

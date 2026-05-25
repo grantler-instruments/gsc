@@ -7,7 +7,7 @@ import {
 } from "../lib/project-bundle";
 import { replaceProjectWithoutHistory } from "../lib/project-history";
 import { BUNDLE_EXTENSION } from "../lib/project-paths";
-import { collectSessionAssetPaths } from "../lib/project-session";
+import { collectSessionAssetPaths, persistProjectSessionAsync } from "../lib/project-session";
 import { snapshotToCueLists } from "../lib/project-snapshot";
 import { useProjectStore } from "../stores/project";
 import type { VfsEntry } from "../stores/vfs";
@@ -80,4 +80,6 @@ export async function importProjectBundleWeb(file: File): Promise<void> {
   useVfsStore.setState({
     entries: vfsEntriesFromPaths(assets.map((a) => a.path)),
   });
+
+  await persistProjectSessionAsync();
 }

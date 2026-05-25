@@ -256,6 +256,12 @@ describe("isCueActive", () => {
     expect(isCueActive(cues[0], cues, ["a", "b"], null)).toBe(true);
     expect(isCueActive(cues[0], cues, ["a"], null)).toBe(false);
   });
+
+  it("detects running light fade cues", () => {
+    const fade = testCue("fade", "Fade", "lightFade");
+    expect(isCueActive(fade, [fade], [], null, { fade: {} })).toBe(true);
+    expect(isCueActive(fade, [fade], [], null, {})).toBe(false);
+  });
 });
 
 describe("isUtilityCue", () => {

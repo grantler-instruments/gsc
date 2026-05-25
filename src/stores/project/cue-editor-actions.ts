@@ -27,12 +27,54 @@ import type { ProjectState } from "./types";
 
 type ProjectStore = StoreApi<ProjectState>;
 
+type NewCueOpts = {
+  name: string;
+  type: Cue["type"];
+  assetPath?: string;
+  midi?: Cue["midi"];
+  osc?: Cue["osc"];
+  dmx?: Cue["dmx"];
+  parentId?: string;
+};
+
+function resolveParentId(cues: Cue[], parentId: string | undefined): string | undefined {
+  if (!parentId) return undefined;
+  const parent = cues.find((c) => c.id === parentId);
+  if (!parent || !isContainerCue(parent)) return undefined;
+  return parentId;
+}
+
+function createCueFromOpts(opts: NewCueOpts, fixtures: ProjectState["fixtures"]): Cue {
+  const { name, type, assetPath, midi, osc, dmx, parentId } = opts;
+  return {
+    id: crypto.randomUUID(),
+    number: "0",
+    name,
+    type,
+    parentId,
+    assetPath: isMediaCueType(type) ? assetPath : undefined,
+    midi: type === "midi" ? (midi ?? defaultMidiCueData()) : undefined,
+    osc: type === "osc" ? (osc ?? defaultOscCueData()) : undefined,
+    dmx: type === "dmx" || type === "lightFade" ? (dmx ?? defaultDmxCueData(fixtures)) : undefined,
+    volume: isMediaCueType(type) ? 1 : undefined,
+    pan: type === "audio" || type === "video" ? 0 : undefined,
+    opacity: type === "video" || type === "image" ? 1 : undefined,
+    fadeIn: type === "audio" || type === "video" ? 0 : undefined,
+    fadeOut: type === "audio" || type === "video" ? 0 : undefined,
+    inTime: isMediaCueType(type) ? 0 : undefined,
+    outTime: undefined,
+    waitDurationSec: type === "wait" ? 1 : undefined,
+    ...(type === "lightFade" ? defaultFadeCueFields("lightFade") : {}),
+  };
+}
+
 export function createCueEditorActions(
   set: ProjectStore["setState"],
   get: ProjectStore["getState"],
 ): Pick<
   ProjectState,
   | "addCue"
+  | "addCues"
   | "addGroupCue"
   | "addSequenceCue"
   | "addStopCueForTarget"
@@ -45,49 +87,33 @@ export function createCueEditorActions(
   | "reorderCueRelative"
 > {
   return {
-    addCue: ({ name, type, assetPath, midi, osc, dmx, parentId }) => {
-      if (!canEditProject()) {
-        return firstCueOrStub(getActiveCueListFromState(get()), name, type);
-      }
+    addCue: (opts) => {
+      const [cue] = get().addCues([opts]);
+      return cue ?? firstCueOrStub(getActiveCueListFromState(get()), opts.name, opts.type);
+    },
+
+    addCues: (items) => {
+      if (!canEditProject() || items.length === 0) return [];
       const active = getActiveCueListFromState(get());
-      let resolvedParentId = parentId;
-      if (resolvedParentId) {
-        const parent = active.cues.find((c) => c.id === resolvedParentId);
-        if (!parent || !isContainerCue(parent)) resolvedParentId = undefined;
+      let cues = active.cues;
+      const created: Cue[] = [];
+
+      for (const opts of items) {
+        const parentId = resolveParentId(cues, opts.parentId);
+        const cue = createCueFromOpts({ ...opts, parentId }, get().fixtures);
+        cues = applyRenumber(appendCueInList(cues, cue));
+        created.push(cue);
       }
 
-      const cue: Cue = {
-        id: crypto.randomUUID(),
-        number: "0",
-        name,
-        type,
-        parentId: resolvedParentId,
-        assetPath: isMediaCueType(type) ? assetPath : undefined,
-        midi: type === "midi" ? (midi ?? defaultMidiCueData()) : undefined,
-        osc: type === "osc" ? (osc ?? defaultOscCueData()) : undefined,
-        dmx:
-          type === "dmx" || type === "lightFade"
-            ? (dmx ?? defaultDmxCueData(get().fixtures))
-            : undefined,
-        volume: isMediaCueType(type) ? 1 : undefined,
-        pan: type === "audio" || type === "video" ? 0 : undefined,
-        opacity: type === "video" || type === "image" ? 1 : undefined,
-        fadeIn: type === "audio" || type === "video" ? 0 : undefined,
-        fadeOut: type === "audio" || type === "video" ? 0 : undefined,
-        inTime: isMediaCueType(type) ? 0 : undefined,
-        outTime: undefined,
-        waitDurationSec: type === "wait" ? 1 : undefined,
-        ...(type === "lightFade" ? defaultFadeCueFields("lightFade") : {}),
-      };
-      const next = applyRenumber(appendCueInList(active.cues, cue));
+      const last = created[created.length - 1];
       set({
         ...patchActiveList(get(), () => ({
-          cues: next,
-          selectedCueIds: [cue.id],
-          selectionAnchorId: cue.id,
+          cues,
+          selectedCueIds: [last.id],
+          selectionAnchorId: last.id,
         })),
       });
-      return cue;
+      return created;
     },
 
     addGroupCue: (opts = {}) => {

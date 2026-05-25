@@ -4,6 +4,12 @@ import { useTransportStore } from "../stores/transport";
 import { testCue } from "../test/fixtures/cues";
 import { fireStepCues, playbackCueIdsInStep } from "./fire-step-cues";
 
+vi.mock("../platform/send-dmx", () => ({
+  sendDmxUniverses: vi.fn(),
+}));
+
+import { sendDmxUniverses } from "../platform/send-dmx";
+
 function resetTransport() {
   useTransportStore.setState({
     isPlaying: false,
@@ -27,6 +33,7 @@ describe("fireStepCues", () => {
   beforeEach(() => {
     resetTransport();
     useFadeStore.setState({ fadesByTargetId: {}, dmxFadesByFadeCueId: {}, frameMs: 0 });
+    vi.mocked(sendDmxUniverses).mockClear();
   });
 
   it("GOs playback cues in a step", () => {
@@ -77,6 +84,20 @@ describe("fireStepCues", () => {
       property: "volume",
       to: 0.5,
     });
+    expect(actions.goMany).not.toHaveBeenCalled();
+  });
+
+  it("fires light cues in the step without GO", () => {
+    const cues = [
+      testCue("l", "Look", "dmx", {
+        dmx: { mode: "snapshot", fixtures: [] },
+      }),
+    ];
+    const actions = mockActions();
+
+    fireStepCues(["l"], cues, actions);
+
+    expect(sendDmxUniverses).toHaveBeenCalledOnce();
     expect(actions.goMany).not.toHaveBeenCalled();
   });
 

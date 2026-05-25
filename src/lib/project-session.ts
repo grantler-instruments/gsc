@@ -2,7 +2,12 @@ import { t } from "../i18n/t";
 import { useProjectStore } from "../stores/project";
 import { useVfsStore, type VfsEntry } from "../stores/vfs";
 import type { AssetKind, ProjectSnapshot } from "../types/cue";
-import { hydrateVfsFromProjectCache, vfsClear, vfsHas } from "../vfs/engine";
+import {
+  flushPendingAssetCacheWrites,
+  hydrateVfsFromProjectCache,
+  vfsClear,
+  vfsHas,
+} from "../vfs/engine";
 import { setActiveProjectId } from "./active-project-id";
 import { notifyWarningDeduped } from "./notifications";
 import { collectOflPaths } from "./ofl/import-ofl";
@@ -24,7 +29,7 @@ interface ProjectSession {
   assets: PersistedAssetEntry[];
 }
 
-let restored = false;
+let restorePromise: Promise<void> | null = null;
 
 function assetPathsFromSnapshot(snapshot: ProjectSnapshot): string[] {
   const paths = new Set<string>();
@@ -71,6 +76,12 @@ export function persistProjectSession(): void {
   }
 }
 
+/** Flush pending asset cache writes, then persist session metadata. */
+export async function persistProjectSessionAsync(): Promise<void> {
+  await flushPendingAssetCacheWrites();
+  persistProjectSession();
+}
+
 function vfsEntriesFromSession(assets: PersistedAssetEntry[]): VfsEntry[] {
   return assets
     .map((asset) => ({
@@ -81,10 +92,17 @@ function vfsEntriesFromSession(assets: PersistedAssetEntry[]): VfsEntry[] {
 }
 
 /** Restore the last autosaved project and hydrate assets from the Cache API. */
-export async function restoreProjectSessionOnce(): Promise<void> {
-  if (restored) return;
-  restored = true;
+export function restoreProjectSessionOnce(): Promise<void> {
+  if (!restorePromise) {
+    restorePromise = restoreProjectSession().catch((err) => {
+      restorePromise = null;
+      throw err;
+    });
+  }
+  return restorePromise;
+}
 
+async function restoreProjectSession(): Promise<void> {
   const raw = localStorage.getItem(SESSION_KEY);
   if (!raw) {
     setActiveProjectId(useProjectStore.getState().id);
@@ -107,13 +125,17 @@ export async function restoreProjectSessionOnce(): Promise<void> {
 
   vfsClear();
   const loaded = snapshotToCueLists(session.snapshot);
+  const projectId = loaded.id || crypto.randomUUID();
+  if (!loaded.id) {
+    loaded.id = projectId;
+  }
   replaceProjectWithoutHistory(() => {
-    setActiveProjectId(loaded.id);
+    setActiveProjectId(projectId);
     useProjectStore.setState(loaded);
   });
 
   const paths = collectSessionAssetPaths(session.snapshot, session.assets);
-  await hydrateVfsFromProjectCache(loaded.id, paths);
+  await hydrateVfsFromProjectCache(projectId, paths);
 
   const stillMissing = session.assets.filter((asset) => !vfsHas(asset.path));
   if (stillMissing.length > 0) {
@@ -124,4 +146,9 @@ export async function restoreProjectSessionOnce(): Promise<void> {
   useVfsStore.setState({
     entries: vfsEntriesFromSession(session.assets),
   });
+}
+
+/** Test-only reset of internal module state. */
+export function resetProjectSessionForTests(): void {
+  restorePromise = null;
 }

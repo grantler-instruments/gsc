@@ -5,11 +5,25 @@
 
 import { tryGetActiveProjectId } from "../lib/active-project-id";
 import { cacheAsset, getCachedAsset, removeCachedAsset } from "../lib/asset-cache";
+import { getPlatform } from "../platform";
 
 const blobs = new Map<string, Blob>();
 const objectUrls = new Map<string, string>();
 /** Paths known on disk (Tauri) — resolved into memory on first read. */
 const diskBackedPaths = new Set<string>();
+const pendingCacheWrites = new Set<Promise<void>>();
+
+function trackCacheWrite(write: Promise<void>): void {
+  pendingCacheWrites.add(write);
+  void write.finally(() => {
+    pendingCacheWrites.delete(write);
+  });
+}
+
+/** Wait for in-flight Cache API writes before persisting session metadata. */
+export async function flushPendingAssetCacheWrites(): Promise<void> {
+  await Promise.all([...pendingCacheWrites]);
+}
 
 export function vfsPut(path: string, blob: Blob, options?: { cache?: boolean }): void {
   const normalized = normalizePath(path);
@@ -17,9 +31,10 @@ export function vfsPut(path: string, blob: Blob, options?: { cache?: boolean }):
   blobs.set(normalized, blob);
   diskBackedPaths.delete(normalized);
   if (options?.cache === false) return;
+  if (getPlatform() === "tauri") return;
   const projectId = tryGetActiveProjectId();
   if (projectId) {
-    void cacheAsset(projectId, normalized, blob);
+    trackCacheWrite(cacheAsset(projectId, normalized, blob));
   }
 }
 
@@ -59,6 +74,7 @@ export function vfsRemove(path: string): void {
   const normalized = normalizePath(path);
   revokeUrl(normalized);
   blobs.delete(normalized);
+  if (getPlatform() === "tauri") return;
   const projectId = tryGetActiveProjectId();
   if (projectId) {
     void removeCachedAsset(projectId, normalized);

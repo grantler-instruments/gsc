@@ -15,6 +15,8 @@ export function useDmxFadeEngine(): void {
       const fades = Object.values(dmxFadesByFadeCueId);
 
       if (fades.length > 0) {
+        useFadeStore.setState({ frameMs: nowMs });
+
         for (const fade of fades) {
           const progress = getDmxFadeProgress(fade, nowMs);
           const frames = sampleDmxFadePlan(
@@ -26,8 +28,6 @@ export function useDmxFadeEngine(): void {
           if (isDmxFadeComplete(fade, nowMs)) {
             finalizeLightFade(fade.endDmx);
             completeDmxFade(fade.fadeCueId, nowMs);
-          } else {
-            useFadeStore.setState({ frameMs: nowMs });
           }
         }
       }

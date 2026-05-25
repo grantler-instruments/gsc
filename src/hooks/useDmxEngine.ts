@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { syncCueTriggerEngine } from "../lib/cue-trigger-engine-sync";
-import { applyDmxCueToBuffers } from "../lib/dmx";
-import { sendDmxUniverses } from "../platform/send-dmx";
+import { triggerDmxCue } from "../lib/trigger-dmx";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
@@ -11,13 +10,10 @@ import {
 } from "./transport-cue-sync";
 
 function fireDmxCue(cue: Cue): void {
-  if (cue.type !== "dmx" || !cue.dmx) return;
-  const fixtures = useProjectStore.getState().fixtures;
-  const frames = applyDmxCueToBuffers(cue.dmx, fixtures);
-  void sendDmxUniverses(frames);
+  triggerDmxCue(cue);
 }
 
-/** Sends DMX when light cues enter the active transport set. */
+/** Sends DMX when light cues enter the active transport set (legacy fallback). */
 export function useDmxEngine(): void {
   const lastFiredAtMsRef = useRef(new Map<string, number>());
 

@@ -18,6 +18,7 @@ import { setActiveProjectId } from "./active-project-id";
 import { createCueList } from "./cue-lists";
 import { saveProjectFile } from "./project-file-actions";
 import { replaceProjectWithoutHistory } from "./project-history";
+import { persistProjectSession } from "./project-session";
 import { isProjectUnsaved } from "./unsaved-project";
 
 const TAURI_LAST_ROOT_KEY = "gsc-tauri-last-project-root";
@@ -74,5 +75,6 @@ export async function startNewProject(): Promise<void> {
   } else {
     useProjectLocationStore.getState().setRootDir(null);
     localStorage.removeItem(TAURI_LAST_ROOT_KEY);
+    persistProjectSession();
   }
 }

@@ -1,9 +1,12 @@
 import { useCallback, useRef, useState } from "react";
-import { isExternalFileDrag, resolveAssetDropPayloads } from "../../lib/asset-drop";
+import {
+  applyAssetPayloads,
+  isExternalFileDrag,
+  resolveAssetDropPayloads,
+} from "../../lib/asset-drop";
 import { cuesShareParent, isContainerCue } from "../../lib/cues";
 import { pointerLeftElement } from "../../lib/dom";
 import {
-  type AssetDragPayload,
   isAssetDrag,
   isCueDrag,
   readCueDragId,
@@ -16,7 +19,6 @@ interface UseCueRowDropOptions {
   cue: Cue;
   allCues: Cue[];
   canEdit: boolean;
-  onAssetDrop: (payload: AssetDragPayload) => void;
   onCueDrop: (cueId: string) => void;
   onCueReorder: (draggedId: string, targetId: string, place: "before" | "after") => void;
 }
@@ -25,7 +27,6 @@ export function useCueRowDrop({
   cue,
   allCues,
   canEdit,
-  onAssetDrop,
   onCueDrop,
   onCueReorder,
 }: UseCueRowDropOptions) {
@@ -124,19 +125,13 @@ export function useCueRowDrop({
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
           if (!payloads.length) return;
-          if (isContainer) {
-            for (const payload of payloads) {
-              onAssetDrop(payload);
-            }
-          } else {
-            onAssetDrop(payloads[0]);
-          }
+          applyAssetPayloads(payloads, { kind: "row", cueId: cue.id });
         } finally {
           setActiveAssetDrag(null);
         }
       })();
     },
-    [canEdit, cue.id, isContainer, onAssetDrop, onCueDrop, onCueReorder],
+    [canEdit, cue.id, isContainer, onCueDrop, onCueReorder],
   );
 
   return {

@@ -26,6 +26,7 @@ import { getParallelGroupOrderConflict } from "../../lib/parallel-group-fire";
 import { cueShowsPlaybackProgress } from "../../lib/playback-slice";
 import { formatPlaybackRangeLabel } from "../../lib/time";
 import { formatWaitDurationLabel } from "../../lib/wait";
+import { useDmxFadeCueProgress } from "../../hooks/useDmxFadeCueProgress";
 import type { CuePlaybackProgress } from "../../stores/playback";
 import { useProjectStore } from "../../stores/project";
 import type { RunningSequence } from "../../stores/transport";
@@ -83,6 +84,7 @@ export function CueRowDetails({
   const loopLabel = cue.type === "audio" || cue.type === "video" ? formatLoopLabel(cue) : null;
   const assetWarning = getCueAssetWarning(cue);
   const parallelConflict = isParallel ? getParallelGroupOrderConflict(cue, allCues) : null;
+  const lightFadeProgress = useDmxFadeCueProgress(cue.id);
 
   return (
     <>
@@ -172,6 +174,9 @@ export function CueRowDetails({
       )}
       {active && playback && cueShowsPlaybackProgress(cue) && (
         <PlaybackProgress progress={playback} compact tone={isWait ? "wait" : "media"} />
+      )}
+      {isLightFadeCue(cue) && lightFadeProgress && (
+        <PlaybackProgress progress={lightFadeProgress} compact />
       )}
     </>
   );

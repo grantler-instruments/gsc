@@ -1,5 +1,9 @@
 import { useCallback, useState } from "react";
-import { isExternalFileDrag, resolveAssetDropPayloads } from "../../lib/asset-drop";
+import {
+  applyAssetPayloads,
+  isExternalFileDrag,
+  resolveAssetDropPayloads,
+} from "../../lib/asset-drop";
 import { getLastSiblingOfCue } from "../../lib/cues";
 import { pointerLeftElement } from "../../lib/dom";
 import {
@@ -9,12 +13,10 @@ import {
   setActiveAssetDrag,
   setActiveCueDrag,
 } from "../../lib/drag";
-import { useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
 import { useCueListActions } from "./cueListActionsContext";
 
 export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
-  const addCue = useProjectStore((s) => s.addCue);
   const { onCueReorder } = useCueListActions();
   const [dropActive, setDropActive] = useState(false);
 
@@ -83,19 +85,13 @@ export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
       void (async () => {
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
-          for (const payload of payloads) {
-            addCue({
-              name: payload.name,
-              type: payload.kind,
-              assetPath: payload.path,
-            });
-          }
+          applyAssetPayloads(payloads, { kind: "list" });
         } finally {
           setActiveAssetDrag(null);
         }
       })();
     },
-    [addCue, allCues, canEdit, onCueReorder],
+    [allCues, canEdit, onCueReorder],
   );
 
   return {

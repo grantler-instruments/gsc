@@ -2,10 +2,11 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { formatPlaybackClock } from "../lib/time";
+import type { PlaybackProgressSnapshot } from "../lib/playback-slice";
 import type { CuePlaybackProgress } from "../stores/playback";
 
 interface PlaybackProgressProps {
-  progress: CuePlaybackProgress;
+  progress: PlaybackProgressSnapshot | CuePlaybackProgress;
   /** Compact single-line layout for cue list rows. */
   compact?: boolean;
   /** Bar color — wait cues use warning tone. */

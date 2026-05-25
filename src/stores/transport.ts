@@ -94,6 +94,9 @@ export const useTransportStore = create<TransportState>()(
 
       stop: () => {
         clearSequenceTimers();
+        for (const id of Object.keys(useFadeStore.getState().dmxFadesByFadeCueId)) {
+          useFadeStore.getState().clearDmxFade(id);
+        }
         set({
           isPlaying: false,
           activeCueId: null,
@@ -121,6 +124,9 @@ export const useTransportStore = create<TransportState>()(
 
       stopMany: (cueIds) =>
         set((s) => {
+          for (const id of cueIds) {
+            useFadeStore.getState().clearDmxFade(id);
+          }
           const remove = new Set(cueIds);
           const activeCueIds = s.activeCueIds.filter((id) => !remove.has(id));
           const cueStartedAtMs = { ...s.cueStartedAtMs };

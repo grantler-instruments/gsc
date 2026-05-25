@@ -250,7 +250,9 @@ export function isCueActive(
   cues: Cue[],
   activeCueIds: string[],
   runningSequence: { rootId: string; stepCueIds: string[] } | null,
+  dmxFadesByFadeCueId: Readonly<Record<string, unknown>> = {},
 ): boolean {
+  if (cue.id in dmxFadesByFadeCueId) return true;
   if (activeCueIds.includes(cue.id)) return true;
 
   if (runningSequence?.rootId === cue.id) return true;

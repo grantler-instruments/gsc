@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import type { DmxFadePlan } from "../lib/dmx-fade";
+import type { PlaybackProgressSnapshot } from "../lib/playback-slice";
 import { handleSequenceFadeCueCompleted } from "../lib/sequence-runner";
 import type { DmxCueData } from "../types/cue";
 
@@ -52,6 +53,19 @@ export function getFadeLevel(fade: ActivePropertyFade, nowMs: number): number {
 export function getDmxFadeProgress(fade: ActiveDmxFade, nowMs: number): number {
   const elapsedSec = (nowMs - fade.startedAtMs) / 1000;
   return fade.durationSec > 0 ? elapsedSec / fade.durationSec : 1;
+}
+
+export function computeDmxFadeProgressSnapshot(
+  fade: ActiveDmxFade,
+  nowMs: number,
+): PlaybackProgressSnapshot {
+  const elapsedSec = Math.max(0, (nowMs - fade.startedAtMs) / 1000);
+  return {
+    positionSec: elapsedSec,
+    endSec: fade.durationSec,
+    progress: Math.max(0, Math.min(1, getDmxFadeProgress(fade, nowMs))),
+    looping: false,
+  };
 }
 
 export function isFadeComplete(fade: ActivePropertyFade, nowMs: number): boolean {

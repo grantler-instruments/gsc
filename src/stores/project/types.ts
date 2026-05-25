@@ -29,6 +29,17 @@ export interface ProjectState {
     dmx?: DmxCueData;
     parentId?: string;
   }) => Cue;
+  addCues: (
+    items: Array<{
+      name: string;
+      type: CueType;
+      assetPath?: string;
+      midi?: MidiCueData;
+      osc?: OscCueData;
+      dmx?: DmxCueData;
+      parentId?: string;
+    }>,
+  ) => Cue[];
   addGroupCue: (opts?: { name?: string; parentId?: string }) => Cue;
   addSequenceCue: (opts?: { name?: string; parentId?: string }) => Cue;
   addStopCueForTarget: (targetId: string) => Cue | null;

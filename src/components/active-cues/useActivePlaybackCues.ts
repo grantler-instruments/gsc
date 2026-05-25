@@ -9,14 +9,16 @@ export function useActivePlaybackCues(): Cue[] {
   const cueLists = useProjectStore((s) => s.cueLists);
   const activeCueIds = useTransportStore((s) => s.activeCueIds);
   const fadesByTargetId = useFadeStore((s) => s.fadesByTargetId);
+  const dmxFadesByFadeCueId = useFadeStore((s) => s.dmxFadesByFadeCueId);
 
   return useMemo(() => {
     const fadeTargetIds = Object.keys(fadesByTargetId);
-    const ids = [...new Set([...activeCueIds, ...fadeTargetIds])];
+    const dmxFadeCueIds = Object.keys(dmxFadesByFadeCueId);
+    const ids = [...new Set([...activeCueIds, ...fadeTargetIds, ...dmxFadeCueIds])];
     return ids
       .map((id) => findProjectCue(cueLists, id))
       .filter(
         (c): c is Cue => c !== undefined && !isContainerCue(c) && !isStopCue(c) && !isWaitCue(c),
       );
-  }, [activeCueIds, fadesByTargetId, cueLists]);
+  }, [activeCueIds, fadesByTargetId, dmxFadesByFadeCueId, cueLists]);
 }

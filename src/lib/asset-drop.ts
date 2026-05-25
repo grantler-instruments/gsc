@@ -45,6 +45,12 @@ export async function resolveAssetDropPayloads(
     return [fromProject];
   }
 
+  // Tauri OS drops are handled by useTauriProjectBundleDrop. With dragDropEnabled:
+  // false, HTML5 drop also fires — ignore external files to avoid double import.
+  if (getPlatform() === "tauri" && isExternalFileDrag(dataTransfer)) {
+    return [];
+  }
+
   const files = filesFromDataTransfer(dataTransfer);
   if (!files.length) return [];
 
@@ -72,51 +78,52 @@ export function applyAssetPayloads(payloads: AssetDragPayload[], target: AssetDr
   if (!payloads.length || !canEditProject()) return;
 
   const state = useProjectStore.getState();
-  const { addCue, updateCue, selectCue } = state;
+  const { addCues, updateCue, selectCue } = state;
   const cues = getActiveCueListFromState(state)?.cues ?? [];
 
   if (target.kind === "row") {
     const cue = cues.find((c) => c.id === target.cueId);
     if (!cue) {
-      for (const payload of payloads) {
-        addCue({
+      addCues(
+        payloads.map((payload) => ({
           name: payload.name,
           type: payload.kind,
           assetPath: payload.path,
-        });
-      }
+        })),
+      );
       return;
     }
 
     if (isContainerCue(cue)) {
-      for (const payload of payloads) {
-        addCue({
+      addCues(
+        payloads.map((payload) => ({
           name: payload.name,
           type: payload.kind,
           assetPath: payload.path,
           parentId: cue.id,
-        });
-      }
-    } else {
-      const payload = payloads[0];
-      updateCue(cue.id, {
-        assetPath: payload.path,
-        name: payload.name,
-        type: payload.kind,
-        midi: undefined,
-      });
-      selectCue(cue.id);
+        })),
+      );
+      return;
     }
+
+    const payload = payloads[0];
+    updateCue(cue.id, {
+      assetPath: payload.path,
+      name: payload.name,
+      type: payload.kind,
+      midi: undefined,
+    });
+    selectCue(cue.id);
     return;
   }
 
-  for (const payload of payloads) {
-    addCue({
+  addCues(
+    payloads.map((payload) => ({
       name: payload.name,
       type: payload.kind,
       assetPath: payload.path,
-    });
-  }
+    })),
+  );
 }
 
 /** Tauri: import dropped disk paths into the VFS and return cue payloads. */

@@ -44,7 +44,6 @@ export function useAudioEngine(): void {
     });
 
     const runSync = () => {
-      void audioEngine.unlock();
       const { activeCueIds, masterVolume, cueStartedAtMs } = useTransportStore.getState();
       if (activeCueIds.length === 0) {
         void audioEngine.stopAll();

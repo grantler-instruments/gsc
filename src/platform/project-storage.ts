@@ -98,6 +98,6 @@ export async function persistPlatformProject(options?: {
     await persistTauriProject(options);
     return;
   }
-  const { persistProjectSession } = await import("../lib/project-session");
-  persistProjectSession();
+  const { persistProjectSessionAsync } = await import("../lib/project-session");
+  await persistProjectSessionAsync();
 }

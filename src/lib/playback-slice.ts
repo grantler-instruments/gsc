@@ -20,8 +20,7 @@ export function cueShowsPlaybackProgress(cue: Cue): boolean {
     cue.type === "video" ||
     cue.type === "image" ||
     cue.type === "midi" ||
-    cue.type === "osc" ||
-    cue.type === "dmx"
+    cue.type === "osc"
   );
 }
 

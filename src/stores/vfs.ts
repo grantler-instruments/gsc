@@ -64,6 +64,9 @@ export const useVfsStore = create<VfsState>()(
             const blob = vfsGet(asset.path);
             if (blob) await syncImportedAssetToDisk(asset.path, blob);
           }
+        } else if (imported.length > 0) {
+          const { persistProjectSessionAsync } = await import("../lib/project-session");
+          void persistProjectSessionAsync();
         }
         return imported;
       },

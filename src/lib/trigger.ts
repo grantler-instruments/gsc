@@ -11,6 +11,7 @@ import {
 } from "./cues";
 import { fireParallelGroupChildren } from "./parallel-group-fire";
 import { cancelAllSequences, runSequence } from "./sequence-runner";
+import { triggerDmxCue } from "./trigger-dmx";
 import { triggerFadeCue } from "./trigger-fade";
 
 type GoMany = (ids: string[]) => void;
@@ -44,6 +45,11 @@ export function triggerGo(
 
   if (isFadeCue(cue)) {
     const ok = triggerFadeCue(cue, cues);
+    return { triggered: [], emptyContainer: !ok };
+  }
+
+  if (cue.type === "dmx") {
+    const ok = triggerDmxCue(cue);
     return { triggered: [], emptyContainer: !ok };
   }
 

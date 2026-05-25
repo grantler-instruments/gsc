@@ -125,7 +125,6 @@ export const CueRow = memo(function CueRow({
     onCreateOpacityFade,
     onCreatePanFade,
     onCreateLightFade,
-    onAssetDrop,
     onCueDrop,
     onCueReorder,
     onToggleExpand,
@@ -182,7 +181,6 @@ export const CueRow = memo(function CueRow({
     cue,
     allCues,
     canEdit,
-    onAssetDrop: (payload) => onAssetDrop(cue.id, payload),
     onCueDrop: (draggedId) => onCueDrop(draggedId, cue.id),
     onCueReorder,
   });

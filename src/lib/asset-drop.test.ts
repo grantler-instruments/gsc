@@ -55,6 +55,38 @@ describe("applyAssetPayloads", () => {
     expect(child?.assetPath).toBe("assets/a.wav");
   });
 
+  it("adds multiple cues to the list for multi-file drops", () => {
+    applyAssetPayloads(
+      [
+        { path: "assets/a.wav", name: "A", kind: "audio" },
+        { path: "assets/b.wav", name: "B", kind: "audio" },
+        { path: "assets/c.mp4", name: "C", kind: "video" },
+      ],
+      { kind: "list" },
+    );
+
+    const cues = activeCues();
+    expect(cues).toHaveLength(3);
+    expect(cues.map((cue) => cue.name)).toEqual(["A", "B", "C"]);
+    expect(useProjectStore.getState().cueLists[0].selectedCueIds).toEqual([cues[2].id]);
+  });
+
+  it("adds child cues when multiple files are dropped on a container row", () => {
+    resetTestProject([testCue("g", "Group", "group")]);
+
+    applyAssetPayloads(
+      [
+        { path: "assets/a.wav", name: "A", kind: "audio" },
+        { path: "assets/b.wav", name: "B", kind: "audio" },
+      ],
+      { kind: "row", cueId: "g" },
+    );
+
+    const children = activeCues().filter((c) => c.parentId === "g");
+    expect(children).toHaveLength(2);
+    expect(children.map((c) => c.name)).toEqual(["A", "B"]);
+  });
+
   it("creates list cues when row id is missing", () => {
     applyAssetPayloads([{ path: "assets/a.wav", name: "A", kind: "audio" }], {
       kind: "row",
