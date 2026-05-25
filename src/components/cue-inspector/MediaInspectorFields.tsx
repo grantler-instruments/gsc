@@ -35,36 +35,6 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
       {(cue.type === "audio" || cue.type === "video") && (
         <>
           <LoopFields cue={cue} readOnly={readOnly} onChange={onChange} />
-          <Box component="label" sx={inspectorFieldSx}>
-            {t("inspector.fadeInSeconds")}
-            <input
-              type="number"
-              min={0}
-              step={0.1}
-              value={cue.fadeIn ?? 0}
-              disabled={readOnly}
-              onChange={(e) =>
-                onChange({
-                  fadeIn: Math.max(0, Number(e.currentTarget.value)),
-                })
-              }
-            />
-          </Box>
-          <Box component="label" sx={inspectorFieldSx}>
-            {t("inspector.fadeOutSeconds")}
-            <input
-              type="number"
-              min={0}
-              step={0.1}
-              value={cue.fadeOut ?? 0}
-              disabled={readOnly}
-              onChange={(e) =>
-                onChange({
-                  fadeOut: Math.max(0, Number(e.currentTarget.value)),
-                })
-              }
-            />
-          </Box>
           <SliderNumberField
             label={t("inspector.volume")}
             value={cue.volume ?? 1}

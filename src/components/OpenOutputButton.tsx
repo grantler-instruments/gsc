@@ -4,9 +4,14 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { openOutputWindow } from "../platform/output-window";
+import { isVisualCueType } from "../stores/project/helpers";
+import { useProjectStore } from "../stores/project";
 
 export function OpenOutputButton() {
   const { t } = useTranslation();
+  const hasVisualCues = useProjectStore((s) =>
+    s.cueLists.some((list) => list.cues.some((cue) => isVisualCueType(cue.type))),
+  );
   const [error, setError] = useState<string | null>(null);
 
   const handleOpen = useCallback(async () => {
@@ -20,6 +25,10 @@ export function OpenOutputButton() {
       );
     }
   }, [t]);
+
+  if (!hasVisualCues) {
+    return null;
+  }
 
   return (
     <>

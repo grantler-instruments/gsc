@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { startNewProject } from "../lib/new-project";
 import { openSettings } from "../lib/open-settings";
 import { openProjectFile, saveProjectFile } from "../lib/project-file-actions";
+import { redoProjectEdit, undoProjectEdit } from "../lib/project-history";
 import { getPlatform } from "../platform";
 
 /** Wire native menu shortcuts on Tauri desktop. */
@@ -32,6 +33,18 @@ export function useTauriAppMenu(): void {
 
     void listen("gsc://save-project", () => {
       void saveProjectFile();
+    }).then((fn) => {
+      unlisteners.push(fn);
+    });
+
+    void listen("gsc://undo", () => {
+      undoProjectEdit();
+    }).then((fn) => {
+      unlisteners.push(fn);
+    });
+
+    void listen("gsc://redo", () => {
+      redoProjectEdit();
     }).then((fn) => {
       unlisteners.push(fn);
     });

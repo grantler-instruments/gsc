@@ -15,4 +15,10 @@ commands.allow = [
   "list_midi_input_ports",
   "start_midi_input",
   "stop_midi_input",
+  "ndi_is_available",
+  "list_ndi_sources",
+  "start_ndi_output",
+  "stop_ndi_output",
+  "get_ndi_output_status",
+  "push_ndi_frame",
 ]

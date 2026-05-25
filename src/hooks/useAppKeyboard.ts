@@ -53,6 +53,22 @@ export function useAppKeyboard(): void {
         return;
       }
 
+      if (
+        canEditProject() &&
+        (e.metaKey || e.ctrlKey) &&
+        e.key.toLowerCase() === "z" &&
+        !isEditableKeyboardTarget(e.target)
+      ) {
+        if (e.shiftKey) {
+          if (redoProjectEdit()) {
+            e.preventDefault();
+          }
+        } else if (undoProjectEdit()) {
+          e.preventDefault();
+        }
+        return;
+      }
+
       if (isEditableKeyboardTarget(e.target)) return;
 
       if (e.code === "Space") {
@@ -87,17 +103,6 @@ export function useAppKeyboard(): void {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "e") {
         e.preventDefault();
         toggleShowMode();
-        return;
-      }
-
-      if (canEditProject() && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
-        if (e.shiftKey) {
-          if (redoProjectEdit()) {
-            e.preventDefault();
-          }
-        } else if (undoProjectEdit()) {
-          e.preventDefault();
-        }
         return;
       }
 

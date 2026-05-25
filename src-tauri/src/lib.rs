@@ -3,6 +3,7 @@ mod dmx;
 mod enttec_pro;
 mod macos_package;
 mod midi_input;
+mod ndi;
 mod osc;
 mod project_open;
 
@@ -18,18 +19,20 @@ use macos_package::mark_gsc_project_package;
 use midi_input::{
     list_midi_input_ports, start_midi_input, stop_midi_input, MidiInputState,
 };
+use ndi::NdiService;
 use osc::send_osc;
 use project_open::{
     handle_cli_open_files, handle_opened_urls, take_pending_open_paths, PendingOpenPaths,
 };
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
-use tauri::{Emitter, RunEvent};
+use tauri::{Emitter, Manager, RunEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
         .manage(MidiInputState(Mutex::new(None)))
         .manage(EnttecProState(Mutex::new(None)))
+        .manage(NdiService::default())
         .manage(PendingOpenPaths(Mutex::new(Vec::new())))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
@@ -50,6 +53,12 @@ pub fn run() {
             stop_midi_input,
             take_pending_open_paths,
             mark_gsc_project_package,
+            ndi::ndi_is_available_cmd,
+            ndi::list_ndi_sources,
+            ndi::start_ndi_output,
+            ndi::stop_ndi_output,
+            ndi::get_ndi_output_status,
+            ndi::push_ndi_frame,
         ])
         .setup(|app| {
             handle_cli_open_files(app.handle());
@@ -70,6 +79,12 @@ pub fn run() {
                 "save_project" => {
                     let _ = app.emit("gsc://save-project", ());
                 }
+                "undo" => {
+                    let _ = app.emit("gsc://undo", ());
+                }
+                "redo" => {
+                    let _ = app.emit("gsc://redo", ());
+                }
                 _ => {}
             }
         })
@@ -77,6 +92,13 @@ pub fn run() {
         .expect("error while running tauri application");
 
     app.run(|app, event| {
+        if let RunEvent::Exit = event {
+            if let Some(ndi) = app.try_state::<NdiService>() {
+                if let Ok(mut guard) = ndi.0.lock() {
+                    let _ = ndi::shutdown_output(&mut guard);
+                }
+            }
+        }
         if let RunEvent::Opened { urls } = event {
             handle_opened_urls(app, urls);
         }
@@ -106,8 +128,8 @@ fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         &[&new_project, &open_project, &save_project, &settings],
     )?;
 
-    let undo = PredefinedMenuItem::undo(handle, None)?;
-    let redo = PredefinedMenuItem::redo(handle, None)?;
+    let undo = MenuItem::with_id(handle, "undo", "Undo", true, Some("CmdOrCtrl+Z"))?;
+    let redo = MenuItem::with_id(handle, "redo", "Redo", true, Some("CmdOrCtrl+Shift+Z"))?;
     let edit_sep = PredefinedMenuItem::separator(handle)?;
     let cut = PredefinedMenuItem::cut(handle, None)?;
     let copy = PredefinedMenuItem::copy(handle, None)?;

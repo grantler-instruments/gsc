@@ -3,6 +3,7 @@ import { testCue } from "../test/fixtures/cues";
 import {
   appendCueInList,
   buildCueTree,
+  canStopTarget,
   expandSequenceSteps,
   getChildCues,
   getCueDisplayName,
@@ -263,6 +264,25 @@ describe("isUtilityCue", () => {
     expect(isUtilityCue(testCue("s", "Stop", "stop"))).toBe(true);
     expect(isUtilityCue(testCue("w", "Wait", "wait"))).toBe(true);
     expect(isUtilityCue(testCue("f", "Fade", "volumeFade", { fadeTargetId: "a" }))).toBe(true);
+  });
+});
+
+describe("canStopTarget", () => {
+  it("allows media, dmx, and container cues", () => {
+    expect(canStopTarget(testCue("a", "A", "audio"))).toBe(true);
+    expect(canStopTarget(testCue("v", "V", "video"))).toBe(true);
+    expect(canStopTarget(testCue("i", "I", "image"))).toBe(true);
+    expect(canStopTarget(testCue("d", "D", "dmx"))).toBe(true);
+    expect(canStopTarget(testCue("g", "Group", "group"))).toBe(true);
+    expect(canStopTarget(testCue("s", "Seq", "sequence"))).toBe(true);
+  });
+
+  it("excludes midi, osc, and utility cues", () => {
+    expect(canStopTarget(testCue("m", "M", "midi"))).toBe(false);
+    expect(canStopTarget(testCue("o", "O", "osc"))).toBe(false);
+    expect(canStopTarget(testCue("stop", "Stop", "stop"))).toBe(false);
+    expect(canStopTarget(testCue("w", "Wait", "wait"))).toBe(false);
+    expect(canStopTarget(testCue("f", "Fade", "volumeFade", { fadeTargetId: "a" }))).toBe(false);
   });
 });
 

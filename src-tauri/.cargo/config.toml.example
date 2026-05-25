@@ -1,0 +1,8 @@
+# Copy to config.toml after installing the NDI SDK.
+# Typical macOS install locations (use the one that exists on your machine):
+#   /Library/NDI 6 SDK
+#   /Library/NDI SDK for Apple
+#   /Library/NDI SDK for macOS
+
+[env]
+NDI_SDK_DIR = "/Library/NDI 6 SDK"

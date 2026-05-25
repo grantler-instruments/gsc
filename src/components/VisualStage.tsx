@@ -176,6 +176,7 @@ export function VisualStage({ layers, stageRole, className, sx }: VisualStagePro
   return (
     <Box
       className={className}
+      data-gsc-output-stage={stageRole === "output" ? "" : undefined}
       sx={{
         position: "relative",
         width: "100%",

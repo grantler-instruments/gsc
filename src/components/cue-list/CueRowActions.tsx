@@ -4,7 +4,7 @@ import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import VolumeDownIcon from "@mui/icons-material/VolumeDown";
 import IconButton from "@mui/material/IconButton";
 import { useTranslation } from "react-i18next";
-import { isUtilityCue } from "../../lib/cues";
+import { canStopTarget, isUtilityCue } from "../../lib/cues";
 import { canLightFadeTarget, canOpacityFadeTarget, canVolumeFadeTarget } from "../../lib/fade";
 import { cueRowFadeActionSx, cueRowStopActionSx } from "../../theme/cueStyles";
 import type { Cue } from "../../types/cue";
@@ -34,6 +34,7 @@ export function CueRowActions({
   const showVolumeFadeAction = !isUtility && canVolumeFadeTarget(cue);
   const showOpacityFadeAction = !isUtility && canOpacityFadeTarget(cue);
   const showLightFadeAction = !isUtility && canLightFadeTarget(cue);
+  const showStopAction = canStopTarget(cue);
 
   return (
     <>
@@ -79,7 +80,7 @@ export function CueRowActions({
           <LightbulbOutlinedIcon fontSize="small" />
         </IconButton>
       )}
-      {!isUtility && (
+      {showStopAction && (
         <IconButton
           size="small"
           sx={cueRowStopActionSx}

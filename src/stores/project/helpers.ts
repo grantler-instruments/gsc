@@ -6,6 +6,10 @@ export function isMediaCueType(type: CueType): boolean {
   return type === "audio" || type === "video" || type === "image";
 }
 
+export function isVisualCueType(type: CueType): boolean {
+  return type === "video" || type === "image";
+}
+
 export function applyRenumber(cues: Cue[]): Cue[] {
   return renumberCueList(cues);
 }

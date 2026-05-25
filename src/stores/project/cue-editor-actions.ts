@@ -2,6 +2,7 @@ import type { StoreApi } from "zustand";
 import { getPrimarySelectedCueId } from "../../lib/cue-selection";
 import {
   appendCueInList,
+  canStopTarget,
   getChildCues,
   isContainerCue,
   isFadeCue,
@@ -149,7 +150,7 @@ export function createCueEditorActions(
       const active = getActiveCueListFromState(get());
       const { cues } = active;
       const target = cues.find((c) => c.id === targetId);
-      if (!target || isStopCue(target)) return null;
+      if (!target || isStopCue(target) || !canStopTarget(target)) return null;
 
       const stopCue = {
         id: crypto.randomUUID(),

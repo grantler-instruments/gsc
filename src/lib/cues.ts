@@ -24,6 +24,18 @@ export function isUtilityCue(cue: Cue): boolean {
   return isStopCue(cue) || isWaitCue(cue) || isFadeCue(cue);
 }
 
+/** Cues that can be targeted by a stop cue (playback/media/containers, not one-shot MIDI/OSC). */
+export function canStopTarget(cue: Cue): boolean {
+  if (isUtilityCue(cue)) return false;
+  return (
+    cue.type === "audio" ||
+    cue.type === "video" ||
+    cue.type === "image" ||
+    cue.type === "dmx" ||
+    isContainerCue(cue)
+  );
+}
+
 /** Parallel or sequential container. */
 export function isContainerCue(cue: Cue): boolean {
   return isParallelGroup(cue) || isSequenceGroup(cue);

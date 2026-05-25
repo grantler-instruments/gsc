@@ -7,6 +7,7 @@ import { useEnttecProConnection } from "./useEnttecProConnection";
 import { useFadeAnimation } from "./useFadeAnimation";
 import { useMidiEngine } from "./useMidiEngine";
 import { useMidiInput } from "./useMidiInput";
+import { useNdiOutputEngine } from "./useNdiOutputEngine";
 import { useOscEngine } from "./useOscEngine";
 import { useOutputPublisher } from "./useOutputPublisher";
 import { usePlaybackProgress } from "./usePlaybackProgress";
@@ -31,6 +32,7 @@ export function useAppRuntime(): boolean {
   useMidiInput();
   useFadeAnimation();
   useOutputPublisher();
+  useNdiOutputEngine();
   usePlaybackProgress();
   usePreventBrowserFileDrop();
   useTauriAppMenu();

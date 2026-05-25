@@ -2,8 +2,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import { formatStopTargetLabel, getStopTarget, isStopCue, isWaitCue } from "../lib/cues";
-import { isFadeCue } from "../lib/fade";
+import { canStopTarget, formatStopTargetLabel, getStopTarget } from "../lib/cues";
 import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue } from "../types/cue";
@@ -29,9 +28,7 @@ export function StopInspectorFields({ stopCue }: StopInspectorFieldsProps) {
   const selectCue = useProjectStore((s) => s.selectCue);
 
   const target = getStopTarget(stopCue, cues);
-  const stoppableCues = cues.filter(
-    (c) => !isStopCue(c) && !isFadeCue(c) && !isWaitCue(c) && c.id !== stopCue.id,
-  );
+  const stoppableCues = cues.filter((c) => canStopTarget(c) && c.id !== stopCue.id);
 
   return (
     <Box component="fieldset" sx={inspectorGroupSx}>

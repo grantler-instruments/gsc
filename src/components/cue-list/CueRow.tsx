@@ -181,7 +181,6 @@ export const CueRow = memo(function CueRow({
     active,
     isGroup: isContainer,
     isSequence,
-    isStop,
     isVolumeFade: isFade && cue.type === "volumeFade",
     isOpacityFade: isFade && cue.type === "opacityFade",
     isLightFade: isFade && cue.type === "lightFade",

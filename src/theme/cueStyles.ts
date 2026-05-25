@@ -41,7 +41,6 @@ export const ADD_CUE_ICON_COLORS: Partial<Record<CueType, string>> = {
 };
 
 const CUE_NAME_TINT = {
-  stop: "#e8b4b4",
   wait: "#e8d4a8",
   volumeFade: "#b4d4e8",
   opacityFade: "#d4b4e8",
@@ -88,7 +87,6 @@ export interface CueRowStyleState {
   active: boolean;
   isGroup: boolean;
   isSequence: boolean;
-  isStop: boolean;
   isVolumeFade: boolean;
   isOpacityFade: boolean;
   isLightFade: boolean;
@@ -203,20 +201,18 @@ export function cueNumberSx(tokens: GscTokenSet, primarySelected = false): SxPro
 export function cueNameSx(
   state: Pick<
     CueRowStyleState,
-    "primarySelected" | "isStop" | "isVolumeFade" | "isOpacityFade" | "isLightFade" | "hasWarning"
+    "primarySelected" | "isVolumeFade" | "isOpacityFade" | "isLightFade" | "hasWarning"
   >,
 ): SxProps<Theme> {
-  const cueNameColor = state.isStop
-    ? CUE_NAME_TINT.stop
-    : state.isVolumeFade
-      ? CUE_NAME_TINT.volumeFade
-      : state.isOpacityFade
-        ? CUE_NAME_TINT.opacityFade
-        : state.isLightFade
-          ? CUE_NAME_TINT.lightFade
-          : state.hasWarning
-            ? CUE_NAME_TINT.warning
-            : undefined;
+  const cueNameColor = state.isVolumeFade
+    ? CUE_NAME_TINT.volumeFade
+    : state.isOpacityFade
+      ? CUE_NAME_TINT.opacityFade
+      : state.isLightFade
+        ? CUE_NAME_TINT.lightFade
+        : state.hasWarning
+          ? CUE_NAME_TINT.warning
+          : undefined;
 
   return {
     flex: 1,

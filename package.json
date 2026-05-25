@@ -16,7 +16,8 @@
     "lint:fix": "biome check --write .",
     "screenshots": "node scripts/screenshots/capture.mjs",
     "screenshots:serve": "node scripts/screenshots/capture.mjs --serve",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:dev:ndi": "tauri dev --features ndi"
   },
   "dependencies": {
     "@elemaudio/core": "^4.0.1",

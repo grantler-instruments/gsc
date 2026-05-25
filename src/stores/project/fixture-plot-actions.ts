@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand";
+import { runWithoutHistory } from "../../lib/project-history";
 import {
   ensureFixturePlot,
   fixturePlotNeedsSync,
@@ -21,7 +22,9 @@ export function createFixturePlotActions(
     syncFixturePlot: () => {
       const { fixtures, fixturePlot } = get();
       if (!fixturePlotNeedsSync(fixturePlot, fixtures)) return;
-      set({ fixturePlot: ensureFixturePlot(fixturePlot, fixtures) });
+      runWithoutHistory(() => {
+        set({ fixturePlot: ensureFixturePlot(fixturePlot, fixtures) });
+      });
     },
 
     setFixturePlot: (plot: FixturePlot) => {

@@ -114,6 +114,25 @@ MyShow.gsc.zip
 - **Web:** File → Open… / Export…
 - **Desktop:** File → Export…, or Open… to import a bundle into a new `.gsc` folder
 
+## NDI output (desktop)
+
+The Tauri app can publish the **output window** as an NDI® source for OBS, vMix, Resolume, and other NDI tools on your LAN.
+
+1. Install the [NDI SDK](https://ndi.video/sdk/) for your platform (macOS: run the `.pkg` installer).
+2. Tell Cargo where the SDK was installed. After install, check which folder exists, e.g. `/Library/NDI 6 SDK`. Then either:
+   - Copy `src-tauri/.cargo/config.toml.example` to `src-tauri/.cargo/config.toml` and set `NDI_SDK_DIR`, or
+   - Export for one shell session: `export NDI_SDK_DIR="/Library/NDI 6 SDK"`
+3. Build or run with the Rust feature enabled:
+   ```bash
+   npm run tauri:dev:ndi
+   ```
+   Release builds: `npm run tauri build -- --features ndi`
+4. In **Settings → Video**, enable **NDI program output**, set a source name, and open the **output window** from the toolbar.
+
+Frames are composited in the output webview and sent via `grafton-ndi`. If the SDK is missing, the app still builds without `--features ndi`; Settings will show that NDI is unavailable.
+
+NDI® is a registered trademark of Vizrt NDI AB. See [ndi.video](https://ndi.video/) for SDK license terms.
+
 ## Contributing
 
 Bug reports and pull requests are welcome.
