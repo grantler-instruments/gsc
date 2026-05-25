@@ -17,7 +17,16 @@ export const LOCALE_LABELS: Record<SupportedLocale, string> = {
 
 const PREFERENCES_STORAGE_KEY = "gsc-preferences";
 
+function isBrowserStorageAvailable(): boolean {
+  try {
+    return typeof localStorage !== "undefined" && typeof localStorage.getItem === "function";
+  } catch {
+    return false;
+  }
+}
+
 function readLocaleFromPreferences(): SupportedLocale | null {
+  if (!isBrowserStorageAvailable()) return null;
   try {
     const raw = localStorage.getItem(PREFERENCES_STORAGE_KEY);
     if (!raw) return null;
@@ -37,11 +46,12 @@ function detectInitialLocale(): SupportedLocale {
   if (fromPreferences) return fromPreferences;
 
   // Existing preferences without a locale field (pre-i18n) — default English.
-  if (localStorage.getItem(PREFERENCES_STORAGE_KEY)) return "en";
+  if (isBrowserStorageAvailable() && localStorage.getItem(PREFERENCES_STORAGE_KEY)) return "en";
 
-  const browser = navigator.language.split("-")[0];
-  if (SUPPORTED_LOCALES.includes(browser as SupportedLocale)) {
-    return browser as SupportedLocale;
+  const browserLanguage =
+    typeof navigator !== "undefined" ? navigator.language?.split("-")[0] : undefined;
+  if (browserLanguage && SUPPORTED_LOCALES.includes(browserLanguage as SupportedLocale)) {
+    return browserLanguage as SupportedLocale;
   }
   return "en";
 }
