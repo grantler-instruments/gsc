@@ -22,6 +22,7 @@ export const CUE_TYPE_COLORS: Record<CueType | AssetKind, { color: string; bgcol
   wait: { color: "#e8c86d", bgcolor: "#3a3218" },
   volumeFade: { color: "#8ac4e8", bgcolor: "#1e2e3a" },
   opacityFade: { color: "#c4a8e8", bgcolor: "#2a1e3a" },
+  panFade: { color: "#8ad4b8", bgcolor: "#1e3a30" },
   lightFade: { color: "#f2d072", bgcolor: "#3a3218" },
 };
 
@@ -37,6 +38,7 @@ export const ADD_CUE_ICON_COLORS: Partial<Record<CueType, string>> = {
   wait: "#e8c86d",
   volumeFade: "#8ac4e8",
   opacityFade: "#c4a8e8",
+  panFade: "#8ad4b8",
   lightFade: "#f2d072",
 };
 
@@ -80,6 +82,9 @@ function accentRowTint(
   return `color-mix(in srgb, ${tokens.accent} ${accentPercent}%, ${base})`;
 }
 
+export const FADE_TARGET_ROW_FLASH_SEC = 2;
+export const FADE_TARGET_NUMBER_BLINK_SEC = 2.2;
+
 export interface CueRowStyleState {
   tokens: GscTokenSet;
   selected: boolean;
@@ -94,6 +99,7 @@ export interface CueRowStyleState {
   hasWarning: boolean;
   pulseAsStopTarget: boolean;
   staticAsStopTarget: boolean;
+  highlightAsFadeTarget: boolean;
   isPreviewing: boolean;
   dropActive: boolean;
   insertBefore: boolean;
@@ -160,24 +166,45 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
     ...(state.pulseAsStopTarget && {
       "@keyframes cueStopTargetPulse": {
         "0%, 100%": {
-          bgcolor: "rgba(232, 138, 138, 0.05)",
           boxShadow: "inset 3px 0 0 rgba(232, 138, 138, 0.3)",
         },
         "50%": {
-          bgcolor: "rgba(232, 138, 138, 0.11)",
           boxShadow: "inset 3px 0 0 rgba(232, 138, 138, 0.55)",
         },
       },
       animation: "cueStopTargetPulse 3s ease-in-out infinite",
       "@media (prefers-reduced-motion: reduce)": {
         animation: "none",
-        bgcolor: "rgba(232, 138, 138, 0.12)",
         boxShadow: "inset 3px 0 0 #e88a8a",
       },
     }),
     ...(state.staticAsStopTarget && {
-      bgcolor: "rgba(232, 138, 138, 0.1)",
       boxShadow: "inset 3px 0 0 rgba(232, 138, 138, 0.65)",
+    }),
+    ...(state.highlightAsFadeTarget && {
+      "@keyframes cueFadeTargetRowFlash": {
+        "0%": {
+          filter: "brightness(1)",
+          bgcolor: "transparent",
+          boxShadow: "none",
+        },
+        "40%": {
+          filter: "brightness(1.22)",
+          bgcolor: `color-mix(in srgb, ${tokens.accent} 20%, transparent)`,
+          boxShadow: `inset 3px 0 0 color-mix(in srgb, ${tokens.accent} 70%, transparent)`,
+        },
+        "100%": {
+          filter: "brightness(1)",
+          bgcolor: "transparent",
+          boxShadow: "none",
+        },
+      },
+      animation: `cueFadeTargetRowFlash ${FADE_TARGET_ROW_FLASH_SEC}s ease-in-out 1`,
+      "@media (prefers-reduced-motion: reduce)": {
+        animation: "none",
+        bgcolor: `color-mix(in srgb, ${tokens.accent} 12%, transparent)`,
+        boxShadow: `inset 3px 0 0 color-mix(in srgb, ${tokens.accent} 55%, transparent)`,
+      },
     }),
     ...(state.isPreviewing && {
       boxShadow: `inset 3px 0 0 ${CUE_TYPE_COLORS.dmx.color}`,
@@ -185,7 +212,11 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
   };
 }
 
-export function cueNumberSx(tokens: GscTokenSet, primarySelected = false): SxProps<Theme> {
+export function cueNumberSx(
+  tokens: GscTokenSet,
+  primarySelected = false,
+  highlightAsFadeTarget = false,
+): SxProps<Theme> {
   return {
     fontVariantNumeric: "tabular-nums",
     fontWeight: primarySelected ? 700 : 600,
@@ -194,6 +225,25 @@ export function cueNumberSx(tokens: GscTokenSet, primarySelected = false): SxPro
     flexShrink: 0,
     ...(primarySelected && {
       textShadow: `0 0 10px color-mix(in srgb, ${tokens.accent} 45%, transparent)`,
+    }),
+    ...(highlightAsFadeTarget && {
+      "@keyframes cueFadeTargetNumberBlink": {
+        "0%, 100%": {
+          opacity: 1,
+          transform: "scale(1)",
+          textShadow: "none",
+        },
+        "50%": {
+          opacity: 0.35,
+          transform: "scale(1.12)",
+          textShadow: `0 0 12px color-mix(in srgb, ${tokens.accent} 65%, transparent)`,
+        },
+      },
+      animation: `cueFadeTargetNumberBlink ${FADE_TARGET_NUMBER_BLINK_SEC}s ease-in-out ${FADE_TARGET_ROW_FLASH_SEC}s infinite`,
+      "@media (prefers-reduced-motion: reduce)": {
+        animation: "none",
+        textShadow: `0 0 8px color-mix(in srgb, ${tokens.accent} 50%, transparent)`,
+      },
     }),
   };
 }

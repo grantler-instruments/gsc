@@ -6,6 +6,7 @@ import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue } from "../types/cue";
 import { inspectorFieldLabelSx, inspectorFieldSx, inspectorGroupHintSx } from "./inspectorSx";
+import { DraftNumberInput } from "./DraftNumberInput";
 
 interface WaitInspectorFieldsProps {
   waitCue: Cue;
@@ -25,17 +26,10 @@ export function WaitInspectorFields({ waitCue }: WaitInspectorFieldsProps) {
         <Typography component="span" sx={inspectorFieldLabelSx}>
           {t("inspector.durationSeconds")}
         </Typography>
-        <input
-          type="number"
-          min={0.1}
-          step={0.1}
+        <DraftNumberInput
           value={getWaitDurationSec(waitCue)}
-          disabled={readOnly}
-          onChange={(e) =>
-            updateCue(waitCue.id, {
-              waitDurationSec: Math.max(0.1, Number(e.currentTarget.value)),
-            })
-          }
+          readOnly={readOnly}
+          onChange={(waitDurationSec) => updateCue(waitCue.id, { waitDurationSec })}
         />
       </Box>
     </>

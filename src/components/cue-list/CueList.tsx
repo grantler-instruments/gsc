@@ -87,6 +87,9 @@ export function CueList() {
             primarySelectedId={selection.primarySelectedId}
             hoveredStopTargetId={stopHighlights.hoveredStopTargetId}
             selectedStopTargetId={stopHighlights.selectedStopTargetId}
+            hoveredFadeTargetId={stopHighlights.hoveredFadeTargetId}
+            selectedFadeTargetId={stopHighlights.selectedFadeTargetId}
+            fadeTargetHighlightToken={stopHighlights.fadeTargetHighlightToken}
             renamingCueId={rename.renamingCueId}
             renameValue={rename.renameValue}
             onHoverChange={stopHighlights.setHoveredCueId}

@@ -4,12 +4,12 @@ import Typography from "@mui/material/Typography";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDmxCue } from "../../lib/dmx";
-import { canOpacityFadeTarget, canVolumeFadeTarget } from "../../lib/fade";
+import { canOpacityFadeTarget, canPanFadeTarget, canVolumeFadeTarget } from "../../lib/fade";
 import { formatMidiCue } from "../../lib/midi";
 import { formatOscCue } from "../../lib/osc";
 import { cueShowsPlaybackProgress } from "../../lib/playback-slice";
 import { formatPlaybackRangeLabel } from "../../lib/time";
-import { resolveEffectiveOpacity, resolveEffectiveVolume, useFadeStore } from "../../stores/fade";
+import { resolveEffectiveOpacity, resolveEffectivePan, resolveEffectiveVolume, useFadeStore } from "../../stores/fade";
 import { usePlaybackStore } from "../../stores/playback";
 import { useProjectStore } from "../../stores/project";
 import { useGscTokens } from "../../theme/useGscTokens";
@@ -39,13 +39,8 @@ export const ActiveCueRow = memo(function ActiveCueRow({
   const updateCue = useProjectStore((s) => s.updateCue);
   const clearFade = useFadeStore((s) => s.clearFade);
   const playback = usePlaybackStore((s) => s.byCueId[cue.id]);
-  const volumeFade = useFadeStore((s) =>
-    s.fadesByTargetId[cue.id]?.property === "volume" ? s.fadesByTargetId[cue.id] : undefined,
-  );
-  const opacityFade = useFadeStore((s) =>
-    s.fadesByTargetId[cue.id]?.property === "opacity" ? s.fadesByTargetId[cue.id] : undefined,
-  );
-  const fadeFrameMs = useFadeStore((s) => (volumeFade || opacityFade ? s.frameMs : 0));
+  const fadeProperty = useFadeStore((s) => s.fadesByTargetId[cue.id]?.property);
+  const fadeFrameMs = useFadeStore((s) => (cue.id in s.fadesByTargetId ? s.frameMs : 0));
 
   const fixtures = useProjectStore((s) => s.fixtures);
   const rangeLabel =
@@ -135,8 +130,21 @@ export const ActiveCueRow = memo(function ActiveCueRow({
             label={t("activeCues.volumeShort")}
             value={resolveEffectiveVolume(cue.id, cue.volume ?? 1, fadeFrameMs || undefined)}
             onChange={(volume) => {
-              if (volumeFade) clearFade(cue.id);
+              if (fadeProperty === "volume") clearFade(cue.id);
               updateCue(cue.id, { volume });
+            }}
+          />
+        )}
+        {canPanFadeTarget(cue) && (
+          <ActiveCueLevelControl
+            label={t("activeCues.panShort")}
+            value={resolveEffectivePan(cue.id, cue.pan ?? 0, fadeFrameMs || undefined)}
+            min={-1}
+            max={1}
+            formatValue={(v) => v.toFixed(2)}
+            onChange={(pan) => {
+              if (fadeProperty === "pan") clearFade(cue.id);
+              updateCue(cue.id, { pan });
             }}
           />
         )}
@@ -145,7 +153,7 @@ export const ActiveCueRow = memo(function ActiveCueRow({
             label={t("activeCues.opacityShort")}
             value={resolveEffectiveOpacity(cue.id, cue.opacity ?? 1, fadeFrameMs || undefined)}
             onChange={(opacity) => {
-              if (opacityFade) clearFade(cue.id);
+              if (fadeProperty === "opacity") clearFade(cue.id);
               updateCue(cue.id, { opacity });
             }}
           />

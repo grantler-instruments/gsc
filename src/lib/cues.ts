@@ -17,7 +17,7 @@ export function isStopCue(cue: Cue): boolean {
   return cue.type === "stop";
 }
 
-export { isFadeCue, isLightFadeCue, isOpacityFadeCue, isVolumeFadeCue } from "./fade";
+export { isFadeCue, isLightFadeCue, isOpacityFadeCue, isPanFadeCue, isVolumeFadeCue } from "./fade";
 
 /** Stop, wait, or fade utility cues — not fired as playback leaves in parallel groups. */
 export function isUtilityCue(cue: Cue): boolean {

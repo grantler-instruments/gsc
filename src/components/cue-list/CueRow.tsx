@@ -5,7 +5,7 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { type MouseEvent, memo } from "react";
+import { type MouseEvent, memo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { getCueAssetWarning } from "../../lib/cue-asset";
 import {
@@ -43,6 +43,7 @@ import { CueRowActions } from "./CueRowActions";
 import { CueRowDetails } from "./CueRowDetails";
 import { useCueListActions } from "./cueListActionsContext";
 import { useCueRowDrop } from "./useCueRowDrop";
+import { useRestartCssAnimation } from "./useRestartCssAnimation";
 
 export interface CueRowProps {
   cue: Cue;
@@ -55,6 +56,8 @@ export interface CueRowProps {
   missingAsset: boolean;
   pulseAsStopTarget: boolean;
   staticAsStopTarget: boolean;
+  highlightAsFadeTarget: boolean;
+  fadeTargetHighlightToken: string;
   onHoverChange: (cueId: string | null) => void;
   onSelect: (e: MouseEvent) => void;
   onContextMenu: (e: MouseEvent) => void;
@@ -81,7 +84,9 @@ function cueRowPropsAreEqual(prev: CueRowProps, next: CueRowProps): boolean {
     prev.active === next.active &&
     prev.missingAsset === next.missingAsset &&
     prev.pulseAsStopTarget === next.pulseAsStopTarget &&
-    prev.staticAsStopTarget === next.staticAsStopTarget
+    prev.staticAsStopTarget === next.staticAsStopTarget &&
+    prev.highlightAsFadeTarget === next.highlightAsFadeTarget &&
+    prev.fadeTargetHighlightToken === next.fadeTargetHighlightToken
   );
 }
 
@@ -96,6 +101,8 @@ export const CueRow = memo(function CueRow({
   missingAsset,
   pulseAsStopTarget,
   staticAsStopTarget,
+  highlightAsFadeTarget,
+  fadeTargetHighlightToken,
   onHoverChange,
   onSelect,
   onContextMenu,
@@ -116,12 +123,18 @@ export const CueRow = memo(function CueRow({
     onCreateStop,
     onCreateVolumeFade,
     onCreateOpacityFade,
+    onCreatePanFade,
     onCreateLightFade,
     onAssetDrop,
     onCueDrop,
     onCueReorder,
     onToggleExpand,
   } = useCueListActions();
+
+  const rowRef = useRef<HTMLLIElement>(null);
+  const cueNumberRef = useRef<HTMLSpanElement>(null);
+  useRestartCssAnimation(rowRef, highlightAsFadeTarget, fadeTargetHighlightToken);
+  useRestartCssAnimation(cueNumberRef, highlightAsFadeTarget, fadeTargetHighlightToken);
 
   const playback = usePlaybackStore((s) => (active ? s.byCueId[cue.id] : undefined));
 
@@ -188,6 +201,7 @@ export const CueRow = memo(function CueRow({
     hasWarning,
     pulseAsStopTarget,
     staticAsStopTarget,
+    highlightAsFadeTarget,
     isPreviewing,
     dropActive: dropActive && isContainer,
     insertBefore: insertPlace === "before",
@@ -196,6 +210,7 @@ export const CueRow = memo(function CueRow({
 
   return (
     <Box
+      ref={rowRef}
       component="li"
       data-gsc-drop-zone="cue-row"
       data-cue-id={cue.id}
@@ -247,7 +262,12 @@ export const CueRow = memo(function CueRow({
       ) : (
         <Box component="span" sx={{ width: 24, flexShrink: 0 }} />
       )}
-      <Box component="span" sx={cueNumberSx(tokens, primarySelected)}>
+      <Box
+        ref={cueNumberRef}
+        component="span"
+        data-cue-number=""
+        sx={cueNumberSx(tokens, primarySelected, highlightAsFadeTarget)}
+      >
         {cue.number}
       </Box>
       <CueTypeBadge type={cue.type} showLabel={false} compact />
@@ -288,6 +308,7 @@ export const CueRow = memo(function CueRow({
         onCreateStop={() => onCreateStop(cue.id)}
         onCreateVolumeFade={() => onCreateVolumeFade(cue.id)}
         onCreateOpacityFade={() => onCreateOpacityFade(cue.id)}
+        onCreatePanFade={() => onCreatePanFade(cue.id)}
         onCreateLightFade={() => onCreateLightFade(cue.id)}
       />
       {cue.assetPath && (

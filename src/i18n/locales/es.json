@@ -192,6 +192,7 @@
     "wait": "Espera",
     "volumeFade": "Fundido de volumen",
     "opacityFade": "Fundido de opacidad",
+    "panFade": "Fundido de panorámica",
     "lightFade": "Fundido de luz"
   },
   "cueMenu": {
@@ -217,6 +218,7 @@
     "deleteCue": "Eliminar cue",
     "createVolumeFade": "Crear fundido de volumen para {{label}}",
     "createOpacityFade": "Crear fundido de opacidad para {{label}}",
+    "createPanFade": "Crear fundido de panorámica para {{label}}",
     "createLightFade": "Crear fundido de luz para {{label}}",
     "createStopCue": "Crear cue de detener para {{label}}"
   },
@@ -279,6 +281,7 @@
     "lightFadeHint": "Funde los niveles DMX del cue de luz de referencia hacia los niveles definidos aquí.",
     "volumeFadeHint": "Funde el volumen del cue objetivo desde su nivel actual al valor de abajo.",
     "opacityFadeHint": "Funde la opacidad del cue objetivo desde su nivel actual al valor de abajo.",
+    "panFadeHint": "Funde la panorámica del cue objetivo desde su posición actual al valor de abajo.",
     "lightFadeChooseHint": "Elija un cue de luz para cargar sus fixtures, o añada fixtures manualmente abajo.",
     "startsFromAtGo": "Empieza desde (en GO)",
     "startsFromCurrent": " — volumen/opacidad actual del cue objetivo",
@@ -288,6 +291,7 @@
     "fadeInSeconds": "Fundido de entrada (s)",
     "fadeOutSeconds": "Fundido de salida (s)",
     "volume": "Volumen",
+    "pan": "Panorámica",
     "opacity": "Opacidad",
     "asset": "Asset",
     "playbackRange": "Rango de reproducción",
@@ -433,6 +437,7 @@
   "activeCues": {
     "empty": "No hay cues activos. Pulse GO para ejecutar el cue seleccionado.",
     "volumeShort": "Vol",
+    "panShort": "Pan",
     "opacityShort": "Opac",
     "lastTriggered": "Último disparado",
     "stopThisCue": "Detener este cue"

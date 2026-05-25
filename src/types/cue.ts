@@ -11,9 +11,10 @@ export type CueType =
   | "wait"
   | "volumeFade"
   | "opacityFade"
+  | "panFade"
   | "lightFade";
 
-export type FadeCueType = "volumeFade" | "opacityFade" | "lightFade";
+export type FadeCueType = "volumeFade" | "opacityFade" | "panFade" | "lightFade";
 
 /** Media file cues (not MIDI/OSC). */
 export type AssetKind = Exclude<
@@ -27,6 +28,7 @@ export type AssetKind = Exclude<
   | "wait"
   | "volumeFade"
   | "opacityFade"
+  | "panFade"
   | "lightFade"
 >;
 
@@ -95,6 +97,8 @@ export interface Cue {
   /** When loop is true and set: how many times to play (minimum 2). Omit for infinite. */
   loopCount?: number;
   volume?: number;
+  /** -1 (full left) to 1 (full right) for audio/video cues. */
+  pan?: number;
   /** 0–1 for image/video cues. */
   opacity?: number;
   /** For volume/opacity fade cues: cue to fade when triggered. */

@@ -1,8 +1,13 @@
 import { useEffect } from "react";
 import { audioEngine } from "../audio/engine";
 import { useFadeStore } from "../stores/fade";
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import type { Cue } from "../types/cue";
+import { useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
+
+function allProjectCues(state: { cueLists: { cues: Cue[] }[] }): Cue[] {
+  return state.cueLists.flatMap((list) => list.cues);
+}
 
 const selectAudioSyncState = (s: {
   activeCueIds: string[];
@@ -45,9 +50,15 @@ export function useAudioEngine(): void {
         void audioEngine.stopAll();
         return;
       }
-      const list = getActiveCueListFromState(useProjectStore.getState());
-      if (!list) return;
-      void audioEngine.sync(activeCueIds, list.cues, masterVolume, cueStartedAtMs);
+      const cues = allProjectCues(useProjectStore.getState());
+      void audioEngine.sync(activeCueIds, cues, masterVolume, cueStartedAtMs);
+    };
+
+    const updateLevels = () => {
+      const { activeCueIds, masterVolume } = useTransportStore.getState();
+      if (activeCueIds.length === 0) return;
+      const cues = allProjectCues(useProjectStore.getState());
+      audioEngine.updateActiveVoiceLevels(cues, masterVolume);
     };
 
     runSync();
@@ -58,11 +69,8 @@ export function useAudioEngine(): void {
     });
 
     const unsubProject = useProjectStore.subscribe((s, prev) => {
-      const list = getActiveCueListFromState(s);
-      const prevList = getActiveCueListFromState(prev);
-      if (list?.cues !== prevList?.cues) {
-        runSync();
-      }
+      if (s.cueLists === prev.cueLists) return;
+      runSync();
     });
 
     let prevFadeFrame = 0;
@@ -74,11 +82,7 @@ export function useAudioEngine(): void {
       prevFadeFrame = s.frameMs;
       hadActiveFades = hasActiveFades;
 
-      const { activeCueIds, masterVolume } = useTransportStore.getState();
-      if (activeCueIds.length === 0) return;
-      const list = getActiveCueListFromState(useProjectStore.getState());
-      if (!list) return;
-      audioEngine.updateActiveVoiceLevels(list.cues, masterVolume);
+      updateLevels();
     });
 
     return () => {

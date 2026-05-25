@@ -6,7 +6,7 @@ import {
   videoPlaybackWindow,
   videoTargetTime,
 } from "../lib/video-playback";
-import { resolveEffectiveVolume } from "../stores/fade";
+import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
 import type { Cue } from "../types/cue";
 import { vfsGetObjectUrl } from "../vfs/engine";
 
@@ -14,11 +14,16 @@ function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
+function clampPan(value: number): number {
+  return Math.max(-1, Math.min(1, value));
+}
+
 export interface VideoVoice {
   cueId: string;
   video: HTMLVideoElement;
   source: MediaElementAudioSourceNode;
   gain: GainNode;
+  panner: StereoPannerNode;
   goAtMs: number;
   loopIteration: number;
 }
@@ -46,14 +51,20 @@ export function startVideoVoice(
   const gain = ctx.createGain();
   gain.gain.value =
     clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) * clamp01(masterVolume);
+
+  const panner = ctx.createStereoPanner();
+  panner.pan.value = clampPan(resolveEffectivePan(cue.id, cue.pan ?? 0));
+
   source.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(panner);
+  panner.connect(ctx.destination);
 
   const voice: VideoVoice = {
     cueId: cue.id,
     video,
     source,
     gain,
+    panner,
     goAtMs,
     loopIteration: 0,
   };
@@ -151,9 +162,10 @@ export function startVideoVoice(
   return voice;
 }
 
-export function updateVideoVoiceGain(voice: VideoVoice, cue: Cue, masterVolume: number): void {
+export function updateVideoVoiceLevels(voice: VideoVoice, cue: Cue, masterVolume: number): void {
   voice.gain.gain.value =
     clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) * clamp01(masterVolume);
+  voice.panner.pan.value = clampPan(resolveEffectivePan(cue.id, cue.pan ?? 0));
 }
 
 export function stopVideoVoice(voice: VideoVoice): void {
@@ -163,4 +175,5 @@ export function stopVideoVoice(voice: VideoVoice): void {
   voice.video.remove();
   voice.source.disconnect();
   voice.gain.disconnect();
+  voice.panner.disconnect();
 }

@@ -9,6 +9,7 @@ import PianoIcon from "@mui/icons-material/Piano";
 import PlaylistPlayIcon from "@mui/icons-material/PlaylistPlay";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import VideocamIcon from "@mui/icons-material/Videocam";
+import SurroundSoundIcon from "@mui/icons-material/SurroundSound";
 import VolumeDownIcon from "@mui/icons-material/VolumeDown";
 import Box from "@mui/material/Box";
 import type { SvgIconProps } from "@mui/material/SvgIcon";
@@ -31,6 +32,7 @@ const CUE_TYPE_ICONS: Record<CueType, ElementType<SvgIconProps>> = {
   wait: HourglassEmptyIcon,
   volumeFade: VolumeDownIcon,
   opacityFade: OpacityIcon,
+  panFade: SurroundSoundIcon,
   lightFade: LightbulbOutlinedIcon,
 };
 

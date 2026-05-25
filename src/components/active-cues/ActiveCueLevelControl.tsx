@@ -4,10 +4,22 @@ import { activeCueLevelSx } from "./activeCuesSx";
 interface ActiveCueLevelControlProps {
   label: string;
   value: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  formatValue?: (value: number) => string;
   onChange: (value: number) => void;
 }
 
-export function ActiveCueLevelControl({ label, value, onChange }: ActiveCueLevelControlProps) {
+export function ActiveCueLevelControl({
+  label,
+  value,
+  min = 0,
+  max = 1,
+  step = 0.01,
+  formatValue = (v) => `${Math.round(v * 100)}%`,
+  onChange,
+}: ActiveCueLevelControlProps) {
   return (
     <Box
       component="label"
@@ -15,15 +27,15 @@ export function ActiveCueLevelControl({ label, value, onChange }: ActiveCueLevel
       onPointerDown={(e) => e.stopPropagation()}
       sx={activeCueLevelSx}
     >
-      <Box component="span" sx={{ width: 28, flexShrink: 0 }}>
+      <Box component="span" sx={{ minWidth: 28, flexShrink: 0 }}>
         {label}
       </Box>
       <Box
         component="input"
         type="range"
-        min={0}
-        max={1}
-        step={0.01}
+        min={min}
+        max={max}
+        step={step}
         value={value}
         onChange={(e) => onChange(Number(e.currentTarget.value))}
       />
@@ -36,7 +48,7 @@ export function ActiveCueLevelControl({ label, value, onChange }: ActiveCueLevel
           fontVariantNumeric: "tabular-nums",
         }}
       >
-        {Math.round(value * 100)}%
+        {formatValue(value)}
       </Box>
     </Box>
   );

@@ -53,7 +53,7 @@ export const useTransportStore = create<TransportState>()(
         useFadeStore.getState().clearRuntimeLevels([cueId]);
         useFadeStore.getState().clearDmxFade(cueId);
         set((s) => {
-          const now = performance.now();
+          const now = Date.now();
           const activeCueIds = mergeActiveIds(
             s.activeCueIds.filter((id) => id !== cueId),
             [cueId],
@@ -75,7 +75,7 @@ export const useTransportStore = create<TransportState>()(
         }
         set((s) => {
           if (cueIds.length === 0) return s;
-          const now = performance.now();
+          const now = Date.now();
           const cueStartedAtMs = { ...s.cueStartedAtMs };
           for (const id of cueIds) {
             cueStartedAtMs[id] = now;

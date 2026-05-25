@@ -4,7 +4,7 @@ import type { DmxFadePlan } from "../lib/dmx-fade";
 import { handleSequenceFadeCueCompleted } from "../lib/sequence-runner";
 import type { DmxCueData } from "../types/cue";
 
-export type FadeProperty = "opacity" | "volume";
+export type FadeProperty = "opacity" | "volume" | "pan";
 
 export type RuntimePropertyLevels = Partial<Record<FadeProperty, number>>;
 
@@ -30,6 +30,15 @@ export interface ActiveDmxFade {
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
+}
+
+function clampPan(value: number): number {
+  return Math.max(-1, Math.min(1, value));
+}
+
+function clampFadeLevel(property: FadeProperty, value: number): number {
+  if (property === "pan") return clampPan(value);
+  return clamp01(value);
 }
 
 export function getFadeLevel(fade: ActivePropertyFade, nowMs: number): number {
@@ -101,7 +110,7 @@ export const useFadeStore = create<FadeState>()(
             ...s.runtimeLevelsByTargetId,
             [targetId]: {
               ...s.runtimeLevelsByTargetId[targetId],
-              [property]: clamp01(level),
+              [property]: clampFadeLevel(property, level),
             },
           },
         })),
@@ -174,14 +183,15 @@ export const useFadeStore = create<FadeState>()(
         const ids = Object.keys(fades);
         if (ids.length === 0) return;
 
-        const next = { ...fades };
         const completedFadeCueIds: string[] = [];
+        let next: typeof fades | undefined;
 
         for (const id of ids) {
           const fade = fades[id];
           if (!isFadeComplete(fade, nowMs)) continue;
 
           get().setRuntimeLevel(fade.targetId, fade.property, fade.to);
+          if (!next) next = { ...fades };
           delete next[id];
 
           if (fade.sourceFadeCueId) {
@@ -193,7 +203,11 @@ export const useFadeStore = create<FadeState>()(
           handleSequenceFadeCueCompleted(fadeCueId);
         }
 
-        set({ fadesByTargetId: next, frameMs: nowMs });
+        if (next) {
+          set({ fadesByTargetId: next, frameMs: nowMs });
+        } else {
+          set({ frameMs: nowMs });
+        }
       },
     }),
     { name: "FadeStore" },
@@ -230,4 +244,20 @@ export function resolveEffectiveVolume(
     return clamp01(runtime);
   }
   return clamp01(storedVolume);
+}
+
+export function resolveEffectivePan(
+  cueId: string,
+  storedPan: number,
+  nowMs = performance.now(),
+): number {
+  const fade = useFadeStore.getState().fadesByTargetId[cueId];
+  if (fade?.property === "pan") {
+    return clampPan(getFadeLevel(fade, nowMs));
+  }
+  const runtime = useFadeStore.getState().runtimeLevelsByTargetId[cueId]?.pan;
+  if (runtime !== undefined) {
+    return clampPan(runtime);
+  }
+  return clampPan(storedPan);
 }

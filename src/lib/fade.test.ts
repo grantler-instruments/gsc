@@ -3,6 +3,7 @@ import { testCue } from "../test/fixtures/cues";
 import {
   canLightFadeTarget,
   canOpacityFadeTarget,
+  canPanFadeTarget,
   canVolumeFadeTarget,
   defaultFadeCueFields,
   fadeCueLabel,
@@ -10,6 +11,7 @@ import {
   isLightFadeCue,
   isLightFadeReady,
   isOpacityFadeCue,
+  isPanFadeCue,
   isValidFadeTarget,
   isVolumeFadeCue,
   resolveFadeFromLevel,
@@ -17,21 +19,26 @@ import {
 } from "./fade";
 
 describe("isFadeCue", () => {
-  it("detects volume, opacity, and light fade cue types", () => {
+  it("detects volume, opacity, pan, and light fade cue types", () => {
     expect(isVolumeFadeCue(testCue("a", "A", "volumeFade"))).toBe(true);
     expect(isOpacityFadeCue(testCue("b", "B", "opacityFade"))).toBe(true);
+    expect(isPanFadeCue(testCue("p", "P", "panFade"))).toBe(true);
     expect(isLightFadeCue(testCue("c", "C", "lightFade"))).toBe(true);
     expect(isFadeCue(testCue("a", "A", "volumeFade"))).toBe(true);
+    expect(isFadeCue(testCue("p", "P", "panFade"))).toBe(true);
     expect(isFadeCue(testCue("c", "C", "lightFade"))).toBe(true);
     expect(isFadeCue(testCue("d", "D", "audio"))).toBe(false);
   });
 });
 
 describe("isValidFadeTarget", () => {
-  it("accepts audio and video for volume fades", () => {
+  it("accepts audio and video for volume and pan fades", () => {
     expect(isValidFadeTarget("volumeFade", testCue("a", "A", "audio"))).toBe(true);
     expect(isValidFadeTarget("volumeFade", testCue("v", "V", "video"))).toBe(true);
     expect(isValidFadeTarget("volumeFade", testCue("i", "I", "image"))).toBe(false);
+    expect(isValidFadeTarget("panFade", testCue("a", "A", "audio"))).toBe(true);
+    expect(isValidFadeTarget("panFade", testCue("v", "V", "video"))).toBe(true);
+    expect(isValidFadeTarget("panFade", testCue("i", "I", "image"))).toBe(false);
   });
 
   it("accepts video and image for opacity fades", () => {
@@ -64,8 +71,10 @@ describe("isValidFadeTarget", () => {
 describe("canVolumeFadeTarget / canOpacityFadeTarget", () => {
   it("matches media types", () => {
     expect(canVolumeFadeTarget(testCue("a", "A", "audio"))).toBe(true);
+    expect(canPanFadeTarget(testCue("v", "V", "video"))).toBe(true);
     expect(canOpacityFadeTarget(testCue("i", "I", "image"))).toBe(true);
     expect(canVolumeFadeTarget(testCue("m", "M", "midi"))).toBe(false);
+    expect(canPanFadeTarget(testCue("i", "I", "image"))).toBe(false);
     expect(
       canLightFadeTarget(testCue("l", "L", "dmx", { dmx: { mode: "partial", fixtures: [] } })),
     ).toBe(true);
@@ -73,12 +82,15 @@ describe("canVolumeFadeTarget / canOpacityFadeTarget", () => {
 });
 
 describe("resolveFadeFromLevel", () => {
-  it("reads volume or opacity from the target cue", () => {
-    const audio = testCue("a", "A", "audio", { volume: 0.5 });
+  it("reads volume, pan, or opacity from the target cue", () => {
+    const audio = testCue("a", "A", "audio", { volume: 0.5, pan: -0.25 });
     const video = testCue("v", "V", "video", { opacity: 0.25 });
     expect(
       resolveFadeFromLevel(testCue("f", "Fade", "volumeFade", { fadeTargetId: "a" }), audio),
     ).toBe(0.5);
+    expect(
+      resolveFadeFromLevel(testCue("f", "Fade", "panFade", { fadeTargetId: "a" }), audio),
+    ).toBe(-0.25);
     expect(
       resolveFadeFromLevel(testCue("f", "Fade", "opacityFade", { fadeTargetId: "v" }), video),
     ).toBe(0.25);
@@ -95,6 +107,10 @@ describe("resolveFadeFromLevel", () => {
 describe("defaultFadeCueFields", () => {
   it("returns two-second fades to zero", () => {
     expect(defaultFadeCueFields("volumeFade")).toEqual({
+      fadeDuration: 2,
+      fadeTo: 0,
+    });
+    expect(defaultFadeCueFields("panFade")).toEqual({
       fadeDuration: 2,
       fadeTo: 0,
     });
@@ -164,6 +180,7 @@ describe("isLightFadeReady", () => {
 describe("fadeCueLabel", () => {
   it("labels fade types", () => {
     expect(fadeCueLabel("volumeFade")).toBe("Volume fade");
+    expect(fadeCueLabel("panFade")).toBe("Pan fade");
     expect(fadeCueLabel("opacityFade")).toBe("Opacity fade");
     expect(fadeCueLabel("lightFade")).toBe("Light fade");
   });

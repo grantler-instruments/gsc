@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { cacheAsset } from "../lib/asset-cache";
-import { createOutputChannel, isOutputMessage, postOutputState } from "../lib/output-channel";
+import { createOutputChannel, isOutputMessage, postOutputAsset, postOutputState } from "../lib/output-channel";
 import { buildOutputState } from "../lib/output-state";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { useFadeStore } from "../stores/fade";
@@ -53,6 +53,7 @@ export function useOutputPublisher(): void {
               const blob = await resolveAssetBlob(layer.assetPath);
               if (blob) {
                 await cacheAsset(state.projectId, layer.assetPath, blob);
+                postOutputAsset(channel, state.projectId, layer.assetPath, blob);
               }
             }),
           );

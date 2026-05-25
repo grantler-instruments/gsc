@@ -70,6 +70,7 @@ export function createCueEditorActions(
             ? (dmx ?? defaultDmxCueData(get().fixtures))
             : undefined,
         volume: isMediaCueType(type) ? 1 : undefined,
+        pan: type === "audio" || type === "video" ? 0 : undefined,
         opacity: type === "video" || type === "image" ? 1 : undefined,
         fadeIn: type === "audio" || type === "video" ? 0 : undefined,
         fadeOut: type === "audio" || type === "video" ? 0 : undefined,
@@ -244,7 +245,7 @@ export function createCueEditorActions(
     updateCue: (id, patch) => {
       const isRuntimeLevelPatch =
         Object.keys(patch).length > 0 &&
-        Object.keys(patch).every((key) => key === "volume" || key === "opacity");
+        Object.keys(patch).every((key) => key === "volume" || key === "opacity" || key === "pan");
       if (!canEditProject() && !isRuntimeLevelPatch) return;
       const apply = () => {
         set((s) => ({

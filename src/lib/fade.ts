@@ -8,6 +8,10 @@ export function isVolumeFadeCue(cue: Cue): boolean {
   return cue.type === "volumeFade";
 }
 
+export function isPanFadeCue(cue: Cue): boolean {
+  return cue.type === "panFade";
+}
+
 export function isOpacityFadeCue(cue: Cue): boolean {
   return cue.type === "opacityFade";
 }
@@ -17,10 +21,14 @@ export function isLightFadeCue(cue: Cue): boolean {
 }
 
 export function isFadeCue(cue: Cue): boolean {
-  return isVolumeFadeCue(cue) || isOpacityFadeCue(cue) || isLightFadeCue(cue);
+  return isVolumeFadeCue(cue) || isOpacityFadeCue(cue) || isPanFadeCue(cue) || isLightFadeCue(cue);
 }
 
 export function canVolumeFadeTarget(cue: Cue): boolean {
+  return cue.type === "audio" || cue.type === "video";
+}
+
+export function canPanFadeTarget(cue: Cue): boolean {
   return cue.type === "audio" || cue.type === "video";
 }
 
@@ -37,12 +45,14 @@ export function isValidFadeTarget(fadeType: FadeCueType, target: Cue | undefined
     return false;
   }
   if (fadeType === "volumeFade") return canVolumeFadeTarget(target);
+  if (fadeType === "panFade") return canPanFadeTarget(target);
   if (fadeType === "lightFade") return canLightFadeTarget(target);
   return canOpacityFadeTarget(target);
 }
 
 export function fadeCueLabel(fadeType: FadeCueType): string {
   if (fadeType === "volumeFade") return t("cueType.volumeFade");
+  if (fadeType === "panFade") return t("cueType.panFade");
   if (fadeType === "lightFade") return t("cueType.lightFade");
   return t("cueType.opacityFade");
 }
@@ -78,9 +88,16 @@ export function isLightFadeReady(fadeCue: Cue, fixtures: Fixture[], cues: Cue[] 
 }
 
 /** Level at GO time — target cue's current volume/opacity, not a stored fadeFrom. */
+function clampPan(value: number): number {
+  return Math.max(-1, Math.min(1, value));
+}
+
 export function resolveFadeFromLevel(fadeCue: Cue, target: Cue): number {
   if (isVolumeFadeCue(fadeCue)) {
     return Math.max(0, Math.min(1, target.volume ?? 1));
+  }
+  if (isPanFadeCue(fadeCue)) {
+    return clampPan(target.pan ?? 0);
   }
   if (isOpacityFadeCue(fadeCue)) {
     return Math.max(0, Math.min(1, target.opacity ?? 1));

@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { getCachedAsset } from "../lib/asset-cache";
+import { getOutputAssetBlob } from "../lib/output-asset-bridge";
 import type { OutputLayer, OutputState } from "../types/output";
 
+const CACHE_RETRY_MS = 50;
+const CACHE_RETRIES = 40;
+
 /**
- * Output webviews load assets from the origin-wide Cache API,
- * populated by the control window when cues go active.
+ * Output webviews resolve assets from BroadcastChannel pushes first,
+ * then fall back to the origin-wide Cache API populated by the control window.
  */
 export function useResolvedOutputLayers(state: OutputState): OutputLayer[] {
   const [layers, setLayers] = useState<OutputLayer[]>([]);
@@ -30,17 +34,22 @@ export function useResolvedOutputLayers(state: OutputState): OutputLayer[] {
       const resolved: OutputLayer[] = [];
 
       for (const layer of state.layers) {
-        let blob: Blob | undefined;
-        for (let attempt = 0; attempt < 8; attempt += 1) {
-          blob = await getCachedAsset(state.projectId, layer.assetPath);
-          if (blob || cancelled) break;
-          await new Promise((r) => setTimeout(r, 50));
+        let blob =
+          getOutputAssetBlob(state.projectId, layer.assetPath) ??
+          (await getCachedAsset(state.projectId, layer.assetPath));
+
+        for (let attempt = 0; !blob && attempt < CACHE_RETRIES; attempt += 1) {
+          if (cancelled) return;
+          await new Promise((r) => setTimeout(r, CACHE_RETRY_MS));
+          blob =
+            getOutputAssetBlob(state.projectId, layer.assetPath) ??
+            (await getCachedAsset(state.projectId, layer.assetPath));
         }
 
         if (cancelled) return;
 
         if (!blob) {
-          console.warn(`[output] Asset not in cache: ${layer.assetPath}`);
+          console.warn(`[output] Asset not available: ${layer.assetPath}`);
           continue;
         }
 
@@ -61,7 +70,7 @@ export function useResolvedOutputLayers(state: OutputState): OutputLayer[] {
     return () => {
       cancelled = true;
     };
-  }, [state.layers, state.revision]);
+  }, [state.layers, state.revision, state.projectId]);
 
   useEffect(() => {
     const urls = urlsRef.current;

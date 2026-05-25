@@ -31,6 +31,7 @@ type AddCueMenuType = Extract<
   | "wait"
   | "volumeFade"
   | "opacityFade"
+  | "panFade"
   | "lightFade"
 >;
 
@@ -39,7 +40,7 @@ const ADD_CUE_SECTIONS: { subheaderKey?: string; types: readonly AddCueMenuType[
   { subheaderKey: "cueMenu.sectionGroup", types: ["sequence", "group"] },
   {
     subheaderKey: "cueMenu.sectionUtility",
-    types: ["wait", "stop", "volumeFade", "opacityFade", "lightFade"],
+    types: ["wait", "stop", "volumeFade", "opacityFade", "panFade", "lightFade"],
   },
 ];
 
@@ -74,7 +75,12 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
       addGroupCue();
     } else if (type === "sequence") {
       addSequenceCue();
-    } else if (type === "volumeFade" || type === "opacityFade" || type === "lightFade") {
+    } else if (
+      type === "volumeFade" ||
+      type === "opacityFade" ||
+      type === "panFade" ||
+      type === "lightFade"
+    ) {
       addFadeCue(type);
     } else if (type === "wait") {
       addCue({ name: getCueTypeLabel("wait"), type: "wait" });

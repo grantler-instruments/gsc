@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { getStopTarget, isStopCue } from "../../lib/cues";
+import { getFadeTarget, getStopTarget, isFadeCue, isStopCue } from "../../lib/cues";
 import type { Cue } from "../../types/cue";
 
 export function useCueListStopHighlights(cues: Cue[], primarySelectedId: string | null) {
@@ -17,10 +17,31 @@ export function useCueListStopHighlights(cues: Cue[], primarySelectedId: string 
     return getStopTarget(cue, cues)?.id ?? null;
   }, [cues, primarySelectedId]);
 
+  const hoveredFadeTargetId = useMemo(() => {
+    const cue = cues.find((c) => c.id === hoveredCueId);
+    if (!cue || !isFadeCue(cue)) return null;
+    return getFadeTarget(cue, cues)?.id ?? null;
+  }, [cues, hoveredCueId]);
+
+  const selectedFadeTargetId = useMemo(() => {
+    const cue = cues.find((c) => c.id === primarySelectedId);
+    if (!cue || !isFadeCue(cue)) return null;
+    return getFadeTarget(cue, cues)?.id ?? null;
+  }, [cues, primarySelectedId]);
+
+  const fadeTargetHighlightToken = useMemo(
+    () =>
+      `${hoveredCueId ?? ""}:${primarySelectedId ?? ""}:${hoveredFadeTargetId ?? ""}:${selectedFadeTargetId ?? ""}`,
+    [hoveredCueId, primarySelectedId, hoveredFadeTargetId, selectedFadeTargetId],
+  );
+
   return {
     hoveredCueId,
     setHoveredCueId,
     hoveredStopTargetId,
     selectedStopTargetId,
+    hoveredFadeTargetId,
+    selectedFadeTargetId,
+    fadeTargetHighlightToken,
   };
 }

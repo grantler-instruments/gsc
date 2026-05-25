@@ -1,19 +1,26 @@
 import { sendDmxUniverses } from "../platform/send-dmx";
-import { resolveEffectiveOpacity, resolveEffectiveVolume, useFadeStore } from "../stores/fade";
+import { resolveEffectiveOpacity, resolveEffectivePan, resolveEffectiveVolume, useFadeStore } from "../stores/fade";
 import { useProjectStore } from "../stores/project";
 import type { Cue } from "../types/cue";
 import { getFadeTarget } from "./cues";
 import { applyDmxCueToBuffers } from "./dmx";
 import { buildDmxFadePlan } from "./dmx-fade";
-import { isLightFadeCue, isOpacityFadeCue, isVolumeFadeCue, resolveLightFadeEndDmx } from "./fade";
+import { isLightFadeCue, isOpacityFadeCue, isPanFadeCue, isVolumeFadeCue, resolveLightFadeEndDmx } from "./fade";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
+function clampPan(value: number): number {
+  return Math.max(-1, Math.min(1, value));
+}
+
 function resolveFadeFromLevel(fadeCue: Cue, target: Cue): number {
   if (isVolumeFadeCue(fadeCue)) {
     return resolveEffectiveVolume(target.id, target.volume ?? 1);
+  }
+  if (isPanFadeCue(fadeCue)) {
+    return resolveEffectivePan(target.id, target.pan ?? 0);
   }
   if (isOpacityFadeCue(fadeCue)) {
     return resolveEffectiveOpacity(target.id, target.opacity ?? 1);
@@ -50,14 +57,28 @@ export function triggerFadeCue(fadeCue: Cue, cues: Cue[]): boolean {
   const target = getFadeTarget(fadeCue, cues);
   if (!target) return false;
 
-  const from = clamp01(resolveFadeFromLevel(fadeCue, target));
-  const to = clamp01(fadeCue.fadeTo ?? 0);
+  const from =
+    isPanFadeCue(fadeCue) ? clampPan(resolveFadeFromLevel(fadeCue, target)) : clamp01(resolveFadeFromLevel(fadeCue, target));
+  const to = isPanFadeCue(fadeCue) ? clampPan(fadeCue.fadeTo ?? 0) : clamp01(fadeCue.fadeTo ?? 0);
   const durationSec = Math.max(0.01, fadeCue.fadeDuration ?? 2);
 
   if (isVolumeFadeCue(fadeCue)) {
     useFadeStore.getState().startFade({
       targetId: target.id,
       property: "volume",
+      from,
+      to,
+      startedAtMs: performance.now(),
+      durationSec,
+      sourceFadeCueId: fadeCue.id,
+    });
+    return true;
+  }
+
+  if (isPanFadeCue(fadeCue)) {
+    useFadeStore.getState().startFade({
+      targetId: target.id,
+      property: "pan",
       from,
       to,
       startedAtMs: performance.now(),

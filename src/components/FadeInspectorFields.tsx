@@ -8,6 +8,7 @@ import { defaultDmxCueData, syncLightFadeDmxFromTarget } from "../lib/dmx";
 import {
   canLightFadeTarget,
   canOpacityFadeTarget,
+  canPanFadeTarget,
   canVolumeFadeTarget,
   isFadeCue,
   isLightFadeCue,
@@ -17,6 +18,7 @@ import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue, FadeCueType } from "../types/cue";
 import { CueTypeBadge } from "./CueTypeIcon";
+import { DraftNumberInput } from "./DraftNumberInput";
 import {
   inspectorFieldLabelSx,
   inspectorFieldSx,
@@ -49,11 +51,14 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
       return false;
     }
     if (fadeType === "volumeFade") return canVolumeFadeTarget(c);
+    if (fadeType === "panFade") return canPanFadeTarget(c);
     if (fadeType === "lightFade") return canLightFadeTarget(c);
     return canOpacityFadeTarget(c);
   });
 
   const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+  const clampPan = (n: number) => Math.max(-1, Math.min(1, n));
+  const isPanFade = fadeType === "panFade";
 
   if (isLightFade) {
     return (
@@ -100,17 +105,10 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
 
         <Box component="label" sx={inspectorFieldSx}>
           {t("inspector.durationSecondsField")}
-          <input
-            type="number"
-            min={0.1}
-            step={0.1}
+          <DraftNumberInput
             value={fadeCue.fadeDuration ?? 2}
-            disabled={readOnly}
-            onChange={(e) =>
-              updateCue(fadeCue.id, {
-                fadeDuration: Math.max(0.1, Number(e.currentTarget.value)),
-              })
-            }
+            readOnly={readOnly}
+            onChange={(fadeDuration) => updateCue(fadeCue.id, { fadeDuration })}
           />
         </Box>
 
@@ -139,7 +137,11 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
         {getCueTypeLabel(fadeType)}
       </Box>
       <Typography component="p" sx={inspectorGroupHintSx}>
-        {fadeType === "volumeFade" ? t("inspector.volumeFadeHint") : t("inspector.opacityFadeHint")}
+        {fadeType === "volumeFade"
+          ? t("inspector.volumeFadeHint")
+          : fadeType === "panFade"
+            ? t("inspector.panFadeHint")
+            : t("inspector.opacityFadeHint")}
       </Typography>
 
       <Box component="label" sx={inspectorFieldSx}>
@@ -164,17 +166,10 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
 
       <Box component="label" sx={inspectorFieldSx}>
         {t("inspector.durationSecondsField")}
-        <input
-          type="number"
-          min={0.1}
-          step={0.1}
+        <DraftNumberInput
           value={fadeCue.fadeDuration ?? 2}
-          disabled={readOnly}
-          onChange={(e) =>
-            updateCue(fadeCue.id, {
-              fadeDuration: Math.max(0.1, Number(e.currentTarget.value)),
-            })
-          }
+          readOnly={readOnly}
+          onChange={(fadeDuration) => updateCue(fadeCue.id, { fadeDuration })}
         />
       </Box>
 
@@ -193,11 +188,15 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
       <SliderNumberField
         label={t("inspector.to")}
         value={fadeCue.fadeTo ?? 0}
-        min={0}
+        min={isPanFade ? -1 : 0}
         max={1}
         step={0.01}
         readOnly={readOnly}
-        onChange={(fadeTo) => updateCue(fadeCue.id, { fadeTo: clamp01(fadeTo) })}
+        onChange={(fadeTo) =>
+          updateCue(fadeCue.id, {
+            fadeTo: isPanFade ? clampPan(fadeTo) : clamp01(fadeTo),
+          })
+        }
         inputWidth={48}
       />
 

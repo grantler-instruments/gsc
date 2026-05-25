@@ -16,6 +16,9 @@ export interface CueListTreeProps {
   primarySelectedId: string | null;
   hoveredStopTargetId: string | null;
   selectedStopTargetId: string | null;
+  hoveredFadeTargetId: string | null;
+  selectedFadeTargetId: string | null;
+  fadeTargetHighlightToken: string;
   renamingCueId: string | null;
   renameValue: string;
   onHoverChange: (cueId: string | null) => void;
@@ -36,6 +39,9 @@ export function CueListTree({
   primarySelectedId,
   hoveredStopTargetId,
   selectedStopTargetId,
+  hoveredFadeTargetId,
+  selectedFadeTargetId,
+  fadeTargetHighlightToken,
   renamingCueId,
   renameValue,
   onHoverChange,
@@ -51,6 +57,9 @@ export function CueListTree({
     const expanded = !collapsedGroups.has(node.cue.id);
     const childCount = isContainerCue(node.cue) ? getChildCues(cues, node.cue.id).length : 0;
 
+    const highlightAsFadeTarget =
+      node.cue.id === hoveredFadeTargetId || node.cue.id === selectedFadeTargetId;
+
     const row = (
       <CueRow
         key={node.cue.id}
@@ -64,6 +73,8 @@ export function CueListTree({
         missingAsset={cueMissingAsset(node.cue, assetEntries)}
         pulseAsStopTarget={node.cue.id === hoveredStopTargetId}
         staticAsStopTarget={node.cue.id === selectedStopTargetId}
+        highlightAsFadeTarget={highlightAsFadeTarget}
+        fadeTargetHighlightToken={fadeTargetHighlightToken}
         onHoverChange={onHoverChange}
         onSelect={(e) => onSelect(node.cue.id, e)}
         onContextMenu={(e) => onContextMenu(node.cue.id, e)}
@@ -89,6 +100,9 @@ export function CueListTree({
           primarySelectedId={primarySelectedId}
           hoveredStopTargetId={hoveredStopTargetId}
           selectedStopTargetId={selectedStopTargetId}
+          hoveredFadeTargetId={hoveredFadeTargetId}
+          selectedFadeTargetId={selectedFadeTargetId}
+          fadeTargetHighlightToken={fadeTargetHighlightToken}
           renamingCueId={renamingCueId}
           renameValue={renameValue}
           onHoverChange={onHoverChange}

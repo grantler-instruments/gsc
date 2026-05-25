@@ -1,18 +1,22 @@
 import { getLoopPlayCount } from "../lib/loop";
 import { getMediaDurationSec } from "../lib/media-duration";
 import { resolveAssetBlob } from "../platform/vfs-asset";
-import { resolveEffectiveVolume } from "../stores/fade";
+import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
 import type { Cue } from "../types/cue";
 import { getCachedAudioBuffer, loadAudioBuffer } from "./buffer-cache";
 import {
   startVideoVoice,
   stopVideoVoice,
-  updateVideoVoiceGain,
+  updateVideoVoiceLevels,
   type VideoVoice,
 } from "./video-voice";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
+}
+
+function clampPan(value: number): number {
+  return Math.max(-1, Math.min(1, value));
 }
 
 function playbackWindow(cue: Cue, bufferDuration: number) {
@@ -30,6 +34,7 @@ function playbackWindow(cue: Cue, bufferDuration: number) {
 interface ActiveVoice {
   source: AudioBufferSourceNode;
   gain: GainNode;
+  panner: StereoPannerNode;
   goAtMs: number;
 }
 
@@ -79,6 +84,7 @@ export class AudioEngine {
     }
     voice.source.disconnect();
     voice.gain.disconnect();
+    voice.panner.disconnect();
     this.voices.delete(cueId);
   }
 
@@ -107,8 +113,12 @@ export class AudioEngine {
     gain.gain.value =
       clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) * clamp01(masterVolume);
 
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = clampPan(resolveEffectivePan(cue.id, cue.pan ?? 0));
+
     source.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(panner);
+    panner.connect(ctx.destination);
 
     const when = ctx.currentTime;
 
@@ -132,28 +142,29 @@ export class AudioEngine {
       }
     };
 
-    this.voices.set(cue.id, { source, gain, goAtMs });
+    this.voices.set(cue.id, { source, gain, panner, goAtMs });
   }
 
-  private updateVoiceGain(cueId: string, cue: Cue, masterVolume: number): void {
+  private updateVoiceLevels(cueId: string, cue: Cue, masterVolume: number): void {
     const voice = this.voices.get(cueId);
     if (!voice) return;
     voice.gain.gain.value =
       clamp01(resolveEffectiveVolume(cueId, cue.volume ?? 1)) * clamp01(masterVolume);
+    voice.panner.pan.value = clampPan(resolveEffectivePan(cueId, cue.pan ?? 0));
   }
 
-  /** Refresh gain for all active voices (e.g. during a volume fade). */
+  /** Refresh gain and pan for all active voices (e.g. during a fade). */
   updateActiveVoiceLevels(cues: Cue[], masterVolume: number): void {
     for (const cueId of this.voices.keys()) {
       const cue = cues.find((c) => c.id === cueId);
       if (cue) {
-        this.updateVoiceGain(cueId, cue, masterVolume);
+        this.updateVoiceLevels(cueId, cue, masterVolume);
       }
     }
     for (const voice of this.videoVoices.values()) {
       const cue = cues.find((c) => c.id === voice.cueId);
       if (cue) {
-        updateVideoVoiceGain(voice, cue, masterVolume);
+        updateVideoVoiceLevels(voice, cue, masterVolume);
       }
     }
   }
@@ -195,12 +206,12 @@ export class AudioEngine {
 
       for (const cueId of targetVideo) {
         const cue = cueById.get(cueId)!;
-        const goAtMs = cueStartedAtMs[cueId] ?? performance.now();
+        const goAtMs = cueStartedAtMs[cueId] ?? Date.now();
 
         if (this.videoVoices.has(cueId)) {
           const existing = this.videoVoices.get(cueId)!;
           if (existing.goAtMs === goAtMs) {
-            updateVideoVoiceGain(existing, cue, masterVolume);
+            updateVideoVoiceLevels(existing, cue, masterVolume);
             continue;
           }
           this.stopVideoVoice(cueId);
@@ -234,12 +245,12 @@ export class AudioEngine {
       for (const cueId of targetAudio) {
         const cue = cueById.get(cueId)!;
         const assetPath = cue.assetPath!;
-        const goAtMs = cueStartedAtMs[cueId] ?? performance.now();
+        const goAtMs = cueStartedAtMs[cueId] ?? Date.now();
 
         if (this.voices.has(cueId)) {
           const existing = this.voices.get(cueId)!;
           if (existing.goAtMs === goAtMs) {
-            this.updateVoiceGain(cueId, cue, masterVolume);
+            this.updateVoiceLevels(cueId, cue, masterVolume);
             continue;
           }
           this.stopVoice(cueId);

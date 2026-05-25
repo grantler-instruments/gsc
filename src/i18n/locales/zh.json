@@ -192,6 +192,7 @@
     "wait": "等待",
     "volumeFade": "音量渐变",
     "opacityFade": "透明度渐变",
+    "panFade": "声像渐变",
     "lightFade": "灯光渐变"
   },
   "cueMenu": {
@@ -217,6 +218,7 @@
     "deleteCue": "删除提示",
     "createVolumeFade": "为 {{label}} 创建音量渐变",
     "createOpacityFade": "为 {{label}} 创建透明度渐变",
+    "createPanFade": "为 {{label}} 创建声像渐变",
     "createLightFade": "为 {{label}} 创建灯光渐变",
     "createStopCue": "为 {{label}} 创建停止提示"
   },
@@ -279,6 +281,7 @@
     "lightFadeHint": "将参考灯光提示的 DMX 电平渐变到此处定义的电平。",
     "volumeFadeHint": "将目标提示的音量从当前电平渐变到下方值。",
     "opacityFadeHint": "将目标提示的透明度从当前电平渐变到下方值。",
+    "panFadeHint": "将目标提示的声像从当前位置渐变到下方值。",
     "lightFadeChooseHint": "选择灯光提示以加载其灯具，或在下方手动添加灯具。",
     "startsFromAtGo": "起始于（GO 时）",
     "startsFromCurrent": " — 目标提示当前音量/透明度",
@@ -288,6 +291,7 @@
     "fadeInSeconds": "淡入（秒）",
     "fadeOutSeconds": "淡出（秒）",
     "volume": "音量",
+    "pan": "声像",
     "opacity": "透明度",
     "asset": "资源",
     "playbackRange": "播放范围",
@@ -433,6 +437,7 @@
   "activeCues": {
     "empty": "无活跃提示。按 GO 运行所选提示。",
     "volumeShort": "音量",
+    "panShort": "声像",
     "opacityShort": "透明",
     "lastTriggered": "上次触发",
     "stopThisCue": "停止此提示"

@@ -3,6 +3,7 @@ import { getPlatform } from "./index";
 
 const OUTPUT_LABEL = "output";
 const OUTPUT_WINDOW_NAME = "gsc-output";
+const WEB_WATCH_MS = 1000;
 
 function outputUrl(): string {
   const base = `${window.location.origin}${window.location.pathname}`;
@@ -12,10 +13,31 @@ function outputUrl(): string {
 }
 
 let webOutputWindow: Window | null = null;
+let keepAlive = false;
+let webWatchInterval: ReturnType<typeof setInterval> | null = null;
 
-async function openWebOutputWindow(): Promise<void> {
+function markOutputWindowInitialized(): void {
+  if (keepAlive) return;
+  keepAlive = true;
+  if (getPlatform() === "web") {
+    startWebOutputWindowWatchdog();
+  }
+}
+
+function startWebOutputWindowWatchdog(): void {
+  if (webWatchInterval !== null) return;
+  webWatchInterval = setInterval(() => {
+    if (!keepAlive) return;
+    if (webOutputWindow && !webOutputWindow.closed) return;
+    void openWebOutputWindow(false);
+  }, WEB_WATCH_MS);
+}
+
+async function openWebOutputWindow(focus = true): Promise<void> {
   if (webOutputWindow && !webOutputWindow.closed) {
-    webOutputWindow.focus();
+    if (focus) {
+      webOutputWindow.focus();
+    }
     return;
   }
 
@@ -38,7 +60,7 @@ async function openTauriOutputWindow(): Promise<void> {
   new WebviewWindow(OUTPUT_LABEL, {
     url: outputUrl(),
     title: t("common.brand.outputWindowTitle"),
-    decorations: false,
+    decorations: true,
     fullscreen: false,
     width: 1280,
     height: 720,
@@ -51,9 +73,10 @@ async function openTauriOutputWindow(): Promise<void> {
 export async function openOutputWindow(): Promise<void> {
   if (getPlatform() === "tauri") {
     await openTauriOutputWindow();
-    return;
+  } else {
+    await openWebOutputWindow();
   }
-  await openWebOutputWindow();
+  markOutputWindowInitialized();
 }
 
 export function isOutputMode(): boolean {

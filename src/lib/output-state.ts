@@ -51,7 +51,7 @@ export async function buildOutputState(revision: number): Promise<OutputState> {
 
   const list = getActiveCueListFromState(useProjectStore.getState());
   const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
-  const now = performance.now();
+  const now = Date.now();
 
   const layers: OutputLayer[] = [];
   for (const cueId of activeCueIds) {

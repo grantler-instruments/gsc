@@ -1,4 +1,4 @@
-/** Toggle native fullscreen on the main app window. */
+/** Toggle native fullscreen on the current window. */
 export async function toggleWindowFullscreen(): Promise<void> {
   const { getCurrentWindow } = await import("@tauri-apps/api/window");
   const win = getCurrentWindow();

@@ -16,6 +16,7 @@ export interface CueListActionsContextValue {
   onCreateStop: (cueId: string) => void;
   onCreateVolumeFade: (cueId: string) => void;
   onCreateOpacityFade: (cueId: string) => void;
+  onCreatePanFade: (cueId: string) => void;
   onCreateLightFade: (cueId: string) => void;
   onAssetDrop: (cueId: string, payload: AssetDragPayload) => void;
   onCueDrop: (draggedId: string, groupId: string) => void;
@@ -63,6 +64,7 @@ export function CueListActionsProvider({
       onCreateStop: addStopCueForTarget,
       onCreateVolumeFade: (cueId) => addFadeCueForTarget(cueId, "volumeFade"),
       onCreateOpacityFade: (cueId) => addFadeCueForTarget(cueId, "opacityFade"),
+      onCreatePanFade: (cueId) => addFadeCueForTarget(cueId, "panFade"),
       onCreateLightFade: (cueId) => addFadeCueForTarget(cueId, "lightFade"),
       onAssetDrop: (cueId, payload) => {
         applyAssetPayloads([payload], { kind: "row", cueId });

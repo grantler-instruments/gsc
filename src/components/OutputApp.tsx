@@ -3,6 +3,9 @@ import GlobalStyles from "@mui/material/GlobalStyles";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNdiFramePublisher } from "../hooks/useNdiFramePublisher";
+import { useOutputAssetReceiver } from "../hooks/useOutputAssetReceiver";
+import { useOutputWindowKeyboard } from "../hooks/useOutputWindowKeyboard";
+import { useOutputWindowLifecycle } from "../hooks/useOutputWindowLifecycle";
 import { useResolvedOutputLayers } from "../hooks/useResolvedOutputLayers";
 import { createOutputChannel, isOutputMessage, postRequestState } from "../lib/output-channel";
 import type { OutputState } from "../types/output";
@@ -20,6 +23,9 @@ export function OutputApp() {
   const channelRef = useRef<BroadcastChannel | null>(null);
 
   useNdiFramePublisher();
+  useOutputAssetReceiver();
+  useOutputWindowLifecycle();
+  useOutputWindowKeyboard();
 
   useEffect(() => {
     document.title = t("common.brand.outputWindowTitle");

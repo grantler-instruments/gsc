@@ -45,6 +45,16 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
             onChange={(volume) => onChange({ volume })}
             inputWidth={48}
           />
+          <SliderNumberField
+            label={t("inspector.pan")}
+            value={cue.pan ?? 0}
+            min={-1}
+            max={1}
+            step={0.01}
+            readOnly={readOnly}
+            onChange={(pan) => onChange({ pan })}
+            inputWidth={48}
+          />
         </>
       )}
 

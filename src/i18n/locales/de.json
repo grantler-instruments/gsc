@@ -192,6 +192,7 @@
     "wait": "Warte",
     "volumeFade": "Lautstärke-Fade",
     "opacityFade": "Deckkraft-Fade",
+    "panFade": "Panorama-Fade",
     "lightFade": "Licht-Fade"
   },
   "cueMenu": {
@@ -217,6 +218,7 @@
     "deleteCue": "Cue löschen",
     "createVolumeFade": "Lautstärke-Fade für {{label}} erstellen",
     "createOpacityFade": "Deckkraft-Fade für {{label}} erstellen",
+    "createPanFade": "Panorama-Fade für {{label}} erstellen",
     "createLightFade": "Licht-Fade für {{label}} erstellen",
     "createStopCue": "Stopp-Cue für {{label}} erstellen"
   },
@@ -279,6 +281,7 @@
     "lightFadeHint": "Blendet DMX-Werte des Referenz-Licht-Cues zu den hier definierten Werten.",
     "volumeFadeHint": "Blendet die Lautstärke des Ziel-Cues vom aktuellen Wert zum Wert unten.",
     "opacityFadeHint": "Blendet die Deckkraft des Ziel-Cues vom aktuellen Wert zum Wert unten.",
+    "panFadeHint": "Blendet die Panorama-Position des Ziel-Cues von der aktuellen Position zum Wert unten.",
     "lightFadeChooseHint": "Licht-Cue wählen, um Fixtures zu laden, oder Fixtures manuell unten hinzufügen.",
     "startsFromAtGo": "Startet von (bei GO)",
     "startsFromCurrent": " — aktuelle Lautstärke/Deckkraft des Ziel-Cues",
@@ -288,6 +291,7 @@
     "fadeInSeconds": "Einblenden (s)",
     "fadeOutSeconds": "Ausblenden (s)",
     "volume": "Lautstärke",
+    "pan": "Panorama",
     "opacity": "Deckkraft",
     "asset": "Asset",
     "playbackRange": "Wiedergabebereich",
@@ -433,6 +437,7 @@
   "activeCues": {
     "empty": "Keine aktiven Cues. GO drücken, um den ausgewählten Cue zu starten.",
     "volumeShort": "Vol",
+    "panShort": "Pan",
     "opacityShort": "Opaz",
     "lastTriggered": "Zuletzt ausgelöst",
     "stopThisCue": "Diesen Cue stoppen"

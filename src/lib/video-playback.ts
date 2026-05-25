@@ -24,7 +24,7 @@ export function isOutputLayerLooping(layer: OutputLayer): boolean {
   return layer.loopCount !== 1;
 }
 
-export function elapsedVideoSec(goAtMs: number, nowMs = performance.now()): number {
+export function elapsedVideoSec(goAtMs: number, nowMs = Date.now()): number {
   return Math.max(0, (nowMs - goAtMs) / 1000);
 }
 
@@ -32,7 +32,7 @@ export function videoTargetTime(
   cue: Cue,
   mediaDuration: number,
   goAtMs: number,
-  nowMs = performance.now(),
+  nowMs = Date.now(),
 ): number {
   const { offsetSec, durationSec } = videoPlaybackWindow(cue, mediaDuration);
   const loopPlayCount = getLoopPlayCount(cue);
@@ -49,7 +49,7 @@ export function videoTargetTime(
   return offsetSec + inSlice;
 }
 
-export function outputLayerTargetTime(layer: OutputLayer, nowMs = performance.now()): number {
+export function outputLayerTargetTime(layer: OutputLayer, nowMs = Date.now()): number {
   const elapsed = elapsedVideoSec(layer.goAtMs, nowMs);
 
   if (layer.loopCount === "inf") {
@@ -67,7 +67,7 @@ export function isVideoPlaybackComplete(
   cue: Cue,
   mediaDuration: number,
   goAtMs: number,
-  nowMs = performance.now(),
+  nowMs = Date.now(),
 ): boolean {
   const loopPlayCount = getLoopPlayCount(cue);
   if (loopPlayCount === "inf") return false;
@@ -77,7 +77,7 @@ export function isVideoPlaybackComplete(
 
 export function isOutputLayerPlaybackComplete(
   layer: OutputLayer,
-  nowMs = performance.now(),
+  nowMs = Date.now(),
 ): boolean {
   if (layer.loopCount === "inf") return false;
   const elapsed = elapsedVideoSec(layer.goAtMs, nowMs);

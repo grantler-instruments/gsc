@@ -192,6 +192,7 @@
     "wait": "Wait",
     "volumeFade": "Volume fade",
     "opacityFade": "Opacity fade",
+    "panFade": "Pan fade",
     "lightFade": "Light fade"
   },
   "cueMenu": {
@@ -217,6 +218,7 @@
     "deleteCue": "Delete cue",
     "createVolumeFade": "Create volume fade for {{label}}",
     "createOpacityFade": "Create opacity fade for {{label}}",
+    "createPanFade": "Create pan fade for {{label}}",
     "createLightFade": "Create light fade for {{label}}",
     "createStopCue": "Create stop cue for {{label}}"
   },
@@ -279,6 +281,7 @@
     "lightFadeHint": "Fades DMX levels on the reference light cue toward the levels defined here.",
     "volumeFadeHint": "Fades the target cue's volume from its current level to the value below.",
     "opacityFadeHint": "Fades the target cue's opacity from its current level to the value below.",
+    "panFadeHint": "Fades the target cue's pan from its current position to the value below.",
     "lightFadeChooseHint": "Choose a light cue to load its fixtures, or add fixtures manually below.",
     "startsFromAtGo": "Starts from (at GO)",
     "startsFromCurrent": " — target cue volume/opacity now",
@@ -288,6 +291,7 @@
     "fadeInSeconds": "Fade in (s)",
     "fadeOutSeconds": "Fade out (s)",
     "volume": "Volume",
+    "pan": "Pan",
     "opacity": "Opacity",
     "asset": "Asset",
     "playbackRange": "Playback range",
@@ -433,6 +437,7 @@
   "activeCues": {
     "empty": "No active cues. Press GO to run the selected cue.",
     "volumeShort": "Vol",
+    "panShort": "Pan",
     "opacityShort": "Opac",
     "lastTriggered": "Last triggered",
     "stopThisCue": "Stop this cue"
