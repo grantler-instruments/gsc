@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { audioEngine } from "../audio/engine";
 import { useFadeStore } from "../stores/fade";
-import type { Cue } from "../types/cue";
 import { useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
+import type { Cue } from "../types/cue";
 
 function allProjectCues(state: { cueLists: { cues: Cue[] }[] }): Cue[] {
   return state.cueLists.flatMap((list) => list.cues);

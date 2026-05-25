@@ -87,12 +87,5 @@ export function useNdiOutputEngine(): void {
       cancelled = true;
       void stopNdiOutput();
     };
-  }, [
-    ndiOutputEnabled,
-    ndiSourceName,
-    ndiOutputWidth,
-    ndiOutputHeight,
-    ndiOutputFps,
-    t,
-  ]);
+  }, [ndiOutputEnabled, ndiSourceName, ndiOutputWidth, ndiOutputHeight, ndiOutputFps, t]);
 }

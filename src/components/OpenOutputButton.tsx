@@ -4,8 +4,8 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { openOutputWindow } from "../platform/output-window";
-import { isVisualCueType } from "../stores/project/helpers";
 import { useProjectStore } from "../stores/project";
+import { isVisualCueType } from "../stores/project/helpers";
 
 export function OpenOutputButton() {
   const { t } = useTranslation();

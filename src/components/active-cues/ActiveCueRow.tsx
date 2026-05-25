@@ -9,7 +9,12 @@ import { formatMidiCue } from "../../lib/midi";
 import { formatOscCue } from "../../lib/osc";
 import { cueShowsPlaybackProgress } from "../../lib/playback-slice";
 import { formatPlaybackRangeLabel } from "../../lib/time";
-import { resolveEffectiveOpacity, resolveEffectivePan, resolveEffectiveVolume, useFadeStore } from "../../stores/fade";
+import {
+  resolveEffectiveOpacity,
+  resolveEffectivePan,
+  resolveEffectiveVolume,
+  useFadeStore,
+} from "../../stores/fade";
 import { usePlaybackStore } from "../../stores/playback";
 import { useProjectStore } from "../../stores/project";
 import { useGscTokens } from "../../theme/useGscTokens";

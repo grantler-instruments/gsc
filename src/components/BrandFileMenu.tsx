@@ -1,16 +1,16 @@
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import Box from "@mui/material/Box";
 import ButtonBase from "@mui/material/ButtonBase";
-import Tooltip from "@mui/material/Tooltip";
 import Divider from "@mui/material/Divider";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import Tooltip from "@mui/material/Tooltip";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatShortcut } from "../lib/keyboard";

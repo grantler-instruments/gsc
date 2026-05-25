@@ -1,6 +1,11 @@
 import { useEffect, useRef } from "react";
 import { cacheAsset } from "../lib/asset-cache";
-import { createOutputChannel, isOutputMessage, postOutputAsset, postOutputState } from "../lib/output-channel";
+import {
+  createOutputChannel,
+  isOutputMessage,
+  postOutputAsset,
+  postOutputState,
+} from "../lib/output-channel";
 import { buildOutputState } from "../lib/output-state";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { useFadeStore } from "../stores/fade";

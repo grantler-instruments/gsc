@@ -5,8 +5,8 @@ import { getWaitDurationSec } from "../lib/wait";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue } from "../types/cue";
-import { inspectorFieldLabelSx, inspectorFieldSx, inspectorGroupHintSx } from "./inspectorSx";
 import { DraftNumberInput } from "./DraftNumberInput";
+import { inspectorFieldLabelSx, inspectorFieldSx, inspectorGroupHintSx } from "./inspectorSx";
 
 interface WaitInspectorFieldsProps {
   waitCue: Cue;

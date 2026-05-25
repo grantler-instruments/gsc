@@ -75,10 +75,7 @@ export function isVideoPlaybackComplete(
   return elapsedVideoSec(goAtMs, nowMs) >= durationSec * loopPlayCount;
 }
 
-export function isOutputLayerPlaybackComplete(
-  layer: OutputLayer,
-  nowMs = Date.now(),
-): boolean {
+export function isOutputLayerPlaybackComplete(layer: OutputLayer, nowMs = Date.now()): boolean {
   if (layer.loopCount === "inf") return false;
   const elapsed = elapsedVideoSec(layer.goAtMs, nowMs);
   return elapsed >= layer.sliceSec * layer.loopCount;

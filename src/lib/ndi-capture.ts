@@ -12,10 +12,7 @@ function rgbaToBgra(rgba: Uint8ClampedArray): Uint8Array {
 }
 
 /** Draw the output stage DOM into a canvas and return BGRA pixels. */
-export function captureOutputStageFrame(
-  width: number,
-  height: number,
-): Uint8Array | null {
+export function captureOutputStageFrame(width: number, height: number): Uint8Array | null {
   const stage = document.querySelector(STAGE_ROOT_SELECTOR);
   if (!stage) return null;
 

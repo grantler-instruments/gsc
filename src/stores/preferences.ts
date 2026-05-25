@@ -2,13 +2,13 @@ import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { type SupportedLocale, setAppLocale } from "../i18n";
 import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx";
+import { getPlatform, type PlatformKind } from "../platform";
 import {
   DEFAULT_NDI_OUTPUT_FPS,
   DEFAULT_NDI_OUTPUT_HEIGHT,
   DEFAULT_NDI_OUTPUT_WIDTH,
   DEFAULT_NDI_SOURCE_NAME,
 } from "../types/ndi";
-import { getPlatform, type PlatformKind } from "../platform";
 
 export type DmxOutputBackend = "artnet" | "enttec-pro";
 

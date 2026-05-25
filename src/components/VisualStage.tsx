@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import type { SxProps, Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useRef, type CSSProperties } from "react";
+import { type CSSProperties, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   isOutputLayerLooping,

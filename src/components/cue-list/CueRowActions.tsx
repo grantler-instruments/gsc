@@ -6,7 +6,12 @@ import VolumeDownIcon from "@mui/icons-material/VolumeDown";
 import IconButton from "@mui/material/IconButton";
 import { useTranslation } from "react-i18next";
 import { canStopTarget, isUtilityCue } from "../../lib/cues";
-import { canLightFadeTarget, canOpacityFadeTarget, canPanFadeTarget, canVolumeFadeTarget } from "../../lib/fade";
+import {
+  canLightFadeTarget,
+  canOpacityFadeTarget,
+  canPanFadeTarget,
+  canVolumeFadeTarget,
+} from "../../lib/fade";
 import { cueRowFadeActionSx, cueRowStopActionSx } from "../../theme/cueStyles";
 import type { Cue } from "../../types/cue";
 

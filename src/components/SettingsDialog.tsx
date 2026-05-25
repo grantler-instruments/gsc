@@ -1,10 +1,10 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Divider from "@mui/material/Divider";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import Divider from "@mui/material/Divider";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
@@ -38,13 +38,7 @@ const DEFAULT_VALUE = "";
 
 type SettingsCategory = "general" | "audio" | "video" | "dmx" | "midi";
 
-const SETTINGS_CATEGORIES: SettingsCategory[] = [
-  "general",
-  "audio",
-  "video",
-  "dmx",
-  "midi",
-];
+const SETTINGS_CATEGORIES: SettingsCategory[] = ["general", "audio", "video", "dmx", "midi"];
 
 const CATEGORY_LABEL_KEYS: Record<SettingsCategory, string> = {
   general: "settings.categoryGeneral",
@@ -396,7 +390,11 @@ export function SettingsDialog() {
           {category === "midi" ? (
             <Stack sx={{ ...inspectorFieldsSx, gap: 2 }}>
               <Box sx={inspectorFieldSx}>
-                <Typography component="label" htmlFor="midi-output-select" sx={inspectorFieldLabelSx}>
+                <Typography
+                  component="label"
+                  htmlFor="midi-output-select"
+                  sx={inspectorFieldLabelSx}
+                >
                   {t("settings.midiOutput")}
                 </Typography>
                 <Select
@@ -425,7 +423,11 @@ export function SettingsDialog() {
               </Box>
 
               <Box sx={inspectorFieldSx}>
-                <Typography component="label" htmlFor="midi-input-select" sx={inspectorFieldLabelSx}>
+                <Typography
+                  component="label"
+                  htmlFor="midi-input-select"
+                  sx={inspectorFieldLabelSx}
+                >
                   {t("settings.midiInput")}
                 </Typography>
                 <Select

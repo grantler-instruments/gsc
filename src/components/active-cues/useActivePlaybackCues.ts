@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { isContainerCue, isStopCue, isWaitCue } from "../../lib/cues";
-import { findProjectCue, useProjectStore } from "../../stores/project";
 import { useFadeStore } from "../../stores/fade";
+import { findProjectCue, useProjectStore } from "../../stores/project";
 import { useTransportStore } from "../../stores/transport";
 import type { Cue } from "../../types/cue";
 

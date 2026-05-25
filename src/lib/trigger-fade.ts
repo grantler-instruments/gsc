@@ -1,11 +1,22 @@
 import { sendDmxUniverses } from "../platform/send-dmx";
-import { resolveEffectiveOpacity, resolveEffectivePan, resolveEffectiveVolume, useFadeStore } from "../stores/fade";
+import {
+  resolveEffectiveOpacity,
+  resolveEffectivePan,
+  resolveEffectiveVolume,
+  useFadeStore,
+} from "../stores/fade";
 import { useProjectStore } from "../stores/project";
 import type { Cue } from "../types/cue";
 import { getFadeTarget } from "./cues";
 import { applyDmxCueToBuffers } from "./dmx";
 import { buildDmxFadePlan } from "./dmx-fade";
-import { isLightFadeCue, isOpacityFadeCue, isPanFadeCue, isVolumeFadeCue, resolveLightFadeEndDmx } from "./fade";
+import {
+  isLightFadeCue,
+  isOpacityFadeCue,
+  isPanFadeCue,
+  isVolumeFadeCue,
+  resolveLightFadeEndDmx,
+} from "./fade";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
@@ -57,8 +68,9 @@ export function triggerFadeCue(fadeCue: Cue, cues: Cue[]): boolean {
   const target = getFadeTarget(fadeCue, cues);
   if (!target) return false;
 
-  const from =
-    isPanFadeCue(fadeCue) ? clampPan(resolveFadeFromLevel(fadeCue, target)) : clamp01(resolveFadeFromLevel(fadeCue, target));
+  const from = isPanFadeCue(fadeCue)
+    ? clampPan(resolveFadeFromLevel(fadeCue, target))
+    : clamp01(resolveFadeFromLevel(fadeCue, target));
   const to = isPanFadeCue(fadeCue) ? clampPan(fadeCue.fadeTo ?? 0) : clamp01(fadeCue.fadeTo ?? 0);
   const durationSec = Math.max(0.01, fadeCue.fadeDuration ?? 2);
 

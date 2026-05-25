@@ -21,10 +21,6 @@ export async function getNdiOutputStatus(): Promise<NdiOutputStatus> {
   return invoke<NdiOutputStatus>("get_ndi_output_status");
 }
 
-export async function pushNdiFrame(
-  width: number,
-  height: number,
-  data: Uint8Array,
-): Promise<void> {
+export async function pushNdiFrame(width: number, height: number, data: Uint8Array): Promise<void> {
   await invoke("push_ndi_frame", { width, height, data: Array.from(data) });
 }

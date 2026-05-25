@@ -1,11 +1,11 @@
 import type { StoreApi } from "zustand";
-import { runWithoutHistory } from "../../lib/project-history";
 import {
   ensureFixturePlot,
   fixturePlotNeedsSync,
   normalizeFixturePlot,
   updateFixturePlotEntryPosition,
 } from "../../lib/fixture-plot";
+import { runWithoutHistory } from "../../lib/project-history";
 import type { FixturePlot, FixturePlotEntry } from "../../types/fixture-plot";
 import type { ProjectState } from "./types";
 

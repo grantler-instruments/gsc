@@ -230,7 +230,11 @@ export function NdiSettingsPanel() {
       {sources.length > 0 ? (
         <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
           {sources.map((source) => (
-            <Typography component="li" key={`${source.name}-${source.urlAddress}`} variant="caption">
+            <Typography
+              component="li"
+              key={`${source.name}-${source.urlAddress}`}
+              variant="caption"
+            >
               {source.name}
               {source.urlAddress ? ` (${source.urlAddress})` : ""}
             </Typography>
