@@ -62,6 +62,8 @@
   },
   "fileMenu": {
     "ariaLabel": "文件菜单",
+    "tooltip": "文件菜单 — 打开、保存、设置…",
+    "firstVisitHint": "点击左上角的 GSC 可进行打开、保存和设置等文件操作。",
     "settings": "设置…",
     "open": "打开…",
     "openWebHint": "导入 {{extension}} 文件",

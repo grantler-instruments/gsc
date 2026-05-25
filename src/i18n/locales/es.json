@@ -62,6 +62,8 @@
   },
   "fileMenu": {
     "ariaLabel": "Menú Archivo",
+    "tooltip": "Menú Archivo — abrir, guardar, ajustes…",
+    "firstVisitHint": "Haz clic en GSC arriba a la izquierda para acciones de archivo como abrir, guardar y ajustes.",
     "settings": "Ajustes…",
     "open": "Abrir…",
     "openWebHint": "Importar un archivo {{extension}}",

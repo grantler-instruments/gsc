@@ -47,11 +47,14 @@ interface PreferencesState {
   ndiOutputWidth: number;
   ndiOutputHeight: number;
   ndiOutputFps: number;
+  /** One-time hint that the GSC brand opens the file menu. */
+  hasSeenFileMenuHint: boolean;
   setNdiOutputEnabled: (enabled: boolean) => void;
   setNdiSourceName: (name: string) => void;
   setNdiOutputWidth: (width: number) => void;
   setNdiOutputHeight: (height: number) => void;
   setNdiOutputFps: (fps: number) => void;
+  markFileMenuHintSeen: () => void;
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -71,6 +74,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         ndiOutputWidth: DEFAULT_NDI_OUTPUT_WIDTH,
         ndiOutputHeight: DEFAULT_NDI_OUTPUT_HEIGHT,
         ndiOutputFps: DEFAULT_NDI_OUTPUT_FPS,
+        hasSeenFileMenuHint: false,
         setLocale: (locale) => {
           setAppLocale(locale);
           set({ locale });
@@ -87,6 +91,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         setNdiOutputWidth: (ndiOutputWidth) => set({ ndiOutputWidth }),
         setNdiOutputHeight: (ndiOutputHeight) => set({ ndiOutputHeight }),
         setNdiOutputFps: (ndiOutputFps) => set({ ndiOutputFps }),
+        markFileMenuHintSeen: () => set({ hasSeenFileMenuHint: true }),
       }),
       {
         name: "gsc-preferences",
@@ -104,6 +109,7 @@ export const usePreferencesStore = create<PreferencesState>()(
           ndiOutputWidth: s.ndiOutputWidth,
           ndiOutputHeight: s.ndiOutputHeight,
           ndiOutputFps: s.ndiOutputFps,
+          hasSeenFileMenuHint: s.hasSeenFileMenuHint,
         }),
       },
     ),

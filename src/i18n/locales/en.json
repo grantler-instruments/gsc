@@ -62,6 +62,8 @@
   },
   "fileMenu": {
     "ariaLabel": "File menu",
+    "tooltip": "File menu — open, save, settings…",
+    "firstVisitHint": "Click GSC in the top-left for file actions like open, save, and settings.",
     "settings": "Settings…",
     "open": "Open…",
     "openWebHint": "Import a {{extension}} file",

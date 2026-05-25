@@ -62,6 +62,8 @@
   },
   "fileMenu": {
     "ariaLabel": "Dateimenü",
+    "tooltip": "Dateimenü — öffnen, speichern, Einstellungen…",
+    "firstVisitHint": "Klicken Sie oben links auf GSC für Dateiaktionen wie Öffnen, Speichern und Einstellungen.",
     "settings": "Einstellungen…",
     "open": "Öffnen…",
     "openWebHint": "{{extension}}-Datei importieren",
