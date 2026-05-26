@@ -21,7 +21,7 @@ const previewIdleSx = {
   borderColor: "divider",
   color: "text.primary",
   "&:hover": {
-    borderColor: CUE_TYPE_COLORS.dmx.color,
+    borderColor: CUE_TYPE_COLORS.dmx.bgcolor,
     bgcolor: "rgba(242, 208, 114, 0.08)",
   },
 } as const;

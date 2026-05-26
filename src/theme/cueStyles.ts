@@ -15,7 +15,7 @@ export const CUE_TYPE_COLORS: Record<CueType | AssetKind, { color: string; bgcol
   image: { color: "#e8b86d", bgcolor: "#3a2e1e" },
   midi: { color: "#7eb8da", bgcolor: "#1e2a3a" },
   osc: { color: "#8ad4c4", bgcolor: "#1e3a34" },
-  dmx: { color: "#f2d072", bgcolor: "#3a3218" },
+  dmx: { color: "#1a1a1a", bgcolor: "#f2d072" },
   group: { color: "#c9a227", bgcolor: "#2a2818" },
   sequence: { color: "#9eb8ff", bgcolor: "#1e2438" },
   stop: { color: "#e88a8a", bgcolor: "#3a1e1e" },
@@ -23,7 +23,7 @@ export const CUE_TYPE_COLORS: Record<CueType | AssetKind, { color: string; bgcol
   volumeFade: { color: "#8ac4e8", bgcolor: "#1e2e3a" },
   opacityFade: { color: "#c4a8e8", bgcolor: "#2a1e3a" },
   panFade: { color: "#8ad4b8", bgcolor: "#1e3a30" },
-  lightFade: { color: "#f2d072", bgcolor: "#3a3218" },
+  lightFade: { color: "#1a1a1a", bgcolor: "#f2d072" },
 };
 
 export const ADD_CUE_ICON_COLORS: Partial<Record<CueType, string>> = {
@@ -46,7 +46,6 @@ const CUE_NAME_TINT = {
   wait: "#e8d4a8",
   volumeFade: "#b4d4e8",
   opacityFade: "#d4b4e8",
-  lightFade: "#f2d072",
   warning: "#e8a87c",
 } as const;
 
@@ -207,7 +206,7 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
       },
     }),
     ...(state.isPreviewing && {
-      boxShadow: `inset 3px 0 0 ${CUE_TYPE_COLORS.dmx.color}`,
+      boxShadow: `inset 3px 0 0 ${CUE_TYPE_COLORS.dmx.bgcolor}`,
     }),
   };
 }
@@ -258,9 +257,7 @@ export function cueNameSx(
     ? CUE_NAME_TINT.volumeFade
     : state.isOpacityFade
       ? CUE_NAME_TINT.opacityFade
-      : state.isLightFade
-        ? CUE_NAME_TINT.lightFade
-        : state.hasWarning
+      : state.hasWarning
           ? CUE_NAME_TINT.warning
           : undefined;
 
