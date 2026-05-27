@@ -12,7 +12,7 @@ let lastFireKey = "";
 let lastFireAt = 0;
 
 function shouldDebounce(match: MidiMatch): boolean {
-  const key = `${match.channel}:${match.kind}:${match.note ?? ""}:${match.controller ?? ""}`;
+  const key = `${match.channel}:${match.kind}:${match.note ?? ""}:${match.controller ?? ""}:${match.pitchBend ?? ""}`;
   const now = performance.now();
   if (key === lastFireKey && now - lastFireAt < DEBOUNCE_MS) {
     return true;

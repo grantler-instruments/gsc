@@ -313,7 +313,7 @@
     "loopInfiniteHint": "Leave empty or ∞ for infinite looping.",
     "loopFiniteHint": "Number of times to repeat playback (after the first run).",
     "channel": "Channel",
-    "message": "Message",
+    "messageType": "Message type",
     "note": "Note",
     "velocity": "Velocity",
     "controller": "Controller",
@@ -323,6 +323,11 @@
     "midiNoteOff": "note-off",
     "midiControlChange": "control-change",
     "midiProgramChange": "program-change",
+    "midiPitchBend": "pitch-bend",
+    "midiStart": "start",
+    "midiStop": "stop",
+    "midiContinue": "continue",
+    "pitchBend": "Pitch bend",
     "oscDesktopOnly": "OSC sending requires the desktop app.",
     "host": "Host",
     "port": "Port",
@@ -464,7 +469,11 @@
     "noteOn": "Ch{{channel}} Note On {{note}} {{velocity}}",
     "noteOff": "Ch{{channel}} Note Off {{note}}",
     "controlChange": "Ch{{channel}} CC {{controller}} {{value}}",
-    "programChange": "Ch{{channel}} Program {{program}}"
+    "programChange": "Ch{{channel}} Program {{program}}",
+    "pitchBend": "Ch{{channel}} Pitch Bend {{pitchBend}}",
+    "start": "Start",
+    "stop": "Stop",
+    "continue": "Continue"
   },
   "notification": {
     "selectMidiOutput": "Select a MIDI output in Settings before sending.",

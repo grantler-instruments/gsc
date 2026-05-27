@@ -313,7 +313,7 @@
     "loopInfiniteHint": "Leer lassen oder ∞ für endlose Wiederholung.",
     "loopFiniteHint": "Anzahl der Wiederholungen (nach dem ersten Durchlauf).",
     "channel": "Kanal",
-    "message": "Nachricht",
+    "messageType": "Nachrichtentyp",
     "note": "Note",
     "velocity": "Anschlagstärke",
     "controller": "Controller",
@@ -323,6 +323,11 @@
     "midiNoteOff": "note-off",
     "midiControlChange": "control-change",
     "midiProgramChange": "program-change",
+    "midiPitchBend": "pitch-bend",
+    "midiStart": "start",
+    "midiStop": "stop",
+    "midiContinue": "continue",
+    "pitchBend": "Pitch Bend",
     "oscDesktopOnly": "OSC-Versand erfordert die Desktop-App.",
     "host": "Host",
     "port": "Port",
@@ -464,7 +469,11 @@
     "noteOn": "Ch{{channel}} Note On {{note}} {{velocity}}",
     "noteOff": "Ch{{channel}} Note Off {{note}}",
     "controlChange": "Ch{{channel}} CC {{controller}} {{value}}",
-    "programChange": "Ch{{channel}} Programm {{program}}"
+    "programChange": "Ch{{channel}} Programm {{program}}",
+    "pitchBend": "Ch{{channel}} Pitch Bend {{pitchBend}}",
+    "start": "Start",
+    "stop": "Stop",
+    "continue": "Continue"
   },
   "notification": {
     "selectMidiOutput": "MIDI-Ausgang in Einstellungen wählen, bevor gesendet wird.",

@@ -313,7 +313,7 @@
     "loopInfiniteHint": "留空或 ∞ 表示无限循环。",
     "loopFiniteHint": "重复播放次数（首次播放之后）。",
     "channel": "通道",
-    "message": "消息",
+    "messageType": "消息类型",
     "note": "音符",
     "velocity": "力度",
     "controller": "控制器",
@@ -323,6 +323,11 @@
     "midiNoteOff": "note-off",
     "midiControlChange": "control-change",
     "midiProgramChange": "program-change",
+    "midiPitchBend": "pitch-bend",
+    "midiStart": "start",
+    "midiStop": "stop",
+    "midiContinue": "continue",
+    "pitchBend": "弯音",
     "oscDesktopOnly": "OSC 发送需要桌面应用。",
     "host": "主机",
     "port": "端口",
@@ -464,7 +469,11 @@
     "noteOn": "Ch{{channel}} 音符开 {{note}} {{velocity}}",
     "noteOff": "Ch{{channel}} 音符关 {{note}}",
     "controlChange": "Ch{{channel}} CC {{controller}} {{value}}",
-    "programChange": "Ch{{channel}} 程序 {{program}}"
+    "programChange": "Ch{{channel}} 程序 {{program}}",
+    "pitchBend": "Ch{{channel}} 弯音 {{pitchBend}}",
+    "start": "开始",
+    "stop": "停止",
+    "continue": "继续"
   },
   "notification": {
     "selectMidiOutput": "发送前请在设置中选择 MIDI 输出。",

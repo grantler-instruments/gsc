@@ -32,7 +32,15 @@ export type AssetKind = Exclude<
   | "lightFade"
 >;
 
-export type MidiMessageKind = "note-on" | "note-off" | "control-change" | "program-change";
+export type MidiMessageKind =
+  | "note-on"
+  | "note-off"
+  | "control-change"
+  | "program-change"
+  | "pitch-bend"
+  | "start"
+  | "stop"
+  | "continue";
 
 export interface MidiCueData {
   channel: number;
@@ -42,6 +50,8 @@ export interface MidiCueData {
   controller?: number;
   value?: number;
   program?: number;
+  /** 14-bit pitch bend (0–16383; center = 8192). */
+  pitchBend?: number;
 }
 
 export type OscArg =

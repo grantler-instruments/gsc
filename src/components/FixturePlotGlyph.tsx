@@ -18,6 +18,8 @@ interface FixturePlotGlyphProps {
   selected: boolean;
   editMode: boolean;
   disableTooltip?: boolean;
+  /** Hide labels/tooltips for tiny transport thumbnails. */
+  compact?: boolean;
   onPointerDown?: (event: PointerEvent<SVGCircleElement>) => void;
 }
 
@@ -100,6 +102,7 @@ export function FixturePlotGlyph({
   selected,
   editMode,
   disableTooltip = false,
+  compact = false,
   onPointerDown,
 }: FixturePlotGlyphProps) {
   const radius = size / 2;
@@ -130,7 +133,7 @@ export function FixturePlotGlyph({
           onPointerDown={onPointerDown}
         />
       )}
-      {!editMode && (
+      {!editMode && !compact && (
         <foreignObject
           x={-radius}
           y={-radius}
@@ -161,16 +164,18 @@ export function FixturePlotGlyph({
           </div>
         </foreignObject>
       )}
-      <text
-        y={radius + LABEL_OFFSET}
-        textAnchor="middle"
-        fontSize={0.028}
-        fill="currentColor"
-        fillOpacity={0.75}
-        style={{ pointerEvents: "none", userSelect: "none" }}
-      >
-        {label.length > 14 ? `${label.slice(0, 13)}…` : label}
-      </text>
+      {!compact && (
+        <text
+          y={radius + LABEL_OFFSET}
+          textAnchor="middle"
+          fontSize={0.028}
+          fill="currentColor"
+          fillOpacity={0.75}
+          style={{ pointerEvents: "none", userSelect: "none" }}
+        >
+          {label.length > 14 ? `${label.slice(0, 13)}…` : label}
+        </text>
+      )}
     </g>
   );
 }

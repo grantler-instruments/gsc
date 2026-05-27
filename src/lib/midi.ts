@@ -7,7 +7,17 @@ export const MIDI_MESSAGE_KINDS: MidiMessageKind[] = [
   "note-off",
   "control-change",
   "program-change",
+  "pitch-bend",
+  "start",
+  "stop",
+  "continue",
 ];
+
+export function isSystemRealtimeKind(
+  kind: MidiMessageKind,
+): kind is "start" | "stop" | "continue" {
+  return kind === "start" || kind === "stop" || kind === "continue";
+}
 
 export function defaultMidiCueData(): MidiCueData {
   return {
@@ -49,6 +59,17 @@ export function formatMidiCue(data: MidiCueData): string {
         channel: data.channel,
         program: data.program ?? 0,
       });
+    case "pitch-bend":
+      return t("midi.pitchBend", {
+        channel: data.channel,
+        pitchBend: data.pitchBend ?? MIDI_PITCH_BEND_CENTER,
+      });
+    case "start":
+      return t("midi.start");
+    case "stop":
+      return t("midi.stop");
+    case "continue":
+      return t("midi.continue");
     default:
       return `Ch${data.channel}`;
   }
@@ -62,10 +83,24 @@ export function clampMidiChannel(v: number): number {
   return Math.max(1, Math.min(16, Math.round(v)));
 }
 
+/** 14-bit pitch bend range (MIDI center = 8192). */
+export const MIDI_PITCH_BEND_MIN = 0;
+export const MIDI_PITCH_BEND_MAX = 16383;
+export const MIDI_PITCH_BEND_CENTER = 8192;
+
+export function clampMidiPitchBend(v: number): number {
+  return Math.max(MIDI_PITCH_BEND_MIN, Math.min(MIDI_PITCH_BEND_MAX, Math.round(v)));
+}
+
 /** Parse a short MIDI message into match fields. */
 export function parseMidiMessage(bytes: number[]): MidiMatch | null {
   if (bytes.length < 1) return null;
   const status = bytes[0]!;
+
+  if (status === 0xfa) return { channel: 1, kind: "start" };
+  if (status === 0xfb) return { channel: 1, kind: "continue" };
+  if (status === 0xfc) return { channel: 1, kind: "stop" };
+
   const channel = (status & 0x0f) + 1;
   const hi = status & 0xf0;
 
@@ -100,11 +135,25 @@ export function parseMidiMessage(bytes: number[]): MidiMatch | null {
       program: bytes[1],
     };
   }
+  if (hi === 0xe0 && bytes.length >= 3) {
+    const pitchBend = (bytes[2]! << 7) | bytes[1]!;
+    return {
+      channel,
+      kind: "pitch-bend",
+      pitchBend,
+    };
+  }
   return null;
 }
 
 export function midiMatches(mapping: MidiMatch, incoming: MidiMatch): boolean {
-  if (mapping.channel !== incoming.channel || mapping.kind !== incoming.kind) {
+  if (mapping.kind !== incoming.kind) {
+    return false;
+  }
+  if (isSystemRealtimeKind(mapping.kind)) {
+    return true;
+  }
+  if (mapping.channel !== incoming.channel) {
     return false;
   }
   switch (mapping.kind) {
@@ -118,6 +167,9 @@ export function midiMatches(mapping: MidiMatch, incoming: MidiMatch): boolean {
       );
     case "program-change":
       return (mapping.program ?? 0) === (incoming.program ?? 0);
+    case "pitch-bend":
+      return (mapping.pitchBend ?? MIDI_PITCH_BEND_CENTER) ===
+        (incoming.pitchBend ?? MIDI_PITCH_BEND_CENTER);
     default:
       return false;
   }
@@ -135,6 +187,16 @@ export function encodeMidiMessage(data: MidiCueData): number[] {
       return [0xb0 | ch, clampMidiByte(data.controller ?? 0), clampMidiByte(data.value ?? 0)];
     case "program-change":
       return [0xc0 | ch, clampMidiByte(data.program ?? 0)];
+    case "pitch-bend": {
+      const pitchBend = clampMidiPitchBend(data.pitchBend ?? MIDI_PITCH_BEND_CENTER);
+      return [0xe0 | ch, pitchBend & 0x7f, (pitchBend >> 7) & 0x7f];
+    }
+    case "start":
+      return [0xfa];
+    case "continue":
+      return [0xfb];
+    case "stop":
+      return [0xfc];
     default:
       return [];
   }

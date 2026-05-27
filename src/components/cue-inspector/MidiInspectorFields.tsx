@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
-import { clampMidiByte, clampMidiChannel, MIDI_MESSAGE_KINDS } from "../../lib/midi";
+import { clampMidiByte, clampMidiChannel, clampMidiPitchBend, isSystemRealtimeKind, MIDI_MESSAGE_KINDS, MIDI_PITCH_BEND_CENTER, MIDI_PITCH_BEND_MAX, MIDI_PITCH_BEND_MIN } from "../../lib/midi";
 import type { Cue, MidiCueData, MidiMessageKind } from "../../types/cue";
 import { inspectorFieldSx } from "../inspectorSx";
 
@@ -9,6 +9,10 @@ const MIDI_KIND_KEYS: Record<(typeof MIDI_MESSAGE_KINDS)[number], string> = {
   "note-off": "inspector.midiNoteOff",
   "control-change": "inspector.midiControlChange",
   "program-change": "inspector.midiProgramChange",
+  "pitch-bend": "inspector.midiPitchBend",
+  start: "inspector.midiStart",
+  stop: "inspector.midiStop",
+  continue: "inspector.midiContinue",
 };
 
 interface MidiInspectorFieldsProps {
@@ -23,23 +27,26 @@ export function MidiInspectorFields({ cue, readOnly, onPatch }: MidiInspectorFie
   if (cue.type !== "midi" || !cue.midi) return null;
 
   const midi = cue.midi;
+  const showChannel = !isSystemRealtimeKind(midi.kind);
 
   return (
     <>
-      <Box component="label" sx={inspectorFieldSx}>
-        {t("inspector.channel")}
-        <input
-          type="number"
-          min={1}
-          max={16}
-          value={midi.channel}
-          disabled={readOnly}
-          onChange={(e) => onPatch({ channel: clampMidiChannel(Number(e.currentTarget.value)) })}
-        />
-      </Box>
+      {showChannel && (
+        <Box component="label" sx={inspectorFieldSx}>
+          {t("inspector.channel")}
+          <input
+            type="number"
+            min={1}
+            max={16}
+            value={midi.channel}
+            disabled={readOnly}
+            onChange={(e) => onPatch({ channel: clampMidiChannel(Number(e.currentTarget.value)) })}
+          />
+        </Box>
+      )}
 
       <Box component="label" sx={inspectorFieldSx}>
-        {t("inspector.message")}
+        {t("inspector.messageType")}
         <select
           value={midi.kind}
           disabled={readOnly}
@@ -127,6 +134,22 @@ export function MidiInspectorFields({ cue, readOnly, onPatch }: MidiInspectorFie
             value={midi.program ?? 0}
             disabled={readOnly}
             onChange={(e) => onPatch({ program: clampMidiByte(Number(e.currentTarget.value)) })}
+          />
+        </Box>
+      )}
+
+      {midi.kind === "pitch-bend" && (
+        <Box component="label" sx={inspectorFieldSx}>
+          {t("inspector.pitchBend")}
+          <input
+            type="number"
+            min={MIDI_PITCH_BEND_MIN}
+            max={MIDI_PITCH_BEND_MAX}
+            value={midi.pitchBend ?? MIDI_PITCH_BEND_CENTER}
+            disabled={readOnly}
+            onChange={(e) =>
+              onPatch({ pitchBend: clampMidiPitchBend(Number(e.currentTarget.value)) })
+            }
           />
         </Box>
       )}
