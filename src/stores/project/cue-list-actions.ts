@@ -11,7 +11,7 @@ export function createCueListActions(
   get: ProjectStore["getState"],
 ): Pick<
   ProjectState,
-  "addCueList" | "removeCueList" | "renameCueList" | "setActiveCueList" | "setName"
+  "addCueList" | "removeCueList" | "renameCueList" | "setActiveCueList" | "setShowMetadata"
 > {
   return {
     addCueList: (name) => {
@@ -50,9 +50,16 @@ export function createCueListActions(
       }
     },
 
-    setName: (name) => {
+    setShowMetadata: ({ name, startDate, endDate, description }) => {
       if (!canEditProject()) return;
-      set({ name });
+      const trimmedName = name.trim();
+      if (!trimmedName) return;
+      set({
+        name: trimmedName,
+        startDate: startDate?.trim() || undefined,
+        endDate: endDate?.trim() || undefined,
+        description: description?.trim() || undefined,
+      });
     },
   };
 }

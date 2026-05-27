@@ -44,6 +44,38 @@ describe("project snapshot round-trip", () => {
     expect(loaded.cueLists[0].cues[0].midi?.channel).toBe(1);
   });
 
+  it("preserves show metadata through snapshot", () => {
+    const list = createCueList("Main");
+    const snap = cueListsToSnapshot(
+      "project-1",
+      "Summer Tour",
+      [list],
+      list.id,
+      [],
+      [],
+      undefined,
+      "2026-05-27",
+      "2026-06-15",
+      "Opening night at the amphitheater.",
+    );
+
+    const loaded = snapshotToCueLists(snap);
+    expect(loaded.name).toBe("Summer Tour");
+    expect(loaded.startDate).toBe("2026-05-27");
+    expect(loaded.endDate).toBe("2026-06-15");
+    expect(loaded.description).toBe("Opening night at the amphitheater.");
+  });
+
+  it("maps legacy date field to startDate when loading", () => {
+    const list = createCueList("Main");
+    const snap = cueListsToSnapshot("project-1", "Legacy Show", [list], list.id);
+    const legacy = { ...snap, date: "2026-01-01" };
+
+    const loaded = snapshotToCueLists(legacy);
+    expect(loaded.startDate).toBe("2026-01-01");
+    expect(loaded.endDate).toBeUndefined();
+  });
+
   it("preserves fixtures through snapshot", () => {
     const list = createCueList("Main");
     const fixtures: Fixture[] = [

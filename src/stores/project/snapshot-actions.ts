@@ -19,7 +19,18 @@ export function createSnapshotActions(
     },
 
     getSnapshot: () => {
-      const { id, name, cueLists, activeCueListId, midiMappings, fixtures, fixturePlot } = get();
+      const {
+        id,
+        name,
+        startDate,
+        endDate,
+        description,
+        cueLists,
+        activeCueListId,
+        midiMappings,
+        fixtures,
+        fixturePlot,
+      } = get();
       return cueListsToSnapshot(
         id,
         name,
@@ -28,6 +39,9 @@ export function createSnapshotActions(
         midiMappings,
         fixtures,
         fixturePlot,
+        startDate,
+        endDate,
+        description,
       );
     },
   };

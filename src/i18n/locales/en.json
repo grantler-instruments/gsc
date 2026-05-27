@@ -58,7 +58,19 @@
     "namePlaceholder": "Untitled show",
     "nameAriaLabel": "Show name",
     "draftHint": " · Draft (save to choose location)",
-    "savingToHint": " · Saving to {{folder}}"
+    "savingToHint": " · Saving to {{folder}}",
+    "metadata": {
+      "title": "Show details",
+      "name": "Name",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional notes about this show…",
+      "editAriaLabel": "Edit show details",
+      "location": "Location",
+      "locationDraft": "Draft (save to choose location)",
+      "locationWeb": "Browser session (export to save to disk)"
+    }
   },
   "fileMenu": {
     "ariaLabel": "File menu",

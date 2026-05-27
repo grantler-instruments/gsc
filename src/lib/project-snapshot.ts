@@ -39,6 +39,9 @@ function normalizeCues(cues: Cue[], fixtures: Fixture[] = []): Cue[] {
 export function snapshotToCueLists(snap: ProjectSnapshot): {
   id: string;
   name: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
   cueLists: CueList[];
   activeCueListId: string;
   midiMappings: MidiMapping[];
@@ -58,6 +61,9 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   return {
     id: snap.id,
     name: snap.name,
+    startDate: snap.startDate ?? snap.date,
+    endDate: snap.endDate,
+    description: snap.description,
     cueLists,
     activeCueListId: active.id,
     midiMappings: snap.midiMappings ?? [],
@@ -74,12 +80,18 @@ export function cueListsToSnapshot(
   midiMappings: MidiMapping[] = [],
   fixtures: Fixture[] = [],
   fixturePlot?: FixturePlot,
+  startDate?: string,
+  endDate?: string,
+  description?: string,
 ): ProjectSnapshot {
   const normalizedFixtures = normalizeFixtures(fixtures);
   return {
     version: 2,
     id,
     name,
+    ...(startDate ? { startDate } : {}),
+    ...(endDate ? { endDate } : {}),
+    ...(description ? { description } : {}),
     activeCueListId,
     cueLists: cueLists.map((list) => ({
       id: list.id,

@@ -58,7 +58,19 @@
     "namePlaceholder": "未命名演出",
     "nameAriaLabel": "演出名称",
     "draftHint": " · 草稿（保存以选择位置）",
-    "savingToHint": " · 保存至 {{folder}}"
+    "savingToHint": " · 保存至 {{folder}}",
+    "metadata": {
+      "title": "演出详情",
+      "name": "名称",
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "description": "描述",
+      "descriptionPlaceholder": "关于此演出的可选备注…",
+      "editAriaLabel": "编辑演出详情",
+      "location": "位置",
+      "locationDraft": "草稿（保存以选择位置）",
+      "locationWeb": "浏览器会话（导出以保存到磁盘）"
+    }
   },
   "fileMenu": {
     "ariaLabel": "文件菜单",

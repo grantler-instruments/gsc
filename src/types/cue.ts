@@ -138,6 +138,14 @@ export interface ProjectSnapshot {
   /** Stable project identity; assigned on creation, preserved across save/load. */
   id: string;
   name: string;
+  /** Optional show start date (ISO 8601 calendar date, YYYY-MM-DD). */
+  startDate?: string;
+  /** Optional show end date (ISO 8601 calendar date, YYYY-MM-DD). */
+  endDate?: string;
+  /** @deprecated Legacy single date field; read for backward compatibility only. */
+  date?: string;
+  /** Optional show description or notes. */
+  description?: string;
   cueLists: CueListSnapshot[];
   activeCueListId: string;
   /** MIDI input → action bindings for this show. */

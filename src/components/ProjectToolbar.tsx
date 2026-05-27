@@ -1,17 +1,19 @@
 import Box from "@mui/material/Box";
-import InputBase from "@mui/material/InputBase";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import { BrandFileMenu } from "./BrandFileMenu";
 import { OpenOutputButton } from "./OpenOutputButton";
+import { ShowMetadataDialog } from "./ShowMetadataDialog";
 import { ShowModeToggle } from "./ShowModeToggle";
 
 export function ProjectToolbar() {
   const { t } = useTranslation();
   const name = useProjectStore((s) => s.name);
-  const setName = useProjectStore((s) => s.setName);
   const showMode = useUiStore((s) => s.showMode);
+  const [metadataOpen, setMetadataOpen] = useState(false);
+  const canEdit = !showMode;
 
   return (
     <Box
@@ -29,11 +31,12 @@ export function ProjectToolbar() {
     >
       <BrandFileMenu />
 
-      <InputBase
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder={t("project.namePlaceholder")}
-        inputProps={{ "aria-label": t("project.nameAriaLabel") }}
+      <Box
+        component="button"
+        type="button"
+        onClick={() => canEdit && setMetadataOpen(true)}
+        disabled={!canEdit}
+        aria-label={t("project.metadata.editAriaLabel")}
         sx={{
           flex: 1,
           minWidth: 0,
@@ -44,22 +47,26 @@ export function ProjectToolbar() {
           px: 0.75,
           py: 0.25,
           borderRadius: 0.75,
-          color: "text.primary",
-          "& .MuiInputBase-input": {
-            p: 0,
-            textAlign: "center",
-            "&::placeholder": { opacity: 0.55 },
-          },
-          ...(!showMode && {
+          border: "none",
+          bgcolor: "transparent",
+          color: name ? "text.primary" : "text.secondary",
+          cursor: canEdit ? "pointer" : "default",
+          font: "inherit",
+          textAlign: "center",
+          ...(canEdit && {
             "&:hover": { bgcolor: "action.hover" },
-            "&.Mui-focused": {
+            "&:focus-visible": {
               bgcolor: "action.selected",
               outline: "1px solid",
               outlineColor: "divider",
             },
           }),
         }}
-      />
+      >
+        {name || t("project.namePlaceholder")}
+      </Box>
+
+      <ShowMetadataDialog open={metadataOpen} onClose={() => setMetadataOpen(false)} />
 
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
         <OpenOutputButton />

@@ -15,6 +15,9 @@ import type { MidiMapping } from "../../types/midi-mapping";
 export interface ProjectState {
   id: string;
   name: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
   cueLists: CueList[];
   activeCueListId: string;
   midiMappings: MidiMapping[];
@@ -62,7 +65,12 @@ export interface ProjectState {
   removeCueList: (listId: string) => void;
   renameCueList: (listId: string, name: string) => void;
   setActiveCueList: (listId: string) => void;
-  setName: (name: string) => void;
+  setShowMetadata: (metadata: {
+    name: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }) => void;
   addMidiMapping: (mapping: Omit<MidiMapping, "id">) => MidiMapping;
   removeMidiMapping: (id: string) => void;
   updateMidiMapping: (id: string, patch: Partial<MidiMapping>) => void;

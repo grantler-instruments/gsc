@@ -58,7 +58,19 @@
     "namePlaceholder": "Show sin título",
     "nameAriaLabel": "Nombre del show",
     "draftHint": " · Borrador (guardar para elegir ubicación)",
-    "savingToHint": " · Guardando en {{folder}}"
+    "savingToHint": " · Guardando en {{folder}}",
+    "metadata": {
+      "title": "Detalles del show",
+      "name": "Nombre",
+      "startDate": "Fecha de inicio",
+      "endDate": "Fecha de fin",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Notas opcionales sobre este show…",
+      "editAriaLabel": "Editar detalles del show",
+      "location": "Ubicación",
+      "locationDraft": "Borrador (guardar para elegir ubicación)",
+      "locationWeb": "Sesión del navegador (exportar para guardar en disco)"
+    }
   },
   "fileMenu": {
     "ariaLabel": "Menú Archivo",

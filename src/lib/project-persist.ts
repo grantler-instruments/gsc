@@ -8,6 +8,9 @@ import type { CueList } from "./cue-lists";
 export interface ProjectPersistSlice {
   id: string;
   name: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
   cueLists: CueList[];
   activeCueListId: string;
   midiMappings: MidiMapping[];
@@ -23,6 +26,9 @@ export function projectPersistStateChanged(
   if (
     prev.id !== next.id ||
     prev.name !== next.name ||
+    prev.startDate !== next.startDate ||
+    prev.endDate !== next.endDate ||
+    prev.description !== next.description ||
     prev.activeCueListId !== next.activeCueListId ||
     prev.midiMappings !== next.midiMappings ||
     prev.fixtures !== next.fixtures ||

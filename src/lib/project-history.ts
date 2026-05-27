@@ -43,6 +43,9 @@ function captureEntry(state: ProjectPersistSlice & { cueLists: CueList[] }): Pro
       state.midiMappings,
       state.fixtures,
       state.fixturePlot,
+      state.startDate,
+      state.endDate,
+      state.description,
     ),
     selections: captureSelections(state.cueLists),
   };

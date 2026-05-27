@@ -58,7 +58,19 @@
     "namePlaceholder": "Unbenannte Show",
     "nameAriaLabel": "Show-Name",
     "draftHint": " · Entwurf (speichern, um Speicherort zu wählen)",
-    "savingToHint": " · Speichern in {{folder}}"
+    "savingToHint": " · Speichern in {{folder}}",
+    "metadata": {
+      "title": "Show-Details",
+      "name": "Name",
+      "startDate": "Startdatum",
+      "endDate": "Enddatum",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Optionale Notizen zu dieser Show…",
+      "editAriaLabel": "Show-Details bearbeiten",
+      "location": "Speicherort",
+      "locationDraft": "Entwurf (speichern, um Speicherort zu wählen)",
+      "locationWeb": "Browsersitzung (exportieren, um auf Festplatte zu speichern)"
+    }
   },
   "fileMenu": {
     "ariaLabel": "Dateimenü",
