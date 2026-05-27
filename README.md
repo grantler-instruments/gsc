@@ -143,6 +143,12 @@ Bug reports and pull requests are welcome.
 
 By contributing, you agree that your contributions will be licensed under the same terms as this project ([AGPL-3.0-or-later](LICENSE)).
 
+## Support
+
+If you find GSC useful, you can support development:
+
+[![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://buymeacoffee.com/thomasgeissl)
+
 ## License
 
 Copyright © 2026 Grantler Instruments.
