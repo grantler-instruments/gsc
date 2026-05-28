@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && VITE_BASE=/ vite build",
+    "build": "tsc && cross-env VITE_BASE=/ vite build",
     "build:pages": "tsc && vite build",
     "preview": "vite preview",
     "preview:pages": "vite preview",
@@ -45,6 +45,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
+    "cross-env": "^10.1.0",
     "puppeteer": "^25.0.4",
     "typescript": "~5.8.3",
     "vite": "^7.0.4",
