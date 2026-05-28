@@ -1,5 +1,6 @@
 import { vfsGet } from "../vfs/engine";
 import { getPlatform } from "./index";
+import { isRemoteClient } from "./remote-mode";
 
 const loading = new Map<string, Promise<Blob | undefined>>();
 
@@ -11,6 +12,10 @@ export async function resolveAssetBlob(assetPath: string): Promise<Blob | undefi
   let pending = loading.get(assetPath);
   if (!pending) {
     pending = (async () => {
+      if (isRemoteClient()) {
+        const { fetchRemoteAssetBlob } = await import("./remote-asset");
+        return fetchRemoteAssetBlob(assetPath);
+      }
       if (getPlatform() === "tauri") {
         const { loadAssetBlobFromProjectDisk } = await import("./vfs-asset.tauri");
         return loadAssetBlobFromProjectDisk(assetPath);

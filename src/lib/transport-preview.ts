@@ -76,10 +76,7 @@ export function resolveTransportPreview(
     return { kind: "waveform", cue: mediaCue, crossedOut: borrowed.crossedOut };
   }
 
-  if (
-    (mediaCue.type === "image" || mediaCue.type === "video") &&
-    mediaCue.assetPath
-  ) {
+  if ((mediaCue.type === "image" || mediaCue.type === "video") && mediaCue.assetPath) {
     return { kind: "media", cue: mediaCue, crossedOut: borrowed.crossedOut };
   }
 

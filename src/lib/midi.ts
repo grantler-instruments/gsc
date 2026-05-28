@@ -13,9 +13,7 @@ export const MIDI_MESSAGE_KINDS: MidiMessageKind[] = [
   "continue",
 ];
 
-export function isSystemRealtimeKind(
-  kind: MidiMessageKind,
-): kind is "start" | "stop" | "continue" {
+export function isSystemRealtimeKind(kind: MidiMessageKind): kind is "start" | "stop" | "continue" {
   return kind === "start" || kind === "stop" || kind === "continue";
 }
 
@@ -168,8 +166,10 @@ export function midiMatches(mapping: MidiMatch, incoming: MidiMatch): boolean {
     case "program-change":
       return (mapping.program ?? 0) === (incoming.program ?? 0);
     case "pitch-bend":
-      return (mapping.pitchBend ?? MIDI_PITCH_BEND_CENTER) ===
-        (incoming.pitchBend ?? MIDI_PITCH_BEND_CENTER);
+      return (
+        (mapping.pitchBend ?? MIDI_PITCH_BEND_CENTER) ===
+        (incoming.pitchBend ?? MIDI_PITCH_BEND_CENTER)
+      );
     default:
       return false;
   }

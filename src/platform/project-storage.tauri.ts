@@ -1,5 +1,6 @@
 import { appCacheDir, join } from "@tauri-apps/api/path";
 import { open, save } from "@tauri-apps/plugin-dialog";
+import { randomId } from "../lib/random-id";
 import {
   exists,
   mkdir,
@@ -62,7 +63,7 @@ const DRAFT_ROOT_KEY = "gsc-tauri-draft-root";
 const IGNORED_DIR_ENTRIES = new Set([".DS_Store", "Thumbs.db", "desktop.ini"]);
 
 async function createDraftProjectRoot(showName: string): Promise<string> {
-  const sessionDir = await join(await appCacheDir(), "drafts", crypto.randomUUID());
+  const sessionDir = await join(await appCacheDir(), "drafts", randomId());
   const rootDir = await join(sessionDir, projectDirNameFromShowName(showName));
   await mkdir(rootDir, { recursive: true });
   await markGscProjectPackage(rootDir);

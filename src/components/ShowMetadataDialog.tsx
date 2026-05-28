@@ -82,7 +82,9 @@ export function ShowMetadataDialog({ open, onClose }: ShowMetadataDialogProps) {
             sx={{
               ...inspectorReadonlySx,
               wordBreak: "break-all",
-              ...(isDesktop && isTemporaryRoot ? { color: "text.secondary", fontStyle: "italic" } : {}),
+              ...(isDesktop && isTemporaryRoot
+                ? { color: "text.secondary", fontStyle: "italic" }
+                : {}),
             }}
             title={rootDir && !isTemporaryRoot ? rootDir : undefined}
           >

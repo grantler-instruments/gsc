@@ -21,4 +21,10 @@ commands.allow = [
   "stop_ndi_output",
   "get_ndi_output_status",
   "push_ndi_frame",
+  "get_local_ip",
+  "get_remote_server_status",
+  "start_remote_server",
+  "stop_remote_server",
+  "remote_broadcast",
+  "remote_set_project_root",
 ]

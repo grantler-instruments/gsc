@@ -68,6 +68,10 @@ export function triggerGo(
   }
 
   actions.go(cue.id);
+  // MIDI/OSC are momentary triggers — fire output then leave the active list (like a flash GO).
+  if (cue.type === "midi" || cue.type === "osc") {
+    actions.stopMany([cue.id]);
+  }
   return { triggered: [cue.id], emptyContainer: false };
 }
 

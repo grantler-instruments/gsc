@@ -2,6 +2,7 @@ import { strFromU8, strToU8, unzipSync, type Zippable, zipSync } from "fflate";
 import { t } from "../i18n/t";
 import type { Fixture } from "../types/fixture";
 import { normalizePath, vfsHas, vfsPut } from "../vfs/engine";
+import { randomId } from "./random-id";
 import {
   fixtureFitsInUniverse,
   getFixtureConflicts,
@@ -119,7 +120,7 @@ function uniqueProfilePath(desiredPath: string, taken: Set<string>): string {
 function remapFixtureProfilePaths(fixture: Fixture, pathMap: Map<string, string>): Fixture {
   const remapped: Fixture = {
     ...fixture,
-    id: crypto.randomUUID(),
+    id: randomId(),
   };
 
   if (remapped.ofl && pathMap.has(remapped.ofl.filePath)) {

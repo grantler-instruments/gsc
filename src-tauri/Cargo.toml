@@ -30,3 +30,9 @@ serialport = "4.6"
 grafton-ndi = { version = "0.12", optional = true, default-features = false }
 xcap = { version = "0.9", optional = true }
 image = { version = "0.25", optional = true, default-features = false, features = ["png"] }
+axum = { version = "0.7", features = ["ws"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "net", "time"] }
+tower-http = { version = "0.6", features = ["fs", "cors"] }
+futures-util = { version = "0.3" }
+local-ip-address = "0.6"
+rand = "0.8"

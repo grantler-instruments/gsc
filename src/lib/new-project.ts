@@ -15,6 +15,7 @@ import { requestUnsavedProjectChoice } from "../stores/unsaved-project-prompt";
 import { useVfsStore } from "../stores/vfs";
 import { vfsClear } from "../vfs/engine";
 import { setActiveProjectId } from "./active-project-id";
+import { randomId } from "./random-id";
 import { createCueList } from "./cue-lists";
 import { saveProjectFile } from "./project-file-actions";
 import { replaceProjectWithoutHistory } from "./project-history";
@@ -25,7 +26,7 @@ const TAURI_LAST_ROOT_KEY = "gsc-tauri-last-project-root";
 
 function createFreshProjectState(projectName = t("project.defaultName")) {
   const list = createCueList(t("project.defaultListName"));
-  const id = crypto.randomUUID();
+  const id = randomId();
   setActiveProjectId(id);
   return {
     id,

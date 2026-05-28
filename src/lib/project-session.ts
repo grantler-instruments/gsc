@@ -12,6 +12,7 @@ import { setActiveProjectId } from "./active-project-id";
 import { notifyWarningDeduped } from "./notifications";
 import { collectOflPaths } from "./ofl/import-ofl";
 import { replaceProjectWithoutHistory } from "./project-history";
+import { randomId } from "./random-id";
 import { snapshotToCueLists } from "./project-snapshot";
 
 const SESSION_KEY = "gsc-project-session";
@@ -125,7 +126,7 @@ async function restoreProjectSession(): Promise<void> {
 
   vfsClear();
   const loaded = snapshotToCueLists(session.snapshot);
-  const projectId = loaded.id || crypto.randomUUID();
+  const projectId = loaded.id || randomId();
   if (!loaded.id) {
     loaded.id = projectId;
   }

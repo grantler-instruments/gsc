@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useDmxFadeCueProgress } from "../../hooks/useDmxFadeCueProgress";
 import { formatDmxCue } from "../../lib/dmx";
 import {
   canOpacityFadeTarget,
@@ -15,7 +16,6 @@ import { formatMidiCue } from "../../lib/midi";
 import { formatOscCue } from "../../lib/osc";
 import { cueShowsPlaybackProgress } from "../../lib/playback-slice";
 import { formatPlaybackRangeLabel } from "../../lib/time";
-import { useDmxFadeCueProgress } from "../../hooks/useDmxFadeCueProgress";
 import {
   resolveEffectiveOpacity,
   resolveEffectivePan,

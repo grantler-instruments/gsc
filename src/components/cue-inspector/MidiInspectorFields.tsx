@@ -1,6 +1,15 @@
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
-import { clampMidiByte, clampMidiChannel, clampMidiPitchBend, isSystemRealtimeKind, MIDI_MESSAGE_KINDS, MIDI_PITCH_BEND_CENTER, MIDI_PITCH_BEND_MAX, MIDI_PITCH_BEND_MIN } from "../../lib/midi";
+import {
+  clampMidiByte,
+  clampMidiChannel,
+  clampMidiPitchBend,
+  isSystemRealtimeKind,
+  MIDI_MESSAGE_KINDS,
+  MIDI_PITCH_BEND_CENTER,
+  MIDI_PITCH_BEND_MAX,
+  MIDI_PITCH_BEND_MIN,
+} from "../../lib/midi";
 import type { Cue, MidiCueData, MidiMessageKind } from "../../types/cue";
 import { inspectorFieldSx } from "../inspectorSx";
 

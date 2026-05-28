@@ -196,6 +196,20 @@ export function resetDmxOutputBuffers(): void {
   bumpDmxOutputRevision();
 }
 
+/** Replace output buffers from per-fixture channel levels (fixture plot / remote sync). */
+export function applyFixtureChannelValuesToBuffers(
+  fixtures: Fixture[],
+  valuesByFixtureId: Record<string, number[]>,
+): void {
+  resetDmxOutputBuffers();
+  const affected = new Set<number>();
+  for (const fixture of fixtures) {
+    const values = valuesByFixtureId[fixture.id];
+    if (!values || values.length === 0) continue;
+    writeFixtureValuesToBuffer(fixture, values, affected);
+  }
+}
+
 export function getDmxUniverseBuffer(universe: number): Uint8Array {
   return new Uint8Array(getUniverseBuffer(universe));
 }

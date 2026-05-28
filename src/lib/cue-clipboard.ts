@@ -1,4 +1,5 @@
 import type { Cue } from "../types/cue";
+import { randomId } from "./random-id";
 import { getChildCues, isContainerCue, renumberCueList } from "./cues";
 
 let clipboard: Cue[] | null = null;
@@ -92,7 +93,7 @@ export function prepareCuePaste(
 
   const sourceSet = new Set(source.map((c) => c.id));
   const roots = source.filter((c) => !c.parentId || !sourceSet.has(c.parentId));
-  const idMap = new Map(source.map((c) => [c.id, crypto.randomUUID()]));
+  const idMap = new Map(source.map((c) => [c.id, randomId()]));
 
   const pasteParentId = anchorCueId ? cues.find((c) => c.id === anchorCueId)?.parentId : undefined;
 

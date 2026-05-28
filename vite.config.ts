@@ -15,6 +15,9 @@ const base = process.env.VITE_BASE ?? `/${SITE_BASENAME}/`;
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
+/** Bind all interfaces in dev so phones on the LAN can load the remote UI from Vite. */
+const devHost = host ?? true;
+
 export default defineConfig({
   base,
   plugins: [trailingSlashRedirectPlugin(base), react()],
@@ -39,7 +42,7 @@ export default defineConfig({
   server: {
     port: 1421,
     strictPort: true,
-    host: host || false,
+    host: devHost,
     hmr: host
       ? {
           protocol: "ws",

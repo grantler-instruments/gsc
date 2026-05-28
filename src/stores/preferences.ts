@@ -55,6 +55,9 @@ interface PreferencesState {
   setNdiOutputHeight: (height: number) => void;
   setNdiOutputFps: (fps: number) => void;
   markFileMenuHintSeen: () => void;
+  /** Desktop remote control HTTP/WebSocket port. */
+  remotePort: number;
+  setRemotePort: (remotePort: number) => void;
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -75,6 +78,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         ndiOutputHeight: DEFAULT_NDI_OUTPUT_HEIGHT,
         ndiOutputFps: DEFAULT_NDI_OUTPUT_FPS,
         hasSeenFileMenuHint: false,
+        remotePort: 8766,
         setLocale: (locale) => {
           setAppLocale(locale);
           set({ locale });
@@ -92,6 +96,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         setNdiOutputHeight: (ndiOutputHeight) => set({ ndiOutputHeight }),
         setNdiOutputFps: (ndiOutputFps) => set({ ndiOutputFps }),
         markFileMenuHintSeen: () => set({ hasSeenFileMenuHint: true }),
+        setRemotePort: (remotePort) => set({ remotePort }),
       }),
       {
         name: "gsc-preferences",
@@ -110,6 +115,7 @@ export const usePreferencesStore = create<PreferencesState>()(
           ndiOutputHeight: s.ndiOutputHeight,
           ndiOutputFps: s.ndiOutputFps,
           hasSeenFileMenuHint: s.hasSeenFileMenuHint,
+          remotePort: s.remotePort,
         }),
       },
     ),

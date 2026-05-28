@@ -1,5 +1,6 @@
 import { t } from "../i18n/t";
 import type { Fixture, FixtureChannel } from "../types/fixture";
+import { randomId } from "./random-id";
 import { normalizeFixtureOflProfile, oflProfileChannelCount } from "./ofl/profile";
 
 export const DMX_UNIVERSE_SIZE = 512;
@@ -116,7 +117,7 @@ export function createFixture(
 ): Fixture {
   const universe = clampUniverse(overrides.universe ?? 1);
   const fixture: Fixture = {
-    id: crypto.randomUUID(),
+    id: randomId(),
     name: overrides.name ?? defaultFixtureName(fixtures),
     universe,
     startAddress: clampStartAddress(
