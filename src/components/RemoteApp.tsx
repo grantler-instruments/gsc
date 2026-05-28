@@ -113,7 +113,7 @@ export function RemoteApp() {
               const next = event.target.value.replace(/\D/g, "").slice(0, 6);
               setEnteredPin(next);
             }}
-            inputProps={{ inputMode: "numeric", pattern: "[0-9]*", maxLength: 6 }}
+            slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*", maxLength: 6 } }}
             placeholder="123456"
             label={t("remote.pinLabel")}
             error={enteredPin.length > 0 && !validEnteredPin}

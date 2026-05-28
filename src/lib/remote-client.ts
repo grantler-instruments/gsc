@@ -54,6 +54,17 @@ function handleSnapshot(snapshot: RemoteSnapshot): void {
   }
 }
 
+function isRemoteSnapshot(value: unknown): value is RemoteSnapshot {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<RemoteSnapshot>;
+  return (
+    typeof candidate.project === "object" &&
+    Array.isArray(candidate.selectedCueIds) &&
+    typeof candidate.transport === "object" &&
+    typeof candidate.playback === "object"
+  );
+}
+
 function handleServerMessage(message: RemoteServerMessage): void {
   if (message.type === "authOk") {
     setConnectionState("connected");
@@ -65,7 +76,7 @@ function handleServerMessage(message: RemoteServerMessage): void {
     socket?.close();
     return;
   }
-  if (message.type === "snapshot" && message.payload) {
+  if (message.type === "snapshot" && isRemoteSnapshot(message.payload)) {
     handleSnapshot(message.payload);
   }
 }

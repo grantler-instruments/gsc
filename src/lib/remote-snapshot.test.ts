@@ -84,7 +84,6 @@ describe("remote-snapshot", () => {
       universe: 1,
       startAddress: 1,
       channelCount: 2,
-      profileId: "generic-dimmer",
       channels: [],
     };
     const cue = testCue("c1", "Look", "dmx", {

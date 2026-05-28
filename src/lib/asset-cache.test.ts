@@ -19,7 +19,10 @@ function createMockCache(): Cache {
       storage.delete(key);
     },
     keys: async () => [...storage.keys()],
-  } as Cache;
+    add: async () => {},
+    addAll: async () => {},
+    matchAll: async () => [],
+  } as unknown as Cache;
 }
 
 describe("asset-cache", () => {
@@ -78,12 +81,17 @@ describe("asset-cache", () => {
   it("still writes legacy keys when scoped put fails", async () => {
     const cache = createMockCache();
     const originalPut = cache.put.bind(cache);
-    cache.put = async (request, response) => {
-      const key = typeof request === "string" ? request : request.url;
+    cache.put = async (request: RequestInfo | URL, response: Response) => {
+      const key =
+        typeof request === "string"
+          ? request
+          : request instanceof URL
+            ? request.toString()
+            : request.url;
       if (key.includes("/projects/")) {
         throw new TypeError("Invalid URL");
       }
-      return originalPut(request, response);
+      return originalPut(request as RequestInfo, response);
     };
 
     vi.stubGlobal("caches", {

@@ -142,7 +142,7 @@ export function RemoteSettingsPanel() {
               const next = e.target.value.replace(/\D/g, "").slice(0, 6);
               setRemotePin(next);
             }}
-            inputProps={{ inputMode: "numeric", pattern: "[0-9]*", maxLength: 6 }}
+            slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*", maxLength: 6 } }}
             placeholder="123456"
             sx={inspectorFieldSx}
           />

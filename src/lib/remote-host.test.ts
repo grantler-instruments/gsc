@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resetTestProject, testCue } from "../test/fixtures/cues";
 import { useProjectStore } from "../stores/project";
 
-const remoteBroadcast = vi.fn(async () => {});
+const remoteBroadcast = vi.fn<(message: string) => Promise<void>>(async () => {});
 
 vi.mock("../platform/remote-server", () => ({
-  remoteBroadcast: (...args: unknown[]) => remoteBroadcast(...args),
+  remoteBroadcast: (message: string) => remoteBroadcast(message),
 }));
 
 describe("broadcastRemoteSnapshot", () => {
