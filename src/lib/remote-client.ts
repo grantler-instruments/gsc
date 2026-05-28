@@ -81,7 +81,7 @@ export function connectRemoteClient(): void {
 
   const pin = remotePinFromUrl();
   if (!pin) {
-    setConnectionState("auth-failed");
+    setConnectionState("disconnected");
     return;
   }
 

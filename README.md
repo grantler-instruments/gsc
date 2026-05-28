@@ -143,6 +143,8 @@ See **[docs/remote.md](docs/remote.md)** for architecture and implementation det
 2. Scan the **QR code** or open the connect URL on another device on the same Wi‑Fi.
 3. The remote opens in **show mode** — GO, panic, cue selection, and master volume control the booth computer.
 
+You can set a fixed **6-digit PIN** in Settings so it stays stable across app restarts. Optional **auto-start** can bring the remote server up automatically on launch.
+
 **Audio, video, and image cues** always play on the **booth computer** (output window, speakers, DMX, MIDI, etc.). The remote syncs show state from host snapshots (project/selection/transport/playback/fixture-plot). Missing-asset warnings are hidden on the remote because files are expected to live on the host project.
 
 The **fixture plot** (sidebar and expanded above the cue list) mirrors the booth: DMX preview toggles, expand/collapse, and live fixture levels are included in the remote snapshot.

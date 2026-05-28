@@ -1,6 +1,8 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import QRCode from "qrcode";
@@ -19,7 +21,11 @@ import { inspectorFieldLabelSx, inspectorFieldSx, inspectorFieldsSx } from "./in
 export function RemoteSettingsPanel() {
   const { t } = useTranslation();
   const remotePort = usePreferencesStore((s) => s.remotePort);
+  const remotePin = usePreferencesStore((s) => s.remotePin);
+  const remoteAutoStart = usePreferencesStore((s) => s.remoteAutoStart);
   const setRemotePort = usePreferencesStore((s) => s.setRemotePort);
+  const setRemotePin = usePreferencesStore((s) => s.setRemotePin);
+  const setRemoteAutoStart = usePreferencesStore((s) => s.setRemoteAutoStart);
   const [status, setStatus] = useState<RemoteServerStatus | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -51,7 +57,11 @@ export function RemoteSettingsPanel() {
     setBusy(true);
     setError(null);
     try {
-      const info: RemoteServerInfo = await startRemoteServer(remotePort);
+      const preferredPin = /^\d{6}$/.test(remotePin) ? remotePin : undefined;
+      const info: RemoteServerInfo = await startRemoteServer(remotePort, preferredPin);
+      if (info.pin !== remotePin) {
+        setRemotePin(info.pin);
+      }
       await broadcastRemoteSnapshot();
       setStatus({
         running: true,
@@ -68,6 +78,13 @@ export function RemoteSettingsPanel() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleGeneratePin = () => {
+    const next = Math.floor(Math.random() * 1_000_000)
+      .toString()
+      .padStart(6, "0");
+    setRemotePin(next);
   };
 
   const handleStop = async () => {
@@ -109,6 +126,46 @@ export function RemoteSettingsPanel() {
           sx={inspectorFieldSx}
         />
       </Box>
+
+      <Box>
+        <Typography component="label" htmlFor="remote-pin" sx={inspectorFieldLabelSx}>
+          {t("remote.pin")}
+        </Typography>
+        <Stack direction="row" sx={{ gap: 1 }}>
+          <TextField
+            id="remote-pin"
+            size="small"
+            fullWidth
+            value={remotePin}
+            disabled={status?.running ?? false}
+            onChange={(e) => {
+              const next = e.target.value.replace(/\D/g, "").slice(0, 6);
+              setRemotePin(next);
+            }}
+            inputProps={{ inputMode: "numeric", pattern: "[0-9]*", maxLength: 6 }}
+            placeholder="123456"
+            sx={inspectorFieldSx}
+          />
+          <Button
+            variant="outlined"
+            onClick={handleGeneratePin}
+            disabled={busy || (status?.running ?? false)}
+          >
+            {t("remote.generatePin")}
+          </Button>
+        </Stack>
+      </Box>
+
+      <FormControlLabel
+        control={
+          <Switch
+            checked={remoteAutoStart}
+            onChange={(_, checked) => setRemoteAutoStart(checked)}
+            disabled={busy}
+          />
+        }
+        label={t("remote.autoStart")}
+      />
 
       <Stack direction="row" sx={{ gap: 1 }}>
         <Button

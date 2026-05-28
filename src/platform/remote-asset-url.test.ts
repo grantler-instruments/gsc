@@ -27,4 +27,20 @@ describe("buildRemoteAssetUrl", () => {
     expect(url.searchParams.get("path")).toBe("/assets/intro.wav");
     expect(url.searchParams.get("pin")).toBe("123456");
   });
+
+  it("falls back to default remote server port in dev", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        protocol: "http:",
+        hostname: "192.168.1.10",
+        host: "192.168.1.10:1421",
+        port: "1421",
+        search: "?mode=remote&pin=123456",
+      },
+    });
+
+    const { buildRemoteAssetUrl } = await import("./remote-asset-url");
+    const url = new URL(buildRemoteAssetUrl("/assets/intro.wav"));
+    expect(url.origin).toBe("http://192.168.1.10:8766");
+  });
 });

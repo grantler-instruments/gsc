@@ -133,6 +133,9 @@
     "title": "Remote control",
     "description": "Let phones or tablets on the same Wi‑Fi fire cues from show mode. Scan the QR code or open the URL, then enter the PIN if prompted.",
     "port": "Port",
+    "pin": "PIN (6 digits)",
+    "generatePin": "Generate",
+    "autoStart": "Start remote automatically on launch",
     "start": "Start remote",
     "stop": "Stop remote",
     "pinLabel": "PIN",
@@ -148,7 +151,11 @@
     "statusConnecting": "Connecting…",
     "statusDisconnected": "Disconnected",
     "statusAuthFailed": "Auth failed",
-    "missingPin": "Missing PIN in URL — scan the QR code from the booth computer."
+    "missingPin": "PIN required",
+    "enterPinTitle": "Enter remote PIN",
+    "enterPinDescription": "Enter the 6-digit PIN from the booth computer to connect this remote.",
+    "enterPinValidation": "PIN must be 6 digits",
+    "missingPinUrlHint": "Tip: use the QR code for one-tap setup with PIN included in the URL."
   },
   "midiMap": {
     "description": "Map incoming MIDI to transport actions. Mappings are saved with the project.",

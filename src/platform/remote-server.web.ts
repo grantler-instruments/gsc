@@ -16,7 +16,7 @@ export async function getRemoteServerStatus(): Promise<RemoteServerStatus> {
   };
 }
 
-export async function startRemoteServer(_port: number): Promise<RemoteServerInfo> {
+export async function startRemoteServer(_port: number, _pin?: string): Promise<RemoteServerInfo> {
   throw new Error("Remote control requires the desktop app.");
 }
 

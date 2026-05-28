@@ -57,7 +57,13 @@ interface PreferencesState {
   markFileMenuHintSeen: () => void;
   /** Desktop remote control HTTP/WebSocket port. */
   remotePort: number;
+  /** Preferred remote PIN (6 digits). Empty means auto-generate on first start. */
+  remotePin: string;
+  /** Start remote server automatically on app launch. */
+  remoteAutoStart: boolean;
   setRemotePort: (remotePort: number) => void;
+  setRemotePin: (remotePin: string) => void;
+  setRemoteAutoStart: (remoteAutoStart: boolean) => void;
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -79,6 +85,8 @@ export const usePreferencesStore = create<PreferencesState>()(
         ndiOutputFps: DEFAULT_NDI_OUTPUT_FPS,
         hasSeenFileMenuHint: false,
         remotePort: 8766,
+        remotePin: "",
+        remoteAutoStart: false,
         setLocale: (locale) => {
           setAppLocale(locale);
           set({ locale });
@@ -97,6 +105,8 @@ export const usePreferencesStore = create<PreferencesState>()(
         setNdiOutputFps: (ndiOutputFps) => set({ ndiOutputFps }),
         markFileMenuHintSeen: () => set({ hasSeenFileMenuHint: true }),
         setRemotePort: (remotePort) => set({ remotePort }),
+        setRemotePin: (remotePin) => set({ remotePin }),
+        setRemoteAutoStart: (remoteAutoStart) => set({ remoteAutoStart }),
       }),
       {
         name: "gsc-preferences",
@@ -116,6 +126,8 @@ export const usePreferencesStore = create<PreferencesState>()(
           ndiOutputFps: s.ndiOutputFps,
           hasSeenFileMenuHint: s.hasSeenFileMenuHint,
           remotePort: s.remotePort,
+          remotePin: s.remotePin,
+          remoteAutoStart: s.remoteAutoStart,
         }),
       },
     ),

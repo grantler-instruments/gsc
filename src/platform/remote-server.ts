@@ -19,13 +19,13 @@ export async function getRemoteServerStatus(): Promise<RemoteServerStatus> {
   return get();
 }
 
-export async function startRemoteServer(port: number): Promise<RemoteServerInfo> {
+export async function startRemoteServer(port: number, pin?: string): Promise<RemoteServerInfo> {
   if (getPlatform() !== "tauri") {
     const { startRemoteServer: start } = await import("./remote-server.web");
-    return start(port);
+    return start(port, pin);
   }
   const { startRemoteServer: start } = await import("./remote-server.tauri");
-  return start(port);
+  return start(port, pin);
 }
 
 export async function stopRemoteServer(): Promise<void> {

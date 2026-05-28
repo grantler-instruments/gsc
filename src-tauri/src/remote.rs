@@ -287,6 +287,14 @@ fn generate_pin() -> String {
     format!("{:06}", rng.gen_range(0..1_000_000))
 }
 
+fn normalize_pin(pin: &str) -> Option<String> {
+    let trimmed = pin.trim();
+    if trimmed.len() != 6 || !trimmed.chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    Some(trimmed.to_string())
+}
+
 pub fn local_ip_address() -> String {
     local_ip_address::local_ip()
         .map(|ip| ip.to_string())
@@ -572,6 +580,7 @@ pub async fn start_remote_server(
     app: AppHandle,
     state: tauri::State<'_, RemoteServerState>,
     port: u16,
+    pin: Option<String>,
 ) -> Result<RemoteServerInfo, String> {
     if port == 0 {
         return Err("Port must be greater than 0".to_string());
@@ -598,7 +607,10 @@ pub async fn start_remote_server(
         }
     }
 
-    let pin = generate_pin();
+    let pin = match pin {
+        Some(raw) => normalize_pin(&raw).ok_or_else(|| "PIN must be 6 digits".to_string())?,
+        None => generate_pin(),
+    };
     let lan_ip = local_ip_address();
     let connect_url = build_connect_url(&lan_ip, port, &pin, dev_mode);
 
@@ -669,6 +681,15 @@ mod tests {
         let url = build_connect_url("192.168.1.10", 8766, "123456", true);
         assert!(url.contains(":1421/gsc/app/"));
         assert!(url.contains("wsPort=8766"));
+    }
+
+    #[test]
+    fn normalize_pin_accepts_six_digits_only() {
+        assert_eq!(normalize_pin("123456").as_deref(), Some("123456"));
+        assert_eq!(normalize_pin(" 654321 ").as_deref(), Some("654321"));
+        assert!(normalize_pin("12345").is_none());
+        assert!(normalize_pin("1234567").is_none());
+        assert!(normalize_pin("12a456").is_none());
     }
 
     #[test]

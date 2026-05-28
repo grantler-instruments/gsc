@@ -9,8 +9,8 @@ export async function getRemoteServerStatus(): Promise<RemoteServerStatus> {
   return invoke<RemoteServerStatus>("get_remote_server_status");
 }
 
-export async function startRemoteServer(port: number): Promise<RemoteServerInfo> {
-  return invoke<RemoteServerInfo>("start_remote_server", { port });
+export async function startRemoteServer(port: number, pin?: string): Promise<RemoteServerInfo> {
+  return invoke<RemoteServerInfo>("start_remote_server", { port, pin });
 }
 
 export async function stopRemoteServer(): Promise<void> {

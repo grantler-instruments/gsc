@@ -3,7 +3,8 @@ import { useEffect, useRef } from "react";
 import { registerHostSelectionBroadcaster } from "../lib/host-selection-bridge";
 import { broadcastRemoteSnapshot, handleRemoteHostCommand } from "../lib/remote-host";
 import { getPlatform } from "../platform";
-import { getRemoteServerStatus, setRemoteProjectRoot } from "../platform/remote-server";
+import { getRemoteServerStatus, setRemoteProjectRoot, startRemoteServer } from "../platform/remote-server";
+import { usePreferencesStore } from "../stores/preferences";
 import { useProjectLocationStore } from "../stores/project-location";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useDmxOutputStore } from "../stores/dmx-output";
@@ -35,6 +36,7 @@ function isRelevantUiChange(
 /** Host-side: relay store changes to remote clients and handle incoming commands. */
 export function useRemoteHost(sessionReady: boolean): void {
   const broadcastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoStartAttempted = useRef(false);
 
   useEffect(() => {
     if (!sessionReady || getPlatform() !== "tauri") return;
@@ -53,6 +55,24 @@ export function useRemoteHost(sessionReady: boolean): void {
       const status = await getRemoteServerStatus();
       if (status.running) {
         pushSnapshot();
+        return;
+      }
+      if (autoStartAttempted.current) {
+        return;
+      }
+      autoStartAttempted.current = true;
+
+      const prefs = usePreferencesStore.getState();
+      if (!prefs.remoteAutoStart) return;
+      const preferredPin = /^\d{6}$/.test(prefs.remotePin) ? prefs.remotePin : undefined;
+      try {
+        const info = await startRemoteServer(prefs.remotePort, preferredPin);
+        if (info.pin !== prefs.remotePin) {
+          usePreferencesStore.getState().setRemotePin(info.pin);
+        }
+        pushSnapshot();
+      } catch (err) {
+        console.warn("[remote] auto-start failed", err);
       }
     })();
 

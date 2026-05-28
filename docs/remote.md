@@ -20,6 +20,8 @@ This document explains how desktop remote control works in GSC.
 - Remote UI is opened with `?mode=remote`.
 - `src/app/main.tsx` renders `RemoteApp` when `isRemoteClient()` is true.
 - The host starts/stops the remote server from Settings.
+- Remote PIN is user-configurable (6 digits) and persisted in preferences.
+- Optional auto-start can start the remote server automatically on app launch.
 
 ## Data flow
 
