@@ -1,5 +1,6 @@
 import type { StoreApi } from "zustand";
 import { buildNoteToCueMappings } from "../../lib/midi-mapping";
+import { randomId } from "../../lib/random-id";
 import { getActiveCueListFromState } from "./helpers";
 import type { ProjectState } from "./types";
 
@@ -18,7 +19,7 @@ export function createMidiMappingActions(
 > {
   return {
     addMidiMapping: (mapping) => {
-      const entry = { ...mapping, id: crypto.randomUUID() };
+      const entry = { ...mapping, id: randomId() };
       set((s) => ({ midiMappings: [...s.midiMappings, entry] }));
       return entry;
     },

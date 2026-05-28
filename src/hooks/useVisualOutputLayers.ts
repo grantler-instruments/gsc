@@ -15,6 +15,10 @@ export function useVisualOutputLayers(): OutputLayer[] {
   const [layers, setLayers] = useState<OutputLayer[]>([]);
 
   useEffect(() => {
+    void activeCueIds;
+    void cues;
+    void byCueId;
+    void frameMs;
     let cancelled = false;
     void buildOutputState(0).then((state) => {
       if (!cancelled) setLayers(state.layers);

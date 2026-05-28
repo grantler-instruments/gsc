@@ -65,7 +65,7 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
     endDate: snap.endDate,
     description: snap.description,
     cueLists,
-    activeCueListId: active.id,
+    activeCueListId: active?.id ?? snap.activeCueListId,
     midiMappings: snap.midiMappings ?? [],
     fixtures,
     fixturePlot,

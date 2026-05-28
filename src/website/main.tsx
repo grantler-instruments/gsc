@@ -5,7 +5,12 @@ import "../i18n";
 import { websiteTheme } from "./theme";
 import WebsiteApp from "./WebsiteApp";
 
-createRoot(document.getElementById("root")!).render(
+const root = document.getElementById("root");
+if (!root) {
+  throw new Error("Website root element not found");
+}
+
+createRoot(root).render(
   <StrictMode>
     <ThemeProvider theme={websiteTheme}>
       <CssBaseline />

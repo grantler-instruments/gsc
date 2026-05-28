@@ -40,7 +40,11 @@ function normalizePartialFixtures(
   const byId = new Map(entries.map((entry) => [entry.fixtureId, entry]));
   return fixtures
     .filter((fixture) => byId.has(fixture.id))
-    .map((fixture) => normalizeDmxFixtureEntry(byId.get(fixture.id)!, fixture))
+    .map((fixture) => {
+      const entry = byId.get(fixture.id);
+      if (!entry) return null;
+      return normalizeDmxFixtureEntry(entry, fixture);
+    })
     .filter((entry): entry is DmxFixtureValues => entry !== null);
 }
 
@@ -194,6 +198,20 @@ function writeFixtureValuesToBuffer(
 export function resetDmxOutputBuffers(): void {
   universeBuffers.clear();
   bumpDmxOutputRevision();
+}
+
+/** Replace output buffers from per-fixture channel levels (fixture plot / remote sync). */
+export function applyFixtureChannelValuesToBuffers(
+  fixtures: Fixture[],
+  valuesByFixtureId: Record<string, number[]>,
+): void {
+  resetDmxOutputBuffers();
+  const affected = new Set<number>();
+  for (const fixture of fixtures) {
+    const values = valuesByFixtureId[fixture.id];
+    if (!values || values.length === 0) continue;
+    writeFixtureValuesToBuffer(fixture, values, affected);
+  }
 }
 
 export function getDmxUniverseBuffer(universe: number): Uint8Array {

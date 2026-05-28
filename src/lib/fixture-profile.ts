@@ -14,6 +14,7 @@ import {
   isAssetsRelativePath,
   virtualPathFromRelativeAssetFile,
 } from "./project-paths";
+import { randomId } from "./random-id";
 
 export const FIXTURES_PROFILE_JSON = "fixtures.json";
 export const FIXTURES_PROFILE_EXTENSION = ".gsc-fixtures.zip";
@@ -119,13 +120,15 @@ function uniqueProfilePath(desiredPath: string, taken: Set<string>): string {
 function remapFixtureProfilePaths(fixture: Fixture, pathMap: Map<string, string>): Fixture {
   const remapped: Fixture = {
     ...fixture,
-    id: crypto.randomUUID(),
+    id: randomId(),
   };
 
   if (remapped.ofl && pathMap.has(remapped.ofl.filePath)) {
+    const mappedPath = pathMap.get(remapped.ofl.filePath);
+    if (!mappedPath) return remapped;
     remapped.ofl = {
       ...remapped.ofl,
-      filePath: pathMap.get(remapped.ofl.filePath)!,
+      filePath: mappedPath,
     };
   }
 

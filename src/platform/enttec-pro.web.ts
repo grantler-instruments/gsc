@@ -23,18 +23,25 @@ export async function connectEnttecProWeb(): Promise<boolean> {
     notifyWarning(t("notification.webSerialUnavailable"));
     return false;
   }
+  const serial = navigator.serial;
+  if (!serial) {
+    notifyWarning(t("notification.webSerialUnavailable"));
+    return false;
+  }
 
   await disconnectEnttecProWeb();
 
   try {
-    port = await navigator.serial!.requestPort({ filters: ENTTEC_USB_FILTERS });
-    await port.open({ baudRate: ENTTEC_PRO_BAUD_RATE });
-    writer = port.writable?.getWriter() ?? null;
+    const selectedPort = await serial.requestPort({ filters: ENTTEC_USB_FILTERS });
+    await selectedPort.open({ baudRate: ENTTEC_PRO_BAUD_RATE });
+    writer = selectedPort.writable?.getWriter() ?? null;
     if (!writer) {
+      port = selectedPort;
       await disconnectEnttecProWeb();
       notifyWarning(t("notification.enttecNoWritableStream"));
       return false;
     }
+    port = selectedPort;
     return true;
   } catch (err) {
     await disconnectEnttecProWeb();
@@ -77,7 +84,7 @@ export async function sendEnttecProUniversesWeb(frames: DmxUniverseFrame[]): Pro
         notifyWarningDeduped(t("notification.enttecUniverseLimit", { universe: frame.universe }));
         continue;
       }
-      await writer!.write(packet);
+      await writer?.write(packet);
     }
   });
 

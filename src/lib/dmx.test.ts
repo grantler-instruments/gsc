@@ -126,14 +126,18 @@ describe("dmx", () => {
 
   it("switches modes through the helper", () => {
     const partial = defaultDmxCueData(fixtures);
-    const withFixture = addDmxFixtureToCue(partial, fixtures[0]!);
+    const fixture = fixtures[0];
+    if (!fixture) throw new Error("Expected fixture");
+    const withFixture = addDmxFixtureToCue(partial, fixture);
     const snapshot = setDmxCueMode(withFixture, "snapshot", fixtures);
     expect(snapshot.mode).toBe("snapshot");
     expect(snapshot.fixtures).toHaveLength(2);
   });
 
   it("adds every patched fixture not already in the cue", () => {
-    const data = addDmxFixtureToCue(defaultDmxCueData(fixtures), fixtures[0]!);
+    const fixture = fixtures[0];
+    if (!fixture) throw new Error("Expected fixture");
+    const data = addDmxFixtureToCue(defaultDmxCueData(fixtures), fixture);
     expect(addAllDmxFixturesToCue(data, fixtures)).toEqual({
       mode: "partial",
       fixtures: [
@@ -144,7 +148,9 @@ describe("dmx", () => {
   });
 
   it("updates a single channel value", () => {
-    const data = addDmxFixtureToCue(defaultDmxCueData(fixtures), fixtures[0]!);
+    const fixture = fixtures[0];
+    if (!fixture) throw new Error("Expected fixture");
+    const data = addDmxFixtureToCue(defaultDmxCueData(fixtures), fixture);
     expect(updateDmxFixtureChannelValue(data, "f1", 1, 128)).toEqual({
       mode: "partial",
       fixtures: [{ fixtureId: "f1", values: [0, 128] }],

@@ -1,5 +1,6 @@
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import { useDmxFadeCueProgress } from "../../hooks/useDmxFadeCueProgress";
 import { getCueAssetWarning } from "../../lib/cue-asset";
 import {
   getFadeTarget,
@@ -26,7 +27,6 @@ import { getParallelGroupOrderConflict } from "../../lib/parallel-group-fire";
 import { cueShowsPlaybackProgress } from "../../lib/playback-slice";
 import { formatPlaybackRangeLabel } from "../../lib/time";
 import { formatWaitDurationLabel } from "../../lib/wait";
-import { useDmxFadeCueProgress } from "../../hooks/useDmxFadeCueProgress";
 import type { CuePlaybackProgress } from "../../stores/playback";
 import { useProjectStore } from "../../stores/project";
 import type { RunningSequence } from "../../stores/transport";

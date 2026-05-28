@@ -103,9 +103,7 @@ export function TransportCueThumbnail({ cue, allCues }: TransportCueThumbnailPro
   if (preview?.kind === "fixturePlot" && preview.dmx) {
     content = <TransportFixturePlotThumb dmx={preview.dmx} />;
   } else if (preview?.kind === "waveform" && preview.cue?.assetPath) {
-    content = (
-      <TransportWaveformThumb assetPath={preview.cue.assetPath} height={THUMB_SIZE} />
-    );
+    content = <TransportWaveformThumb assetPath={preview.cue.assetPath} height={THUMB_SIZE} />;
   } else if (preview?.kind === "media" && preview.cue) {
     content = <TransportMediaThumb cue={preview.cue} />;
   }

@@ -74,7 +74,7 @@ export function useCueRowDrop({
         setDropActive(true);
       }
     },
-    [allCues, canEdit, cue.id, isContainer],
+    [allCues, canEdit, cue.id, isContainer, cue],
   );
 
   const onDragLeave = useCallback((e: React.DragEvent) => {

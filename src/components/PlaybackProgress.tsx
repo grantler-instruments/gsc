@@ -1,8 +1,8 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import { formatPlaybackClock } from "../lib/time";
 import type { PlaybackProgressSnapshot } from "../lib/playback-slice";
+import { formatPlaybackClock } from "../lib/time";
 import type { CuePlaybackProgress } from "../stores/playback";
 
 interface PlaybackProgressProps {

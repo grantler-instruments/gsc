@@ -45,6 +45,18 @@ describe("triggerGo", () => {
     expect(result).toEqual({ triggered: ["a"], emptyContainer: false });
     expect(actions.go).toHaveBeenCalledWith("a");
     expect(actions.goMany).not.toHaveBeenCalled();
+    expect(actions.stopMany).not.toHaveBeenCalled();
+  });
+
+  it("GOs midi as a pulse (leaves actives immediately after fire)", () => {
+    const cue = testCue("m", "M", "midi");
+    const actions = mockActions();
+
+    const result = triggerGo(cue, [cue], actions);
+
+    expect(result).toEqual({ triggered: ["m"], emptyContainer: false });
+    expect(actions.go).toHaveBeenCalledWith("m");
+    expect(actions.stopMany).toHaveBeenCalledWith(["m"]);
   });
 
   it("stops the target of a stop cue", () => {

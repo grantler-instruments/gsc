@@ -11,7 +11,10 @@ import {
   getPrimarySelectedCueId,
 } from "../../lib/cue-selection";
 import { getChildCues, isContainerCue, isFadeCue, isStopCue } from "../../lib/cues";
+import { syncHostSelectionToRemotes } from "../../lib/host-selection-bridge";
+import { sendRemoteCommand } from "../../lib/remote-client";
 import { canEditProject } from "../../lib/show-mode";
+import { isRemoteClient } from "../../platform/remote-mode";
 import { guardDmxPreviewSelection } from "../../stores/dmx-preview-session";
 import { useUiStore } from "../../stores/ui";
 import type { Cue } from "../../types/cue";
@@ -58,6 +61,16 @@ export function createSelectionActions(
 > {
   return {
     selectCue: (id) => {
+      if (isRemoteClient()) {
+        set((s) => ({
+          ...patchActiveList(s, () => ({
+            selectedCueIds: id ? [id] : [],
+            selectionAnchorId: id,
+          })),
+        }));
+        if (id) sendRemoteCommand({ action: "select-cue", cueId: id });
+        return;
+      }
       if (!guardDmxPreviewSelection(id)) return;
       set((s) => ({
         ...patchActiveList(s, () => ({
@@ -65,6 +78,7 @@ export function createSelectionActions(
           selectionAnchorId: id,
         })),
       }));
+      syncHostSelectionToRemotes();
     },
 
     toggleSelectCue: (id) => {
@@ -83,6 +97,7 @@ export function createSelectionActions(
           return { selectedCueIds, selectionAnchorId: id };
         }),
       }));
+      syncHostSelectionToRemotes();
     },
 
     selectCueRange: (id, visibleOrder) => {
@@ -98,6 +113,7 @@ export function createSelectionActions(
             selectionAnchorId: id,
           })),
         });
+        syncHostSelectionToRemotes();
         return;
       }
       const [lo, hi] = a < b ? [a, b] : [b, a];
@@ -107,6 +123,7 @@ export function createSelectionActions(
           selectionAnchorId: anchor,
         })),
       });
+      syncHostSelectionToRemotes();
     },
 
     groupSelectedCues: () => {

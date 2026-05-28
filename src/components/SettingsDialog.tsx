@@ -33,12 +33,20 @@ import type { DeviceOption } from "../types/device";
 import { inspectorFieldLabelSx, inspectorFieldSx, inspectorFieldsSx } from "./inspectorSx";
 import { MidiMapPanel } from "./MidiMapPanel";
 import { NdiSettingsPanel } from "./NdiSettingsPanel";
+import { RemoteSettingsPanel } from "./RemoteSettingsPanel";
 
 const DEFAULT_VALUE = "";
 
-type SettingsCategory = "general" | "audio" | "video" | "dmx" | "midi";
+type SettingsCategory = "general" | "audio" | "video" | "dmx" | "midi" | "remote";
 
-const SETTINGS_CATEGORIES: SettingsCategory[] = ["general", "audio", "video", "dmx", "midi"];
+const SETTINGS_CATEGORIES: SettingsCategory[] = [
+  "general",
+  "audio",
+  "video",
+  "dmx",
+  "midi",
+  "remote",
+];
 
 const CATEGORY_LABEL_KEYS: Record<SettingsCategory, string> = {
   general: "settings.categoryGeneral",
@@ -46,6 +54,7 @@ const CATEGORY_LABEL_KEYS: Record<SettingsCategory, string> = {
   video: "settings.categoryVideo",
   dmx: "settings.categoryDmx",
   midi: "settings.categoryMidi",
+  remote: "settings.categoryRemote",
 };
 
 export function SettingsDialog() {
@@ -140,7 +149,7 @@ export function SettingsDialog() {
             py: 1,
           }}
         >
-          {SETTINGS_CATEGORIES.map((id) => (
+          {SETTINGS_CATEGORIES.filter((id) => id !== "remote" || isTauri).map((id) => (
             <ListItemButton
               key={id}
               selected={category === id}
@@ -460,6 +469,8 @@ export function SettingsDialog() {
               <MidiMapPanel />
             </Stack>
           ) : null}
+
+          {category === "remote" && isTauri ? <RemoteSettingsPanel /> : null}
         </Box>
       </DialogContent>
       <DialogActions>

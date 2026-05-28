@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { randomId } from "../lib/random-id";
 
 export type NotificationSeverity = "error" | "warning" | "info" | "success";
 
@@ -22,7 +23,7 @@ export const useNotificationsStore = create<NotificationsState>()(
 
       push: (message, severity = "info") =>
         set((s) => ({
-          queue: [...s.queue, { id: crypto.randomUUID(), message, severity }],
+          queue: [...s.queue, { id: randomId(), message, severity }],
         })),
 
       dismiss: (id) =>

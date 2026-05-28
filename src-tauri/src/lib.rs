@@ -6,6 +6,7 @@ mod midi_input;
 mod ndi;
 mod osc;
 mod project_open;
+mod remote;
 
 use std::sync::Mutex;
 
@@ -24,6 +25,10 @@ use osc::send_osc;
 use project_open::{
     handle_cli_open_files, handle_opened_urls, take_pending_open_paths, PendingOpenPaths,
 };
+use remote::{
+    get_local_ip, get_remote_server_status, remote_broadcast, remote_set_project_root,
+    start_remote_server, stop_remote_server, RemoteServerState,
+};
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::{Emitter, Manager, RunEvent};
 
@@ -34,6 +39,7 @@ pub fn run() {
         .manage(EnttecProState(Mutex::new(None)))
         .manage(NdiService::default())
         .manage(PendingOpenPaths(Mutex::new(Vec::new())))
+        .manage(RemoteServerState::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
@@ -59,6 +65,12 @@ pub fn run() {
             ndi::stop_ndi_output,
             ndi::get_ndi_output_status,
             ndi::push_ndi_frame,
+            get_local_ip,
+            get_remote_server_status,
+            start_remote_server,
+            stop_remote_server,
+            remote_broadcast,
+            remote_set_project_root,
         ])
         .setup(|app| {
             handle_cli_open_files(app.handle());
@@ -97,6 +109,9 @@ pub fn run() {
                 if let Ok(mut guard) = ndi.0.lock() {
                     let _ = ndi::shutdown_output(&mut guard);
                 }
+            }
+            if let Some(remote) = app.try_state::<RemoteServerState>() {
+                remote::shutdown_on_exit(remote.inner());
             }
         }
         if let RunEvent::Opened { urls } = event {

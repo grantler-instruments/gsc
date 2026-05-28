@@ -103,7 +103,8 @@ function splitCommaSeparated(text: string): string[] {
   let quote: "'" | '"' | null = null;
 
   for (let i = 0; i < text.length; i += 1) {
-    const ch = text[i]!;
+    const ch = text[i];
+    if (ch === undefined) break;
     if (quote) {
       current += ch;
       if (ch === quote) quote = null;

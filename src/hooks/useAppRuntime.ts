@@ -14,6 +14,7 @@ import { usePlaybackProgress } from "./usePlaybackProgress";
 import { usePreventBrowserFileDrop } from "./usePreventBrowserFileDrop";
 import { useProjectHistory } from "./useProjectHistory";
 import { useProjectSession } from "./useProjectSession";
+import { useRemoteHost } from "./useRemoteHost";
 import { useTauriAppMenu } from "./useTauriAppMenu";
 import { useTauriOpenProject } from "./useTauriOpenProject";
 
@@ -38,6 +39,7 @@ export function useAppRuntime(): boolean {
   useTauriAppMenu();
   useTauriOpenProject(sessionReady);
   useEnttecProConnection();
+  useRemoteHost(sessionReady);
 
   return sessionReady;
 }

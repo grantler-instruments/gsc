@@ -14,6 +14,7 @@ import { defaultFadeCueFields, fadeCueLabel, isValidFadeTarget } from "../../lib
 import { defaultMidiCueData } from "../../lib/midi";
 import { defaultOscCueData } from "../../lib/osc";
 import { runWithoutHistory } from "../../lib/project-history";
+import { randomId } from "../../lib/random-id";
 import { canEditProject } from "../../lib/show-mode";
 import type { Cue } from "../../types/cue";
 import {
@@ -47,7 +48,7 @@ function resolveParentId(cues: Cue[], parentId: string | undefined): string | un
 function createCueFromOpts(opts: NewCueOpts, fixtures: ProjectState["fixtures"]): Cue {
   const { name, type, assetPath, midi, osc, dmx, parentId } = opts;
   return {
-    id: crypto.randomUUID(),
+    id: randomId(),
     number: "0",
     name,
     type,
@@ -127,7 +128,7 @@ export function createCueEditorActions(
         if (!parent || !isContainerCue(parent)) parentId = undefined;
       }
       const cue = {
-        id: crypto.randomUUID(),
+        id: randomId(),
         number: "0",
         name: opts.name ?? "group",
         type: "group" as const,
@@ -155,7 +156,7 @@ export function createCueEditorActions(
         if (!parent || !isContainerCue(parent)) parentId = undefined;
       }
       const cue = {
-        id: crypto.randomUUID(),
+        id: randomId(),
         number: "0",
         name: opts.name ?? "group",
         type: "sequence" as const,
@@ -180,7 +181,7 @@ export function createCueEditorActions(
       if (!target || isStopCue(target) || !canStopTarget(target)) return null;
 
       const stopCue = {
-        id: crypto.randomUUID(),
+        id: randomId(),
         number: "0",
         name: "Stop",
         type: "stop" as const,
@@ -208,7 +209,7 @@ export function createCueEditorActions(
         return firstCueOrStub(active, fadeCueLabel(fadeType), fadeType);
       }
       const fadeCue = {
-        id: crypto.randomUUID(),
+        id: randomId(),
         number: "0",
         name: fadeCueLabel(fadeType),
         type: fadeType,
@@ -234,7 +235,7 @@ export function createCueEditorActions(
       if (!target || !isValidFadeTarget(fadeType, target)) return null;
 
       const fadeCue = {
-        id: crypto.randomUUID(),
+        id: randomId(),
         number: "0",
         name:
           fadeType === "lightFade"

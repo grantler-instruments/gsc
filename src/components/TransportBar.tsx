@@ -4,10 +4,18 @@ import Chip from "@mui/material/Chip";
 import Slider from "@mui/material/Slider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
 import { getCueDisplayName } from "../lib/cues";
+import {
+  getRemoteConnectionState,
+  sendRemoteCommand,
+  sendRemoteMasterVolume,
+  subscribeRemoteConnection,
+} from "../lib/remote-client";
 import { triggerGoSelected } from "../lib/transport-actions";
+import { isRemoteClient } from "../platform/remote-mode";
 import { findProjectCue, useActiveCueList, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
@@ -70,6 +78,16 @@ function CueSummary({ cue, allCues }: { cue: Cue; allCues?: Cue[] }) {
 
 export function TransportBar() {
   const { t } = useTranslation();
+  const isRemote = isRemoteClient();
+  const [remoteConnected, setRemoteConnected] = useState(
+    () => !isRemote || getRemoteConnectionState() === "connected",
+  );
+  useEffect(() => {
+    if (!isRemote) return;
+    return subscribeRemoteConnection((state) => {
+      setRemoteConnected(state === "connected");
+    });
+  }, [isRemote]);
   const cueLists = useProjectStore((s) => s.cueLists);
   const activeList = useActiveCueList();
   const selectedCueIds = activeList.selectedCueIds;
@@ -115,11 +133,21 @@ export function TransportBar() {
           variant="contained"
           color="success"
           onClick={triggerGoSelected}
-          disabled={cues.length === 0}
+          disabled={cues.length === 0 || !remoteConnected}
         >
           {t("transport.go")}
         </Button>
-        <Button variant="outlined" color="error" onClick={panic}>
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={() => {
+            if (isRemoteClient()) {
+              sendRemoteCommand({ action: "panic" });
+              return;
+            }
+            panic();
+          }}
+        >
           {t("transport.panic")}
         </Button>
       </Stack>
@@ -196,7 +224,14 @@ export function TransportBar() {
           max={1}
           step={0.01}
           value={masterVolume}
-          onChange={(_, value) => setMasterVolume(value as number)}
+          onChange={(_, value) => {
+            const next = value as number;
+            if (isRemoteClient()) {
+              sendRemoteMasterVolume(next);
+              return;
+            }
+            setMasterVolume(next);
+          }}
           sx={{ width: 100, color: "primary.main" }}
         />
       </Stack>
