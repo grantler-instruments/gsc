@@ -4,6 +4,7 @@ import {
   openDroppedProjectBundle,
   openDroppedProjectBundleFile,
 } from "../platform/project-storage";
+import type { TauriDropTarget } from "./tauri-drop";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useVfsStore } from "../stores/vfs";
 import { assetKindFromFilename } from "../vfs/import";
@@ -138,10 +139,11 @@ export async function resolveAssetDropFromDiskPaths(paths: string[]): Promise<As
 export async function handleTauriMediaDrop(
   paths: string[],
   position: { x: number; y: number },
+  targetHint?: TauriDropTarget,
 ): Promise<void> {
   const { dropTargetAtPhysicalPosition, applyAssetDropPayloads } = await import("./tauri-drop");
   const [target, payloads] = await Promise.all([
-    dropTargetAtPhysicalPosition(position),
+    targetHint ? Promise.resolve(targetHint) : dropTargetAtPhysicalPosition(position),
     resolveAssetDropFromDiskPaths(paths),
   ]);
   if (!payloads.length) return;

@@ -46,7 +46,8 @@ export function useCueListDrop(canEdit: boolean) {
       if (!canEdit) return;
 
       const cuePayload = readCueDragData(e.dataTransfer);
-      const draggedCueId = cuePayload?.cueId ?? readCueDragId(e.dataTransfer);
+      const draggedCueId =
+        cuePayload?.cueId ?? (isCueDrag(e.dataTransfer) ? readCueDragId(e.dataTransfer) : null);
       if (draggedCueId) {
         if (e.target === e.currentTarget) {
           moveCueToGroup(draggedCueId, null);

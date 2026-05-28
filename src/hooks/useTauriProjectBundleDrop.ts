@@ -19,6 +19,9 @@ import { useUiStore } from "../stores/ui";
 export function useTauriProjectBundleDrop(): void {
   const pendingPathsRef = useRef<string[]>([]);
   const highlightGenRef = useRef(0);
+  const lastTargetRef = useRef<Awaited<ReturnType<typeof dropTargetAtPhysicalPosition>> | null>(
+    null,
+  );
 
   useEffect(() => {
     if (getPlatform() !== "tauri") return;
@@ -30,6 +33,7 @@ export function useTauriProjectBundleDrop(): void {
       dispatchTauriFileDrag(false);
       dispatchTauriCueListDrag(false);
       pendingPathsRef.current = [];
+      lastTargetRef.current = null;
     };
 
     const updateHighlights = async (position: { x: number; y: number }) => {
@@ -45,6 +49,7 @@ export function useTauriProjectBundleDrop(): void {
 
       const target = await dropTargetAtPhysicalPosition(position);
       if (gen !== highlightGenRef.current || cancelled) return;
+      lastTargetRef.current = target;
 
       const { assets, cueList } = tauriDragHighlightState(target);
       dispatchTauriFileDrag(assets);
@@ -94,7 +99,9 @@ export function useTauriProjectBundleDrop(): void {
             return;
           }
 
-          void handleTauriMediaDrop(paths, position);
+          const targetHint = lastTargetRef.current ?? undefined;
+          lastTargetRef.current = null;
+          void handleTauriMediaDrop(paths, position, targetHint);
         });
       } catch (err) {
         console.warn("[tauri] drag-drop listener unavailable", err);
