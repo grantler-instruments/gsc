@@ -11,6 +11,12 @@ Web-based show playback for audio and video cues. Same codebase runs in the brow
 - **Desktop:** Tauri 2
 - **Browser:** Virtual filesystem (drag-and-drop assets), browser storage + `.gsc.zip` bundles
 
+## Features
+
+- Cue-based playback for audio, video, images, MIDI, OSC, and utility cues
+- Portable project workflows with `.gsc` desktop projects and `.gsc.zip` bundles
+- Audience output window plus **Remote View** for monitoring playback from another device
+
 ## Development
 
 ```bash

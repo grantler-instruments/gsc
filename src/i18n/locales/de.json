@@ -568,6 +568,8 @@
     "featureShowModeDesc": "Bearbeitungs-UI ausblenden und auf das Auslösen von Cues während der Aufführung fokussieren.",
     "featureOutputTitle": "Zweiten Bildschirm ansteuern",
     "featureOutputDesc": "Dediziertes Ausgabefenster für Publikums-Video und -Bilder auf einem weiteren Display öffnen.",
+    "featureRemoteViewTitle": "Remote View",
+    "featureRemoteViewDesc": "Eine browserbasierte Fernansicht öffnen, um aktive Cues und den Show-Status von einem anderen Gerät im Netzwerk zu überwachen.",
     "featureControlTitle": "Mit MIDI & OSC steuern",
     "featureControlDesc": "MIDI und OSC von Cues senden und Hardware auf GO, Cue-Auswahl und Panic mappen. OSC erfordert die Desktop-App — nicht im Web verfügbar.",
     "featurePortableTitle": "Shows überall mitnehmen",

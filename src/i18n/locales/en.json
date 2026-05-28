@@ -568,6 +568,8 @@
     "featureShowModeDesc": "Hide editing chrome and focus on firing cues during the performance.",
     "featureOutputTitle": "Drive a second screen",
     "featureOutputDesc": "Open a dedicated output window for audience video and images on another display.",
+    "featureRemoteViewTitle": "Remote View",
+    "featureRemoteViewDesc": "Open a browser-based remote view to monitor active cues and show state from another device on your network.",
     "featureControlTitle": "Control with MIDI & OSC",
     "featureControlDesc": "Send MIDI and OSC from cues and map hardware to GO, cue select, and panic. OSC requires the desktop app — it is not available in the web.",
     "featurePortableTitle": "Take shows anywhere",

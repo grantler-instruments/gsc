@@ -568,6 +568,8 @@
     "featureShowModeDesc": "隐藏编辑界面，专注于演出期间触发提示。",
     "featureOutputTitle": "驱动第二屏幕",
     "featureOutputDesc": "在另一显示器上打开专用输出窗口，显示观众视频和图像。",
+    "featureRemoteViewTitle": "远程视图",
+    "featureRemoteViewDesc": "打开基于浏览器的远程视图，从网络中的另一台设备监看活跃提示和演出状态。",
     "featureControlTitle": "MIDI 与 OSC 控制",
     "featureControlDesc": "从提示发送 MIDI 和 OSC，并将硬件映射到 GO、提示选择和紧急停止。OSC 需要桌面应用 — Web 不可用。",
     "featurePortableTitle": "随身携带演出",

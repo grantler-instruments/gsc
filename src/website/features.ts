@@ -49,6 +49,7 @@ export const featureCategoryKeys: FeatureCategoryKey[] = [
     key: "categoryOutputProjects",
     features: [
       { key: "featureOutputTitle", descKey: "featureOutputDesc" },
+      { key: "featureRemoteViewTitle", descKey: "featureRemoteViewDesc" },
       { key: "featureControlTitle", descKey: "featureControlDesc" },
       { key: "featurePortableTitle", descKey: "featurePortableDesc" },
     ],

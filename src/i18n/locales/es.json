@@ -568,6 +568,8 @@
     "featureShowModeDesc": "Oculte la interfaz de edición y concéntrese en disparar cues durante la función.",
     "featureOutputTitle": "Impulsar una segunda pantalla",
     "featureOutputDesc": "Abra una ventana de salida dedicada para video e imágenes del público en otra pantalla.",
+    "featureRemoteViewTitle": "Vista remota",
+    "featureRemoteViewDesc": "Abra una vista remota en el navegador para supervisar cues activos y el estado del show desde otro dispositivo en la red.",
     "featureControlTitle": "Controlar con MIDI y OSC",
     "featureControlDesc": "Envíe MIDI y OSC desde cues y asigne hardware a GO, selección de cue y pánico. OSC requiere la app de escritorio — no disponible en la web.",
     "featurePortableTitle": "Lleve shows a cualquier parte",
