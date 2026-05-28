@@ -84,6 +84,7 @@ export function useTauriProjectBundleDrop(): void {
           if (event.payload.type !== "drop") return;
 
           const { paths, position } = event.payload;
+          const targetHint = lastTargetRef.current ?? undefined;
           clearHighlights();
           if (useUiStore.getState().showMode) return;
 
@@ -99,8 +100,6 @@ export function useTauriProjectBundleDrop(): void {
             return;
           }
 
-          const targetHint = lastTargetRef.current ?? undefined;
-          lastTargetRef.current = null;
           void handleTauriMediaDrop(paths, position, targetHint);
         });
       } catch (err) {

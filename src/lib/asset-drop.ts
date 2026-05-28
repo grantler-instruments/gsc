@@ -4,7 +4,6 @@ import {
   openDroppedProjectBundle,
   openDroppedProjectBundleFile,
 } from "../platform/project-storage";
-import type { TauriDropTarget } from "./tauri-drop";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useVfsStore } from "../stores/vfs";
 import { assetKindFromFilename } from "../vfs/import";
@@ -12,6 +11,7 @@ import { isContainerCue } from "./cues";
 import { type AssetDragPayload, isAssetDrag, readAssetDragData } from "./drag";
 import { isProjectBundlePath } from "./project-paths";
 import { canEditProject } from "./show-mode";
+import type { TauriDropTarget } from "./tauri-drop";
 
 /** True if any path looks like a media file (folders are treated as possible media). */
 export function diskPathsMayHaveMedia(paths: string[]): boolean {
@@ -44,12 +44,6 @@ export async function resolveAssetDropPayloads(
   const fromProject = readAssetDragData(dataTransfer);
   if (fromProject) {
     return [fromProject];
-  }
-
-  // Tauri OS drops are handled by useTauriProjectBundleDrop. With dragDropEnabled:
-  // false, HTML5 drop also fires — ignore external files to avoid double import.
-  if (getPlatform() === "tauri" && isExternalFileDrag(dataTransfer)) {
-    return [];
   }
 
   const files = filesFromDataTransfer(dataTransfer);
