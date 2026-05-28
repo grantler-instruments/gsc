@@ -325,7 +325,7 @@ export function AudioWaveform({
             <Box sx={{ ...waveformThumbnailSx, left: `${hoverPct}%` }}>
               <Box component="img" src={thumbnailUrl} alt="" draggable={false} />
               <Typography component="span" sx={waveformThumbnailTimeSx}>
-                {formatTime(hoverSec!)}
+                {formatTime(hoverSec ?? 0)}
               </Typography>
             </Box>
           )}

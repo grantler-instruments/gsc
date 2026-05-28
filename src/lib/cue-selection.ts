@@ -1,5 +1,6 @@
 import type { Cue } from "../types/cue";
 import { buildCueTree, type CueListNode, getChildCues, isContainerCue } from "./cues";
+import { randomId } from "./random-id";
 
 export function getPrimarySelectedCueId(selectedCueIds: string[]): string | null {
   return selectedCueIds[selectedCueIds.length - 1] ?? null;
@@ -84,7 +85,7 @@ export function buildParallelGroupFromSelection(
   if (firstIdx === -1) return null;
 
   const group: Cue = {
-    id: crypto.randomUUID(),
+    id: randomId(),
     number: "0",
     name: groupName,
     type: "group",

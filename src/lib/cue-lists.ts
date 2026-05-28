@@ -1,5 +1,6 @@
 import { t } from "../i18n/t";
 import type { Cue } from "../types/cue";
+import { randomId } from "./random-id";
 
 export interface CueList {
   id: string;
@@ -11,7 +12,7 @@ export interface CueList {
 
 export function createCueList(name: string): CueList {
   return {
-    id: crypto.randomUUID(),
+    id: randomId(),
     name,
     cues: [],
     selectedCueIds: [],

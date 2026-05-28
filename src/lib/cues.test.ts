@@ -134,7 +134,9 @@ describe("resolveParallelGoIds", () => {
       testCue("seq", "Seq", "sequence", { parentId: "par" }),
       testCue("a", "A", "audio", { parentId: "seq" }),
     ];
-    expect(resolveParallelGoIds(cues.find((c) => c.id === "par")!, cues)).toEqual(["seq"]);
+    const group = cues.find((c) => c.id === "par");
+    if (!group) throw new Error("Expected group cue");
+    expect(resolveParallelGoIds(group, cues)).toEqual(["seq"]);
   });
 
   it("returns a single cue id for non-group cues", () => {

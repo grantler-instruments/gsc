@@ -258,8 +258,8 @@ export function cueNameSx(
     : state.isOpacityFade
       ? CUE_NAME_TINT.opacityFade
       : state.hasWarning
-          ? CUE_NAME_TINT.warning
-          : undefined;
+        ? CUE_NAME_TINT.warning
+        : undefined;
 
   return {
     flex: 1,

@@ -4,6 +4,7 @@ import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
 import type { MidiAction, MidiMapping, MidiMatch } from "../types/midi-mapping";
 import { midiMatches, parseMidiMessage } from "./midi";
+import { randomId } from "./random-id";
 import { triggerGoAndAdvance, triggerGoSelected } from "./transport-actions";
 
 const DEBOUNCE_MS = 50;
@@ -68,7 +69,7 @@ export function handleIncomingMidi(data: number[], mappings: MidiMapping[]): voi
 export function buildNoteToCueMappings(cues: Cue[], startNote = 36): MidiMapping[] {
   const topLevel = cues.filter((c) => !c.parentId);
   return topLevel.map((cue, i) => ({
-    id: crypto.randomUUID(),
+    id: randomId(),
     match: {
       channel: 1,
       kind: "note-on",

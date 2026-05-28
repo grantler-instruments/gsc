@@ -43,12 +43,13 @@ export function createFixturePlotActions(
         const plot = ensureFixturePlot(state.fixturePlot, state.fixtures);
         const entries = plot.entries.map((entry) => {
           if (entry.fixtureId !== fixtureId) return entry;
-          return normalizeFixturePlot(
+          const normalized = normalizeFixturePlot(
             {
               entries: [{ ...entry, ...patch, fixtureId }],
             },
             [fixture],
-          ).entries[0]!;
+          ).entries[0];
+          return normalized ?? entry;
         });
 
         return { fixturePlot: { ...plot, entries } };

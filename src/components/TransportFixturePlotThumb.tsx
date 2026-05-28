@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import { useMemo } from "react";
-import { ensureFixturePlot, resolveFixtureVisualState } from "../lib/fixture-plot";
 import { normalizeDmxCueData } from "../lib/dmx";
+import { ensureFixturePlot, resolveFixtureVisualState } from "../lib/fixture-plot";
 import { useProjectStore } from "../stores/project";
 import type { DmxCueData } from "../types/cue";
 import { FixturePlotGlyph } from "./FixturePlotGlyph";

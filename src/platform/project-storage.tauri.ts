@@ -39,6 +39,7 @@ import {
 } from "../lib/project-paths";
 import { collectSessionAssetPaths } from "../lib/project-session";
 import { snapshotToCueLists } from "../lib/project-snapshot";
+import { randomId } from "../lib/random-id";
 import type { RecentProjectEntry } from "../lib/recent-projects";
 import {
   readRecentProjects,
@@ -62,7 +63,7 @@ const DRAFT_ROOT_KEY = "gsc-tauri-draft-root";
 const IGNORED_DIR_ENTRIES = new Set([".DS_Store", "Thumbs.db", "desktop.ini"]);
 
 async function createDraftProjectRoot(showName: string): Promise<string> {
-  const sessionDir = await join(await appCacheDir(), "drafts", crypto.randomUUID());
+  const sessionDir = await join(await appCacheDir(), "drafts", randomId());
   const rootDir = await join(sessionDir, projectDirNameFromShowName(showName));
   await mkdir(rootDir, { recursive: true });
   await markGscProjectPackage(rootDir);

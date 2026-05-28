@@ -4,7 +4,7 @@ import { type RefObject, useLayoutEffect } from "react";
 export function useRestartCssAnimation(
   ref: RefObject<HTMLElement | null>,
   active: boolean,
-  token: string,
+  _token: string,
 ): void {
   useLayoutEffect(() => {
     if (!active || !ref.current) return;
@@ -12,5 +12,5 @@ export function useRestartCssAnimation(
     el.style.animation = "none";
     void el.offsetHeight;
     el.style.animation = "";
-  }, [active, token]);
+  }, [active, ref.current]);
 }

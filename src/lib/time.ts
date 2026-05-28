@@ -63,18 +63,19 @@ export function formatPlaybackRangeLabel(
   if (!hasIn && !hasOut) {
     return isImage ? t("playback.infinite") : null;
   }
+  const outVal = outTime ?? 0;
 
   if (isImage && hasOut) {
-    return formatTime(outTime!);
+    return formatTime(outVal);
   }
 
   if (hasIn && hasOut) {
     return t("playback.inOutRange", {
       inTime: formatTime(inVal),
-      outTime: formatTime(outTime!),
+      outTime: formatTime(outVal),
     });
   }
   if (hasIn) return t("playback.inTime", { time: formatTime(inVal) });
-  if (hasOut) return t("playback.outTime", { time: formatTime(outTime!) });
+  if (hasOut) return t("playback.outTime", { time: formatTime(outVal) });
   return null;
 }

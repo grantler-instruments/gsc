@@ -70,7 +70,7 @@ export function useResolvedOutputLayers(state: OutputState): OutputLayer[] {
     return () => {
       cancelled = true;
     };
-  }, [state.layers, state.revision, state.projectId]);
+  }, [state.layers, state.projectId]);
 
   useEffect(() => {
     const urls = urlsRef.current;

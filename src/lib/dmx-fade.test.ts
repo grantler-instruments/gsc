@@ -69,8 +69,9 @@ describe("dmx fade", () => {
       fixtures,
     );
     expect(plan).not.toBeNull();
+    if (!plan) throw new Error("Expected fade plan");
 
-    const frames = sampleDmxFadePlan(plan!, 0.5);
+    const frames = sampleDmxFadePlan(plan, 0.5);
     expect(frames).toHaveLength(1);
     expect(getDmxChannelLevel(1, 1)).toBe(100);
     expect(getDmxChannelLevel(1, 2)).toBe(50);

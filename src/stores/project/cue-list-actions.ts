@@ -1,6 +1,9 @@
 import type { StoreApi } from "zustand";
 import { createCueList, nextCueListName } from "../../lib/cue-lists";
+import { syncHostSelectionToRemotes } from "../../lib/host-selection-bridge";
+import { sendRemoteCommand } from "../../lib/remote-client";
 import { canEditProject } from "../../lib/show-mode";
+import { isRemoteClient } from "../../platform/remote-mode";
 import { getActiveCueListFromState } from "./helpers";
 import type { ProjectState } from "./types";
 
@@ -45,8 +48,13 @@ export function createCueListActions(
     },
 
     setActiveCueList: (listId) => {
+      if (isRemoteClient()) {
+        sendRemoteCommand({ action: "set-active-cue-list", cueListId: listId });
+        return;
+      }
       if (get().cueLists.some((l) => l.id === listId)) {
         set({ activeCueListId: listId });
+        syncHostSelectionToRemotes();
       }
     },
 

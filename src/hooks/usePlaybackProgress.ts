@@ -70,13 +70,15 @@ export function usePlaybackProgress(): void {
       if (sessionsRef.current.has(cueId)) return;
 
       const sourceDurationSec = cue.assetPath ? getMediaDurationSec(cue.assetPath) : undefined;
+      const assetPath = cue.assetPath;
 
       if (cueNeedsKnownDuration(cue) && sourceDurationSec === undefined) {
-        if (cue.assetPath && !probedPathsRef.current.has(cue.assetPath)) {
-          probedPathsRef.current.add(cue.assetPath);
-          prefetchMediaDurations([cue.assetPath]);
+        if (assetPath && !probedPathsRef.current.has(assetPath)) {
+          probedPathsRef.current.add(assetPath);
+          prefetchMediaDurations([assetPath]);
         }
-        void ensureMediaDurationSec(cue.assetPath!).then(() => {
+        if (!assetPath) return;
+        void ensureMediaDurationSec(assetPath).then(() => {
           const { activeCueIds: currentActive } = useTransportStore.getState();
           if (currentActive.includes(cueId)) {
             tryStartSession(cueId, cue);

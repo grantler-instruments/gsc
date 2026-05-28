@@ -54,8 +54,8 @@ describe("selection actions", () => {
     const group = useProjectStore.getState().groupSelectedCues();
 
     expect(group?.type).toBe("group");
-    expect(activeListSelection()).toEqual([group!.id]);
-    expect(activeCues().filter((c) => c.parentId === group!.id)).toHaveLength(2);
+    expect(activeListSelection()).toEqual([group?.id]);
+    expect(activeCues().filter((c) => c.parentId === group?.id)).toHaveLength(2);
   });
 
   it("cut and paste selected cues", () => {

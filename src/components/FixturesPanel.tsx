@@ -100,7 +100,7 @@ export function FixturesPanel() {
     } catch (err) {
       notifyErrorFromUnknown(err);
     }
-  }, [canEdit, fixtures, projectName, readProfileBlob]);
+  }, [canEdit, fixtures, projectName, readProfileBlob, t]);
 
   const handleImportProfileClick = useCallback(() => {
     profileImportRef.current?.click();
@@ -388,7 +388,7 @@ function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorP
     return () => {
       cancelled = true;
     };
-  }, [fixture.ofl?.filePath]);
+  }, [fixture.ofl?.filePath, fixture.ofl]);
 
   const handleModeChange = (modeName: string) => {
     if (!fixture.ofl || readOnly) return;
@@ -512,7 +512,7 @@ function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorP
           </Typography>
           {manualChannels.map((channel, index) => (
             <Stack
-              key={`${fixture.id}-channel-${index}`}
+              key={`${fixture.id}-channel-${fixtureChannelAddress(fixture, index)}`}
               direction="row"
               sx={{ gap: 0.75, alignItems: "center" }}
             >

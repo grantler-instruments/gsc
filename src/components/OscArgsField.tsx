@@ -11,7 +11,7 @@ interface OscArgsFieldProps {
   onChange: (args: OscArg[]) => void;
 }
 
-export function OscArgsField({ cueId, args, readOnly, onChange }: OscArgsFieldProps) {
+export function OscArgsField({ cueId: _cueId, args, readOnly, onChange }: OscArgsFieldProps) {
   const { t } = useTranslation();
   const [text, setText] = useState(() => formatOscArgsText(args));
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +19,7 @@ export function OscArgsField({ cueId, args, readOnly, onChange }: OscArgsFieldPr
   useEffect(() => {
     setText(formatOscArgsText(args));
     setError(null);
-  }, [cueId]);
+  }, [args]);
 
   const commit = (value: string, showError = true) => {
     const parsed = parseOscArgsText(value);

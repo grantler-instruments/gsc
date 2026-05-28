@@ -13,9 +13,7 @@ export const MIDI_MESSAGE_KINDS: MidiMessageKind[] = [
   "continue",
 ];
 
-export function isSystemRealtimeKind(
-  kind: MidiMessageKind,
-): kind is "start" | "stop" | "continue" {
+export function isSystemRealtimeKind(kind: MidiMessageKind): kind is "start" | "stop" | "continue" {
   return kind === "start" || kind === "stop" || kind === "continue";
 }
 
@@ -94,8 +92,8 @@ export function clampMidiPitchBend(v: number): number {
 
 /** Parse a short MIDI message into match fields. */
 export function parseMidiMessage(bytes: number[]): MidiMatch | null {
-  if (bytes.length < 1) return null;
-  const status = bytes[0]!;
+  const status = bytes[0];
+  if (status === undefined) return null;
 
   if (status === 0xfa) return { channel: 1, kind: "start" };
   if (status === 0xfb) return { channel: 1, kind: "continue" };
@@ -136,7 +134,10 @@ export function parseMidiMessage(bytes: number[]): MidiMatch | null {
     };
   }
   if (hi === 0xe0 && bytes.length >= 3) {
-    const pitchBend = (bytes[2]! << 7) | bytes[1]!;
+    const lsb = bytes[1];
+    const msb = bytes[2];
+    if (lsb === undefined || msb === undefined) return null;
+    const pitchBend = (msb << 7) | lsb;
     return {
       channel,
       kind: "pitch-bend",
@@ -168,8 +169,10 @@ export function midiMatches(mapping: MidiMatch, incoming: MidiMatch): boolean {
     case "program-change":
       return (mapping.program ?? 0) === (incoming.program ?? 0);
     case "pitch-bend":
-      return (mapping.pitchBend ?? MIDI_PITCH_BEND_CENTER) ===
-        (incoming.pitchBend ?? MIDI_PITCH_BEND_CENTER);
+      return (
+        (mapping.pitchBend ?? MIDI_PITCH_BEND_CENTER) ===
+        (incoming.pitchBend ?? MIDI_PITCH_BEND_CENTER)
+      );
     default:
       return false;
   }

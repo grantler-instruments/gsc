@@ -1,4 +1,5 @@
 import { t } from "../i18n/t";
+import { isRemoteClient } from "../platform/remote-mode";
 import type { VfsEntry } from "../stores/vfs";
 import { useVfsStore } from "../stores/vfs";
 import type { AssetKind, Cue } from "../types/cue";
@@ -33,6 +34,8 @@ export function getCueAssetWarning(
   cue: Cue,
   entries: VfsEntry[] = useVfsStore.getState().entries,
 ): { title: string; detail: string } | null {
+  // Playback stays on the booth; media loads over HTTP for waveforms/thumbnails only.
+  if (isRemoteClient()) return null;
   if (!cueNeedsAsset(cue)) return null;
   if (!cue.assetPath) {
     return {
@@ -60,5 +63,6 @@ export function cueMissingAsset(
   cue: Cue,
   entries: VfsEntry[] = useVfsStore.getState().entries,
 ): boolean {
+  if (isRemoteClient()) return false;
   return getCueAssetWarning(cue, entries) !== null;
 }
