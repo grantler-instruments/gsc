@@ -43,9 +43,9 @@ function FixturePlotTooltipContent({
       >
         {fixture.name}
       </Typography>
-      {channels.map((channel, index) => (
+      {channels.map((channel) => (
         <Typography
-          key={`${fixture.id}-${index}`}
+          key={`${fixture.id}-${channel.label}`}
           component="span"
           variant="caption"
           sx={{
@@ -76,7 +76,7 @@ function AbstractBars({ channels, radius }: { channels: number[]; radius: number
         const x = startX + index * barWidth;
         return (
           <rect
-            key={index}
+            key={`${x}-${value}`}
             x={x}
             y={radius * 0.2 - height}
             width={barWidth * 0.75}

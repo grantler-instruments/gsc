@@ -149,7 +149,7 @@ export function DmxInspectorFields({
               const channelLabel = fixtureChannelLabel(fixture, index);
               return (
                 <Stack
-                  key={`${entry.fixtureId}-${index}`}
+                  key={`${entry.fixtureId}-${fixtureChannelAddress(fixture, index)}`}
                   direction="row"
                   sx={{ gap: 0.75, alignItems: "center" }}
                 >

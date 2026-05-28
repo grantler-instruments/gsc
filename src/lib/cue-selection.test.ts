@@ -110,16 +110,16 @@ describe("buildParallelGroupFromSelection", () => {
     const result = buildParallelGroupFromSelection(["a", "b"], cues, "My Group");
     expect(result).not.toBeNull();
 
-    const group = result!.find((c) => c.type === "group");
+    const group = result?.find((c) => c.type === "group");
     expect(group?.id).toBe("uuid-1");
     expect(group?.name).toBe("My Group");
 
-    const a = result!.find((c) => c.id === "a");
-    const b = result!.find((c) => c.id === "b");
+    const a = result?.find((c) => c.id === "a");
+    const b = result?.find((c) => c.id === "b");
     expect(a?.parentId).toBe("uuid-1");
     expect(b?.parentId).toBe("uuid-1");
 
-    const ids = result!.map((c) => c.id);
+    const ids = result?.map((c) => c.id);
     expect(ids.indexOf("uuid-1")).toBeLessThan(ids.indexOf("c"));
   });
 });

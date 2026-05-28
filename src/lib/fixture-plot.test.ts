@@ -55,11 +55,13 @@ describe("fixture plot", () => {
 
   it("preserves existing positions when syncing", () => {
     const fixtures = [fixture("a", { channelCount: 1 })];
+    const firstFixture = fixtures[0];
+    if (!firstFixture) throw new Error("Expected fixture");
     const plot = normalizeFixturePlot(
       {
         entries: [
           {
-            ...defaultFixturePlotEntry(fixtures[0]!, 0, 1),
+            ...defaultFixturePlotEntry(firstFixture, 0, 1),
             x: 0.25,
             y: 0.75,
           },

@@ -1,10 +1,10 @@
-import { groupDmxOutputChannelsByFixture, listDmxOutputChannels } from "./dmx-output";
-import { applyFixtureChannelValuesToBuffers } from "./dmx";
 import { usePlaybackStore } from "../stores/playback";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
 import type { RemoteSnapshot, RemoteTransportState } from "../types/remote";
+import { applyFixtureChannelValuesToBuffers } from "./dmx";
+import { groupDmxOutputChannelsByFixture, listDmxOutputChannels } from "./dmx-output";
 import { snapshotToCueLists } from "./project-snapshot";
 
 type Fixtures = ReturnType<typeof useProjectStore.getState>["fixtures"];

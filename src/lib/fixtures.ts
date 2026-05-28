@@ -1,7 +1,7 @@
 import { t } from "../i18n/t";
 import type { Fixture, FixtureChannel } from "../types/fixture";
-import { randomId } from "./random-id";
 import { normalizeFixtureOflProfile, oflProfileChannelCount } from "./ofl/profile";
+import { randomId } from "./random-id";
 
 export const DMX_UNIVERSE_SIZE = 512;
 export const DEFAULT_FIXTURE_CHANNEL_COUNT = 1;

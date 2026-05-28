@@ -11,7 +11,11 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRemoteClient } from "../hooks/useRemoteClient";
 import { useRemoteKeyboard } from "../hooks/useRemoteKeyboard";
-import { connectRemoteClient, getRemoteConnectionState, subscribeRemoteConnection } from "../lib/remote-client";
+import {
+  connectRemoteClient,
+  getRemoteConnectionState,
+  subscribeRemoteConnection,
+} from "../lib/remote-client";
 import { remotePinFromUrl, setRemotePinForSession } from "../platform/remote-mode";
 import { AppSnackbar } from "./AppSnackbar";
 import { CueList } from "./CueList";

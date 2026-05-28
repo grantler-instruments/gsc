@@ -1,16 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { getDmxChannelLevel } from "./dmx";
-import { buildDmxPreviewFrames } from "./dmx-preview";
 import { usePlaybackStore } from "../stores/playback";
 import { useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
 import { resetTestProject, testCue } from "../test/fixtures/cues";
 import type { Fixture } from "../types/fixture";
-import {
-  applyRemoteSnapshot,
-  buildRemoteSnapshot,
-} from "./remote-snapshot";
+import { getDmxChannelLevel } from "./dmx";
+import { buildDmxPreviewFrames } from "./dmx-preview";
+import { applyRemoteSnapshot, buildRemoteSnapshot } from "./remote-snapshot";
 
 describe("remote-snapshot", () => {
   it("round-trips project, selection, and transport state", () => {
@@ -106,7 +103,8 @@ describe("remote-snapshot", () => {
       activeCueListId: "list1",
     });
     useUiStore.setState({ dmxPreviewCueIds: [cue.id], fixturePlotExpanded: true });
-    const list = useProjectStore.getState().cueLists[0]!;
+    const list = useProjectStore.getState().cueLists[0];
+    if (!list) throw new Error("Expected cue list");
     buildDmxPreviewFrames(list.cues, [cue.id], [fixture]);
 
     const snapshot = buildRemoteSnapshot();

@@ -1,6 +1,6 @@
 import type { StoreApi } from "zustand";
-import { randomId } from "../../lib/random-id";
 import { buildNoteToCueMappings } from "../../lib/midi-mapping";
+import { randomId } from "../../lib/random-id";
 import { getActiveCueListFromState } from "./helpers";
 import type { ProjectState } from "./types";
 

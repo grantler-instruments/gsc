@@ -2,7 +2,6 @@ import { strFromU8, strToU8, unzipSync, type Zippable, zipSync } from "fflate";
 import { t } from "../i18n/t";
 import type { Fixture } from "../types/fixture";
 import { normalizePath, vfsHas, vfsPut } from "../vfs/engine";
-import { randomId } from "./random-id";
 import {
   fixtureFitsInUniverse,
   getFixtureConflicts,
@@ -15,6 +14,7 @@ import {
   isAssetsRelativePath,
   virtualPathFromRelativeAssetFile,
 } from "./project-paths";
+import { randomId } from "./random-id";
 
 export const FIXTURES_PROFILE_JSON = "fixtures.json";
 export const FIXTURES_PROFILE_EXTENSION = ".gsc-fixtures.zip";
@@ -124,9 +124,11 @@ function remapFixtureProfilePaths(fixture: Fixture, pathMap: Map<string, string>
   };
 
   if (remapped.ofl && pathMap.has(remapped.ofl.filePath)) {
+    const mappedPath = pathMap.get(remapped.ofl.filePath);
+    if (!mappedPath) return remapped;
     remapped.ofl = {
       ...remapped.ofl,
-      filePath: pathMap.get(remapped.ofl.filePath)!,
+      filePath: mappedPath,
     };
   }
 

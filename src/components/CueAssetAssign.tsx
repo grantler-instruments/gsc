@@ -58,7 +58,7 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
       void prefetchMediaDurations([payload.path]);
       return true;
     },
-    [cue, updateCue],
+    [cue, updateCue, t],
   );
 
   const onSelectAsset = (payload: AssetDragPayload) => {
@@ -89,7 +89,7 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
         setActiveAssetDrag(null);
       }
     },
-    [assignPayload, cue, readOnly],
+    [assignPayload, cue, readOnly, t],
   );
 
   const onDragOver = useCallback(
@@ -128,7 +128,7 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
       }
       assignPayload(match);
     },
-    [assignPayload, cue, importFromFileList, readOnly],
+    [assignPayload, cue, importFromFileList, readOnly, t],
   );
 
   if (!warning) return null;

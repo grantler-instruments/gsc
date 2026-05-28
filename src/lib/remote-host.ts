@@ -1,6 +1,6 @@
 import { remoteBroadcast } from "../platform/remote-server";
-import { patchActiveList } from "../stores/project/helpers";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import { patchActiveList } from "../stores/project/helpers";
 import { useTransportStore } from "../stores/transport";
 import type { RemoteHostCommand } from "../types/remote";
 import { selectNextCueAfterGo } from "./cue-navigation";

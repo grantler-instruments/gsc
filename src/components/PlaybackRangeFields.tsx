@@ -68,16 +68,18 @@ export function PlaybackRangeFields({ cue, readOnly = false, onChange }: Playbac
 
       {hasWaveform && (
         <Box sx={inspectorWaveformFieldSx}>
-          <AudioWaveform
-            assetPath={cue.assetPath!}
-            inTime={cue.inTime}
-            outTime={cue.outTime}
-            height={isVideo ? 88 : 80}
-            editable={!readOnly}
-            onRangeChange={onChange}
-            mediaKind={isVideo ? "video" : "audio"}
-            hoverPreview={isVideo && !readOnly}
-          />
+          {cue.assetPath && (
+            <AudioWaveform
+              assetPath={cue.assetPath}
+              inTime={cue.inTime}
+              outTime={cue.outTime}
+              height={isVideo ? 88 : 80}
+              editable={!readOnly}
+              onRangeChange={onChange}
+              mediaKind={isVideo ? "video" : "audio"}
+              hoverPreview={isVideo && !readOnly}
+            />
+          )}
           <Typography component="p" sx={inspectorWaveformRangeSummarySx}>
             {t("inspector.rangeSummary", {
               inTime: formatTime(inTime),

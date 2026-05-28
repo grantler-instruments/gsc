@@ -205,11 +205,13 @@ export class AudioEngine {
       if (generation !== this.syncGeneration) return;
 
       for (const cueId of targetVideo) {
-        const cue = cueById.get(cueId)!;
+        const cue = cueById.get(cueId);
+        if (!cue) continue;
         const goAtMs = cueStartedAtMs[cueId] ?? Date.now();
 
         if (this.videoVoices.has(cueId)) {
-          const existing = this.videoVoices.get(cueId)!;
+          const existing = this.videoVoices.get(cueId);
+          if (!existing) continue;
           if (existing.goAtMs === goAtMs) {
             updateVideoVoiceLevels(existing, cue, masterVolume);
             continue;
@@ -243,12 +245,14 @@ export class AudioEngine {
       }
 
       for (const cueId of targetAudio) {
-        const cue = cueById.get(cueId)!;
-        const assetPath = cue.assetPath!;
+        const cue = cueById.get(cueId);
+        if (!cue?.assetPath) continue;
+        const assetPath = cue.assetPath;
         const goAtMs = cueStartedAtMs[cueId] ?? Date.now();
 
         if (this.voices.has(cueId)) {
-          const existing = this.voices.get(cueId)!;
+          const existing = this.voices.get(cueId);
+          if (!existing) continue;
           if (existing.goAtMs === goAtMs) {
             this.updateVoiceLevels(cueId, cue, masterVolume);
             continue;

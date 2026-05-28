@@ -12,8 +12,8 @@ import { setActiveProjectId } from "./active-project-id";
 import { notifyWarningDeduped } from "./notifications";
 import { collectOflPaths } from "./ofl/import-ofl";
 import { replaceProjectWithoutHistory } from "./project-history";
-import { randomId } from "./random-id";
 import { snapshotToCueLists } from "./project-snapshot";
+import { randomId } from "./random-id";
 
 const SESSION_KEY = "gsc-project-session";
 

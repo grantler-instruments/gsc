@@ -27,7 +27,7 @@ export async function connectEnttecProWeb(): Promise<boolean> {
   await disconnectEnttecProWeb();
 
   try {
-    port = await navigator.serial!.requestPort({ filters: ENTTEC_USB_FILTERS });
+    port = await navigator.serial?.requestPort({ filters: ENTTEC_USB_FILTERS });
     await port.open({ baudRate: ENTTEC_PRO_BAUD_RATE });
     writer = port.writable?.getWriter() ?? null;
     if (!writer) {
@@ -77,7 +77,7 @@ export async function sendEnttecProUniversesWeb(frames: DmxUniverseFrame[]): Pro
         notifyWarningDeduped(t("notification.enttecUniverseLimit", { universe: frame.universe }));
         continue;
       }
-      await writer!.write(packet);
+      await writer?.write(packet);
     }
   });
 

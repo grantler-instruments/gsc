@@ -145,7 +145,7 @@ function VideoLayer({ layer, onEnded }: VideoLayerProps) {
       video.removeAttribute("src");
       video.load();
     };
-  }, [layer.cueId, layer.objectUrl, layer.goAtMs, onEnded]);
+  }, [layer.objectUrl, onEnded, layer.opacity]);
 
   useEffect(() => {
     const video = ref.current;

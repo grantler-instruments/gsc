@@ -13,8 +13,8 @@ import {
 import { getChildCues, isContainerCue, isFadeCue, isStopCue } from "../../lib/cues";
 import { syncHostSelectionToRemotes } from "../../lib/host-selection-bridge";
 import { sendRemoteCommand } from "../../lib/remote-client";
-import { isRemoteClient } from "../../platform/remote-mode";
 import { canEditProject } from "../../lib/show-mode";
+import { isRemoteClient } from "../../platform/remote-mode";
 import { guardDmxPreviewSelection } from "../../stores/dmx-preview-session";
 import { useUiStore } from "../../stores/ui";
 import type { Cue } from "../../types/cue";

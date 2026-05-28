@@ -13,6 +13,9 @@ function randomIdFromMath(): string {
 
 /** UUID v4 for cue/project ids. Uses getRandomValues (works on HTTP LAN); never calls randomUUID. */
 export function randomId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
   if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
     const bytes = new Uint8Array(16);
     crypto.getRandomValues(bytes);

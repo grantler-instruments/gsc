@@ -3,13 +3,17 @@ import { useEffect, useRef } from "react";
 import { registerHostSelectionBroadcaster } from "../lib/host-selection-bridge";
 import { broadcastRemoteSnapshot, handleRemoteHostCommand } from "../lib/remote-host";
 import { getPlatform } from "../platform";
-import { getRemoteServerStatus, setRemoteProjectRoot, startRemoteServer } from "../platform/remote-server";
-import { usePreferencesStore } from "../stores/preferences";
-import { useProjectLocationStore } from "../stores/project-location";
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import {
+  getRemoteServerStatus,
+  setRemoteProjectRoot,
+  startRemoteServer,
+} from "../platform/remote-server";
 import { useDmxOutputStore } from "../stores/dmx-output";
 import { useFadeStore } from "../stores/fade";
 import { usePlaybackStore } from "../stores/playback";
+import { usePreferencesStore } from "../stores/preferences";
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import { useProjectLocationStore } from "../stores/project-location";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
 import type { RemoteHostCommand } from "../types/remote";
@@ -20,7 +24,9 @@ function isCueCountChanged(
   state: ReturnType<typeof useProjectStore.getState>,
   prev: ReturnType<typeof useProjectStore.getState>,
 ): boolean {
-  return getActiveCueListFromState(state).cues.length !== getActiveCueListFromState(prev).cues.length;
+  return (
+    getActiveCueListFromState(state).cues.length !== getActiveCueListFromState(prev).cues.length
+  );
 }
 
 function isRelevantUiChange(

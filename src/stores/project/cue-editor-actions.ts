@@ -13,8 +13,8 @@ import { defaultDmxCueData, normalizeDmxCueData } from "../../lib/dmx";
 import { defaultFadeCueFields, fadeCueLabel, isValidFadeTarget } from "../../lib/fade";
 import { defaultMidiCueData } from "../../lib/midi";
 import { defaultOscCueData } from "../../lib/osc";
-import { randomId } from "../../lib/random-id";
 import { runWithoutHistory } from "../../lib/project-history";
+import { randomId } from "../../lib/random-id";
 import { canEditProject } from "../../lib/show-mode";
 import type { Cue } from "../../types/cue";
 import {

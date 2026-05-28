@@ -32,8 +32,10 @@ describe("triggerGoAndAdvance", () => {
 
   it("GOs the cue through transport and advances selection", () => {
     useProjectStore.getState().selectCue("a");
+    const cue = useProjectStore.getState().cueLists[0].cues.find((c) => c.id === "a");
+    if (!cue) throw new Error("Expected cue a");
 
-    triggerGoAndAdvance(useProjectStore.getState().cueLists[0].cues.find((c) => c.id === "a")!);
+    triggerGoAndAdvance(cue);
 
     expect(useTransportStore.getState().activeCueIds).toEqual(["a"]);
     expect(activeListSelection()).toEqual(["b"]);
@@ -45,7 +47,8 @@ describe("triggerGoAndAdvance", () => {
       testCue("a", "A", "audio", { parentId: "g" }),
       testCue("b", "B", "audio"),
     ]);
-    const group = useProjectStore.getState().cueLists[0].cues.find((c) => c.id === "g")!;
+    const group = useProjectStore.getState().cueLists[0].cues.find((c) => c.id === "g");
+    if (!group) throw new Error("Expected group cue");
 
     triggerGoAndAdvance(group);
 

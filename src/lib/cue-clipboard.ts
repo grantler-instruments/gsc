@@ -1,6 +1,6 @@
 import type { Cue } from "../types/cue";
-import { randomId } from "./random-id";
 import { getChildCues, isContainerCue, renumberCueList } from "./cues";
+import { randomId } from "./random-id";
 
 let clipboard: Cue[] | null = null;
 
@@ -98,16 +98,26 @@ export function prepareCuePaste(
   const pasteParentId = anchorCueId ? cues.find((c) => c.id === anchorCueId)?.parentId : undefined;
 
   const rootOldIds = new Set(roots.map((c) => c.id));
-  const clones = source.map((c) => ({
-    ...cloneCueFields(c),
-    id: idMap.get(c.id)!,
-    number: "0",
-    parentId: rootOldIds.has(c.id) ? pasteParentId : c.parentId ? idMap.get(c.parentId) : undefined,
-    stopTargetId:
-      c.stopTargetId && idMap.has(c.stopTargetId) ? idMap.get(c.stopTargetId) : c.stopTargetId,
-    fadeTargetId:
-      c.fadeTargetId && idMap.has(c.fadeTargetId) ? idMap.get(c.fadeTargetId) : c.fadeTargetId,
-  }));
+  const clones = source.map((c) => {
+    const mappedId = idMap.get(c.id);
+    if (!mappedId) {
+      throw new Error(`Missing pasted cue id for source cue ${c.id}`);
+    }
+    return {
+      ...cloneCueFields(c),
+      id: mappedId,
+      number: "0",
+      parentId: rootOldIds.has(c.id)
+        ? pasteParentId
+        : c.parentId
+          ? idMap.get(c.parentId)
+          : undefined,
+      stopTargetId:
+        c.stopTargetId && idMap.has(c.stopTargetId) ? idMap.get(c.stopTargetId) : c.stopTargetId,
+      fadeTargetId:
+        c.fadeTargetId && idMap.has(c.fadeTargetId) ? idMap.get(c.fadeTargetId) : c.fadeTargetId,
+    };
+  });
 
   const insertAt = anchorCueId ? indexAfterCueSubtree(cues, anchorCueId) : cues.length;
 

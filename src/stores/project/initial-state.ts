@@ -1,8 +1,8 @@
 import { t } from "../../i18n/t";
 import { setActiveProjectId } from "../../lib/active-project-id";
-import { randomId } from "../../lib/random-id";
 import { createCueList } from "../../lib/cue-lists";
 import { emptyFixturePlot } from "../../lib/fixture-plot";
+import { randomId } from "../../lib/random-id";
 import type { MidiMapping } from "../../types/midi-mapping";
 
 export const initialList = createCueList(t("project.defaultListName"));

@@ -40,7 +40,11 @@ function normalizePartialFixtures(
   const byId = new Map(entries.map((entry) => [entry.fixtureId, entry]));
   return fixtures
     .filter((fixture) => byId.has(fixture.id))
-    .map((fixture) => normalizeDmxFixtureEntry(byId.get(fixture.id)!, fixture))
+    .map((fixture) => {
+      const entry = byId.get(fixture.id);
+      if (!entry) return null;
+      return normalizeDmxFixtureEntry(entry, fixture);
+    })
     .filter((entry): entry is DmxFixtureValues => entry !== null);
 }
 

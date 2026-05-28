@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { resetTestProject, testCue } from "../test/fixtures/cues";
 import { useProjectStore } from "../stores/project";
+import { resetTestProject, testCue } from "../test/fixtures/cues";
 
 const remoteBroadcast = vi.fn<(message: string) => Promise<void>>(async () => {});
 

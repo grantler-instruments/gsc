@@ -15,11 +15,11 @@ import { requestUnsavedProjectChoice } from "../stores/unsaved-project-prompt";
 import { useVfsStore } from "../stores/vfs";
 import { vfsClear } from "../vfs/engine";
 import { setActiveProjectId } from "./active-project-id";
-import { randomId } from "./random-id";
 import { createCueList } from "./cue-lists";
 import { saveProjectFile } from "./project-file-actions";
 import { replaceProjectWithoutHistory } from "./project-history";
 import { persistProjectSession } from "./project-session";
+import { randomId } from "./random-id";
 import { isProjectUnsaved } from "./unsaved-project";
 
 const TAURI_LAST_ROOT_KEY = "gsc-tauri-last-project-root";

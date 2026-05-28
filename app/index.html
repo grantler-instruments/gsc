@@ -6,18 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Grantler Stage Control</title>
     <script>
-      (function () {
+      (() => {
         var c = globalThis.crypto;
+        var bytes;
+        var hex;
         if (!c || typeof c.randomUUID === "function") return;
-        c.randomUUID = function () {
+        c.randomUUID = () => {
           if (typeof c.getRandomValues === "function") {
-            var bytes = new Uint8Array(16);
+            bytes = new Uint8Array(16);
             c.getRandomValues(bytes);
             bytes[6] = (bytes[6] & 15) | 64;
             bytes[8] = (bytes[8] & 63) | 128;
-            var hex = Array.from(bytes, function (b) {
-              return b.toString(16).padStart(2, "0");
-            }).join("");
+            hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
             return (
               hex.slice(0, 8) +
               "-" +
@@ -30,7 +30,7 @@
               hex.slice(20)
             );
           }
-          return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (ch) {
+          return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (ch) => {
             var n = (Math.random() * 16) | 0;
             return (ch === "x" ? n : (n & 3) | 8).toString(16);
           });

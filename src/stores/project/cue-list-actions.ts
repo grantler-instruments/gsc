@@ -1,9 +1,9 @@
 import type { StoreApi } from "zustand";
 import { createCueList, nextCueListName } from "../../lib/cue-lists";
-import { sendRemoteCommand } from "../../lib/remote-client";
 import { syncHostSelectionToRemotes } from "../../lib/host-selection-bridge";
-import { isRemoteClient } from "../../platform/remote-mode";
+import { sendRemoteCommand } from "../../lib/remote-client";
 import { canEditProject } from "../../lib/show-mode";
+import { isRemoteClient } from "../../platform/remote-mode";
 import { getActiveCueListFromState } from "./helpers";
 import type { ProjectState } from "./types";
 

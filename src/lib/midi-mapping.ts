@@ -3,8 +3,8 @@ import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
 import type { MidiAction, MidiMapping, MidiMatch } from "../types/midi-mapping";
-import { randomId } from "./random-id";
 import { midiMatches, parseMidiMessage } from "./midi";
+import { randomId } from "./random-id";
 import { triggerGoAndAdvance, triggerGoSelected } from "./transport-actions";
 
 const DEBOUNCE_MS = 50;

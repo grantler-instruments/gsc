@@ -22,8 +22,8 @@ describe("cue clipboard storage", () => {
     expect(hasCueClipboard()).toBe(true);
     const stored = getCueClipboard();
     expect(stored).toHaveLength(1);
-    expect(stored![0]).toEqual(cue);
-    expect(stored![0].midi).not.toBe(cue.midi);
+    expect(stored?.[0]).toEqual(cue);
+    expect(stored?.[0].midi).not.toBe(cue.midi);
   });
 
   it("reports empty clipboard", () => {
@@ -83,9 +83,9 @@ describe("prepareCuePaste", () => {
 
     const result = prepareCuePaste(source, existing, null);
     expect(result).not.toBeNull();
-    expect(result!.cues.map((c) => c.name)).toEqual(["X", "A", "B"]);
-    expect(result!.cues.map((c) => c.number)).toEqual(["1", "2", "3"]);
-    expect(result!.selectedCueIds).toEqual(["paste-1", "paste-2"]);
+    expect(result?.cues.map((c) => c.name)).toEqual(["X", "A", "B"]);
+    expect(result?.cues.map((c) => c.number)).toEqual(["1", "2", "3"]);
+    expect(result?.selectedCueIds).toEqual(["paste-1", "paste-2"]);
   });
 
   it("inserts after the anchor subtree as a sibling with remapped ids", () => {
@@ -100,14 +100,14 @@ describe("prepareCuePaste", () => {
     const result = prepareCuePaste(source, existing, "p");
     expect(result).not.toBeNull();
 
-    const names = result!.cues.map((c) => c.name);
+    const names = result?.cues.map((c) => c.name);
     expect(names).toEqual(["X", "Parent", "Child", "Group", "A", "Y"]);
 
-    const pastedGroup = result!.cues.find((c) => c.name === "Group");
-    const pastedA = result!.cues.find((c) => c.name === "A");
+    const pastedGroup = result?.cues.find((c) => c.name === "Group");
+    const pastedA = result?.cues.find((c) => c.name === "A");
     expect(pastedGroup?.parentId).toBeUndefined();
     expect(pastedA?.parentId).toBe(pastedGroup?.id);
-    expect(result!.selectedCueIds).toEqual(["paste-1", "paste-2"]);
+    expect(result?.selectedCueIds).toEqual(["paste-1", "paste-2"]);
   });
 
   it("pastes into the anchor cue's parent when the anchor is nested", () => {
@@ -120,9 +120,9 @@ describe("prepareCuePaste", () => {
     const result = prepareCuePaste(source, existing, "c");
     expect(result).not.toBeNull();
 
-    const pastedA = result!.cues.find((c) => c.name === "A");
+    const pastedA = result?.cues.find((c) => c.name === "A");
     expect(pastedA?.parentId).toBe("p");
-    expect(result!.cues.map((c) => c.name)).toEqual(["Parent", "Child", "A"]);
+    expect(result?.cues.map((c) => c.name)).toEqual(["Parent", "Child", "A"]);
   });
 
   it("remaps internal stop and fade targets within the pasted set", () => {
@@ -138,9 +138,9 @@ describe("prepareCuePaste", () => {
     const existing = [testCue("x", "X", "audio")];
 
     const result = prepareCuePaste(source, existing, "x");
-    const pastedA = result!.cues.find((c) => c.name === "A");
-    const pastedStop = result!.cues.find((c) => c.name === "Stop");
-    const pastedFade = result!.cues.find((c) => c.name === "Fade");
+    const pastedA = result?.cues.find((c) => c.name === "A");
+    const pastedStop = result?.cues.find((c) => c.name === "Stop");
+    const pastedFade = result?.cues.find((c) => c.name === "Fade");
 
     expect(pastedStop?.stopTargetId).toBe(pastedA?.id);
     expect(pastedFade?.fadeTargetId).toBe(pastedA?.id);

@@ -11,7 +11,7 @@ const REMOTE_DEFAULT_SERVER_PORT = "8766";
 function readPinFromSession(): string | null {
   if (typeof window === "undefined") return null;
   const pin = window.sessionStorage.getItem(REMOTE_PIN_SESSION_KEY)?.trim();
-  return /^\d{6}$/.test(pin ?? "") ? pin! : null;
+  return pin && /^\d{6}$/.test(pin) ? pin : null;
 }
 
 function writePinToSession(pin: string): void {

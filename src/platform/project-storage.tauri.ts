@@ -1,6 +1,5 @@
 import { appCacheDir, join } from "@tauri-apps/api/path";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { randomId } from "../lib/random-id";
 import {
   exists,
   mkdir,
@@ -40,6 +39,7 @@ import {
 } from "../lib/project-paths";
 import { collectSessionAssetPaths } from "../lib/project-session";
 import { snapshotToCueLists } from "../lib/project-snapshot";
+import { randomId } from "../lib/random-id";
 import type { RecentProjectEntry } from "../lib/recent-projects";
 import {
   readRecentProjects,
