@@ -114,6 +114,7 @@ pub fn run() {
                 remote::shutdown_on_exit(remote.inner());
             }
         }
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         if let RunEvent::Opened { urls } = event {
             handle_opened_urls(app, urls);
         }
