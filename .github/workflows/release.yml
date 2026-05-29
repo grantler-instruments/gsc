@@ -77,6 +77,8 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use CI-safe DMG creation (no Finder AppleScript). Required on GHA macOS runners.
+          TAURI_BUNDLER_DMG_IGNORE_CI: false
         with:
           tagName: ${{ github.ref_name }}
           releaseName: Grantler Stage Control ${{ github.ref_name }}
