@@ -522,9 +522,16 @@
     "unsupportedVersion": "Nicht unterstützte Projektversion"
   },
   "website": {
-    "tagline": "Cue-basierte Bühnensteuerung — im Browser oder als Desktop-App.",
+    "tagline": "Cue-basierte Bühnensteuerung. Im Browser oder als Desktop-App.",
     "downloadDesktop": "Desktop-Version herunterladen",
     "tryWeb": "Im Web ausprobieren",
+    "useCasesHeading": "Anwendungsfälle",
+    "useCaseTheaterTitle": "Kleine Theaterproduktionen",
+    "useCaseTheaterDesc": "Audio-, Video- und Licht-Cues von einem Regieplatz. Sequenzen für Szenen, parallele Cues für Übergänge und Show-Modus am Premierenabend.",
+    "useCaseConferenceTitle": "Konferenzen & Business-Events",
+    "useCaseConferenceDesc": "Einlassmusik, Moderation und Präsentationsvideo auf Cue. Publikumsmedien auf einen zweiten Bildschirm, Programm im Show-Modus vom AV-Tisch.",
+    "useCaseInstallationTitle": "Installationen & Ausstellungen",
+    "useCaseInstallationDesc": "Zeitgesteuerte Sequenzen aus Audio, Video und Bildern. OSC oder MIDI an Interaktive, Licht oder Galerie-Technik ohne vollen Media-Server.",
     "featuresHeading": "Funktionen",
     "contact": "Kontakt",
     "copyright": "© {{year}} Grantler Instruments.",

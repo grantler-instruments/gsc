@@ -6,7 +6,6 @@ import {
   Button,
   Container,
   Grid,
-  Link,
   Paper,
   Stack,
   Toolbar,
@@ -17,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { GscLogo } from "../brand/GscLogo";
 import { CueTypeBadge } from "../components/CueTypeIcon";
 import { featureCategoryKeys } from "./features";
+import { useCaseKeys } from "./useCases";
 
 /**
  * Logo mark and hero title cap height (matched). Fluid below `md` so the full
@@ -170,6 +170,44 @@ export default function WebsiteApp() {
           component="section"
           sx={{
             py: { xs: 6, md: 8 },
+            borderTop: 1,
+            borderColor: "divider",
+          }}
+        >
+          <Container maxWidth="lg">
+            <Stack spacing={4}>
+              <Typography variant="h4" component="h2" color="primary">
+                {t("website.useCasesHeading")}
+              </Typography>
+              <Grid container spacing={3}>
+                {useCaseKeys.map((useCase) => (
+                  <Grid key={useCase.key} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 2.5,
+                        height: "100%",
+                        bgcolor: "background.paper",
+                      }}
+                    >
+                      <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 600, mb: 1 }}>
+                        {t(`website.${useCase.key}`)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {t(`website.${useCase.descKey}`)}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            </Stack>
+          </Container>
+        </Box>
+
+        <Box
+          component="section"
+          sx={{
+            py: { xs: 6, md: 8 },
             bgcolor: "background.paper",
             borderTop: 1,
             borderColor: "divider",
@@ -234,10 +272,7 @@ export default function WebsiteApp() {
       >
         <Container>
           <Typography variant="body2" color="text.secondary">
-            {t("website.copyright", { year: new Date().getFullYear() })}{" "}
-            <Link href="mailto:info@example.com" color="text.primary" underline="hover">
-              info@example.com
-            </Link>
+            {t("website.copyright", { year: new Date().getFullYear() })}
           </Typography>
         </Container>
       </Box>

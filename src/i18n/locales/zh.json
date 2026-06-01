@@ -522,9 +522,16 @@
     "unsupportedVersion": "不支持的项目版本"
   },
   "website": {
-    "tagline": "基于提示的舞台控制软件 — 在浏览器中运行或安装桌面应用。",
+    "tagline": "基于提示的舞台控制软件。在浏览器中运行或安装桌面应用。",
     "downloadDesktop": "下载桌面版",
     "tryWeb": "在 Web 中试用",
+    "useCasesHeading": "使用场景",
+    "useCaseTheaterTitle": "小型剧场制作",
+    "useCaseTheaterDesc": "在调音台统一运行音频、视频与灯光提示。按场景编排序列、并行提示做转场，首演夜锁定演出模式。",
+    "useCaseConferenceTitle": "会议与企业活动",
+    "useCaseConferenceDesc": "按提示播放暖场音乐、嘉宾介绍与演示视频。将观众画面送到第二块屏幕，在 AV 控台以演出模式推进整场流程。",
+    "useCaseInstallationTitle": "装置与展览",
+    "useCaseInstallationDesc": "循环定时音视图像序列。通过 OSC 或 MIDI 驱动互动、灯光或展厅设备，无需完整媒体服务器。",
     "featuresHeading": "功能",
     "contact": "联系",
     "copyright": "© {{year}} Grantler Instruments.",

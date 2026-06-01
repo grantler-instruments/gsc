@@ -163,6 +163,27 @@ The **fixture plot** (sidebar and expanded above the cue list) mirrors the booth
 
 Remote control is **desktop-only**; the web app does not host remote sessions.
 
+## macOS releases (signing & notarization)
+
+Tag pushes (`x.y.z`) build desktop artifacts via [`.github/workflows/release.yml`](.github/workflows/release.yml) and [`tauri-apps/tauri-action`](https://github.com/tauri-apps/tauri-action). On macOS, the workflow signs and notarizes through Tauri’s bundler ([docs](https://v2.tauri.app/distribute/sign/macos/)).
+
+Add these **repository secrets** (Settings → Secrets and variables → Actions):
+
+| Secret | Description |
+|--------|-------------|
+| `APPLE_CERTIFICATE` | Base64-encoded `.p12` (Developer ID Application) |
+| `APPLE_CERTIFICATE_PASSWORD` | Password used when exporting the `.p12` |
+| `KEYCHAIN_PASSWORD` | Random string for the ephemeral CI keychain |
+| `APPLE_ID` | Apple ID email |
+| `APPLE_PASSWORD` | App-specific password ([appleid.apple.com](https://appleid.apple.com)) |
+| `APPLE_TEAM_ID` | 10-character Team ID from the developer portal |
+
+Use a **Developer ID Application** certificate (direct download releases), not “Apple Distribution” (App Store).
+
+If you already use NeopixelBlocks secrets, reuse the same certificate values; create `APPLE_PASSWORD` with the same value as `APPLE_APP_SPECIFIC_PASSWORD` (Tauri expects the name `APPLE_PASSWORD`).
+
+Without these secrets, macOS jobs still build but releases stay unsigned (Gatekeeper may report the app as “damaged”).
+
 ## Contributing
 
 Bug reports and pull requests are welcome.

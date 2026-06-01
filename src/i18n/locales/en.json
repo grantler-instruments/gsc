@@ -551,9 +551,16 @@
     "unsupportedVersion": "Unsupported project version"
   },
   "website": {
-    "tagline": "Cue-based stage control software — run it in the browser or install the desktop app.",
+    "tagline": "Cue-based stage control software. Run it in the browser or install the desktop app.",
     "downloadDesktop": "Download desktop version",
     "tryWeb": "Try it in the web",
+    "useCasesHeading": "Use cases",
+    "useCaseTheaterTitle": "Small theater productions",
+    "useCaseTheaterDesc": "Run audio, video, and lighting cues from one booth. Sequences for scenes, parallel cues for transitions, and show mode on opening night.",
+    "useCaseConferenceTitle": "Conferences & business events",
+    "useCaseConferenceDesc": "Play walk-in music, speaker intros, and presentation video on cue. Send audience media to a second screen and run the program in show mode from the AV table.",
+    "useCaseInstallationTitle": "Installations & exhibits",
+    "useCaseInstallationDesc": "Loop timed sequences of audio, video, and images. Trigger OSC or MIDI to interactives, lighting, or gallery gear without a full media-server stack.",
     "featuresHeading": "Features",
     "contact": "Contact",
     "copyright": "© {{year}} Grantler Instruments.",

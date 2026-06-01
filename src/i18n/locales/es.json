@@ -522,9 +522,16 @@
     "unsupportedVersion": "Versión de proyecto no compatible"
   },
   "website": {
-    "tagline": "Software de control escénico basado en cues — ejecútelo en el navegador o instale la app de escritorio.",
+    "tagline": "Software de control escénico basado en cues. Ejecútelo en el navegador o instale la app de escritorio.",
     "downloadDesktop": "Descargar versión de escritorio",
     "tryWeb": "Probar en la web",
+    "useCasesHeading": "Casos de uso",
+    "useCaseTheaterTitle": "Producciones teatrales pequeñas",
+    "useCaseTheaterDesc": "Ejecute cues de audio, video e iluminación desde una cabina. Secuencias por escenas, cues paralelos para transiciones y modo show en el estreno.",
+    "useCaseConferenceTitle": "Conferencias y eventos corporativos",
+    "useCaseConferenceDesc": "Reproduzca música de entrada, presentaciones de ponentes y video de diapositivas a cue. Envíe medios al público a una segunda pantalla y ejecute el programa en modo show desde la mesa AV.",
+    "useCaseInstallationTitle": "Instalaciones y exposiciones",
+    "useCaseInstallationDesc": "Secuencias temporizadas de audio, video e imágenes. OSC o MIDI a interactivos, iluminación o equipo de galería sin un media server completo.",
     "featuresHeading": "Funciones",
     "contact": "Contacto",
     "copyright": "© {{year}} Grantler Instruments.",
