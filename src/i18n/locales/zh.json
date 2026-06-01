@@ -523,6 +523,7 @@
   },
   "website": {
     "tagline": "基于提示的舞台控制软件。在浏览器中运行或安装桌面应用。",
+    "screenshotAlt": "GSC 编辑模式界面，显示提示列表、波形编辑器、灯具预览与 GO 控制",
     "downloadDesktop": "下载桌面版",
     "tryWeb": "在 Web 中试用",
     "useCasesHeading": "使用场景",

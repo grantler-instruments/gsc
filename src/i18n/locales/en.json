@@ -552,6 +552,7 @@
   },
   "website": {
     "tagline": "Cue-based stage control software. Run it in the browser or install the desktop app.",
+    "screenshotAlt": "GSC edit mode showing cue lists, waveform editor, fixture preview, and GO controls",
     "downloadDesktop": "Download desktop version",
     "tryWeb": "Try it in the web",
     "useCasesHeading": "Use cases",

@@ -30,6 +30,7 @@ const heroMarkHeight = {
 };
 
 const webAppUrl = `${import.meta.env.BASE_URL}app/`;
+const screenshotUrl = `${import.meta.env.BASE_URL}gsc_edit_screenshot.png`;
 
 /** Update when desktop release artifacts are published. */
 const DESKTOP_DOWNLOAD_URL = "#";
@@ -162,6 +163,21 @@ export default function WebsiteApp() {
                   {t("website.tryWeb")}
                 </Button>
               </Stack>
+
+              <Box
+                component="img"
+                src={screenshotUrl}
+                alt={t("website.screenshotAlt")}
+                sx={{
+                  display: "block",
+                  width: "100%",
+                  height: "auto",
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: "divider",
+                  boxShadow: 4,
+                }}
+              />
             </Stack>
           </Container>
         </Box>

@@ -523,6 +523,7 @@
   },
   "website": {
     "tagline": "Software de control escénico basado en cues. Ejecútelo en el navegador o instale la app de escritorio.",
+    "screenshotAlt": "GSC en modo edición con listas de cues, editor de forma de onda, vista previa de fixtures y controles GO",
     "downloadDesktop": "Descargar versión de escritorio",
     "tryWeb": "Probar en la web",
     "useCasesHeading": "Casos de uso",

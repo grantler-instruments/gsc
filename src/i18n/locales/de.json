@@ -523,6 +523,7 @@
   },
   "website": {
     "tagline": "Cue-basierte Bühnensteuerung. Im Browser oder als Desktop-App.",
+    "screenshotAlt": "GSC Bearbeitungsmodus mit Cue-Listen, Wellenform-Editor, Fixture-Vorschau und GO-Steuerung",
     "downloadDesktop": "Desktop-Version herunterladen",
     "tryWeb": "Im Web ausprobieren",
     "useCasesHeading": "Anwendungsfälle",
