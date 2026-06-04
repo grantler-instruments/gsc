@@ -6,6 +6,7 @@ import {
   Button,
   Container,
   Grid,
+  Link,
   Paper,
   Stack,
   Toolbar,
@@ -34,6 +35,8 @@ const screenshotUrl = `${import.meta.env.BASE_URL}gsc_edit_screenshot.png`;
 
 /** Update when desktop release artifacts are published. */
 const DESKTOP_DOWNLOAD_URL = "#";
+
+const GITHUB_REPO_URL = "https://github.com/grantler-instruments/gsc";
 
 export default function WebsiteApp() {
   const theme = useTheme();
@@ -287,9 +290,24 @@ export default function WebsiteApp() {
         }}
       >
         <Container>
-          <Typography variant="body2" color="text.secondary">
-            {t("website.copyright", { year: new Date().getFullYear() })}
-          </Typography>
+          <Stack spacing={1}>
+            <Typography variant="body2" color="text.secondary">
+              {t("website.copyright", { year: new Date().getFullYear() })}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t("website.contributionsBefore")}
+              <Link
+                href={GITHUB_REPO_URL}
+                color="inherit"
+                underline="hover"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t("website.contributionsLink")}
+              </Link>
+              {t("website.contributionsAfter")}
+            </Typography>
+          </Stack>
         </Container>
       </Box>
     </Box>
