@@ -27,10 +27,7 @@ function setPackageJson(version) {
 function setCargoToml(version) {
   const path = join(root, "src-tauri", "Cargo.toml");
   const contents = readFileSync(path, "utf8");
-  const updated = contents.replace(
-    /^version = ".*"$/m,
-    `version = "${version}"`,
-  );
+  const updated = contents.replace(/^version = ".*"$/m, `version = "${version}"`);
   if (updated === contents) {
     throw new Error("Could not update version in Cargo.toml");
   }
