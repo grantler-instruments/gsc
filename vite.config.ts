@@ -20,6 +20,8 @@ const host = process.env.TAURI_DEV_HOST;
 /** Bind all interfaces in dev so phones on the LAN can load the remote UI from Vite. */
 const devHost = host ?? true;
 
+const isVitest = !!process.env.VITEST;
+
 const baseNoSlash = base.replace(/\/$/, "") || "";
 const escapedBase = baseNoSlash.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const websiteNavigateDenylist = baseNoSlash
@@ -29,7 +31,7 @@ const websiteNavigateDenylist = baseNoSlash
 export default defineConfig({
   base,
   plugins: [
-    syncFaviconPlugin(__dirname),
+    ...(isVitest ? [] : [syncFaviconPlugin(__dirname)]),
     trailingSlashRedirectPlugin(base),
     react(),
     VitePWA({
