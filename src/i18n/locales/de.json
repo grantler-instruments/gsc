@@ -126,7 +126,14 @@
     "enttecWebSerial": "Enttec Pro (Web Serial)",
     "grantChromeAccess": "Zugriff gewähren, wenn Chrome danach fragt",
     "webSerialUnavailable": "Web Serial ist in diesem Browser nicht verfügbar",
-    "enttecBaudHint": "57600 Baud · Universe 1 (Pro) · Universes 1–2 (Pro MK2)"
+    "enttecBaudHint": "57600 Baud · Universe 1 (Pro) · Universes 1–2 (Pro MK2)",
+    "storageTitle": "Offline-Speicher",
+    "storageUsed": "{{used}} von {{quota}} belegt",
+    "storageUnavailable": "Speicherschätzung in diesem Browser nicht verfügbar.",
+    "storageWarning": "Der Speicher wird knapp. Exportieren Sie ein Backup über das Dateimenü, bevor Sie große Medien importieren.",
+    "storageCritical": "Der Speicher ist fast voll. Exportieren Sie jetzt ein Backup, um Datenverlust zu vermeiden.",
+    "storagePersisted": "Dauerhafter Speicher gewährt — Ihre Show wird seltener vom Browser gelöscht.",
+    "storageNotPersisted": "Dauerhaften Speicher erhalten Sie durch Import oder Bearbeitung eines Projekts."
   },
   "midiMap": {
     "description": "Eingehendes MIDI auf Transportaktionen abbilden. Zuordnungen werden mit dem Projekt gespeichert.",

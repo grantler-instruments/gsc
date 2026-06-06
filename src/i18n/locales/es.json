@@ -126,7 +126,14 @@
     "enttecWebSerial": "Enttec Pro (Web Serial)",
     "grantChromeAccess": "Conceda acceso cuando Chrome lo solicite",
     "webSerialUnavailable": "Web Serial no está disponible en este navegador",
-    "enttecBaudHint": "57600 baud · universo 1 (Pro) · universos 1–2 (Pro MK2)"
+    "enttecBaudHint": "57600 baud · universo 1 (Pro) · universos 1–2 (Pro MK2)",
+    "storageTitle": "Almacenamiento sin conexión",
+    "storageUsed": "{{used}} de {{quota}} en uso",
+    "storageUnavailable": "Estimación de almacenamiento no disponible en este navegador.",
+    "storageWarning": "El almacenamiento se está llenando. Exporte una copia de seguridad desde el menú de archivos antes de importar medios grandes.",
+    "storageCritical": "El almacenamiento está casi lleno. Exporte una copia de seguridad ahora para evitar perder su show.",
+    "storagePersisted": "Almacenamiento persistente concedido — el navegador borrará sus datos con menos frecuencia.",
+    "storageNotPersisted": "Obtenga almacenamiento persistente importando o editando un proyecto para que el navegador conserve sus datos."
   },
   "midiMap": {
     "description": "Asigne MIDI entrante a acciones de transporte. Las asignaciones se guardan con el proyecto.",

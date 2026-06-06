@@ -3,30 +3,53 @@ import { useProjectStore } from "../stores/project";
 import { initialProjectData } from "../stores/project/initial-state";
 import { useVfsStore } from "../stores/vfs";
 import {
-  persistProjectSession,
+  persistProjectSessionAsync,
   resetProjectSessionForTests,
   restoreProjectSessionOnce,
 } from "./project-session";
 
-const SESSION_KEY = "gsc-project-session";
-const storage = new Map<string, string>();
+const idbState = {
+  activeProjectId: undefined as string | undefined,
+  projects: new Map<
+    string,
+    { snapshot: { version: number; id: string; name: string }; assets: [] }
+  >(),
+};
+
+vi.mock("./project-idb", () => ({
+  initProjectIdb: vi.fn(async () => undefined),
+  idbGetActiveProjectId: vi.fn(async () => idbState.activeProjectId),
+  idbSetActiveProjectId: vi.fn(async (projectId: string) => {
+    idbState.activeProjectId = projectId;
+  }),
+  idbPutProject: vi.fn(async (record: { id: string; snapshot: unknown; assets: [] }) => {
+    idbState.projects.set(record.id, record as never);
+    idbState.activeProjectId = record.id;
+  }),
+  idbGetProject: vi.fn(async (projectId: string) => idbState.projects.get(projectId)),
+  resetProjectIdbForTests: vi.fn(),
+}));
+
+vi.mock("../vfs/engine", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../vfs/engine")>();
+  return {
+    ...actual,
+    flushPendingAssetCacheWrites: vi.fn(async () => undefined),
+    hydrateVfsFromProjectCache: vi.fn(async () => undefined),
+    vfsHas: vi.fn(() => false),
+    vfsClear: vi.fn(),
+  };
+});
+
+vi.mock("./storage-persistence", () => ({
+  requestPersistentStorage: vi.fn(async () => true),
+}));
 
 describe("project-session", () => {
   beforeEach(() => {
     resetProjectSessionForTests();
-    storage.clear();
-    vi.stubGlobal("localStorage", {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => {
-        storage.set(key, value);
-      },
-      removeItem: (key: string) => {
-        storage.delete(key);
-      },
-      clear: () => {
-        storage.clear();
-      },
-    });
+    idbState.activeProjectId = undefined;
+    idbState.projects.clear();
     useProjectStore.setState(initialProjectData);
     useVfsStore.setState({ entries: [] });
   });
@@ -34,10 +57,11 @@ describe("project-session", () => {
   it("persists and restores the active project snapshot", async () => {
     useProjectStore.setState({ name: "Saved Show" });
 
-    persistProjectSession();
+    await persistProjectSessionAsync();
 
-    const raw = localStorage.getItem(SESSION_KEY);
-    expect(raw).toContain("Saved Show");
+    expect(idbState.projects.size).toBe(1);
+    const saved = [...idbState.projects.values()][0];
+    expect(saved.snapshot.name).toBe("Saved Show");
 
     useProjectStore.setState({ name: "Temporary Change" });
     await restoreProjectSessionOnce();
@@ -47,7 +71,7 @@ describe("project-session", () => {
 
   it("shares one restore promise across concurrent callers", async () => {
     useProjectStore.setState({ name: "Shared Restore" });
-    persistProjectSession();
+    await persistProjectSessionAsync();
     useProjectStore.setState({ name: "Before Restore" });
 
     const first = restoreProjectSessionOnce();
@@ -58,12 +82,23 @@ describe("project-session", () => {
     expect(useProjectStore.getState().name).toBe("Shared Restore");
   });
 
-  it("ignores invalid session data", async () => {
-    localStorage.setItem(SESSION_KEY, "{not-json");
-    useProjectStore.setState({ name: "Current Show" });
+  it("falls back to legacy localStorage when IDB has no active project", async () => {
+    const legacySession = {
+      snapshot: {
+        ...useProjectStore.getState().getSnapshot(),
+        name: "Legacy Show",
+      },
+      assets: [],
+    };
+    vi.stubGlobal("localStorage", {
+      getItem: () => JSON.stringify(legacySession),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    });
 
     await restoreProjectSessionOnce();
 
-    expect(useProjectStore.getState().name).toBe("Current Show");
+    expect(useProjectStore.getState().name).toBe("Legacy Show");
   });
 });

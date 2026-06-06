@@ -209,7 +209,11 @@ export default function WebsiteApp() {
                         bgcolor: "background.paper",
                       }}
                     >
-                      <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 600, mb: 1 }}>
+                      <Typography
+                        variant="subtitle1"
+                        component="h3"
+                        sx={{ fontWeight: 600, mb: 1 }}
+                      >
                         {t(`website.${useCase.key}`)}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">

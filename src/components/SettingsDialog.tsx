@@ -16,6 +16,12 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LOCALE_LABELS, SUPPORTED_LOCALES, type SupportedLocale } from "../i18n";
+import {
+  estimateStorage,
+  formatStorageBytes,
+  getStoragePressure,
+  type StoragePressure,
+} from "../lib/storage-persistence";
 import { getPlatform } from "../platform";
 import { listAudioOutputDevices } from "../platform/audio-devices";
 import {
@@ -88,6 +94,9 @@ export function SettingsDialog() {
   const [enttecConnected, setEnttecConnected] = useState(false);
   const [webSerialAvailable, setWebSerialAvailable] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [storageLabel, setStorageLabel] = useState<string | null>(null);
+  const [storagePressure, setStoragePressure] = useState<StoragePressure>("ok");
+  const [storagePersisted, setStoragePersisted] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!open || isTauri) return;
@@ -120,6 +129,36 @@ export function SettingsDialog() {
       } catch (err) {
         if (cancelled) return;
         setLoadError(err instanceof Error ? err.message : t("settings.loadDevicesError"));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, isTauri, t]);
+
+  useEffect(() => {
+    if (!open || isTauri) return;
+
+    let cancelled = false;
+    void (async () => {
+      const [estimate, pressure, persisted] = await Promise.all([
+        estimateStorage(),
+        getStoragePressure(),
+        navigator.storage?.persisted?.() ?? Promise.resolve(false),
+      ]);
+      if (cancelled) return;
+      setStoragePressure(pressure);
+      setStoragePersisted(persisted);
+      if (estimate && estimate.quota > 0) {
+        setStorageLabel(
+          t("settings.storageUsed", {
+            used: formatStorageBytes(estimate.usage),
+            quota: formatStorageBytes(estimate.quota),
+          }),
+        );
+      } else {
+        setStorageLabel(null);
       }
     })();
 
@@ -196,6 +235,31 @@ export function SettingsDialog() {
                   ))}
                 </Select>
               </Box>
+              {!isTauri ? (
+                <Box sx={inspectorFieldSx}>
+                  <Typography sx={inspectorFieldLabelSx}>{t("settings.storageTitle")}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {storageLabel ?? t("settings.storageUnavailable")}
+                  </Typography>
+                  {storagePressure === "warning" ? (
+                    <Typography variant="caption" color="warning.main">
+                      {t("settings.storageWarning")}
+                    </Typography>
+                  ) : null}
+                  {storagePressure === "critical" ? (
+                    <Typography variant="caption" color="error">
+                      {t("settings.storageCritical")}
+                    </Typography>
+                  ) : null}
+                  {storagePersisted !== null ? (
+                    <Typography variant="caption" color="text.secondary">
+                      {storagePersisted
+                        ? t("settings.storagePersisted")
+                        : t("settings.storageNotPersisted")}
+                    </Typography>
+                  ) : null}
+                </Box>
+              ) : null}
             </Stack>
           ) : null}
 

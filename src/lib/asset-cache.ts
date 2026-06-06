@@ -1,6 +1,7 @@
 import { t } from "../i18n/t";
 import { normalizePath } from "../vfs/engine";
 import { notifyWarningDeduped } from "./notifications";
+import { idbGetAsset, idbPutAsset, idbRemoveAsset, initProjectIdb } from "./project-idb";
 
 const CACHE_NAME = "gsc-assets-v1";
 /** Synthetic origin — Cache API requires valid URL keys, not arbitrary strings. */
@@ -61,8 +62,41 @@ async function matchCachedBlob(cache: Cache, key: string): Promise<Blob | undefi
   }
 }
 
-/** Store asset bytes in the origin-wide Cache API, scoped to a project. */
+async function findLegacyCachedAssetBlob(
+  cache: Cache,
+  projectId: string,
+  path: string,
+): Promise<Blob | undefined> {
+  const normalized = normalizePath(path);
+
+  const scopedBlob = await matchCachedBlob(cache, scopedCacheKey(projectId, normalized));
+  if (scopedBlob) return scopedBlob;
+
+  const legacyBlob = await matchCachedBlob(cache, legacyCacheKey(normalized));
+  if (legacyBlob) return legacyBlob;
+
+  const suffix = normalized;
+  for (const request of await cache.keys()) {
+    const key = cacheRequestKey(request);
+    const cachedPath = pathFromCacheKey(key);
+    if (cachedPath !== suffix) continue;
+
+    const blob = await matchCachedBlob(cache, key);
+    if (blob) return blob;
+  }
+
+  return undefined;
+}
+
+/** Store asset bytes in IndexedDB, with legacy Cache API fallback reads. */
 export async function cacheAsset(projectId: string, path: string, blob: Blob): Promise<void> {
+  try {
+    await initProjectIdb();
+    await idbPutAsset(projectId, path, blob);
+  } catch (err) {
+    console.warn(`[asset-cache] Could not write IDB for ${path}`, err);
+  }
+
   if (typeof caches === "undefined") return;
   try {
     const cache = await caches.open(CACHE_NAME);
@@ -74,51 +108,40 @@ export async function cacheAsset(projectId: string, path: string, blob: Blob): P
   }
 }
 
-async function findCachedAssetBlob(
-  cache: Cache,
-  projectId: string,
-  path: string,
-): Promise<Blob | undefined> {
-  const normalized = normalizePath(path);
-
-  const scopedBlob = await matchCachedBlob(cache, scopedCacheKey(projectId, normalized));
-  if (scopedBlob) return scopedBlob;
-
-  const legacyBlob = await matchCachedBlob(cache, legacyCacheKey(normalized));
-  if (legacyBlob) {
-    await cacheAsset(projectId, normalized, legacyBlob);
-    return legacyBlob;
+/** Read asset bytes for a project; IndexedDB first, then legacy Cache API. */
+export async function getCachedAsset(projectId: string, path: string): Promise<Blob | undefined> {
+  try {
+    await initProjectIdb();
+    const fromIdb = await idbGetAsset(projectId, path);
+    if (fromIdb) return fromIdb;
+  } catch (err) {
+    console.warn(`[asset-cache] Could not read IDB for ${path}`, err);
   }
 
-  const suffix = normalized;
-  for (const request of await cache.keys()) {
-    const key = cacheRequestKey(request);
-    const cachedPath = pathFromCacheKey(key);
-    if (cachedPath !== suffix) continue;
-
-    const blob = await matchCachedBlob(cache, key);
-    if (!blob) continue;
-    await cacheAsset(projectId, normalized, blob);
-    return blob;
+  if (typeof caches === "undefined") return undefined;
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const legacyBlob = await findLegacyCachedAssetBlob(cache, projectId, path);
+    if (legacyBlob) {
+      await cacheAsset(projectId, path, legacyBlob);
+      return legacyBlob;
+    }
+  } catch (err) {
+    console.warn(`[asset-cache] Could not read ${path}`, err);
+    notifyWarningDeduped(t("notification.assetLoadFailed", { path }));
   }
 
   return undefined;
 }
 
-/** Read asset bytes for a project; falls back to path-only and legacy scoped keys. */
-export async function getCachedAsset(projectId: string, path: string): Promise<Blob | undefined> {
-  if (typeof caches === "undefined") return undefined;
-  try {
-    const cache = await caches.open(CACHE_NAME);
-    return await findCachedAssetBlob(cache, projectId, path);
-  } catch (err) {
-    console.warn(`[asset-cache] Could not read ${path}`, err);
-    notifyWarningDeduped(t("notification.assetLoadFailed", { path }));
-    return undefined;
-  }
-}
-
 export async function removeCachedAsset(projectId: string, path: string): Promise<void> {
+  try {
+    await initProjectIdb();
+    await idbRemoveAsset(projectId, path);
+  } catch {
+    /* ignore */
+  }
+
   if (typeof caches === "undefined") return;
   try {
     const cache = await caches.open(CACHE_NAME);

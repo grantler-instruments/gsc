@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
+import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vitest/config";
 import { trailingSlashRedirectPlugin } from "./vite-trailing-slash-redirect";
 
@@ -18,9 +19,58 @@ const host = process.env.TAURI_DEV_HOST;
 /** Bind all interfaces in dev so phones on the LAN can load the remote UI from Vite. */
 const devHost = host ?? true;
 
+const baseNoSlash = base.replace(/\/$/, "") || "";
+const escapedBase = baseNoSlash.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const websiteNavigateDenylist = baseNoSlash
+  ? [new RegExp(`^${escapedBase}/?$`), new RegExp(`^${escapedBase}/index\\.html$`)]
+  : [/^\/$/, /^\/index\.html$/];
+
 export default defineConfig({
   base,
-  plugins: [trailingSlashRedirectPlugin(base), react()],
+  plugins: [
+    trailingSlashRedirectPlugin(base),
+    react(),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.svg", "pwa-192x192.png", "pwa-512x512.png"],
+      manifest: {
+        name: "Grantler Stage Control",
+        short_name: "GSC",
+        description: "Show control for cues, lights, and media",
+        theme_color: "#1e2229",
+        background_color: "#1e2229",
+        display: "standalone",
+        start_url: "app/",
+        scope: "app/",
+        icons: [
+          {
+            src: "pwa-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+          },
+          {
+            src: "pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+          },
+          {
+            src: "pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
+          },
+        ],
+      },
+      workbox: {
+        navigateFallback: "app/index.html",
+        navigateFallbackDenylist: websiteNavigateDenylist,
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webmanifest}"],
+      },
+      devOptions: {
+        enabled: true,
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@brand": path.resolve(__dirname, "src/brand"),

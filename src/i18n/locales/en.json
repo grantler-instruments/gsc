@@ -127,7 +127,14 @@
     "grantChromeAccess": "Grant access when Chrome prompts",
     "webSerialUnavailable": "Web Serial is not available in this browser",
     "enttecBaudHint": "57600 baud · universe 1 (Pro) · universes 1–2 (Pro MK2)",
-    "categoryRemote": "Remote"
+    "categoryRemote": "Remote",
+    "storageTitle": "Offline storage",
+    "storageUsed": "{{used}} of {{quota}} used",
+    "storageUnavailable": "Storage estimate unavailable in this browser.",
+    "storageWarning": "Storage is getting full. Export a backup from the file menu before importing large media.",
+    "storageCritical": "Storage is nearly full. Export a backup now to avoid losing your show.",
+    "storagePersisted": "Persistent storage granted — your show is less likely to be cleared by the browser.",
+    "storageNotPersisted": "Grant persistent storage by importing or editing a project so the browser keeps your show data."
   },
   "remote": {
     "title": "Remote control",

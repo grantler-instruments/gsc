@@ -1,7 +1,7 @@
 import { t } from "../i18n/t";
 import { useProjectStore } from "../stores/project";
 import { useVfsStore, type VfsEntry } from "../stores/vfs";
-import type { AssetKind, ProjectSnapshot } from "../types/cue";
+import type { ProjectSnapshot } from "../types/cue";
 import {
   flushPendingAssetCacheWrites,
   hydrateVfsFromProjectCache,
@@ -12,18 +12,21 @@ import { setActiveProjectId } from "./active-project-id";
 import { notifyWarningDeduped } from "./notifications";
 import { collectOflPaths } from "./ofl/import-ofl";
 import { replaceProjectWithoutHistory } from "./project-history";
+import {
+  idbGetActiveProjectId,
+  idbGetProject,
+  idbPutProject,
+  idbSetActiveProjectId,
+  initProjectIdb,
+  type PersistedAssetEntry,
+} from "./project-idb";
 import { snapshotToCueLists } from "./project-snapshot";
 import { randomId } from "./random-id";
+import { requestPersistentStorage } from "./storage-persistence";
 
-const SESSION_KEY = "gsc-project-session";
+export type { PersistedAssetEntry };
 
-export interface PersistedAssetEntry {
-  path: string;
-  name: string;
-  size: number;
-  mimeType: string;
-  kind: AssetKind;
-}
+const LEGACY_SESSION_KEY = "gsc-project-session";
 
 interface ProjectSession {
   snapshot: ProjectSnapshot;
@@ -56,7 +59,40 @@ export function collectSessionAssetPaths(
   return [...paths];
 }
 
+function readLegacySession(): ProjectSession | undefined {
+  if (typeof localStorage === "undefined") return undefined;
+  const raw = localStorage.getItem(LEGACY_SESSION_KEY);
+  if (!raw) return undefined;
+  try {
+    return JSON.parse(raw) as ProjectSession;
+  } catch {
+    return undefined;
+  }
+}
+
+async function persistToIdb(session: ProjectSession): Promise<void> {
+  const projectId = session.snapshot.id || randomId();
+  if (!session.snapshot.id) {
+    session.snapshot.id = projectId;
+  }
+  await idbPutProject({
+    id: projectId,
+    name: session.snapshot.name,
+    updatedAt: Date.now(),
+    snapshot: session.snapshot,
+    assets: session.assets,
+  });
+  await idbSetActiveProjectId(projectId);
+  setActiveProjectId(projectId);
+}
+
 export function persistProjectSession(): void {
+  void persistProjectSessionAsync();
+}
+
+/** Flush pending asset writes, then persist session metadata. */
+export async function persistProjectSessionAsync(): Promise<void> {
+  await flushPendingAssetCacheWrites();
   try {
     const snapshot = useProjectStore.getState().getSnapshot();
     if (snapshot.version !== 2) return;
@@ -69,18 +105,13 @@ export function persistProjectSession(): void {
         mimeType,
         kind,
       }));
-    const session: ProjectSession = { snapshot, assets };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    await initProjectIdb();
+    await persistToIdb({ snapshot, assets });
+    void requestPersistentStorage();
   } catch (err) {
     console.warn("[project-session] Could not persist session", err);
     notifyWarningDeduped(t("notification.browserSaveFailed"));
   }
-}
-
-/** Flush pending asset cache writes, then persist session metadata. */
-export async function persistProjectSessionAsync(): Promise<void> {
-  await flushPendingAssetCacheWrites();
-  persistProjectSession();
 }
 
 function vfsEntriesFromSession(assets: PersistedAssetEntry[]): VfsEntry[] {
@@ -92,33 +123,7 @@ function vfsEntriesFromSession(assets: PersistedAssetEntry[]): VfsEntry[] {
     .sort((a, b) => a.path.localeCompare(b.path));
 }
 
-/** Restore the last autosaved project and hydrate assets from the Cache API. */
-export function restoreProjectSessionOnce(): Promise<void> {
-  if (!restorePromise) {
-    restorePromise = restoreProjectSession().catch((err) => {
-      restorePromise = null;
-      throw err;
-    });
-  }
-  return restorePromise;
-}
-
-async function restoreProjectSession(): Promise<void> {
-  const raw = localStorage.getItem(SESSION_KEY);
-  if (!raw) {
-    setActiveProjectId(useProjectStore.getState().id);
-    return;
-  }
-
-  let session: ProjectSession;
-  try {
-    session = JSON.parse(raw) as ProjectSession;
-  } catch {
-    console.warn("[project-session] Invalid session data");
-    setActiveProjectId(useProjectStore.getState().id);
-    return;
-  }
-
+async function restoreFromSession(session: ProjectSession): Promise<void> {
   if (session.snapshot.version !== 2) {
     setActiveProjectId(useProjectStore.getState().id);
     return;
@@ -147,6 +152,38 @@ async function restoreProjectSession(): Promise<void> {
   useVfsStore.setState({
     entries: vfsEntriesFromSession(session.assets),
   });
+}
+
+/** Restore the last autosaved project and hydrate assets from IndexedDB. */
+export function restoreProjectSessionOnce(): Promise<void> {
+  if (!restorePromise) {
+    restorePromise = restoreProjectSession().catch((err) => {
+      restorePromise = null;
+      throw err;
+    });
+  }
+  return restorePromise;
+}
+
+async function restoreProjectSession(): Promise<void> {
+  await initProjectIdb();
+
+  const activeProjectId = await idbGetActiveProjectId();
+  if (activeProjectId) {
+    const record = await idbGetProject(activeProjectId);
+    if (record) {
+      await restoreFromSession({ snapshot: record.snapshot, assets: record.assets });
+      return;
+    }
+  }
+
+  const legacy = readLegacySession();
+  if (legacy) {
+    await restoreFromSession(legacy);
+    return;
+  }
+
+  setActiveProjectId(useProjectStore.getState().id);
 }
 
 /** Test-only reset of internal module state. */

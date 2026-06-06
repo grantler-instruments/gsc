@@ -1,4 +1,5 @@
 import { t } from "../../i18n/t";
+import { idbGetOflCache, idbPutOflCache, initProjectIdb } from "../project-idb";
 import { OFL_MANUFACTURERS_URL, oflFixtureRawUrl, oflManufacturerContentsUrl } from "./constants";
 import type {
   OflFixtureListEntry,
@@ -27,13 +28,38 @@ function titleCaseFromKey(key: string): string {
     .join(" ");
 }
 
+async function fetchJsonWithOflCache<T>(url: string): Promise<T> {
+  await initProjectIdb();
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(String(response.status));
+    }
+    const body = await response.text();
+    await idbPutOflCache(url, body, response.headers.get("content-type") ?? "application/json");
+    return JSON.parse(body) as T;
+  } catch (networkErr) {
+    const cached = await idbGetOflCache(url);
+    if (cached) {
+      return JSON.parse(cached.body) as T;
+    }
+    throw networkErr;
+  }
+}
+
 export async function fetchOflManufacturers(): Promise<OflManufacturer[]> {
-  const response = await fetch(OFL_MANUFACTURERS_URL);
-  if (!response.ok) {
-    throw new Error(t("ofl.manufacturersError", { status: response.status }));
+  let data: Record<string, { name?: string } | string>;
+  try {
+    data =
+      await fetchJsonWithOflCache<Record<string, { name?: string } | string>>(
+        OFL_MANUFACTURERS_URL,
+      );
+  } catch (err) {
+    const status = err instanceof Error ? err.message : "unknown";
+    throw new Error(t("ofl.manufacturersError", { status }));
   }
 
-  const data = (await response.json()) as Record<string, { name?: string } | string>;
   return Object.entries(data)
     .filter(([key]) => key !== "$schema")
     .map(([key, value]) => ({
@@ -44,12 +70,15 @@ export async function fetchOflManufacturers(): Promise<OflManufacturer[]> {
 }
 
 export async function fetchOflFixtureList(manufacturerKey: string): Promise<OflFixtureListEntry[]> {
-  const response = await fetch(oflManufacturerContentsUrl(manufacturerKey));
-  if (!response.ok) {
-    throw new Error(t("ofl.fixturesError", { key: manufacturerKey, status: response.status }));
+  const url = oflManufacturerContentsUrl(manufacturerKey);
+  let entries: GitHubContentEntry[];
+  try {
+    entries = await fetchJsonWithOflCache<GitHubContentEntry[]>(url);
+  } catch (err) {
+    const status = err instanceof Error ? err.message : "unknown";
+    throw new Error(t("ofl.fixturesError", { key: manufacturerKey, status }));
   }
 
-  const entries = (await response.json()) as GitHubContentEntry[];
   return entries
     .filter((entry) => entry.type === "file")
     .map((entry) => fixtureKeyFromFileName(entry.name))
@@ -125,17 +154,20 @@ export async function fetchOflFixtureSummary(
   manufacturerName: string,
   fixtureKey: string,
 ): Promise<OflFixtureSummary> {
-  const response = await fetch(oflFixtureRawUrl(manufacturerKey, fixtureKey));
-  if (!response.ok) {
+  const url = oflFixtureRawUrl(manufacturerKey, fixtureKey);
+  let raw: unknown;
+  try {
+    raw = await fetchJsonWithOflCache<unknown>(url);
+  } catch (err) {
+    const status = err instanceof Error ? err.message : "unknown";
     throw new Error(
       t("ofl.fixtureError", {
         manufacturer: manufacturerKey,
         fixture: fixtureKey,
-        status: response.status,
+        status,
       }),
     );
   }
-  const raw = await response.json();
   return parseOflFixtureJson(manufacturerKey, manufacturerName, fixtureKey, raw);
 }
 
