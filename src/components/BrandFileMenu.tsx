@@ -3,6 +3,7 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import Box from "@mui/material/Box";
 import ButtonBase from "@mui/material/ButtonBase";
 import Divider from "@mui/material/Divider";
@@ -28,6 +29,7 @@ import { exportProjectBundle, listRecentProjects } from "../platform/project-sto
 import { usePreferencesStore } from "../stores/preferences";
 import { projectDisplayName, useProjectLocationStore } from "../stores/project-location";
 import { useUiStore } from "../stores/ui";
+import { SupportDialog } from "./SupportDialog";
 
 const isTauri = getPlatform() === "tauri";
 
@@ -46,6 +48,7 @@ export function BrandFileMenu() {
   const hasSeenFileMenuHint = usePreferencesStore((s) => s.hasSeenFileMenuHint);
   const markFileMenuHintSeen = usePreferencesStore((s) => s.markFileMenuHintSeen);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [supportOpen, setSupportOpen] = useState(false);
   const [recents, setRecents] = useState<RecentProjectEntry[]>([]);
   const open = Boolean(anchorEl);
 
@@ -228,7 +231,23 @@ export function BrandFileMenu() {
             }
           />
         </MenuItem>
+
+        <Divider />
+
+        <MenuItem
+          onClick={() => {
+            close();
+            setSupportOpen(true);
+          }}
+        >
+          <ListItemIcon>
+            <VolunteerActivismOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary={t("support.menuItem")} />
+        </MenuItem>
       </Menu>
+
+      <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
     </>
   );
 }

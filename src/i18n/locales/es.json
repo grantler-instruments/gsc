@@ -84,6 +84,18 @@
     "export": "Exportar…",
     "exportHint": "Descargar {{extension}} con todos los assets"
   },
+  "support": {
+    "menuItem": "Apoyar…",
+    "title": "Apoyar GSC",
+    "intro": "GSC es software libre y de código abierto para control de espectáculos.",
+    "communityBefore": "El proyecto crece cuando la gente lo usa en shows reales, reporta lo que falla y se lo cuenta a otros. Código e incidencias están en ",
+    "communityLink": "GitHub",
+    "communityAfter": ".",
+    "funding": "Si quieres ir un paso más allá, invitar a un café ayuda a reservar tiempo para seguir desarrollando.",
+    "thanks": "Gracias por usar GSC.",
+    "buyMeACoffeeAlt": "Buy Me a Coffee",
+    "buyMeACoffeeAria": "Invitar al desarrollador a un café (se abre en una pestaña nueva)"
+  },
   "settings": {
     "title": "Ajustes",
     "navAria": "Categorías de ajustes",

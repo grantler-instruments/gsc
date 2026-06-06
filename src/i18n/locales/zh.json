@@ -84,6 +84,18 @@
     "export": "导出…",
     "exportHint": "下载包含所有资源的 {{extension}}"
   },
+  "support": {
+    "menuItem": "支持…",
+    "title": "支持 GSC",
+    "intro": "GSC 是免费的开源演出控制软件。",
+    "communityBefore": "项目的成长离不开大家在真实演出中使用、反馈问题以及向他人推荐。源代码和问题反馈见 ",
+    "communityLink": "GitHub",
+    "communityAfter": "。",
+    "funding": "如果想更进一步，请开发者喝杯咖啡也能帮助腾出时间继续改进。",
+    "thanks": "感谢使用 GSC。",
+    "buyMeACoffeeAlt": "Buy Me a Coffee",
+    "buyMeACoffeeAria": "请开发者喝杯咖啡（在新标签页中打开）"
+  },
   "settings": {
     "title": "设置",
     "navAria": "设置分类",

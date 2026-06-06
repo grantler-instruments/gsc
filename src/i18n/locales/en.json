@@ -84,6 +84,18 @@
     "export": "Export…",
     "exportHint": "Download {{extension}} with all assets"
   },
+  "support": {
+    "menuItem": "Support…",
+    "title": "Support GSC",
+    "intro": "GSC is free, open-source show-control software.",
+    "communityBefore": "The project grows when people use it on real shows, report what breaks, and tell others about it. Source code and issues are on ",
+    "communityLink": "GitHub",
+    "communityAfter": ".",
+    "funding": "If you want to go a step further, buying a coffee helps carve out time for development.",
+    "thanks": "Thanks for using GSC.",
+    "buyMeACoffeeAlt": "Buy Me a Coffee",
+    "buyMeACoffeeAria": "Buy the developer a coffee (opens in a new tab)"
+  },
   "settings": {
     "title": "Settings",
     "navAria": "Settings categories",

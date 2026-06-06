@@ -84,6 +84,18 @@
     "export": "Exportieren…",
     "exportHint": "{{extension}} mit allen Assets herunterladen"
   },
+  "support": {
+    "menuItem": "Unterstützen…",
+    "title": "GSC unterstützen",
+    "intro": "GSC ist kostenlose Open-Source-Software für Show-Steuerung.",
+    "communityBefore": "Das Projekt wächst, wenn Menschen es in echten Shows einsetzen, Probleme melden und andere darauf aufmerksam machen. Quellcode und Issues finden Sie auf ",
+    "communityLink": "GitHub",
+    "communityAfter": ".",
+    "funding": "Wenn Sie mehr tun möchten, hilft ein Kaffee dabei, Zeit für die Weiterentwicklung freizumachen.",
+    "thanks": "Danke, dass Sie GSC nutzen.",
+    "buyMeACoffeeAlt": "Buy Me a Coffee",
+    "buyMeACoffeeAria": "Dem Entwickler einen Kaffee spendieren (öffnet in neuem Tab)"
+  },
   "settings": {
     "title": "Einstellungen",
     "navAria": "Einstellungskategorien",
