@@ -20,6 +20,7 @@ function normalizeVersion(raw) {
 function setPackageJson(version) {
   const path = join(root, "package.json");
   const pkg = JSON.parse(readFileSync(path, "utf8"));
+  if (pkg.version === version) return;
   pkg.version = version;
   writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
 }
@@ -27,11 +28,12 @@ function setPackageJson(version) {
 function setCargoToml(version) {
   const path = join(root, "src-tauri", "Cargo.toml");
   const contents = readFileSync(path, "utf8");
-  const updated = contents.replace(/^version = ".*"$/m, `version = "${version}"`);
-  if (updated === contents) {
-    throw new Error("Could not update version in Cargo.toml");
+  const match = contents.match(/^version = "(.*)"$/m);
+  if (!match) {
+    throw new Error("Could not find version in Cargo.toml");
   }
-  writeFileSync(path, updated);
+  if (match[1] === version) return;
+  writeFileSync(path, contents.replace(/^version = ".*"$/m, `version = "${version}"`));
 }
 
 const version = normalizeVersion(process.argv[2] ?? readVersion());
