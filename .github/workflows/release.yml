@@ -74,6 +74,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Set version from git tag
+        run: node scripts/sync-version.mjs "${{ github.ref_name }}"
+
       - name: Install ImageMagick (macOS)
         if: matrix.platform == 'macos-latest'
         run: brew install imagemagick
