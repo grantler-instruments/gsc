@@ -20,24 +20,11 @@ function committedAssetsExist(rootDir: string): boolean {
   return PNG_SIZES.every((size) => fs.existsSync(path.join(publicDir, `pwa-${size}x${size}.png`)));
 }
 
-export function syncFaviconAssets(rootDir: string): void {
-  if (!hasMagick()) {
-    if (committedAssetsExist(rootDir)) {
-      console.log("[sync-favicon] ImageMagick not found; using committed favicon assets");
-      return;
-    }
-    throw new Error(
-      "[sync-favicon] ImageMagick (magick) is not installed and committed favicon assets are missing. " +
-        "Install ImageMagick or run `npm run icons` on a machine with ImageMagick and commit the outputs.",
-    );
-  }
+function tauriIconsExist(rootDir: string): boolean {
+  return fs.existsSync(path.join(rootDir, "src-tauri/icons/icon.png"));
+}
 
-  const publicDir = path.join(rootDir, "public");
-  const faviconPath = path.join(publicDir, "favicon.svg");
-  const svg = `${renderGscLogoMarkSvg()}\n`;
-
-  fs.writeFileSync(faviconPath, svg);
-
+function generatePwaPngs(publicDir: string, faviconPath: string): void {
   for (const size of PNG_SIZES) {
     execFileSync(
       "magick",
@@ -54,12 +41,57 @@ export function syncFaviconAssets(rootDir: string): void {
       { stdio: "inherit" },
     );
   }
+}
 
+function generateTauriIcons(rootDir: string, faviconPath: string): void {
   const tauriIconsDir = path.join(rootDir, "src-tauri/icons");
   execSync(`npx tauri icon ${JSON.stringify(faviconPath)} -o ${JSON.stringify(tauriIconsDir)}`, {
     cwd: rootDir,
     stdio: "inherit",
   });
+}
 
-  console.log("[sync-favicon] Updated favicon.svg, PWA PNGs, and Tauri icons");
+export function syncFaviconAssets(rootDir: string): void {
+  const publicDir = path.join(rootDir, "public");
+  const faviconPath = path.join(publicDir, "favicon.svg");
+  const svg = `${renderGscLogoMarkSvg()}\n`;
+  const existingSvg = fs.existsSync(faviconPath) ? fs.readFileSync(faviconPath, "utf8") : null;
+  const svgUnchanged = existingSvg === svg;
+  const pwaAssetsExist = committedAssetsExist(rootDir);
+  const tauriExist = tauriIconsExist(rootDir);
+
+  if (svgUnchanged && pwaAssetsExist && tauriExist) {
+    console.log("[sync-favicon] Favicon assets are up to date; skipping regeneration");
+    return;
+  }
+
+  if (!hasMagick()) {
+    if (pwaAssetsExist && tauriExist) {
+      console.log("[sync-favicon] ImageMagick not found; using committed favicon assets");
+      return;
+    }
+    throw new Error(
+      "[sync-favicon] ImageMagick (magick) is not installed and committed favicon assets are missing. " +
+        "Install ImageMagick or run `npm run icons` on a machine with ImageMagick and commit the outputs.",
+    );
+  }
+
+  const updated: string[] = [];
+
+  if (!svgUnchanged) {
+    fs.writeFileSync(faviconPath, svg);
+    updated.push("favicon.svg");
+  }
+
+  if (!svgUnchanged || !pwaAssetsExist) {
+    generatePwaPngs(publicDir, faviconPath);
+    updated.push("PWA PNGs");
+  }
+
+  if (!svgUnchanged || !tauriExist) {
+    generateTauriIcons(rootDir, faviconPath);
+    updated.push("Tauri icons");
+  }
+
+  console.log(`[sync-favicon] Updated ${updated.join(", ")}`);
 }
