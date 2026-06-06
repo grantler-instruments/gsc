@@ -15,6 +15,7 @@ import { usePreventBrowserFileDrop } from "./usePreventBrowserFileDrop";
 import { useProjectHistory } from "./useProjectHistory";
 import { useProjectSession } from "./useProjectSession";
 import { useRemoteHost } from "./useRemoteHost";
+import { useShowModeKeepAwake } from "./useShowModeKeepAwake";
 import { useTauriAppMenu } from "./useTauriAppMenu";
 import { useTauriOpenProject } from "./useTauriOpenProject";
 
@@ -23,6 +24,7 @@ export function useAppRuntime(): boolean {
   const sessionReady = useProjectSession();
 
   useProjectHistory();
+  useShowModeKeepAwake();
   useAppKeyboard();
   useAudioEngine();
   useMidiEngine();

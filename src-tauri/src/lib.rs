@@ -42,6 +42,7 @@ pub fn run() {
         .manage(RemoteServerState::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_keepawake::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             list_audio_output_devices,

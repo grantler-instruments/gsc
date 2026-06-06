@@ -40,6 +40,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-i18next": "^17.0.8",
+    "tauri-plugin-keepawake-api": "^0.1.0",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
