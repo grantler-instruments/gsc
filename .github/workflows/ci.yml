@@ -21,6 +21,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
       - name: Typecheck
         run: npx tsc --noEmit
 

@@ -59,9 +59,6 @@ export default function WebsiteApp() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600, ml: 1.5 }}>
             {t("common.brand.gsc")}
           </Typography>
-          <Button color="inherit" href="#contact" sx={{ color: "text.primary" }}>
-            {t("website.contact")}
-          </Button>
         </Toolbar>
       </AppBar>
 
@@ -298,12 +295,10 @@ export default function WebsiteApp() {
             <Typography variant="body2" color="text.secondary">
               {t("website.copyright", { year: new Date().getFullYear() })}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" component="p">
               {t("website.contributionsBefore")}
               <Link
                 href={GITHUB_REPO_URL}
-                color="inherit"
-                underline="hover"
                 target="_blank"
                 rel="noopener noreferrer"
               >

@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vitest/config";
 import { trailingSlashRedirectPlugin } from "./vite-trailing-slash-redirect";
+import { syncFaviconPlugin } from "./vite-plugin-sync-favicon";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -28,6 +29,7 @@ const websiteNavigateDenylist = baseNoSlash
 export default defineConfig({
   base,
   plugins: [
+    syncFaviconPlugin(__dirname),
     trailingSlashRedirectPlugin(base),
     react(),
     VitePWA({

@@ -1,27 +1,38 @@
 import type { SVGProps } from "react";
-
-/** Dark mark on white — chosen brand treatment. */
-export const GSC_LOGO_COLOR = "#1a1a1a";
+import { editTokens } from "../theme/tokens";
+import {
+  GSC_LOGO_COLOR,
+  GSC_LOGO_MARK,
+  gscLogoRowHeight,
+  gscLogoRowYs,
+  gscLogoStripeFill,
+} from "./gscLogoMark";
 
 type GscLogoProps = SVGProps<SVGSVGElement> & {
   size?: number;
+  /** Bright cue stripes (top two and last). */
   color?: string;
+  /** Gray second-to-last stripe and square. */
+  mutedColor?: string;
 };
 
-export function GscLogo({ size = 32, color = GSC_LOGO_COLOR, ...rest }: GscLogoProps) {
-  const block = 18;
-  const gap = 2;
-  const rowGap = 2;
-  const rowH = (block - rowGap * 3) / 4;
-  const xSquare = 8;
-  const y = 15;
+export { GSC_LOGO_COLOR } from "./gscLogoMark";
+
+export function GscLogo({
+  size = 32,
+  color = GSC_LOGO_COLOR,
+  mutedColor = editTokens.textMuted,
+  ...rest
+}: GscLogoProps) {
+  const { block, gap, rowGap, xSquare, y, viewBox } = GSC_LOGO_MARK;
+  const rowH = gscLogoRowHeight(block, rowGap);
   const xRows = xSquare + block + gap;
-  const rowYs = [0, 1, 2, 3].map((i) => y + i * (rowH + rowGap));
+  const rowYs = gscLogoRowYs(y, rowH, rowGap);
 
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 48 48"
+      viewBox={`0 0 ${viewBox} ${viewBox}`}
       fill="none"
       width={size}
       height={size}
@@ -29,7 +40,7 @@ export function GscLogo({ size = 32, color = GSC_LOGO_COLOR, ...rest }: GscLogoP
       {...rest}
     >
       <title>GSC</title>
-      <rect x={xSquare} y={y} width={block} height={block} fill={color} />
+      <rect x={xSquare} y={y} width={block} height={block} fill={mutedColor} />
       {rowYs.map((rowY, i) => (
         <rect
           key={rowY}
@@ -37,8 +48,7 @@ export function GscLogo({ size = 32, color = GSC_LOGO_COLOR, ...rest }: GscLogoP
           y={rowY}
           width={block}
           height={rowH}
-          fill={color}
-          opacity={i === 3 ? 0.45 : 1}
+          fill={gscLogoStripeFill(i, color, mutedColor)}
         />
       ))}
     </svg>

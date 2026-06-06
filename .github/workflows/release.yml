@@ -67,11 +67,20 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libappindicator3-dev \
             librsvg2-dev \
+            imagemagick \
             patchelf \
             libasound2-dev \
             libudev-dev
 
       - run: npm ci
+
+      - name: Install ImageMagick (macOS)
+        if: matrix.platform == 'macos-latest'
+        run: brew install imagemagick
+
+      - name: Install ImageMagick (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: choco install imagemagick --yes
 
       # macOS: import Developer ID cert so tauri-action can sign + notarize.
       # https://v2.tauri.app/distribute/sign/macos/

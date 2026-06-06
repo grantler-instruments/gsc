@@ -5,7 +5,7 @@
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run icons && vite",
     "build": "tsc && cross-env VITE_BASE=/ vite build",
     "build:pages": "tsc && vite build",
     "preview": "vite preview",
@@ -14,10 +14,12 @@
     "test:watch": "vitest",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
+    "icons": "vite-node --script scripts/sync-favicon.ts",
     "screenshots": "node scripts/screenshots/capture.mjs",
     "screenshots:serve": "node scripts/screenshots/capture.mjs --serve",
     "tauri": "tauri",
-    "tauri:dev:ndi": "tauri dev --features ndi"
+    "tauri:dev": "npm run icons && tauri dev",
+    "tauri:dev:ndi": "npm run icons && tauri dev --features ndi"
   },
   "dependencies": {
     "@elemaudio/core": "^4.0.1",
