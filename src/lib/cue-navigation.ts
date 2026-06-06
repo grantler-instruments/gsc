@@ -48,6 +48,25 @@ export function selectNextCueAfterGo(triggeredCueId: string): void {
     useProjectStore.getState().selectCue(id);
     return;
   }
+
+  advanceToNextCueListTab();
+}
+
+/** After the last cue in a list, switch to the next tab and select its first visible cue. */
+function advanceToNextCueListTab(): void {
+  const state = useProjectStore.getState();
+  const { cueLists, activeCueListId } = state;
+  const currentIndex = cueLists.findIndex((l) => l.id === activeCueListId);
+  if (currentIndex === -1 || currentIndex >= cueLists.length - 1) return;
+
+  const nextList = cueLists[currentIndex + 1];
+  state.setActiveCueList(nextList.id);
+
+  const collapsed = new Set(useUiStore.getState().collapsedCueGroupIds);
+  const nextOrder = flattenVisibleCueIds(nextList.cues, collapsed);
+  if (nextOrder.length > 0) {
+    state.selectCue(nextOrder[0]);
+  }
 }
 
 /** Delete the primary selected cue and select a neighbor in the list when possible. */

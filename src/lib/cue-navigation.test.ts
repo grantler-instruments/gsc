@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { createCueList } from "./cue-lists";
 import { useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
@@ -71,6 +72,32 @@ describe("selectNextCueAfterGo", () => {
 
     selectNextCueAfterGo("a");
     expect(activeListSelection()).toEqual(["b"]);
+  });
+
+  it("switches to the next tab after the last cue in a list", () => {
+    const list1 = createCueList("Act 1");
+    list1.cues = [testCue("a", "A", "audio")];
+    const list2 = createCueList("Act 2");
+    list2.cues = [testCue("x", "X", "audio"), testCue("y", "Y", "audio")];
+    useProjectStore.setState({
+      cueLists: [list1, list2],
+      activeCueListId: list1.id,
+    });
+    useProjectStore.getState().selectCue("a");
+
+    selectNextCueAfterGo("a");
+
+    expect(useProjectStore.getState().activeCueListId).toBe(list2.id);
+    expect(activeListSelection()).toEqual(["x"]);
+  });
+
+  it("stays on the last cue when already on the final tab", () => {
+    resetTestProject([testCue("a", "A", "audio")]);
+    useProjectStore.getState().selectCue("a");
+
+    selectNextCueAfterGo("a");
+
+    expect(activeListSelection()).toEqual(["a"]);
   });
 });
 
