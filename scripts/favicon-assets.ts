@@ -17,9 +17,7 @@ function hasMagick(): boolean {
 function committedAssetsExist(rootDir: string): boolean {
   const publicDir = path.join(rootDir, "public");
   if (!fs.existsSync(path.join(publicDir, "favicon.svg"))) return false;
-  return PNG_SIZES.every((size) =>
-    fs.existsSync(path.join(publicDir, `pwa-${size}x${size}.png`)),
-  );
+  return PNG_SIZES.every((size) => fs.existsSync(path.join(publicDir, `pwa-${size}x${size}.png`)));
 }
 
 export function syncFaviconAssets(rootDir: string): void {

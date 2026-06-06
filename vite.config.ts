@@ -3,8 +3,8 @@ import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vitest/config";
-import { trailingSlashRedirectPlugin } from "./vite-trailing-slash-redirect";
 import { syncFaviconPlugin } from "./vite-plugin-sync-favicon";
+import { trailingSlashRedirectPlugin } from "./vite-trailing-slash-redirect";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

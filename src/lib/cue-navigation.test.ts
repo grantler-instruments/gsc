@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createCueList } from "./cue-lists";
 import { useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
 import { activeCues, resetTestProject, testCue } from "../test/fixtures/cues";
+import { createCueList } from "./cue-lists";
 import {
   deletePrimarySelectedCue,
   selectAdjacentVisibleCue,

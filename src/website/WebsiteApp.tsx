@@ -297,11 +297,7 @@ export default function WebsiteApp() {
             </Typography>
             <Typography variant="body2" color="text.secondary" component="p">
               {t("website.contributionsBefore")}
-              <Link
-                href={GITHUB_REPO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Link href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer">
                 {t("website.contributionsLink")}
               </Link>
               {t("website.contributionsAfter")}
