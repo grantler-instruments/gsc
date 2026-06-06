@@ -2,8 +2,11 @@ import { CssBaseline, ThemeProvider } from "@mui/material";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "../i18n";
+import { registerPwaServiceWorker } from "../lib/pwa-install";
 import { websiteTheme } from "./theme";
 import WebsiteApp from "./WebsiteApp";
+
+registerPwaServiceWorker();
 
 const root = document.getElementById("root");
 if (!root) {

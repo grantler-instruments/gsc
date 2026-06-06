@@ -77,6 +77,8 @@
     "tooltip": "Dateimenü — öffnen, speichern, Einstellungen…",
     "firstVisitHint": "Klicken Sie oben links auf GSC für Dateiaktionen wie Öffnen, Speichern und Einstellungen.",
     "settings": "Einstellungen…",
+    "installPwa": "PWA installieren…",
+    "installPwaHint": "Browser-App installieren, nicht die Desktop-Version",
     "open": "Öffnen…",
     "openWebHint": "{{extension}}-Datei importieren",
     "save": "Speichern",
@@ -95,6 +97,11 @@
     "thanks": "Danke, dass Sie GSC nutzen.",
     "buyMeACoffeeAlt": "Buy Me a Coffee",
     "buyMeACoffeeAria": "Dem Entwickler einen Kaffee spendieren (öffnet in neuem Tab)"
+  },
+  "installPwa": {
+    "title": "PWA installieren",
+    "desktopBody": "Suchen Sie das Installationssymbol in der Adressleiste oder wählen Sie im Browsermenü GSC installieren / App installieren.",
+    "iosBody": "Tippen Sie in Safari auf Teilen und dann auf Zum Home-Bildschirm."
   },
   "settings": {
     "title": "Einstellungen",

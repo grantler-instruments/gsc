@@ -1,5 +1,7 @@
 export const GITHUB_REPO_URL = "https://github.com/grantler-instruments/gsc";
 
+export const GITHUB_RELEASES_URL = `${GITHUB_REPO_URL}/releases`;
+
 export const BUY_ME_A_COFFEE_URL = "https://buymeacoffee.com/thomasgeissl";
 
 export const BUY_ME_A_COFFEE_BUTTON_URL =

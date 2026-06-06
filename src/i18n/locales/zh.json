@@ -77,6 +77,8 @@
     "tooltip": "文件菜单 — 打开、保存、设置…",
     "firstVisitHint": "点击左上角的 GSC 可进行打开、保存和设置等文件操作。",
     "settings": "设置…",
+    "installPwa": "安装 PWA…",
+    "installPwaHint": "安装浏览器应用，而非桌面版",
     "open": "打开…",
     "openWebHint": "导入 {{extension}} 文件",
     "save": "保存",
@@ -95,6 +97,11 @@
     "thanks": "感谢使用 GSC。",
     "buyMeACoffeeAlt": "Buy Me a Coffee",
     "buyMeACoffeeAria": "请开发者喝杯咖啡（在新标签页中打开）"
+  },
+  "installPwa": {
+    "title": "安装 PWA",
+    "desktopBody": "请在浏览器地址栏查找安装图标，或在浏览器菜单中选择安装 GSC / 安装应用。",
+    "iosBody": "在 Safari 中，轻点分享，然后选择添加到主屏幕。"
   },
   "settings": {
     "title": "设置",

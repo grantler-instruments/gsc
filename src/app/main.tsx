@@ -4,12 +4,18 @@ import "../i18n";
 import App from "../App";
 import { OutputApp } from "../components/OutputApp";
 import { RemoteApp } from "../components/RemoteApp";
+import { registerPwaServiceWorker } from "../lib/pwa-install";
+import { getPlatform } from "../platform";
 import { isOutputMode } from "../platform/output-window";
 import { isRemoteClient } from "../platform/remote-mode";
 import { GscThemeProvider } from "../theme/GscThemeProvider";
 
 const isOutput = isOutputMode();
 const isRemote = isRemoteClient();
+
+if (getPlatform() === "web" && !isOutput && !isRemote) {
+  registerPwaServiceWorker();
+}
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

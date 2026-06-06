@@ -2,6 +2,7 @@ import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
+import InstallDesktopOutlinedIcon from "@mui/icons-material/InstallDesktopOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import Box from "@mui/material/Box";
@@ -14,6 +15,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { usePwaInstall } from "../hooks/usePwaInstall";
 import { formatShortcut } from "../lib/keyboard";
 import { notify, notifyWarning } from "../lib/notifications";
 import { openSettings } from "../lib/open-settings";
@@ -29,6 +31,7 @@ import { exportProjectBundle, listRecentProjects } from "../platform/project-sto
 import { usePreferencesStore } from "../stores/preferences";
 import { projectDisplayName, useProjectLocationStore } from "../stores/project-location";
 import { useUiStore } from "../stores/ui";
+import { InstallPwaDialog } from "./InstallPwaDialog";
 import { SupportDialog } from "./SupportDialog";
 
 const isTauri = getPlatform() === "tauri";
@@ -49,7 +52,9 @@ export function BrandFileMenu() {
   const markFileMenuHintSeen = usePreferencesStore((s) => s.markFileMenuHintSeen);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [installPwaOpen, setInstallPwaOpen] = useState(false);
   const [recents, setRecents] = useState<RecentProjectEntry[]>([]);
+  const { showInstallMenuItem, install: installPwa } = usePwaInstall();
   const open = Boolean(anchorEl);
 
   useEffect(() => {
@@ -234,6 +239,25 @@ export function BrandFileMenu() {
 
         <Divider />
 
+        {showInstallMenuItem ? (
+          <MenuItem
+            onClick={() => {
+              close();
+              void installPwa().then((prompted) => {
+                if (!prompted) setInstallPwaOpen(true);
+              });
+            }}
+          >
+            <ListItemIcon>
+              <InstallDesktopOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary={t("fileMenu.installPwa")}
+              secondary={t("fileMenu.installPwaHint")}
+            />
+          </MenuItem>
+        ) : null}
+
         <MenuItem
           onClick={() => {
             close();
@@ -248,6 +272,7 @@ export function BrandFileMenu() {
       </Menu>
 
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
+      <InstallPwaDialog open={installPwaOpen} onClose={() => setInstallPwaOpen(false)} />
     </>
   );
 }

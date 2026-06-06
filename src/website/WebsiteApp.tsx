@@ -16,6 +16,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { GscLogo } from "../brand/GscLogo";
 import { CueTypeBadge } from "../components/CueTypeIcon";
+import { GITHUB_RELEASES_URL, GITHUB_REPO_URL } from "../lib/support-links";
 import { featureCategoryKeys } from "./features";
 import { useCaseKeys } from "./useCases";
 
@@ -32,11 +33,6 @@ const heroMarkHeight = {
 
 const webAppUrl = `${import.meta.env.BASE_URL}app/`;
 const screenshotUrl = `${import.meta.env.BASE_URL}gsc_edit_screenshot.png`;
-
-/** Update when desktop release artifacts are published. */
-const DESKTOP_DOWNLOAD_URL = "#";
-
-const GITHUB_REPO_URL = "https://github.com/grantler-instruments/gsc";
 
 export default function WebsiteApp() {
   const theme = useTheme();
@@ -147,7 +143,9 @@ export default function WebsiteApp() {
                 <Button
                   variant="contained"
                   size="large"
-                  href={DESKTOP_DOWNLOAD_URL}
+                  href={GITHUB_RELEASES_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   startIcon={<DownloadOutlinedIcon />}
                   sx={{ flex: 1, py: 1.75, fontSize: "1.05rem" }}
                 >
