@@ -85,35 +85,8 @@ jobs:
         if: matrix.platform == 'windows-latest'
         run: choco install imagemagick --yes
 
-      # macOS: import Developer ID cert so tauri-action can sign + notarize.
-      # https://v2.tauri.app/distribute/sign/macos/
-      - name: Import Apple Developer certificate
-        if: matrix.platform == 'macos-latest'
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-        run: |
-          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
-          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-          security set-keychain-settings -t 3600 -u build.keychain
-          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
-          rm certificate.p12
-
-      - name: Get signing identity
-        if: matrix.platform == 'macos-latest'
-        id: apple_identity
-        run: |
-          SIGNING_IDENTITY=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application" | head -1 | sed -n 's/.*"\(.*\)".*/\1/p')
-          if [ -z "$SIGNING_IDENTITY" ]; then
-            echo "No Developer ID Application identity found in build.keychain"
-            security find-identity -v -p codesigning build.keychain
-            exit 1
-          fi
-          echo "identity=$SIGNING_IDENTITY" >> "$GITHUB_OUTPUT"
+      # macOS signing/notarization disabled on CI for now (both aarch64 and x86_64).
+      # Re-enable: https://v2.tauri.app/distribute/sign/macos/
 
       - name: Build and upload release assets
         uses: tauri-apps/tauri-action@v0
@@ -121,13 +94,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Use CI-safe DMG creation (no Finder AppleScript). Required on GHA macOS runners.
           TAURI_BUNDLER_DMG_IGNORE_CI: false
-          # macOS sign + notarize (tauri-action / Tauri bundler). Ignored on Linux/Windows.
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ steps.apple_identity.outputs.identity }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: Grantler Stage Control ${{ github.ref_name }}
