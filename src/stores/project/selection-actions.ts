@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand";
+import { reopenCompactInspectorDrawerIfEditing } from "../../lib/compact-inspector-drawer";
 import {
   collectCuesForCopy,
   getCueClipboard,
@@ -78,6 +79,9 @@ export function createSelectionActions(
           selectionAnchorId: id,
         })),
       }));
+      if (id) {
+        reopenCompactInspectorDrawerIfEditing();
+      }
       syncHostSelectionToRemotes();
     },
 
@@ -97,6 +101,9 @@ export function createSelectionActions(
           return { selectedCueIds, selectionAnchorId: id };
         }),
       }));
+      if (getPrimarySelectedCueId(getActiveCueListFromState(get()).selectedCueIds)) {
+        reopenCompactInspectorDrawerIfEditing();
+      }
       syncHostSelectionToRemotes();
     },
 
@@ -114,6 +121,7 @@ export function createSelectionActions(
           })),
         });
         syncHostSelectionToRemotes();
+        reopenCompactInspectorDrawerIfEditing();
         return;
       }
       const [lo, hi] = a < b ? [a, b] : [b, a];
@@ -123,6 +131,7 @@ export function createSelectionActions(
           selectionAnchorId: anchor,
         })),
       });
+      reopenCompactInspectorDrawerIfEditing();
       syncHostSelectionToRemotes();
     },
 

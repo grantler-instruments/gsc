@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import { useMemo } from "react";
+import { useCompactLayout } from "../../hooks/useCompactLayout";
 import { getPrimarySelectedCueId } from "../../lib/cue-selection";
 import { buildCueTree } from "../../lib/cues";
 import { useFadeStore } from "../../stores/fade";
@@ -23,6 +24,7 @@ import { useCueListStopHighlights } from "./useCueListStopHighlights";
 
 export function CueList() {
   const tokens = useGscTokens();
+  const compact = useCompactLayout();
   const showMode = useUiStore((s) => s.showMode);
   const fixturePlotExpanded = useUiStore((s) => s.fixturePlotExpanded);
   const fixtures = useProjectStore((s) => s.fixtures);
@@ -61,7 +63,8 @@ export function CueList() {
         flexDirection: "column",
         minHeight: 0,
         minWidth: 0,
-        borderRight: !showMode && getPrimarySelectedCueId(selection.selectedCueIds) ? 1 : 0,
+        borderRight:
+          !compact && !showMode && getPrimarySelectedCueId(selection.selectedCueIds) ? 1 : 0,
         borderColor: "divider",
       }}
     >

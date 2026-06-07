@@ -193,6 +193,7 @@
     "preview": "Vista previa"
   },
   "sidebar": {
+    "cues": "Cues",
     "assets": "Assets",
     "fixtures": "Fixtures",
     "active": "Activos",

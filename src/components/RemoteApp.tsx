@@ -9,6 +9,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useCompactLayout } from "../hooks/useCompactLayout";
 import { useRemoteClient } from "../hooks/useRemoteClient";
 import { useRemoteKeyboard } from "../hooks/useRemoteKeyboard";
 import {
@@ -25,6 +26,7 @@ import { TransportBar } from "./TransportBar";
 /** Phone/tablet remote — show-mode UI only, no local engines. */
 export function RemoteApp() {
   const { t } = useTranslation();
+  const compact = useCompactLayout();
   useRemoteClient();
   useRemoteKeyboard();
   const [connectionState, setConnectionState] = useState(getRemoteConnectionState());
@@ -84,20 +86,22 @@ export function RemoteApp() {
         )}
       </Box>
 
-      <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
+      <Box sx={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0 }}>
         <LeftSidebar />
-        <Box
-          component="main"
-          sx={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            minWidth: 0,
-            minHeight: 0,
-          }}
-        >
-          <CueList />
-        </Box>
+        {!compact && (
+          <Box
+            component="main"
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              minWidth: 0,
+              minHeight: 0,
+            }}
+          >
+            <CueList />
+          </Box>
+        )}
       </Box>
 
       <TransportBar />

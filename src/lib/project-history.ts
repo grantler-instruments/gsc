@@ -1,6 +1,7 @@
 import { useProjectStore } from "../stores/project";
 import type { ProjectSnapshot } from "../types/cue";
 import { setActiveProjectId } from "./active-project-id";
+import { dismissCompactInspectorDrawer } from "./compact-inspector-drawer";
 import type { CueList } from "./cue-lists";
 import { type ProjectPersistSlice, projectPersistStateChanged } from "./project-persist";
 import { cueListsToSnapshot, snapshotToCueLists } from "./project-snapshot";
@@ -103,6 +104,7 @@ export function clearProjectHistory(): void {
 export function replaceProjectWithoutHistory(run: () => void): void {
   clearProjectHistory();
   runWithoutHistory(run);
+  dismissCompactInspectorDrawer();
 }
 
 export function recordProjectStateChange(

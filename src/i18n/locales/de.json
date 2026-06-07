@@ -193,6 +193,7 @@
     "preview": "Vorschau"
   },
   "sidebar": {
+    "cues": "Cues",
     "assets": "Assets",
     "fixtures": "Fixtures",
     "active": "Aktiv",

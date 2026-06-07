@@ -222,6 +222,7 @@
     "preview": "Preview"
   },
   "sidebar": {
+    "cues": "Cues",
     "assets": "Assets",
     "fixtures": "Fixtures",
     "active": "Active",

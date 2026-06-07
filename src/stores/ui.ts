@@ -21,6 +21,10 @@ interface UiState {
   fixturePlotEditMode: boolean;
   /** When true, a larger fixture plot is shown above the cue list. */
   fixturePlotExpanded: boolean;
+  /** Compact-layout inspector drawer is open (blocks global Escape → panic). */
+  compactInspectorDrawerOpen: boolean;
+  /** Compact inspector drawer stays closed until the user selects a cue. */
+  compactInspectorDrawerDismissed: boolean;
   setSidebarTab: (tab: SidebarTabId) => void;
   setRightSidebarTab: (tab: RightSidebarTabId) => void;
   setDarkMode: (dark: boolean) => void;
@@ -32,6 +36,8 @@ interface UiState {
   setFixturePlotEditMode: (open: boolean) => void;
   setFixturePlotExpanded: (expanded: boolean) => void;
   toggleFixturePlotExpanded: () => void;
+  setCompactInspectorDrawerOpen: (open: boolean) => void;
+  setCompactInspectorDrawerDismissed: (dismissed: boolean) => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -48,6 +54,8 @@ export const useUiStore = create<UiState>()(
         dmxPreviewCueIds: [],
         fixturePlotEditMode: false,
         fixturePlotExpanded: false,
+        compactInspectorDrawerOpen: false,
+        compactInspectorDrawerDismissed: true,
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
         setRightSidebarTab: (rightSidebarTab) => set({ rightSidebarTab }),
         setDarkMode: (darkMode) => set({ darkMode }),
@@ -56,14 +64,18 @@ export const useUiStore = create<UiState>()(
         setShowMode: (showMode) =>
           set({
             showMode,
-            ...(showMode ? { sidebarTab: "active" as const } : {}),
+            ...(showMode
+              ? { compactInspectorDrawerDismissed: true, sidebarTab: "cues" as const }
+              : {}),
           }),
         toggleShowMode: () =>
           set((s) => {
             const showMode = !s.showMode;
             return {
               showMode,
-              ...(showMode ? { sidebarTab: "active" as const } : {}),
+              ...(showMode
+                ? { compactInspectorDrawerDismissed: true, sidebarTab: "cues" as const }
+                : {}),
             };
           }),
         toggleCueGroupCollapsed: (groupId) =>
@@ -77,6 +89,10 @@ export const useUiStore = create<UiState>()(
         setFixturePlotExpanded: (fixturePlotExpanded) => set({ fixturePlotExpanded }),
         toggleFixturePlotExpanded: () =>
           set((s) => ({ fixturePlotExpanded: !s.fixturePlotExpanded })),
+        setCompactInspectorDrawerOpen: (compactInspectorDrawerOpen) =>
+          set({ compactInspectorDrawerOpen }),
+        setCompactInspectorDrawerDismissed: (compactInspectorDrawerDismissed) =>
+          set({ compactInspectorDrawerDismissed }),
       }),
       {
         name: "gsc-ui",

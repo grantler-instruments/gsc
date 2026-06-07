@@ -193,6 +193,7 @@
     "preview": "预览"
   },
   "sidebar": {
+    "cues": "提示列表",
     "assets": "资源",
     "fixtures": "灯具",
     "active": "活跃",

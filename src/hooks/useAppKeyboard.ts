@@ -78,6 +78,9 @@ export function useAppKeyboard(): void {
       }
 
       if (e.key === "Escape") {
+        if (useUiStore.getState().compactInspectorDrawerOpen) {
+          return;
+        }
         panic();
         return;
       }

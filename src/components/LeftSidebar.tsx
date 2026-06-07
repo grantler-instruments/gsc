@@ -1,5 +1,6 @@
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
+import ListAltOutlinedIcon from "@mui/icons-material/ListAltOutlined";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
@@ -7,47 +8,74 @@ import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Typography from "@mui/material/Typography";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useCompactLayout } from "../hooks/useCompactLayout";
+import {
+  compactSidebarShellSx,
+  compactSidebarTabLabelSx,
+  sidebarTabsSx,
+} from "../layout/responsiveLayout";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
-import { SIDEBAR_TABS, SIDEBAR_WIDTH, type SidebarTabId } from "../types/sidebar";
+import { normalizeSidebarTab, type SidebarTabId, sidebarTabsForLayout } from "../types/sidebar";
 import { ActiveCuesPanel } from "./ActiveCuesPanel";
 import { AssetsPanel } from "./AssetsPanel";
+import { CueList } from "./CueList";
 import { FixturesPanel } from "./FixturesPanel";
 
 const TAB_ICONS: Record<SidebarTabId, React.ReactNode> = {
+  cues: <ListAltOutlinedIcon fontSize="small" />,
   assets: <FolderOutlinedIcon fontSize="small" />,
   fixtures: <LightbulbOutlinedIcon fontSize="small" />,
   active: <PlayArrowIcon fontSize="small" />,
 };
 
 const SIDEBAR_TAB_LABEL_KEYS: Record<SidebarTabId, string> = {
+  cues: "sidebar.cues",
   assets: "sidebar.assets",
   fixtures: "sidebar.fixtures",
   active: "sidebar.active",
 };
 
-const sidebarShellSx = {
-  width: SIDEBAR_WIDTH,
-  flexShrink: 0,
-  borderRight: 1,
-  borderColor: "divider",
-  display: "flex",
-  flexDirection: "column",
-  bgcolor: "background.paper",
-  minHeight: 0,
-} as const;
+function SidebarTabPanel({ sidebarTab, compact }: { sidebarTab: SidebarTabId; compact: boolean }) {
+  return (
+    <>
+      {sidebarTab === "cues" && compact && <CueList />}
+      {sidebarTab === "assets" && <AssetsPanel />}
+      {sidebarTab === "fixtures" && <FixturesPanel />}
+      {sidebarTab === "active" && <ActiveCuesPanel />}
+    </>
+  );
+}
 
 export function LeftSidebar() {
   const { t } = useTranslation();
+  const compact = useCompactLayout();
   const showMode = useUiStore((s) => s.showMode);
   const sidebarTab = useUiStore((s) => s.sidebarTab);
   const setSidebarTab = useUiStore((s) => s.setSidebarTab);
   const activeCount = useTransportStore((s) => s.activeCueIds.length);
+  const tabs = sidebarTabsForLayout(compact, showMode);
+  const normalizedTab = normalizeSidebarTab(sidebarTab, compact, showMode);
+  const wasCompact = useRef<boolean | null>(null);
 
-  if (showMode) {
+  useEffect(() => {
+    if (compact && wasCompact.current !== true) {
+      setSidebarTab("cues");
+    }
+    wasCompact.current = compact;
+  }, [compact, setSidebarTab]);
+
+  useEffect(() => {
+    if (normalizedTab !== sidebarTab) {
+      setSidebarTab(normalizedTab);
+    }
+  }, [normalizedTab, sidebarTab, setSidebarTab]);
+
+  if (showMode && !compact) {
     return (
-      <Box component="aside" sx={sidebarShellSx}>
+      <Box component="aside" sx={compactSidebarShellSx}>
         <Stack
           direction="row"
           sx={{
@@ -84,26 +112,32 @@ export function LeftSidebar() {
   }
 
   return (
-    <Box component="aside" sx={sidebarShellSx}>
+    <Box component="aside" sx={compactSidebarShellSx}>
       <Tabs
-        value={sidebarTab}
+        value={normalizedTab}
         onChange={(_, value: SidebarTabId) => setSidebarTab(value)}
-        variant="fullWidth"
+        variant={compact ? "scrollable" : "fullWidth"}
+        scrollButtons={compact ? "auto" : false}
+        allowScrollButtonsMobile={compact}
         aria-label={t("sidebar.sidebarAria")}
+        sx={sidebarTabsSx(compact)}
       >
-        {SIDEBAR_TABS.map((tabId) => (
+        {tabs.map((tabId) => (
           <Tab
             key={tabId}
             value={tabId}
             label={
               <Stack direction="row" sx={{ alignItems: "center", gap: 0.75 }}>
                 {TAB_ICONS[tabId]}
-                <span>{t(SIDEBAR_TAB_LABEL_KEYS[tabId])}</span>
+                <Box component="span" sx={compactSidebarTabLabelSx}>
+                  {t(SIDEBAR_TAB_LABEL_KEYS[tabId])}
+                </Box>
                 {tabId === "active" && activeCount > 0 && (
                   <Chip label={activeCount} size="small" color="success" />
                 )}
               </Stack>
             }
+            aria-label={t(SIDEBAR_TAB_LABEL_KEYS[tabId])}
             sx={{ minHeight: 40 }}
           />
         ))}
@@ -119,9 +153,7 @@ export function LeftSidebar() {
           overflow: "hidden",
         }}
       >
-        {sidebarTab === "assets" && <AssetsPanel />}
-        {sidebarTab === "fixtures" && <FixturesPanel />}
-        {sidebarTab === "active" && <ActiveCuesPanel />}
+        <SidebarTabPanel sidebarTab={normalizedTab} compact={compact} />
       </Box>
     </Box>
   );
