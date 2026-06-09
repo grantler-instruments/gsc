@@ -81,6 +81,7 @@ export function CueList() {
           onListDragOver={listDrop.onListDragOver}
           onListDragLeave={listDrop.onListDragLeave}
           onListDrop={listDrop.onListDrop}
+          onListDropCapture={listDrop.onListDropCapture}
         >
           <CueListTree
             nodes={tree}

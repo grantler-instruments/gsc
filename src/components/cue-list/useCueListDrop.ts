@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useClearOnDragEnd } from "./useClearOnDragEnd";
 import {
   applyAssetPayloads,
   isAssetDropDrag,
@@ -19,6 +20,9 @@ import { useProjectStore } from "../../stores/project";
 export function useCueListDrop(canEdit: boolean) {
   const moveCueToGroup = useProjectStore((s) => s.moveCueToGroup);
   const [listDropActive, setListDropActive] = useState(false);
+
+  const clearListDropActive = useCallback(() => setListDropActive(false), []);
+  useClearOnDragEnd(clearListDropActive);
 
   const onListDragOver = useCallback(
     (e: React.DragEvent) => {
@@ -72,10 +76,13 @@ export function useCueListDrop(canEdit: boolean) {
     [canEdit, moveCueToGroup],
   );
 
+  const onListDropCapture = clearListDropActive;
+
   return {
     listDropActive,
     onListDragOver,
     onListDragLeave,
     onListDrop,
+    onListDropCapture,
   };
 }

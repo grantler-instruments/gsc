@@ -13,6 +13,7 @@ interface CueListBodyProps {
   onListDragOver: (e: React.DragEvent) => void;
   onListDragLeave: (e: React.DragEvent) => void;
   onListDrop: (e: React.DragEvent) => void;
+  onListDropCapture: () => void;
   children: ReactNode;
 }
 
@@ -24,6 +25,7 @@ export function CueListBody({
   onListDragOver,
   onListDragLeave,
   onListDrop,
+  onListDropCapture,
   children,
 }: CueListBodyProps) {
   const { t } = useTranslation();
@@ -36,6 +38,7 @@ export function CueListBody({
       onDragOverCapture={onListDragOver}
       onDragLeave={onListDragLeave}
       onDrop={onListDrop}
+      onDropCapture={onListDropCapture}
       sx={{
         listStyle: "none",
         m: 0,

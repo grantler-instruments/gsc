@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { useClearOnDragEnd } from "./useClearOnDragEnd";
 import {
   applyAssetPayloads,
   isExternalFileDrag,
@@ -34,6 +35,13 @@ export function useCueRowDrop({
   const [insertPlace, setInsertPlace] = useState<"before" | "after" | null>(null);
   const insertPlaceRef = useRef<"before" | "after" | null>(null);
   const isContainer = isContainerCue(cue);
+
+  const clearDropHighlight = useCallback(() => {
+    setDropActive(false);
+    insertPlaceRef.current = null;
+    setInsertPlace(null);
+  }, []);
+  useClearOnDragEnd(clearDropHighlight);
 
   const onDragOver = useCallback(
     (e: React.DragEvent) => {

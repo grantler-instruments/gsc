@@ -13,7 +13,7 @@ Web-based show playback for audio and video cues. Same codebase runs in the brow
 
 ## Features
 
-- Cue-based playback for audio, video, images, MIDI, OSC, and utility cues
+- Cue-based playback for audio, video, images, MIDI, OSC, DMX, and utility cues
 - Portable project workflows with `.gsc` desktop projects and `.gsc.zip` bundles
 - Audience output window plus **Remote View** for monitoring playback from another device
 
@@ -37,7 +37,7 @@ npm run lint:fix   # auto-fix where safe
 npm run tauri dev
 ```
 
-Opens **http://localhost:1421/gsc/app/** (port **1421**; enomiga uses 1420).
+Opens **http://localhost:1421/gsc/app/** (port **1421**).
 
 ## Build
 
@@ -76,13 +76,39 @@ See **[docs/architecture.md](docs/architecture.md)** for how playback, stores, a
 
 ## Cue types
 
-| Type | Source |
-|------|--------|
-| **Audio** | Drag/import WAV, MP3, etc. |
-| **Video** | Drag/import MP4, WebM, etc. |
-| **Image** | Drag/import PNG, JPG, WebP, etc. |
-| **Wait** | Timed pause between steps (no media). Runs when placed inside a **sequence**; add from **+ Cue** and drag where you want it. |
-| **MIDI** | **Out:** **+ Cue → MIDI**, GO sends to **Settings → MIDI output**. **In:** **Settings → MIDI map** to bind incoming notes/CCs to GO, select cue, panic, etc. |
+### Media
+
+| Type | Description |
+|------|-------------|
+| **Audio** | Drag/import WAV, MP3, etc. Trim in/out, fades, loop, volume, and pan. |
+| **Video** | Drag/import MP4, WebM, etc. Preview and audience output with trim and fades. |
+| **Image** | Drag/import PNG, JPG, WebP, etc. Shown on the output window. |
+
+### Output
+
+| Type | Description |
+|------|-------------|
+| **MIDI** | **Out:** **+ Cue → MIDI**, GO sends note/CC/program change to **Settings → MIDI output**. **In:** **Settings → MIDI map** to bind incoming notes/CCs to GO, select cue, panic, etc. |
+| **OSC** | **+ Cue → OSC** sends Open Sound Control messages on GO (destination, address, arguments). Desktop app only. |
+| **Light** | DMX fixture control — patch fixtures, program levels or snapshots, and preview in the fixture plot. Desktop app only. |
+
+### Structure
+
+| Type | Description |
+|------|-------------|
+| **Sequence** | Container that runs child steps in order; each step can hold parallel cues, with **wait** cues between steps. |
+| **Parallel** | Container that fires every child cue at the same time on GO. |
+
+### Utility & fades
+
+| Type | Description |
+|------|-------------|
+| **Wait** | Timed pause before the next sequence step. Add from **+ Cue** inside a sequence. |
+| **Stop** | Stops a specific running cue (or create from a media cue’s context menu). |
+| **Volume fade** | Fades audio level on a target audio or video cue over time. |
+| **Opacity fade** | Fades opacity on a target image or video cue. |
+| **Pan fade** | Fades stereo pan on a target audio or video cue. |
+| **Light fade** | Fades DMX levels toward a target light cue over time. |
 
 ## .gsc projects
 
