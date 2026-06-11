@@ -12,6 +12,8 @@
     "preview:pages": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "cross-env PLAYWRIGHT_BROWSERS_PATH=0 playwright test",
+    "test:e2e:install": "cross-env PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "icons": "vite-node --script scripts/sync-favicon.ts",
@@ -45,6 +47,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
+    "@playwright/test": "^1.60.0",
     "@tauri-apps/cli": "^2",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.1.8",
