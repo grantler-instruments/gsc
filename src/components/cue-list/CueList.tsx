@@ -63,6 +63,7 @@ export function CueList() {
         flexDirection: "column",
         minHeight: 0,
         minWidth: 0,
+        overflow: "clip",
         borderRight:
           !compact && !showMode && getPrimarySelectedCueId(selection.selectedCueIds) ? 1 : 0,
         borderColor: "divider",

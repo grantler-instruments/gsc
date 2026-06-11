@@ -35,7 +35,7 @@ export function CueListTabs() {
       aria-label={t("cueList.tabsAria")}
       sx={{
         display: "flex",
-        alignItems: "stretch",
+        alignItems: "center",
         gap: 0.25,
         pt: 0.75,
         px: 1,
@@ -43,6 +43,7 @@ export function CueListTabs() {
         borderBottom: 1,
         borderColor: "divider",
         overflowX: "auto",
+        overflowY: "clip",
         flexShrink: 0,
       }}
     >
@@ -124,9 +125,10 @@ export function CueListTabs() {
               ...(active && {
                 bgcolor: tokens.bgElevated,
                 borderColor: "divider",
+                borderBottomColor: tokens.bgElevated,
                 color: tokens.text,
-                mb: "-1px",
-                pb: "7px",
+                position: "relative",
+                zIndex: 1,
               }),
             }}
           >

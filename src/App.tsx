@@ -40,13 +40,22 @@ function App() {
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: "100%",
-        minHeight: "100vh",
+        flex: 1,
+        minHeight: 0,
+        minWidth: 0,
       }}
     >
       <ProjectToolbar />
 
-      <Box sx={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flex: 1,
+          minHeight: 0,
+          minWidth: 0,
+          overflow: "clip",
+        }}
+      >
         <LeftSidebar />
 
         {!compact && (
@@ -58,9 +67,10 @@ function App() {
               flexDirection: "column",
               minWidth: 0,
               minHeight: 0,
+              overflow: "clip",
             }}
           >
-            <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
+            <Box sx={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0, overflow: "clip" }}>
               <CueList />
               {!showMode && hasFixtures && <RightSidebar />}
               {!showMode && !hasFixtures && hasSelectedCue && <CueInspector />}

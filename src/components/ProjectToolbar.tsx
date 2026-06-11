@@ -27,6 +27,7 @@ export function ProjectToolbar() {
         borderBottom: 1,
         borderColor: "divider",
         bgcolor: "background.paper",
+        flexShrink: 0,
       }}
     >
       <BrandFileMenu />

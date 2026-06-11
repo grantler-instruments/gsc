@@ -6,14 +6,24 @@ function buildComponentOverrides(tokens: GscTokenSet) {
     MuiCssBaseline: {
       styleOverrides: {
         ":root": tokensToCssVars(tokens),
-        html: { height: "100%", colorScheme: "dark" as const },
+        html: {
+          height: "100dvh",
+          colorScheme: "dark" as const,
+        },
         body: {
           height: "100%",
           margin: 0,
+          minWidth: 0,
           backgroundColor: tokens.bg,
           color: tokens.text,
         },
-        "#root": { height: "100%" },
+        "#root": {
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0,
+          minWidth: 0,
+        },
       },
     },
     MuiButton: {

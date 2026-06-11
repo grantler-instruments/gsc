@@ -19,6 +19,8 @@ import { isRemoteClient } from "../platform/remote-mode";
 import { findProjectCue, useActiveCueList, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
+import { useCompactLayout } from "../hooks/useCompactLayout";
+import { compactLayoutBreakpoint } from "../layout/responsiveLayout";
 import { SIDEBAR_WIDTH } from "../types/sidebar";
 import { CueTypeBadge } from "./CueTypeIcon";
 import { TransportCueThumbnail } from "./TransportCueThumbnail";
@@ -34,7 +36,7 @@ function CueNotesLine({ notes }: { notes?: string }) {
     <Box
       sx={{
         height: NOTES_ROW_HEIGHT,
-        overflowY: "auto",
+        overflowY: "clip",
         flexShrink: 0,
       }}
     >
@@ -78,6 +80,7 @@ function CueSummary({ cue, allCues }: { cue: Cue; allCues?: Cue[] }) {
 
 export function TransportBar() {
   const { t } = useTranslation();
+  const compact = useCompactLayout();
   const isRemote = isRemoteClient();
   const [remoteConnected, setRemoteConnected] = useState(
     () => !isRemote || getRemoteConnectionState() === "connected",
@@ -114,14 +117,17 @@ export function TransportBar() {
         borderColor: "divider",
         bgcolor: "background.paper",
         flexShrink: 0,
+        minWidth: 0,
+        overflowX: "clip",
       }}
     >
       <Stack
         direction="row"
         sx={{
-          width: SIDEBAR_WIDTH,
-          flexShrink: 0,
-          px: 1.5,
+          width: compact ? "auto" : SIDEBAR_WIDTH,
+          flex: compact ? "1 1 0" : `0 0 ${SIDEBAR_WIDTH}px`,
+          minWidth: 0,
+          px: { xs: 1, [compactLayoutBreakpoint]: 1.5 },
           gap: 1,
           alignItems: "center",
           borderRight: 1,
@@ -156,10 +162,10 @@ export function TransportBar() {
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: 2,
+          gap: { xs: 1, sm: 2 },
           flex: 1,
           minWidth: 0,
-          px: 2,
+          px: { xs: 1, sm: 2 },
           py: 0.75,
           overflow: "hidden",
         }}
@@ -170,8 +176,9 @@ export function TransportBar() {
 
         <Box
           sx={{
-            width: STATUS_SLOT_WIDTH,
-            flexShrink: 0,
+            width: compact ? "auto" : STATUS_SLOT_WIDTH,
+            maxWidth: compact ? 120 : STATUS_SLOT_WIDTH,
+            flexShrink: compact ? 1 : 0,
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end",
@@ -180,7 +187,7 @@ export function TransportBar() {
             overflow: "hidden",
           }}
         >
-          {playingOther && activeCue ? (
+          {playingOther && activeCue && !compact ? (
             <CueSummary cue={activeCue} allCues={cues} />
           ) : isPlaying && activeCount > 0 ? (
             <Chip
@@ -211,29 +218,43 @@ export function TransportBar() {
           gap: 1,
           fontSize: 12,
           color: "text.secondary",
-          flexShrink: 0,
-          px: 2,
+          flex: compact ? "0 1 auto" : "0 0 auto",
+          minWidth: 0,
+          overflowX: "clip",
+          px: { xs: 1, sm: 2 },
         }}
       >
-        <Typography variant="caption" color="inherit">
+        <Typography
+          variant="caption"
+          color="inherit"
+          sx={{ display: { xs: "none", sm: "block" }, flexShrink: 0 }}
+        >
           {t("transport.master")}
         </Typography>
-        <Slider
-          size="small"
-          min={0}
-          max={1}
-          step={0.01}
-          value={masterVolume}
-          onChange={(_, value) => {
-            const next = value as number;
-            if (isRemoteClient()) {
-              sendRemoteMasterVolume(next);
-              return;
-            }
-            setMasterVolume(next);
+        <Box
+          sx={{
+            width: { xs: 72, sm: 100 },
+            flexShrink: 0,
+            overflowX: "clip",
           }}
-          sx={{ width: 100, color: "primary.main" }}
-        />
+        >
+          <Slider
+            size="small"
+            min={0}
+            max={1}
+            step={0.01}
+            value={masterVolume}
+            onChange={(_, value) => {
+              const next = value as number;
+              if (isRemoteClient()) {
+                sendRemoteMasterVolume(next);
+                return;
+              }
+              setMasterVolume(next);
+            }}
+            sx={{ width: "100%", color: "primary.main" }}
+          />
+        </Box>
       </Stack>
     </Box>
   );

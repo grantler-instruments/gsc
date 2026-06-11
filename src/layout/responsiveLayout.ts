@@ -8,7 +8,7 @@ export const compactLayoutBreakpoint = "md" as const;
 export const compactSidebarShellSx: SxProps<Theme> = {
   width: { xs: "100%", [compactLayoutBreakpoint]: SIDEBAR_WIDTH },
   flex: { xs: 1, [compactLayoutBreakpoint]: "0 0 auto" },
-  flexShrink: 0,
+  flexShrink: { xs: 1, [compactLayoutBreakpoint]: 0 },
   display: "flex",
   flexDirection: "column",
   bgcolor: "background.paper",
