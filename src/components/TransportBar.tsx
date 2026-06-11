@@ -218,9 +218,7 @@ export function TransportBar() {
           gap: 1,
           fontSize: 12,
           color: "text.secondary",
-          flex: compact ? "0 1 auto" : "0 0 auto",
-          minWidth: 0,
-          overflowX: "clip",
+          flexShrink: 0,
           px: { xs: 1, sm: 2 },
         }}
       >
@@ -235,7 +233,9 @@ export function TransportBar() {
           sx={{
             width: { xs: 72, sm: 100 },
             flexShrink: 0,
-            overflowX: "clip",
+            // Thumb extends past the track; padding keeps it visible inside overflow:clip parents.
+            px: 0.75,
+            boxSizing: "content-box",
           }}
         >
           <Slider
