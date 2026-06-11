@@ -1,14 +1,16 @@
 import { expect, test } from "@playwright/test";
+import { sequenceCueListPanel, sequenceCueListTabs } from "./helpers/cue-list-panel";
 
 test("creates a new cue list", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("./");
 
   await expect(page.getByRole("button", { name: "GO" })).toBeVisible();
 
-  const tablist = page.getByRole("tablist", { name: "Cue lists" });
+  const tablist = sequenceCueListTabs(page);
   await expect(tablist.getByRole("tab", { name: /^Main/ })).toBeVisible();
 
-  await page.getByRole("button", { name: "New cue list" }).click();
+  await sequenceCueListPanel(page).getByRole("button", { name: "New cue list" }).click();
 
   const newTab = tablist.getByRole("tab", { name: /^List 2/ });
   await expect(newTab).toBeVisible();
@@ -17,11 +19,12 @@ test("creates a new cue list", async ({ page }) => {
 });
 
 test("renames a cue list", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("./");
 
   await expect(page.getByRole("button", { name: "GO" })).toBeVisible();
 
-  const tablist = page.getByRole("tablist", { name: "Cue lists" });
+  const tablist = sequenceCueListTabs(page);
   await tablist.getByRole("tab", { name: /^Main/ }).dblclick();
 
   const renameInput = tablist.locator("input");
@@ -34,12 +37,13 @@ test("renames a cue list", async ({ page }) => {
 });
 
 test("deletes a cue list", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("./");
 
   await expect(page.getByRole("button", { name: "GO" })).toBeVisible();
 
-  const tablist = page.getByRole("tablist", { name: "Cue lists" });
-  await page.getByRole("button", { name: "New cue list" }).click();
+  const tablist = sequenceCueListTabs(page);
+  await sequenceCueListPanel(page).getByRole("button", { name: "New cue list" }).click();
   await expect(tablist.getByRole("tab")).toHaveCount(2);
 
   await tablist.getByRole("button", { name: "Close List 2" }).click();
