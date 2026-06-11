@@ -10,16 +10,36 @@ export const WHITE_NOISE_NAME = "white-noise.wav";
 export const WHITE_NOISE_ALT_FIXTURE = path.join(fixturesDir, "white-noise-alt.wav");
 export const WHITE_NOISE_ALT_NAME = "white-noise-alt.wav";
 
+const MIME_BY_EXT: Record<string, string> = {
+  wav: "audio/wav",
+  mp3: "audio/mpeg",
+  ogg: "audio/ogg",
+  m4a: "audio/mp4",
+  aac: "audio/aac",
+  flac: "audio/flac",
+  aiff: "audio/aiff",
+  aif: "audio/aiff",
+};
+
+export function fixturePath(fileName: string): string {
+  return path.join(fixturesDir, fileName);
+}
+
+export function mimeTypeForFileName(fileName: string): string {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+  return MIME_BY_EXT[ext] ?? "application/octet-stream";
+}
+
 export type AudioDropTarget = "cue-list" | "hot-cue-panel";
 
-async function createAudioDataTransfer(page: Page, bytes: Buffer, fileName: string) {
+async function createAudioDataTransfer(page: Page, bytes: Buffer, fileName: string, mimeType: string) {
   return page.evaluateHandle(
     (data) => {
       const dt = new DataTransfer();
-      dt.items.add(new File([new Uint8Array(data.bytes)], data.name, { type: "audio/wav" }));
+      dt.items.add(new File([new Uint8Array(data.bytes)], data.name, { type: data.mimeType }));
       return dt;
     },
-    { bytes: [...bytes], name: fileName },
+    { bytes: [...bytes], name: fileName, mimeType },
   );
 }
 
@@ -29,11 +49,13 @@ export async function dropAudioFile(
   options: {
     fixturePath: string;
     fileName: string;
+    mimeType?: string;
     target: AudioDropTarget;
   },
 ): Promise<void> {
   const bytes = readFileSync(options.fixturePath);
-  const dataTransfer = await createAudioDataTransfer(page, bytes, options.fileName);
+  const mimeType = options.mimeType ?? mimeTypeForFileName(options.fileName);
+  const dataTransfer = await createAudioDataTransfer(page, bytes, options.fileName, mimeType);
 
   if (options.target === "cue-list") {
     const dropZone = page.locator('[data-gsc-drop-zone="cue-list"]');
@@ -46,9 +68,12 @@ export async function dropAudioFile(
   const emptyDropZone = hotPanel.getByText(
     "Drop assets here or use the flame button to add hot cues.",
   );
-  const dropZone = (await emptyDropZone.count()) > 0 ? emptyDropZone : hotPanel.locator("div").filter({
-    has: page.locator('button:has-text("GO")'),
-  }).first();
+  const dropZone =
+    (await emptyDropZone.count()) > 0
+      ? emptyDropZone
+      : hotPanel.locator("div").filter({
+          has: page.locator('button:has-text("GO")'),
+        }).first();
 
   await dropZone.dispatchEvent("dragover", { dataTransfer });
   await dropZone.dispatchEvent("drop", { dataTransfer });
@@ -56,16 +81,28 @@ export async function dropAudioFile(
 
 export async function dropAudioOnCueList(
   page: Page,
-  fixturePath = WHITE_NOISE_FIXTURE,
+  fixturePathArg = WHITE_NOISE_FIXTURE,
   fileName = WHITE_NOISE_NAME,
+  mimeType?: string,
 ): Promise<void> {
-  await dropAudioFile(page, { fixturePath, fileName, target: "cue-list" });
+  await dropAudioFile(page, {
+    fixturePath: fixturePathArg,
+    fileName,
+    mimeType,
+    target: "cue-list",
+  });
 }
 
 export async function dropAudioOnHotCuePanel(
   page: Page,
-  fixturePath = WHITE_NOISE_ALT_FIXTURE,
+  fixturePathArg = WHITE_NOISE_ALT_FIXTURE,
   fileName = WHITE_NOISE_ALT_NAME,
+  mimeType?: string,
 ): Promise<void> {
-  await dropAudioFile(page, { fixturePath, fileName, target: "hot-cue-panel" });
+  await dropAudioFile(page, {
+    fixturePath: fixturePathArg,
+    fileName,
+    mimeType,
+    target: "hot-cue-panel",
+  });
 }
