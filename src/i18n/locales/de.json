@@ -76,6 +76,7 @@
     "ariaLabel": "Dateimenü",
     "tooltip": "Dateimenü — öffnen, speichern, Einstellungen…",
     "firstVisitHint": "Klicken Sie oben links auf GSC für Dateiaktionen wie Öffnen, Speichern und Einstellungen.",
+    "newShow": "Neue Show",
     "settings": "Einstellungen…",
     "installPwa": "PWA installieren…",
     "installPwaHint": "Browser-App installieren, nicht die Desktop-Version",

@@ -76,6 +76,7 @@
     "ariaLabel": "File menu",
     "tooltip": "File menu — open, save, settings…",
     "firstVisitHint": "Click GSC in the top-left for file actions like open, save, and settings.",
+    "newShow": "New Show",
     "settings": "Settings…",
     "installPwa": "Install PWA…",
     "installPwaHint": "Install the browser app, not the desktop download",
