@@ -4,7 +4,8 @@ import {
   openDroppedProjectBundle,
   openDroppedProjectBundleFile,
 } from "../platform/project-storage";
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import { applyRenumber, patchListById } from "../stores/project/helpers";
+import { useProjectStore } from "../stores/project";
 import { useVfsStore } from "../stores/vfs";
 import { assetKindFromFilename } from "../vfs/import";
 import { isContainerCue } from "./cues";
@@ -66,15 +67,19 @@ export async function resolveAssetDropPayloads(
   return imported.map(({ path, name, kind }) => ({ path, name, kind }));
 }
 
-export type AssetDropTarget = { kind: "list" } | { kind: "row"; cueId: string };
+export type AssetDropTarget =
+  | { kind: "list"; listId: string }
+  | { kind: "row"; listId: string; cueId: string };
 
 /** Apply resolved asset payloads to the cue list or a specific row. */
 export function applyAssetPayloads(payloads: AssetDragPayload[], target: AssetDropTarget): void {
   if (!payloads.length || !canEditProject()) return;
 
   const state = useProjectStore.getState();
-  const { addCues, updateCue, selectCue } = state;
-  const cues = getActiveCueListFromState(state)?.cues ?? [];
+  const { addCues } = state;
+  const list = state.cueLists.find((l) => l.id === target.listId);
+  if (!list) return;
+  const cues = list.cues;
 
   if (target.kind === "row") {
     const cue = cues.find((c) => c.id === target.cueId);
@@ -85,6 +90,7 @@ export function applyAssetPayloads(payloads: AssetDragPayload[], target: AssetDr
           type: payload.kind,
           assetPath: payload.path,
         })),
+        target.listId,
       );
       return;
     }
@@ -97,18 +103,31 @@ export function applyAssetPayloads(payloads: AssetDragPayload[], target: AssetDr
           assetPath: payload.path,
           parentId: cue.id,
         })),
+        target.listId,
       );
       return;
     }
 
     const payload = payloads[0];
-    updateCue(cue.id, {
-      assetPath: payload.path,
-      name: payload.name,
-      type: payload.kind,
-      midi: undefined,
-    });
-    selectCue(cue.id);
+    useProjectStore.setState((s) => ({
+      ...patchListById(s, target.listId, (current) => ({
+        cues: applyRenumber(
+          current.cues.map((c) =>
+            c.id === target.cueId
+              ? {
+                  ...c,
+                  assetPath: payload.path,
+                  name: payload.name,
+                  type: payload.kind,
+                  midi: undefined,
+                }
+              : c,
+          ),
+        ),
+        selectedCueIds: [target.cueId],
+        selectionAnchorId: target.cueId,
+      })),
+    }));
     return;
   }
 
@@ -118,6 +137,7 @@ export function applyAssetPayloads(payloads: AssetDragPayload[], target: AssetDr
       type: payload.kind,
       assetPath: payload.path,
     })),
+    target.listId,
   );
 }
 

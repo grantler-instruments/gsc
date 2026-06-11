@@ -81,6 +81,14 @@ function accentRowTint(
   return `color-mix(in srgb, ${tokens.accent} ${accentPercent}%, ${base})`;
 }
 
+/** Return-target row: full accent bar, no focus ring or strong fill. */
+function rememberedRowChrome(tokens: GscTokenSet): { bgcolor: string; boxShadow: string } {
+  return {
+    bgcolor: accentRowTint(tokens, 8),
+    boxShadow: `inset 4px 0 0 ${tokens.accent}`,
+  };
+}
+
 export const FADE_TARGET_ROW_FLASH_SEC = 2;
 export const FADE_TARGET_NUMBER_BLINK_SEC = 2.2;
 
@@ -146,6 +154,8 @@ export interface CueRowStyleState {
   tokens: GscTokenSet;
   selected: boolean;
   primarySelected: boolean;
+  /** Primary selection in this list while another list has edit focus (return target). */
+  selectionRemembered: boolean;
   active: boolean;
   isGroup: boolean;
   isSequence: boolean;
@@ -173,6 +183,9 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
   if (state.active && state.primarySelected) {
     bgcolor = `color-mix(in srgb, ${tokens.success} 40%, ${accentRowTint(tokens, 20)})`;
     boxShadow = `inset 4px 0 0 ${tokens.accent}, inset 0 0 0 1px color-mix(in srgb, ${tokens.accent} 50%, transparent)`;
+  } else if (state.active && state.selectionRemembered) {
+    bgcolor = tokens.rowActive;
+    boxShadow = `inset 3px 0 0 ${tokens.success}`;
   } else if (state.active && state.selected) {
     bgcolor = `color-mix(in srgb, ${tokens.success} 40%, ${accentRowTint(tokens, 12)})`;
     boxShadow = `inset 4px 0 0 color-mix(in srgb, ${tokens.accent} 75%, transparent), inset 0 0 0 1px color-mix(in srgb, ${tokens.success} 45%, transparent)`;
@@ -182,6 +195,8 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
   } else if (state.primarySelected) {
     bgcolor = accentRowTint(tokens, 22);
     boxShadow = `inset 4px 0 0 ${tokens.accent}, inset 0 0 0 1px color-mix(in srgb, ${tokens.accent} 45%, transparent)`;
+  } else if (state.selectionRemembered) {
+    ({ bgcolor, boxShadow } = rememberedRowChrome(tokens));
   } else if (state.selected) {
     bgcolor = accentRowTint(tokens, 12);
     boxShadow = `inset 3px 0 0 color-mix(in srgb, ${tokens.accent} 70%, transparent)`;
@@ -210,11 +225,15 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
     listStyle: "none",
     ...(bgcolor && { bgcolor }),
     ...(boxShadow && { boxShadow }),
-    ...(!isHighlightSelected && {
-      "&:hover": { bgcolor: tokens.bgHover },
-    }),
+    ...(!isHighlightSelected &&
+      !state.selectionRemembered && {
+        "&:hover": { bgcolor: tokens.bgHover },
+      }),
     ...(isHighlightSelected && {
       "&:hover": { filter: "brightness(1.06)" },
+    }),
+    ...(state.selectionRemembered && {
+      "&:hover": { bgcolor: accentRowTint(tokens, 15) },
     }),
     ...(state.isGroup && { fontWeight: 500 }),
     ...(state.isSequenceStep && {
@@ -273,6 +292,7 @@ export function cueNumberSx(
   tokens: GscTokenSet,
   primarySelected = false,
   highlightAsFadeTarget = false,
+  selectionRemembered = false,
 ): SxProps<Theme> {
   return {
     fontVariantNumeric: "tabular-nums",
@@ -308,7 +328,12 @@ export function cueNumberSx(
 export function cueNameSx(
   state: Pick<
     CueRowStyleState,
-    "primarySelected" | "isVolumeFade" | "isOpacityFade" | "isLightFade" | "hasWarning"
+    | "primarySelected"
+    | "selectionRemembered"
+    | "isVolumeFade"
+    | "isOpacityFade"
+    | "isLightFade"
+    | "hasWarning"
   >,
 ): SxProps<Theme> {
   const cueNameColor = state.isVolumeFade
@@ -331,7 +356,12 @@ export function cueNameSx(
       fontWeight: 600,
       color: cueNameColor ?? "text.primary",
     }),
-    ...(cueNameColor && !state.primarySelected && { color: cueNameColor }),
+    ...(state.selectionRemembered && {
+      fontWeight: 500,
+      color: cueNameColor ?? "text.primary",
+      opacity: 0.88,
+    }),
+    ...(cueNameColor && !state.primarySelected && !state.selectionRemembered && { color: cueNameColor }),
   };
 }
 

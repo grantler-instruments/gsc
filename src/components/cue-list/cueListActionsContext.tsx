@@ -74,7 +74,7 @@ export function CueListActionsProvider({
       onCreatePanFade: (cueId) => addFadeCueForTarget(cueId, "panFade"),
       onCreateLightFade: (cueId) => addFadeCueForTarget(cueId, "lightFade"),
       onAssetDrop: (cueId, payload) => {
-        applyAssetPayloads([payload], { kind: "row", cueId });
+        applyAssetPayloads([payload], { kind: "row", listId, cueId });
       },
       onCueDrop: (draggedId, groupId) => moveCueToGroup(draggedId, groupId),
       onCueReorder: reorderCueRelative,

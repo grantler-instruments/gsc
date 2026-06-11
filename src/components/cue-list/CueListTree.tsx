@@ -15,6 +15,7 @@ export interface CueListTreeProps {
   dmxFadesByFadeCueId: Readonly<Record<string, unknown>>;
   selectedCueIdSet: Set<string>;
   primarySelectedId: string | null;
+  listHasEditFocus: boolean;
   hoveredStopTargetId: string | null;
   selectedStopTargetId: string | null;
   hoveredFadeTargetId: string | null;
@@ -39,6 +40,7 @@ export function CueListTree({
   dmxFadesByFadeCueId,
   selectedCueIdSet,
   primarySelectedId,
+  listHasEditFocus,
   hoveredStopTargetId,
   selectedStopTargetId,
   hoveredFadeTargetId,
@@ -62,6 +64,8 @@ export function CueListTree({
     const highlightAsFadeTarget =
       node.cue.id === hoveredFadeTargetId || node.cue.id === selectedFadeTargetId;
 
+    const isPrimary = node.cue.id === primarySelectedId;
+    const isRowSelected = selectedCueIdSet.has(node.cue.id);
     const row = (
       <CueRow
         key={node.cue.id}
@@ -69,8 +73,9 @@ export function CueListTree({
         depth={node.depth}
         childCount={childCount}
         expanded={expanded}
-        selected={selectedCueIdSet.has(node.cue.id)}
-        primarySelected={node.cue.id === primarySelectedId}
+        selected={listHasEditFocus && isRowSelected}
+        primarySelected={listHasEditFocus && isPrimary}
+        selectionRemembered={!listHasEditFocus && isPrimary}
         active={isCueActive(node.cue, cues, activeCueIds, runningSequences, dmxFadesByFadeCueId)}
         missingAsset={cueMissingAsset(node.cue, assetEntries)}
         pulseAsStopTarget={node.cue.id === hoveredStopTargetId}
@@ -101,6 +106,7 @@ export function CueListTree({
           dmxFadesByFadeCueId={dmxFadesByFadeCueId}
           selectedCueIdSet={selectedCueIdSet}
           primarySelectedId={primarySelectedId}
+          listHasEditFocus={listHasEditFocus}
           hoveredStopTargetId={hoveredStopTargetId}
           selectedStopTargetId={selectedStopTargetId}
           hoveredFadeTargetId={hoveredFadeTargetId}

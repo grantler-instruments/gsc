@@ -37,6 +37,7 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
   const tokens = useGscTokens();
   const compact = useCompactLayout();
   const showMode = useUiStore((s) => s.showMode);
+  const hotCuePanelVisible = useUiStore((s) => s.hotCuePanelVisible);
   const fixturePlotExpanded = useUiStore((s) => s.fixturePlotExpanded);
   const fixtures = useProjectStore((s) => s.fixtures);
   const activeCueListId = useProjectStore((s) => s.activeCueListId);
@@ -71,6 +72,7 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
   const listDrop = useCueListDrop(canEdit, list.id);
 
   const tree = useMemo(() => buildCueTree(cues), [cues]);
+  const listHasEditFocus = activeCueListId === list.id;
 
   return (
     <Box
@@ -87,6 +89,7 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
         borderRight:
           !compact &&
           !showMode &&
+          listHasEditFocus &&
           getPrimarySelectedCueId(selection.selectedCueIds) &&
           (!listId || !hotCuePanelVisible)
             ? 1
@@ -116,6 +119,7 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
             <HotCueGrid />
           ) : (
             <CueListBody
+              listId={list.id}
               canEdit={canEdit}
               listDropActive={listDrop.listDropActive}
               tokens={tokens}
@@ -134,6 +138,7 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
                 dmxFadesByFadeCueId={dmxFadesByFadeCueId}
                 selectedCueIdSet={selection.selectedCueIdSet}
                 primarySelectedId={selection.primarySelectedId}
+                listHasEditFocus={listHasEditFocus}
                 hoveredStopTargetId={stopHighlights.hoveredStopTargetId}
                 selectedStopTargetId={stopHighlights.selectedStopTargetId}
                 hoveredFadeTargetId={stopHighlights.hoveredFadeTargetId}

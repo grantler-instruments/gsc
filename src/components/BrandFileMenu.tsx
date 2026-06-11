@@ -1,5 +1,6 @@
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import NoteAddOutlinedIcon from "@mui/icons-material/NoteAddOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import InstallDesktopOutlinedIcon from "@mui/icons-material/InstallDesktopOutlined";
@@ -17,6 +18,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePwaInstall } from "../hooks/usePwaInstall";
 import { formatShortcut } from "../lib/keyboard";
+import { startNewProject } from "../lib/new-project";
 import { notify, notifyWarning } from "../lib/notifications";
 import { openSettings } from "../lib/open-settings";
 import {
@@ -143,6 +145,18 @@ export function BrandFileMenu() {
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         transformOrigin={{ vertical: "top", horizontal: "left" }}
       >
+        <MenuItem
+          onClick={() => {
+            close();
+            void startNewProject();
+          }}
+        >
+          <ListItemIcon>
+            <NoteAddOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary={t("fileMenu.newShow")} secondary={formatShortcut("N")} />
+        </MenuItem>
+
         <MenuItem
           onClick={() => {
             close();

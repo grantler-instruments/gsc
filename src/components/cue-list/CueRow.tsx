@@ -53,6 +53,7 @@ export interface CueRowProps {
   expanded: boolean;
   selected: boolean;
   primarySelected: boolean;
+  selectionRemembered: boolean;
   active: boolean;
   missingAsset: boolean;
   pulseAsStopTarget: boolean;
@@ -82,6 +83,7 @@ function cueRowPropsAreEqual(prev: CueRowProps, next: CueRowProps): boolean {
     prev.expanded === next.expanded &&
     prev.selected === next.selected &&
     prev.primarySelected === next.primarySelected &&
+    prev.selectionRemembered === next.selectionRemembered &&
     prev.active === next.active &&
     prev.missingAsset === next.missingAsset &&
     prev.pulseAsStopTarget === next.pulseAsStopTarget &&
@@ -98,6 +100,7 @@ export const CueRow = memo(function CueRow({
   expanded,
   selected,
   primarySelected,
+  selectionRemembered,
   active,
   missingAsset,
   pulseAsStopTarget,
@@ -192,6 +195,7 @@ export const CueRow = memo(function CueRow({
     tokens,
     selected: selected && !primarySelected,
     primarySelected,
+    selectionRemembered,
     active,
     isGroup: isContainer,
     isSequence,
@@ -267,7 +271,7 @@ export const CueRow = memo(function CueRow({
         ref={cueNumberRef}
         component="span"
         data-cue-number=""
-        sx={cueNumberSx(tokens, primarySelected, highlightAsFadeTarget)}
+        sx={cueNumberSx(tokens, primarySelected, highlightAsFadeTarget, selectionRemembered)}
       >
         {cue.number}
       </Box>

@@ -154,7 +154,7 @@ export function useCueRowDrop({
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
           if (!payloads.length) return;
-          applyAssetPayloads(payloads, { kind: "row", cueId: cue.id });
+          applyAssetPayloads(payloads, { kind: "row", listId, cueId: cue.id });
         } finally {
           setActiveAssetDrag(null);
         }

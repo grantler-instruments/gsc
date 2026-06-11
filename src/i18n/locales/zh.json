@@ -78,6 +78,7 @@
     "ariaLabel": "文件菜单",
     "tooltip": "文件菜单 — 打开、保存、设置…",
     "firstVisitHint": "点击左上角的 GSC 可进行打开、保存和设置等文件操作。",
+    "newShow": "新演出",
     "settings": "设置…",
     "installPwa": "安装 PWA…",
     "installPwaHint": "安装浏览器应用，而非桌面版",

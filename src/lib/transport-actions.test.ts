@@ -121,7 +121,7 @@ describe("triggerGoSelected", () => {
   beforeEach(() => {
     resetTestProject([testCue("a", "A", "audio"), testCue("b", "B", "audio")]);
     resetTransport();
-    useUiStore.setState({ collapsedCueGroupIds: [] });
+    useUiStore.setState({ collapsedCueGroupIds: [], showMode: false });
     useFadeStore.setState({ fadesByTargetId: {}, dmxFadesByFadeCueId: {}, frameMs: 0 });
   });
 
@@ -152,26 +152,33 @@ describe("triggerGoSelected", () => {
     expect(activeListSelection()).toEqual([]);
   });
 
-  it("GOs the main sequence list when edit focus is on a hot list", () => {
-    resetTestProject([testCue("a", "A", "audio"), testCue("b", "B", "audio")]);
-    const main = useProjectStore.getState().cueLists[0];
-    const hot = createCueList("Hot", "hot");
-    hot.cues = [testCue("h1", "Sting", "audio")];
-    useProjectStore.setState({
-      cueLists: [main, hot],
-      activeCueListId: hot.id,
-      mainSequenceListId: main.id,
-      activeHotCueListId: hot.id,
-    });
-    useProjectStore.getState().selectCue("h1");
-    useProjectStore.getState().selectCueInList(main.id, "a");
+  it.each([false, true])(
+    "GOs focused hot cue and returns focus to the main list (showMode=%s)",
+    (showMode) => {
+      resetTestProject([testCue("a", "A", "audio"), testCue("b", "B", "audio")]);
+      const main = useProjectStore.getState().cueLists[0];
+      const hot = createCueList("Hot", "hot");
+      hot.cues = [testCue("h1", "Sting", "audio")];
+      useProjectStore.setState({
+        cueLists: [main, hot],
+        activeCueListId: hot.id,
+        mainSequenceListId: main.id,
+        activeHotCueListId: hot.id,
+      });
+      useUiStore.setState({ showMode });
+      useProjectStore.getState().selectCue("h1");
+      useProjectStore.getState().selectCueInList(main.id, "a");
 
-    triggerGoSelected();
+      triggerGoSelected();
 
-    expect(useTransportStore.getState().activeCueIds).toEqual(["a"]);
-    expect(activeListSelection()).toEqual(["h1"]);
-    expect(getMainSequenceListFromState(useProjectStore.getState())?.selectedCueIds).toEqual(["b"]);
-  });
+      expect(useTransportStore.getState().activeCueIds).toEqual(["h1"]);
+      expect(useProjectStore.getState().activeCueListId).toBe(main.id);
+      expect(activeListSelection()).toEqual(["a"]);
+      expect(getMainSequenceListFromState(useProjectStore.getState())?.selectedCueIds).toEqual([
+        "a",
+      ]);
+    },
+  );
 
   it("targets the first top-level cue, not a nested child, when nothing is selected", () => {
     resetTestProject([

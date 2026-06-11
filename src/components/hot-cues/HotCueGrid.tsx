@@ -1,4 +1,5 @@
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import { type MouseEvent, useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getPrimarySelectedCueId } from "../../lib/cue-selection";
@@ -24,7 +25,7 @@ import {
   setActiveCueDrag,
   setCueDragData,
 } from "../../lib/drag";
-import { triggerHotCue } from "../../lib/transport-actions";
+import { triggerHotCueAndFocusMain } from "../../lib/transport-actions";
 import { useFadeStore } from "../../stores/fade";
 import { useActiveCueList, useProjectStore } from "../../stores/project";
 import { useTransportStore } from "../../stores/transport";
@@ -38,10 +39,17 @@ import { useCueListStopHighlights } from "../cue-list/useCueListStopHighlights";
 import { useRestartCssAnimation } from "../cue-list/useRestartCssAnimation";
 import { CueTargetActionsMenu, type CueTargetActionsMenuState } from "./CueTargetActionsMenu";
 
+/** Pad selection uses border styling; hide the browser/MUI default focus ring. */
+const suppressPadFocusRing = {
+  "&:focus": { outline: "none" },
+  "&:focus-visible": { outline: "none" },
+  "&.Mui-focusVisible": { outline: "none", boxShadow: "none" },
+} as const;
+
 /**
- * Cue-cart style grid for a hot cue list. In show mode each cue is a button that
- * fires as an overlay via triggerHotCue; in edit mode clicking selects the cue
- * for the inspector and assets can be dropped to add or assign cues.
+ * Cue-cart style grid for a hot cue list. Each pad has a GO button that fires
+ * via triggerHotCue; clicking the rest of the pad focuses it for the inspector.
+ * In edit mode assets can be dropped and row actions are available.
  */
 export function HotCueGrid({ listId }: { listId?: string }) {
   const { t } = useTranslation();
@@ -55,6 +63,8 @@ export function HotCueGrid({ listId }: { listId?: string }) {
   const list = listById ?? activeList;
   const cues = list.cues;
   const selectedCueIds = list.selectedCueIds;
+  const activeCueListId = useProjectStore((s) => s.activeCueListId);
+  const hotListFocused = activeCueListId === list.id;
   const activeCueIds = useTransportStore((s) => s.activeCueIds);
   const runningSequences = useTransportStore((s) => s.runningSequences);
   const dmxFadesByFadeCueId = useFadeStore((s) => s.dmxFadesByFadeCueId);
@@ -75,14 +85,10 @@ export function HotCueGrid({ listId }: { listId?: string }) {
 
   const handleSelect = useCallback(
     (cue: Cue) => {
-      if (!canEdit) {
-        triggerHotCue(cue);
-        return;
-      }
       focusList();
       selectCue(cue.id);
     },
-    [canEdit, focusList, selectCue],
+    [focusList, selectCue],
   );
 
   const handleListDrop = useCallback(
@@ -98,7 +104,8 @@ export function HotCueGrid({ listId }: { listId?: string }) {
         if (source && source.list.id !== list.id) {
           moveCueToList(draggedCueId, list.id, { kind: "append" });
         } else {
-          const lastTopLevel = getTopLevelCues(list.cues).at(-1);
+          const topLevelCues = getTopLevelCues(list.cues);
+          const lastTopLevel = topLevelCues[topLevelCues.length - 1];
           if (lastTopLevel && lastTopLevel.id !== draggedCueId) {
             reorderCueRelative(draggedCueId, lastTopLevel.id, "after");
           }
@@ -112,7 +119,7 @@ export function HotCueGrid({ listId }: { listId?: string }) {
       void (async () => {
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
-          applyAssetPayloads(payloads, { kind: "list" });
+          applyAssetPayloads(payloads, { kind: "list", listId: list.id });
         } finally {
           setActiveAssetDrag(null);
         }
@@ -148,7 +155,7 @@ export function HotCueGrid({ listId }: { listId?: string }) {
       void (async () => {
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
-          applyAssetPayloads(payloads, { kind: "row", cueId });
+          applyAssetPayloads(payloads, { kind: "row", listId: list.id, cueId });
         } finally {
           setActiveAssetDrag(null);
         }
@@ -243,14 +250,16 @@ export function HotCueGrid({ listId }: { listId?: string }) {
           ...(dropActive && { outline: `2px dashed ${tokens.accent}`, outlineOffset: -4 }),
         }}
       >
-        {topLevel.map((cue) => (
+        {topLevel.map((cue) => {
+          const isCueSelected = selectedCueIds.includes(cue.id);
+          return (
           <HotCueButton
             key={cue.id}
             cue={cue}
             cues={cues}
             canEdit={canEdit}
             active={isCueActive(cue, cues, activeCueIds, runningSequences, dmxFadesByFadeCueId)}
-            selected={canEdit && selectedCueIds.includes(cue.id)}
+            selected={hotListFocused && isCueSelected}
             childCount={isContainerCue(cue) ? getChildCues(cues, cue.id).length : 0}
             accent={tokens.accent}
             pulseAsStopTarget={cue.id === stopHighlights.hoveredStopTargetId}
@@ -262,7 +271,7 @@ export function HotCueGrid({ listId }: { listId?: string }) {
             fadeTargetHighlightToken={stopHighlights.fadeTargetHighlightToken}
             onHoverChange={stopHighlights.setHoveredCueId}
             onSelect={() => handleSelect(cue)}
-            onFire={() => triggerHotCue(cue)}
+            onFire={() => triggerHotCueAndFocusMain(cue)}
             onContextMenu={(e) => handlePadContextMenu(cue, e)}
             onCreateStop={() => addStopCueForTarget(cue.id)}
             onCreateVolumeFade={() => addFadeCueForTarget(cue.id, "volumeFade")}
@@ -283,7 +292,8 @@ export function HotCueGrid({ listId }: { listId?: string }) {
             }
             onDragEnd={canEdit ? () => setActiveCueDrag(null) : undefined}
           />
-        ))}
+          );
+        })}
       </Box>
       <CueTargetActionsMenu
         menu={padMenu}
@@ -331,6 +341,7 @@ function HotCueButton({
   canEdit: boolean;
   active: boolean;
   selected: boolean;
+  rememberedSelected: boolean;
   childCount: number;
   accent: string;
   pulseAsStopTarget: boolean;
@@ -356,7 +367,7 @@ function HotCueButton({
   const tokens = useGscTokens();
   const [hovered, setHovered] = useState(false);
   const showActions = canEdit && (selected || hovered);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const buttonRef = useRef<HTMLElement>(null);
   useRestartCssAnimation(buttonRef, highlightAsFadeTarget, fadeTargetHighlightToken);
 
   const isTargetHighlight = pulseAsStopTarget || staticAsStopTarget || highlightAsFadeTarget;
@@ -369,7 +380,7 @@ function HotCueButton({
     p: 1,
     textAlign: "left",
     border: selected ? 2 : 1,
-    borderColor: selected ? accent : active ? accent : "divider",
+    borderColor: selected ? accent : "divider",
     borderRadius: 1.5,
     bgcolor: active ? `${accent}22` : selected ? `${accent}10` : "background.paper",
     color: "text.primary",
@@ -378,10 +389,10 @@ function HotCueButton({
     transition: "background-color 80ms, border-color 80ms",
     width: "100%",
     height: "100%",
+    minHeight: 72,
     ...(!isTargetHighlight && {
-      "&:hover": { borderColor: accent, bgcolor: `${accent}14` },
+      "&:hover": { bgcolor: `${accent}14` },
     }),
-    "&:active": { transform: "translateY(1px)" },
     ...hotCuePadTargetSx({
       tokens,
       pulseAsStopTarget,
@@ -389,6 +400,44 @@ function HotCueButton({
       highlightAsFadeTarget,
     }),
   } as const;
+
+  const padContent = (
+    <>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, width: "100%" }}>
+        <CueTypeBadge type={cue.type} showLabel={false} compact />
+        <Box
+          component="span"
+          sx={{
+            fontSize: 10,
+            fontVariantNumeric: "tabular-nums",
+            color: "text.secondary",
+          }}
+        >
+          {cue.number}
+        </Box>
+        {childCount > 0 && (
+          <Box component="span" sx={{ ml: "auto", fontSize: 10, color: "text.secondary" }}>
+            {t("hotCues.childCount", { count: childCount })}
+          </Box>
+        )}
+      </Box>
+      <Box
+        component="span"
+        sx={{
+          fontSize: 13,
+          fontWeight: 600,
+          lineHeight: 1.2,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+        }}
+      >
+        {getCueDisplayName(cue, cues)}
+      </Box>
+    </>
+  );
 
   return (
     <Box
@@ -436,46 +485,57 @@ function HotCueButton({
       )}
       <Box
         ref={buttonRef}
-        component="button"
-        type="button"
-        onClick={onSelect}
-        onDoubleClick={onFire}
-        onContextMenu={onContextMenu}
-        title={getCueDisplayName(cue, cues)}
-        sx={padSx}
+        sx={{
+          ...padSx,
+          display: "flex",
+          flexDirection: "column",
+          p: 0,
+          overflow: "hidden",
+        }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, width: "100%" }}>
-          <CueTypeBadge type={cue.type} showLabel={false} compact />
-          <Box
-            component="span"
-            sx={{
-              fontSize: 10,
-              fontVariantNumeric: "tabular-nums",
-              color: "text.secondary",
-            }}
-          >
-            {cue.number}
-          </Box>
-          {childCount > 0 && (
-            <Box component="span" sx={{ ml: "auto", fontSize: 10, color: "text.secondary" }}>
-              {t("hotCues.childCount", { count: childCount })}
-            </Box>
-          )}
-        </Box>
         <Box
-          component="span"
+          component="button"
+          type="button"
+          onClick={onSelect}
+          onContextMenu={canEdit ? onContextMenu : undefined}
+          title={getCueDisplayName(cue, cues)}
           sx={{
-            fontSize: 13,
-            fontWeight: 600,
-            lineHeight: 1.2,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            gap: 0.5,
+            p: 1,
+            pb: 0.5,
+            m: 0,
+            border: 0,
+            bgcolor: "transparent",
+            color: "inherit",
+            font: "inherit",
+            textAlign: "left",
+            cursor: "pointer",
+            minWidth: 0,
+            "&:active": { opacity: 0.85 },
+            ...suppressPadFocusRing,
           }}
         >
-          {getCueDisplayName(cue, cues)}
+          {padContent}
+        </Box>
+        <Box sx={{ px: 1, pb: 1, pt: 0.25 }}>
+          <Button
+            fullWidth
+            size="small"
+            variant="contained"
+            color="success"
+            disableFocusRipple
+            onClick={(e) => {
+              e.stopPropagation();
+              onFire();
+            }}
+            sx={suppressPadFocusRing}
+          >
+            {t("transport.go")}
+          </Button>
         </Box>
       </Box>
     </Box>

@@ -103,7 +103,7 @@ export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
       void (async () => {
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
-          applyAssetPayloads(payloads, { kind: "list" });
+          applyAssetPayloads(payloads, { kind: "list", listId });
         } finally {
           setActiveAssetDrag(null);
         }

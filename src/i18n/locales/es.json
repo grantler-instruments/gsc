@@ -78,6 +78,7 @@
     "ariaLabel": "Menú Archivo",
     "tooltip": "Menú Archivo — abrir, guardar, ajustes…",
     "firstVisitHint": "Haz clic en GSC arriba a la izquierda para acciones de archivo como abrir, guardar y ajustes.",
+    "newShow": "Show nuevo",
     "settings": "Ajustes…",
     "installPwa": "Instalar PWA…",
     "installPwaHint": "Instalar la app del navegador, no la descarga de escritorio",

@@ -115,10 +115,12 @@ export function createCueEditorActions(
       return cue ?? firstCueOrStub(getActiveCueListFromState(get()), opts.name, opts.type);
     },
 
-    addCues: (items) => {
+    addCues: (items, listId) => {
       if (!canEditProject() || items.length === 0) return [];
-      const active = getActiveCueListFromState(get());
-      let cues = active.cues;
+      const targetListId = listId ?? getActiveCueListFromState(get()).id;
+      const targetList = get().cueLists.find((l) => l.id === targetListId);
+      if (!targetList) return [];
+      let cues = targetList.cues;
       const created: Cue[] = [];
 
       for (const opts of items) {
@@ -130,7 +132,7 @@ export function createCueEditorActions(
 
       const last = created[created.length - 1];
       set({
-        ...patchActiveList(get(), () => ({
+        ...patchListById(get(), targetListId, () => ({
           cues,
           selectedCueIds: [last.id],
           selectionAnchorId: last.id,

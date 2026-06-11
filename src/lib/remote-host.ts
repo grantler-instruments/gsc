@@ -11,7 +11,7 @@ import type { RemoteHostCommand } from "../types/remote";
 import { selectNextCueAfterGo } from "./cue-navigation";
 import { getPrimarySelectedCueId } from "./cue-selection";
 import { serializeRemoteSnapshot } from "./remote-snapshot";
-import { triggerHotCue } from "./transport-actions";
+import { resolveHotGoTargetCue, triggerHotCueAndFocusMain } from "./transport-actions";
 import { triggerGo } from "./trigger";
 
 function allHostCues(): Cue[] {
@@ -47,6 +47,11 @@ export async function broadcastRemoteSnapshot(): Promise<void> {
 export function handleRemoteHostCommand(command: RemoteHostCommand): void {
   switch (command.action) {
     case "go-selected": {
+      const hotTarget = resolveHotGoTargetCue();
+      if (hotTarget) {
+        triggerHotCueAndFocusMain(hotTarget);
+        break;
+      }
       const list = getMainSequenceListFromState(useProjectStore.getState());
       if (!list) break;
       const selectedCueId = getPrimarySelectedCueId(list.selectedCueIds);
@@ -66,7 +71,7 @@ export function handleRemoteHostCommand(command: RemoteHostCommand): void {
     case "hot-go": {
       const cue = allHostCues().find((c) => c.id === command.cue_id);
       if (!cue) break;
-      triggerHotCue(cue);
+      triggerHotCueAndFocusMain(cue);
       break;
     }
     case "select-cue":

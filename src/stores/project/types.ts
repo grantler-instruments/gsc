@@ -49,6 +49,7 @@ export interface ProjectState {
       dmx?: DmxCueData;
       parentId?: string;
     }>,
+    listId?: string,
   ) => Cue[];
   addGroupCue: (opts?: { name?: string; parentId?: string }) => Cue;
   addSequenceCue: (opts?: { name?: string; parentId?: string }) => Cue;
