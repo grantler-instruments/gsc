@@ -1,13 +1,9 @@
 import { t } from "../i18n/t";
+import { hydrateAllProjectAssets } from "./hydrate-project-assets";
 import { useProjectStore } from "../stores/project";
-import { useVfsStore, type VfsEntry } from "../stores/vfs";
+import { useVfsStore } from "../stores/vfs";
 import type { ProjectSnapshot } from "../types/cue";
-import {
-  flushPendingAssetCacheWrites,
-  hydrateVfsFromProjectCache,
-  vfsClear,
-  vfsHas,
-} from "../vfs/engine";
+import { flushPendingAssetCacheWrites, vfsClear } from "../vfs/engine";
 import { setActiveProjectId } from "./active-project-id";
 import { notifyWarningDeduped } from "./notifications";
 import { collectOflPaths } from "./ofl/import-ofl";
@@ -114,15 +110,6 @@ export async function persistProjectSessionAsync(): Promise<void> {
   }
 }
 
-function vfsEntriesFromSession(assets: PersistedAssetEntry[]): VfsEntry[] {
-  return assets
-    .map((asset) => ({
-      ...asset,
-      loaded: vfsHas(asset.path),
-    }))
-    .sort((a, b) => a.path.localeCompare(b.path));
-}
-
 async function restoreFromSession(session: ProjectSession): Promise<void> {
   if (session.snapshot.version !== 2) {
     setActiveProjectId(useProjectStore.getState().id);
@@ -140,18 +127,7 @@ async function restoreFromSession(session: ProjectSession): Promise<void> {
     useProjectStore.setState(loaded);
   });
 
-  const paths = collectSessionAssetPaths(session.snapshot, session.assets);
-  await hydrateVfsFromProjectCache(projectId, paths);
-
-  const stillMissing = session.assets.filter((asset) => !vfsHas(asset.path));
-  if (stillMissing.length > 0) {
-    const { resolveAssetBlob } = await import("../platform/vfs-asset");
-    await Promise.all(stillMissing.map((asset) => resolveAssetBlob(asset.path)));
-  }
-
-  useVfsStore.setState({
-    entries: vfsEntriesFromSession(session.assets),
-  });
+  await hydrateAllProjectAssets(projectId, session.assets);
 }
 
 /** Restore the last autosaved project and hydrate assets from IndexedDB. */

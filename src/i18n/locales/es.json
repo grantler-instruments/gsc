@@ -59,6 +59,8 @@
     "nameAriaLabel": "Nombre del show",
     "draftHint": " · Borrador (guardar para elegir ubicación)",
     "savingToHint": " · Guardando en {{folder}}",
+    "restoringProject": "Restaurando proyecto…",
+    "loadingAssets": "Cargando recursos…",
     "metadata": {
       "title": "Detalles del show",
       "name": "Nombre",

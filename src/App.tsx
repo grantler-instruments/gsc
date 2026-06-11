@@ -8,10 +8,12 @@ import { LeftSidebar } from "./components/LeftSidebar";
 import { ProjectToolbar } from "./components/ProjectToolbar";
 import { RightSidebar } from "./components/RightSidebar";
 import { SettingsDialog } from "./components/SettingsDialog";
+import { ProjectLoadingScreen } from "./components/ProjectLoadingScreen";
 import { StartupProjectsDialog } from "./components/StartupProjectsDialog";
 import { TransportBar } from "./components/TransportBar";
 import { UnsavedProjectDialog } from "./components/UnsavedProjectDialog";
 import { useAppRuntime } from "./hooks/useAppRuntime";
+import { useProjectLoadingStore } from "./stores/project-loading";
 import { useCompactLayout } from "./hooks/useCompactLayout";
 import { getPrimarySelectedCueId } from "./lib/cue-selection";
 import { useActiveCueList, useProjectStore } from "./stores/project";
@@ -19,6 +21,7 @@ import { useUiStore } from "./stores/ui";
 
 function App() {
   const sessionReady = useAppRuntime();
+  const projectLoading = useProjectLoadingStore((s) => s.active);
   const compact = useCompactLayout();
   const showMode = useUiStore((s) => s.showMode);
   const fixtures = useProjectStore((s) => s.fixtures);
@@ -26,9 +29,10 @@ function App() {
   const hasSelectedCue = getPrimarySelectedCueId(selectedCueIds) !== null;
   const hasFixtures = fixtures.length > 0;
 
-  if (!sessionReady) {
+  if (!sessionReady || projectLoading) {
     return (
       <>
+        <ProjectLoadingScreen restoring={!sessionReady} />
         <StartupProjectsDialog />
         <UnsavedProjectDialog />
       </>

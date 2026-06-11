@@ -59,6 +59,8 @@
     "nameAriaLabel": "Show name",
     "draftHint": " · Draft (save to choose location)",
     "savingToHint": " · Saving to {{folder}}",
+    "restoringProject": "Restoring project…",
+    "loadingAssets": "Loading assets…",
     "metadata": {
       "title": "Show details",
       "name": "Name",

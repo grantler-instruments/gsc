@@ -20,8 +20,9 @@ export async function exportProjectBundle(): Promise<{ missing: string[] }> {
 
 export async function importProjectBundle(file?: File): Promise<void> {
   if (!file) return;
+  const { withProjectLoading } = await import("../stores/project-loading");
   const { importProjectBundleWeb } = await import("./project-storage.web");
-  return importProjectBundleWeb(file);
+  return withProjectLoading(() => importProjectBundleWeb(file));
 }
 
 export async function openProject(): Promise<boolean> {

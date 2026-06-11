@@ -59,6 +59,8 @@
     "nameAriaLabel": "演出名称",
     "draftHint": " · 草稿（保存以选择位置）",
     "savingToHint": " · 保存至 {{folder}}",
+    "restoringProject": "正在恢复项目…",
+    "loadingAssets": "正在加载资源…",
     "metadata": {
       "title": "演出详情",
       "name": "名称",

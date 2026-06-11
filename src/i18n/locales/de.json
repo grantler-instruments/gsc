@@ -59,6 +59,8 @@
     "nameAriaLabel": "Show-Name",
     "draftHint": " · Entwurf (speichern, um Speicherort zu wählen)",
     "savingToHint": " · Speichern in {{folder}}",
+    "restoringProject": "Projekt wird wiederhergestellt…",
+    "loadingAssets": "Assets werden geladen…",
     "metadata": {
       "title": "Show-Details",
       "name": "Name",
