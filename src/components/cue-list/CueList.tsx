@@ -84,7 +84,9 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
         ...(listId ? cueWorkspaceMainPanelSx : { flex: 1, minHeight: 0, minWidth: 0 }),
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
+        minHeight: 0,
+        minWidth: 0,
+        overflow: "clip",
         // Inspector border only when the list sits directly beside it (no hot panel in between).
         borderRight:
           !compact &&

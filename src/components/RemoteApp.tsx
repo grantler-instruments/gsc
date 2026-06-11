@@ -61,7 +61,15 @@ export function RemoteApp() {
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: "100vh" }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        minHeight: 0,
+        minWidth: 0,
+      }}
+    >
       <Box
         sx={{
           display: "flex",
@@ -86,7 +94,15 @@ export function RemoteApp() {
         )}
       </Box>
 
-      <Box sx={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flex: 1,
+          minHeight: 0,
+          minWidth: 0,
+          overflow: "clip",
+        }}
+      >
         <LeftSidebar />
         {!compact && (
           <Box

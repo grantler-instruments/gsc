@@ -56,14 +56,22 @@ function App() {
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: "100%",
+        flex: 1,
         minHeight: 0,
-        overflow: "hidden",
+        minWidth: 0,
       }}
     >
       <ProjectToolbar />
 
-      <Box sx={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0, overflow: "hidden" }}>
+      <Box
+        sx={{
+          display: "flex",
+          flex: 1,
+          minHeight: 0,
+          minWidth: 0,
+          overflow: "clip",
+        }}
+      >
         <LeftSidebar />
 
         {!compact && (
@@ -73,9 +81,12 @@ function App() {
               ...cueWorkspaceShellSx,
               flexDirection: "column",
               borderLeft: panelEdgeBorder,
+              minWidth: 0,
+              minHeight: 0,
+              overflow: "clip",
             }}
           >
-            <Box sx={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0, overflow: "hidden" }}>
+            <Box sx={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0, overflow: "clip" }}>
               <Box sx={cueWorkspaceSplitSx(hotCuePanelOrientation)}>
                 <CueList listId={mainSequenceList?.id} tabsKind="sequence" />
                 {showHotPanel && <HotCuePanel />}

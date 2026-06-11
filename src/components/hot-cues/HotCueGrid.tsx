@@ -341,7 +341,6 @@ function HotCueButton({
   canEdit: boolean;
   active: boolean;
   selected: boolean;
-  rememberedSelected: boolean;
   childCount: number;
   accent: string;
   pulseAsStopTarget: boolean;

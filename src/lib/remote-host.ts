@@ -11,7 +11,11 @@ import type { RemoteHostCommand } from "../types/remote";
 import { selectNextCueAfterGo } from "./cue-navigation";
 import { getPrimarySelectedCueId } from "./cue-selection";
 import { serializeRemoteSnapshot } from "./remote-snapshot";
-import { resolveHotGoTargetCue, triggerHotCueAndFocusMain } from "./transport-actions";
+import {
+  resolveHotGoTargetCue,
+  triggerHotCue,
+  triggerHotCueAndFocusMain,
+} from "./transport-actions";
 import { triggerGo } from "./trigger";
 
 function allHostCues(): Cue[] {

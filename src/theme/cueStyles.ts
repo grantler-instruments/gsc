@@ -292,7 +292,7 @@ export function cueNumberSx(
   tokens: GscTokenSet,
   primarySelected = false,
   highlightAsFadeTarget = false,
-  selectionRemembered = false,
+  _selectionRemembered = false,
 ): SxProps<Theme> {
   return {
     fontVariantNumeric: "tabular-nums",
