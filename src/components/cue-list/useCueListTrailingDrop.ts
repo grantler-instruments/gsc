@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-import { useClearOnDragEnd } from "./useClearOnDragEnd";
 import {
   applyAssetPayloads,
   isExternalFileDrag,
@@ -16,6 +15,7 @@ import {
 } from "../../lib/drag";
 import type { Cue } from "../../types/cue";
 import { useCueListActions } from "./cueListActionsContext";
+import { useClearOnDragEnd } from "./useClearOnDragEnd";
 
 export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
   const { onCueReorder } = useCueListActions();

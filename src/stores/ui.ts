@@ -4,6 +4,9 @@ import type { MidiAction } from "../types/midi-mapping";
 import type { RightSidebarTabId } from "../types/right-sidebar";
 import type { SidebarTabId } from "../types/sidebar";
 
+/** Where the hot-cue panel sits relative to the main cue list. */
+export type HotCuePanelOrientation = "right" | "bottom";
+
 interface UiState {
   sidebarTab: SidebarTabId;
   rightSidebarTab: RightSidebarTabId;
@@ -25,6 +28,8 @@ interface UiState {
   compactInspectorDrawerOpen: boolean;
   /** Compact inspector drawer stays closed until the user selects a cue. */
   compactInspectorDrawerDismissed: boolean;
+  /** Where the hot-cue panel sits relative to the main cue list (desktop). */
+  hotCuePanelOrientation: HotCuePanelOrientation;
   setSidebarTab: (tab: SidebarTabId) => void;
   setRightSidebarTab: (tab: RightSidebarTabId) => void;
   setDarkMode: (dark: boolean) => void;
@@ -38,6 +43,8 @@ interface UiState {
   toggleFixturePlotExpanded: () => void;
   setCompactInspectorDrawerOpen: (open: boolean) => void;
   setCompactInspectorDrawerDismissed: (dismissed: boolean) => void;
+  setHotCuePanelOrientation: (orientation: HotCuePanelOrientation) => void;
+  toggleHotCuePanelOrientation: () => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -56,6 +63,7 @@ export const useUiStore = create<UiState>()(
         fixturePlotExpanded: false,
         compactInspectorDrawerOpen: false,
         compactInspectorDrawerDismissed: true,
+        hotCuePanelOrientation: "right",
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
         setRightSidebarTab: (rightSidebarTab) => set({ rightSidebarTab }),
         setDarkMode: (darkMode) => set({ darkMode }),
@@ -93,6 +101,11 @@ export const useUiStore = create<UiState>()(
           set({ compactInspectorDrawerOpen }),
         setCompactInspectorDrawerDismissed: (compactInspectorDrawerDismissed) =>
           set({ compactInspectorDrawerDismissed }),
+        setHotCuePanelOrientation: (hotCuePanelOrientation) => set({ hotCuePanelOrientation }),
+        toggleHotCuePanelOrientation: () =>
+          set((s) => ({
+            hotCuePanelOrientation: s.hotCuePanelOrientation === "right" ? "bottom" : "right",
+          })),
       }),
       {
         name: "gsc-ui",
@@ -100,6 +113,7 @@ export const useUiStore = create<UiState>()(
           sidebarTab: s.sidebarTab,
           rightSidebarTab: s.rightSidebarTab,
           darkMode: s.darkMode,
+          hotCuePanelOrientation: s.hotCuePanelOrientation,
         }),
       },
     ),

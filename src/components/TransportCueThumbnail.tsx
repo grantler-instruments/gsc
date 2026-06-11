@@ -1,3 +1,4 @@
+import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import Box from "@mui/material/Box";
 import { useEffect, useMemo, useState } from "react";
 import { useAssetObjectUrl } from "../hooks/useAssetObjectUrl";
@@ -10,31 +11,29 @@ import { TransportWaveformThumb } from "./TransportWaveformThumb";
 
 const THUMB_SIZE = 48;
 
-const crossedOutThumbSx = {
-  "& img, & canvas, & svg": {
-    opacity: 0.55,
-    filter: "grayscale(0.35)",
-  },
-  "&::before, &::after": {
-    content: '""',
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    width: "130%",
-    height: 2,
-    bgcolor: "error.main",
-    borderRadius: 0.25,
-    pointerEvents: "none",
-    zIndex: 1,
-    boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.35)",
-  },
-  "&::before": {
-    transform: "translate(-50%, -50%) rotate(45deg)",
-  },
-  "&::after": {
-    transform: "translate(-50%, -50%) rotate(-45deg)",
-  },
-} as const;
+function StopPreviewOverlay() {
+  return (
+    <Box
+      sx={{
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        pointerEvents: "none",
+        zIndex: 1,
+      }}
+    >
+      <StopCircleOutlinedIcon
+        sx={{
+          fontSize: 28,
+          color: "error.main",
+          filter: "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.75))",
+        }}
+      />
+    </Box>
+  );
+}
 
 interface TransportCueThumbnailProps {
   cue: Cue;
@@ -124,10 +123,10 @@ export function TransportCueThumbnail({ cue, allCues }: TransportCueThumbnailPro
         border: 1,
         borderColor: "divider",
         position: "relative",
-        ...(preview.crossedOut ? crossedOutThumbSx : {}),
       }}
     >
       {content}
+      {preview.crossedOut && <StopPreviewOverlay />}
     </Box>
   );
 }

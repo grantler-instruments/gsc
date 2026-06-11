@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-import { useClearOnDragEnd } from "./useClearOnDragEnd";
 import {
   applyAssetPayloads,
   isAssetDropDrag,
@@ -16,6 +15,7 @@ import {
   setActiveCueDrag,
 } from "../../lib/drag";
 import { useProjectStore } from "../../stores/project";
+import { useClearOnDragEnd } from "./useClearOnDragEnd";
 
 export function useCueListDrop(canEdit: boolean) {
   const moveCueToGroup = useProjectStore((s) => s.moveCueToGroup);

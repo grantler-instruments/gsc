@@ -22,6 +22,32 @@ export function triggerGoAndAdvance(cue: Cue): void {
   selectNextCueAfterGo(cue.id);
 }
 
+function allProjectCues(): Cue[] {
+  return useProjectStore.getState().cueLists.flatMap((l) => l.cues);
+}
+
+/**
+ * Fire a hot cue as an overlay: layers on top of the main list without moving
+ * the editor selection and without cancelling main-list sequences.
+ */
+export function triggerHotCue(cue: Cue): void {
+  if (isRemoteClient()) {
+    sendRemoteCommand({ action: "hot-go", cueId: cue.id });
+    return;
+  }
+  const transport = useTransportStore.getState();
+  triggerGo(
+    cue,
+    allProjectCues(),
+    {
+      go: transport.go,
+      goMany: transport.goMany,
+      stopMany: transport.stopMany,
+    },
+    { sequenceScope: "overlay" },
+  );
+}
+
 function resolveGoTargetCueId(): string | null {
   const list = getActiveCueListFromState(useProjectStore.getState());
   const selectedCueId = getPrimarySelectedCueId(list.selectedCueIds);
@@ -42,5 +68,11 @@ export function triggerGoSelected(): void {
   const target = list.cues.find((c) => c.id === targetId);
   if (!target) return;
 
-  triggerGoAndAdvance(target);
+  // On a hot list, GO (keyboard, transport button, MIDI go-selected) fires as
+  // an overlay instead of advancing the linear list.
+  if (list.kind === "hot") {
+    triggerHotCue(target);
+  } else {
+    triggerGoAndAdvance(target);
+  }
 }

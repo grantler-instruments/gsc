@@ -21,6 +21,30 @@ export function getActiveCueListFromState(state: {
   return state.cueLists.find((l) => l.id === state.activeCueListId) ?? state.cueLists[0];
 }
 
+function isHotList(list: CueList): boolean {
+  return list.kind === "hot";
+}
+
+/** Resolve the sequence list for the main panel, self-healing stale ids. */
+export function resolveMainSequenceListId(state: {
+  cueLists: CueList[];
+  mainSequenceListId: string;
+}): string | null {
+  const stored = state.cueLists.find((l) => l.id === state.mainSequenceListId && !isHotList(l));
+  if (stored) return stored.id;
+  return state.cueLists.find((l) => !isHotList(l))?.id ?? null;
+}
+
+/** Resolve the hot list for the hot-cue panel, self-healing stale ids. */
+export function resolveActiveHotListId(state: {
+  cueLists: CueList[];
+  activeHotCueListId: string | null;
+}): string | null {
+  const stored = state.cueLists.find((l) => l.id === state.activeHotCueListId && isHotList(l));
+  if (stored) return stored.id;
+  return state.cueLists.find((l) => isHotList(l))?.id ?? null;
+}
+
 export function patchActiveList(
   state: { cueLists: CueList[]; activeCueListId: string },
   patch: (list: CueList) => Partial<CueList>,

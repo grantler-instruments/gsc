@@ -1,23 +1,30 @@
 import { t } from "../i18n/t";
-import type { Cue } from "../types/cue";
+import type { Cue, CueListKind } from "../types/cue";
 import { randomId } from "./random-id";
 
 export interface CueList {
   id: string;
   name: string;
+  /** Defaults to "sequence" when absent. Always set by createCueList / snapshot load. */
+  kind?: CueListKind;
   cues: Cue[];
   selectedCueIds: string[];
   selectionAnchorId: string | null;
 }
 
-export function createCueList(name: string): CueList {
+export function createCueList(name: string, kind: CueListKind = "sequence"): CueList {
   return {
     id: randomId(),
     name,
+    kind,
     cues: [],
     selectedCueIds: [],
     selectionAnchorId: null,
   };
+}
+
+export function isHotCueList(list: Pick<CueList, "kind">): boolean {
+  return list.kind === "hot";
 }
 
 export function findCueInLists(
@@ -31,13 +38,14 @@ export function findCueInLists(
   return null;
 }
 
-export function nextCueListName(cueLists: CueList[]): string {
+export function nextCueListName(cueLists: CueList[], kind: CueListKind = "sequence"): string {
   const used = new Set(cueLists.map((l) => l.name));
+  const key = kind === "hot" ? "project.generatedHotListName" : "project.generatedListName";
   let n = cueLists.length + 1;
-  let name = t("project.generatedListName", { number: n });
+  let name = t(key, { number: n });
   while (used.has(name)) {
     n += 1;
-    name = t("project.generatedListName", { number: n });
+    name = t(key, { number: n });
   }
   return name;
 }

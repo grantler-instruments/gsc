@@ -14,6 +14,10 @@ import { inspectorFieldLabelSx, inspectorFieldSx } from "./inspectorSx";
 
 const DEFAULT_LEARN_ACTION: MidiAction = { type: "go-selected" };
 
+function isCueBearingAction(type: MidiAction["type"]): boolean {
+  return type === "go-cue" || type === "select-cue" || type === "fire-hot-cue";
+}
+
 export function MidiMapPanel() {
   const { t } = useTranslation();
   const list = useActiveCueList();
@@ -26,19 +30,30 @@ export function MidiMapPanel() {
   const midiLearnAction = useUiStore((s) => s.midiLearnAction);
   const setMidiLearnAction = useUiStore((s) => s.setMidiLearnAction);
 
+  const cueLists = useProjectStore((s) => s.cueLists);
+
   const [learnAction, setLearnAction] = useState<MidiAction>(DEFAULT_LEARN_ACTION);
   const [learnCueId, setLearnCueId] = useState<string>("");
 
   const topLevelCues = useMemo(() => list.cues.filter((c) => !c.parentId), [list.cues]);
+  const hotTopLevelCues = useMemo(
+    () =>
+      cueLists.filter((l) => l.kind === "hot").flatMap((l) => l.cues.filter((c) => !c.parentId)),
+    [cueLists],
+  );
+  const pickerCues = learnAction.type === "fire-hot-cue" ? hotTopLevelCues : topLevelCues;
 
-  const resolvedLearnAction: MidiAction =
-    learnAction.type === "go-cue" || learnAction.type === "select-cue"
-      ? { ...learnAction, cueId: learnCueId || (topLevelCues[0]?.id ?? "") }
-      : learnAction;
+  const resolvedLearnAction: MidiAction = isCueBearingAction(learnAction.type)
+    ? {
+        ...(learnAction as Extract<MidiAction, { cueId: string }>),
+        cueId: learnCueId || (pickerCues[0]?.id ?? ""),
+      }
+    : learnAction;
 
   const startLearn = () => {
     if (
-      (resolvedLearnAction.type === "go-cue" || resolvedLearnAction.type === "select-cue") &&
+      resolvedLearnAction.type !== "go-selected" &&
+      resolvedLearnAction.type !== "panic" &&
       !resolvedLearnAction.cueId
     ) {
       return;
@@ -64,10 +79,9 @@ export function MidiMapPanel() {
             onChange={(e) => {
               const type = e.target.value as MidiAction["type"];
               if (type === "go-cue" || type === "select-cue") {
-                setLearnAction({
-                  type,
-                  cueId: learnCueId || (topLevelCues[0]?.id ?? ""),
-                });
+                setLearnAction({ type, cueId: learnCueId || (topLevelCues[0]?.id ?? "") });
+              } else if (type === "fire-hot-cue") {
+                setLearnAction({ type, cueId: learnCueId || (hotTopLevelCues[0]?.id ?? "") });
               } else {
                 setLearnAction({ type });
               }
@@ -75,12 +89,13 @@ export function MidiMapPanel() {
           >
             <MenuItem value="go-selected">{t("midiMap.goSelected")}</MenuItem>
             <MenuItem value="go-cue">{t("midiMap.goCue")}</MenuItem>
+            <MenuItem value="fire-hot-cue">{t("midiMap.fireHotCue")}</MenuItem>
             <MenuItem value="select-cue">{t("midiMap.selectCue")}</MenuItem>
             <MenuItem value="panic">{t("midiMap.panic")}</MenuItem>
           </Select>
         </Box>
 
-        {(learnAction.type === "go-cue" || learnAction.type === "select-cue") && (
+        {isCueBearingAction(learnAction.type) && (
           <Box sx={{ ...inspectorFieldSx, flex: "1 1 160px", minWidth: 140 }}>
             <Typography component="span" sx={inspectorFieldLabelSx}>
               {t("midiMap.cue")}
@@ -88,16 +103,16 @@ export function MidiMapPanel() {
             <Select
               size="small"
               fullWidth
-              value={learnCueId || (topLevelCues[0]?.id ?? "")}
+              value={learnCueId || (pickerCues[0]?.id ?? "")}
               onChange={(e) => {
                 setLearnCueId(e.target.value);
                 setLearnAction({
                   type: learnAction.type,
                   cueId: e.target.value,
-                });
+                } as MidiAction);
               }}
             >
-              {topLevelCues.map((c) => (
+              {pickerCues.map((c) => (
                 <MenuItem key={c.id} value={c.id}>
                   {c.number} — {c.name}
                 </MenuItem>
@@ -188,24 +203,24 @@ export function MidiMapPanel() {
                 value={m.action.type}
                 onChange={(e) => {
                   const type = e.target.value as MidiAction["type"];
-                  if (type === "go-cue" || type === "select-cue") {
-                    const cueId =
-                      m.action.type === type && "cueId" in m.action
-                        ? m.action.cueId
-                        : topLevelCues[0]?.id;
+                  if (isCueBearingAction(type)) {
+                    const fallback =
+                      type === "fire-hot-cue" ? hotTopLevelCues[0]?.id : topLevelCues[0]?.id;
+                    const cueId = "cueId" in m.action && m.action.cueId ? m.action.cueId : fallback;
                     if (cueId) {
                       updateMidiMapping(m.id, {
-                        action: { type, cueId },
+                        action: { type, cueId } as MidiAction,
                       });
                     }
                   } else {
-                    updateMidiMapping(m.id, { action: { type } });
+                    updateMidiMapping(m.id, { action: { type } as MidiAction });
                   }
                 }}
                 sx={{ minWidth: 120, maxWidth: 140 }}
               >
                 <MenuItem value="go-selected">{t("midiMap.goSelShort")}</MenuItem>
                 <MenuItem value="go-cue">{t("midiMap.goCueShort")}</MenuItem>
+                <MenuItem value="fire-hot-cue">{t("midiMap.fireHotCueShort")}</MenuItem>
                 <MenuItem value="select-cue">{t("midiMap.selectShort")}</MenuItem>
                 <MenuItem value="panic">{t("midiMap.panic")}</MenuItem>
               </Select>

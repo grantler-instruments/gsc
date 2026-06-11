@@ -54,7 +54,9 @@
   "project": {
     "defaultName": "Unbenannte Show",
     "defaultListName": "Haupt",
+    "defaultHotListName": "Hot-Cues",
     "generatedListName": "Liste {{number}}",
+    "generatedHotListName": "Hot-Cues {{number}}",
     "namePlaceholder": "Unbenannte Show",
     "nameAriaLabel": "Show-Name",
     "draftHint": " · Entwurf (speichern, um Speicherort zu wählen)",
@@ -171,12 +173,25 @@
     "goMissingCue": "GO (Cue fehlt)",
     "selectMissingCue": "Wählen (Cue fehlt)",
     "goCueWithName": "GO {{number}} — {{name}}",
-    "selectCueWithName": "Wählen {{number}} — {{name}}"
+    "selectCueWithName": "Wählen {{number}} — {{name}}",
+    "fireHotCue": "Hot-Cue auslösen…",
+    "fireHotCueShort": "Hot-Cue",
+    "hotMissingCue": "Auslösen (Hot-Cue fehlt)",
+    "hotCueWithName": "Auslösen {{number}} — {{name}}"
   },
   "transport": {
     "go": "GO",
     "panic": "Panic",
     "master": "Master"
+  },
+  "hotCues": {
+    "empty": "Noch keine Hot-Cues. Füge dieser Liste Cues hinzu, um sie jederzeit auszulösen.",
+    "emptyEditable": "Assets hierher ziehen oder mit der Flammen-Schaltfläche Hot-Cues hinzufügen.",
+    "noLists": "Noch keine Hot-Cue-Listen. Mit der Flammen-Schaltfläche eine erstellen.",
+    "childCount": "{{count}} Cues",
+    "panelAria": "Hot-Cues",
+    "moveRight": "Hot-Cues nach rechts verschieben",
+    "moveBelow": "Hot-Cues nach unten verschieben"
   },
   "showMode": {
     "showMode": "Show-Modus",

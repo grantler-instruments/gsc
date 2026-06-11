@@ -54,7 +54,9 @@
   "project": {
     "defaultName": "未命名演出",
     "defaultListName": "主列表",
+    "defaultHotListName": "热点提示",
     "generatedListName": "列表 {{number}}",
+    "generatedHotListName": "热点提示 {{number}}",
     "namePlaceholder": "未命名演出",
     "nameAriaLabel": "演出名称",
     "draftHint": " · 草稿（保存以选择位置）",
@@ -171,12 +173,25 @@
     "goMissingCue": "GO（提示缺失）",
     "selectMissingCue": "选择（提示缺失）",
     "goCueWithName": "GO {{number}} — {{name}}",
-    "selectCueWithName": "选择 {{number}} — {{name}}"
+    "selectCueWithName": "选择 {{number}} — {{name}}",
+    "fireHotCue": "触发热点提示…",
+    "fireHotCueShort": "热点提示",
+    "hotMissingCue": "触发（缺少热点提示）",
+    "hotCueWithName": "触发 {{number}} — {{name}}"
   },
   "transport": {
     "go": "GO",
     "panic": "紧急停止",
     "master": "主音量"
+  },
+  "hotCues": {
+    "empty": "还没有热点提示。向此列表添加提示即可随时触发。",
+    "emptyEditable": "将素材拖到此处，或使用火焰按钮添加热点提示。",
+    "noLists": "还没有热点提示列表。使用火焰按钮创建一个。",
+    "childCount": "{{count}} 个提示",
+    "panelAria": "热点提示",
+    "moveRight": "将热点提示移到右侧",
+    "moveBelow": "将热点提示移到下方"
   },
   "showMode": {
     "showMode": "演出模式",

@@ -5,7 +5,7 @@ import type { Cue } from "../types/cue";
 import type { MidiAction, MidiMapping, MidiMatch } from "../types/midi-mapping";
 import { midiMatches, parseMidiMessage } from "./midi";
 import { randomId } from "./random-id";
-import { triggerGoAndAdvance, triggerGoSelected } from "./transport-actions";
+import { triggerGoAndAdvance, triggerGoSelected, triggerHotCue } from "./transport-actions";
 
 const DEBOUNCE_MS = 50;
 
@@ -28,6 +28,14 @@ function findCueInActiveList(cueId: string): Cue | undefined {
   return list?.cues.find((c) => c.id === cueId);
 }
 
+function findCueAnywhere(cueId: string): Cue | undefined {
+  for (const list of useProjectStore.getState().cueLists) {
+    const cue = list.cues.find((c) => c.id === cueId);
+    if (cue) return cue;
+  }
+  return undefined;
+}
+
 export function dispatchMidiAction(action: MidiAction): void {
   switch (action.type) {
     case "go-selected":
@@ -36,6 +44,11 @@ export function dispatchMidiAction(action: MidiAction): void {
     case "go-cue": {
       const cue = findCueInActiveList(action.cueId);
       if (cue) triggerGoAndAdvance(cue);
+      break;
+    }
+    case "fire-hot-cue": {
+      const cue = findCueAnywhere(action.cueId);
+      if (cue) triggerHotCue(cue);
       break;
     }
     case "select-cue":
@@ -91,6 +104,12 @@ export function formatMidiActionLabel(action: MidiAction, cues: Cue[]): string {
       return cue
         ? t("midiMap.goCueWithName", { number: cue.number, name: cue.name })
         : t("midiMap.goMissingCue");
+    }
+    case "fire-hot-cue": {
+      const cue = cues.find((c) => c.id === action.cueId);
+      return cue
+        ? t("midiMap.hotCueWithName", { number: cue.number, name: cue.name })
+        : t("midiMap.hotMissingCue");
     }
     case "select-cue": {
       const cue = cues.find((c) => c.id === action.cueId);

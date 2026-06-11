@@ -45,7 +45,7 @@ export function CueListBody({
         p: 0,
         overflowY: "auto",
         flex: 1,
-        minHeight: 120,
+        minHeight: 0,
         display: "flex",
         flexDirection: "column",
         ...(listDropActive && cueListDropActiveSx(tokens)),

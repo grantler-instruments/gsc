@@ -16,7 +16,7 @@ function resetTransport() {
     activeCueId: null,
     activeCueIds: [],
     cueStartedAtMs: {},
-    runningSequence: null,
+    runningSequences: {},
     masterVolume: 1,
   });
 }
@@ -137,7 +137,7 @@ describe("triggerGo", () => {
     const result = triggerGo(seq, [seq], actions);
 
     expect(result).toEqual({ triggered: [], emptyContainer: true });
-    expect(useTransportStore.getState().runningSequence).toBeNull();
+    expect(useTransportStore.getState().runningSequences).toEqual({});
   });
 
   it("GOs parallel group leaf children together", () => {
@@ -232,19 +232,22 @@ describe("triggerStopCue", () => {
       testCue("a", "A", "audio", { parentId: "seq" }),
     ];
     useTransportStore.setState({
-      runningSequence: {
-        rootId: "seq",
-        currentStep: 0,
-        stepCount: 1,
-        stepCueIds: ["a"],
-        stepStartedAtMs: 0,
+      runningSequences: {
+        seq: {
+          rootId: "seq",
+          currentStep: 0,
+          stepCount: 1,
+          stepCueIds: ["a"],
+          stepStartedAtMs: 0,
+          scope: "main",
+        },
       },
     });
     const stopMany = vi.fn<(ids: string[]) => void>();
 
     triggerStopCue(cues[0], cues, stopMany);
 
-    expect(useTransportStore.getState().runningSequence).toBeNull();
+    expect(useTransportStore.getState().runningSequences).toEqual({});
     expect(stopMany).toHaveBeenCalledWith(["seq", "a"]);
   });
 });

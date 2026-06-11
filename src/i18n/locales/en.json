@@ -54,7 +54,9 @@
   "project": {
     "defaultName": "Untitled Show",
     "defaultListName": "Main",
+    "defaultHotListName": "Hot Cues",
     "generatedListName": "List {{number}}",
+    "generatedHotListName": "Hot Cues {{number}}",
     "namePlaceholder": "Untitled show",
     "nameAriaLabel": "Show name",
     "draftHint": " · Draft (save to choose location)",
@@ -200,12 +202,25 @@
     "goMissingCue": "GO (missing cue)",
     "selectMissingCue": "Select (missing cue)",
     "goCueWithName": "GO {{number}} — {{name}}",
-    "selectCueWithName": "Select {{number}} — {{name}}"
+    "selectCueWithName": "Select {{number}} — {{name}}",
+    "fireHotCue": "Fire hot cue…",
+    "fireHotCueShort": "Hot cue",
+    "hotMissingCue": "Fire (missing hot cue)",
+    "hotCueWithName": "Fire {{number}} — {{name}}"
   },
   "transport": {
     "go": "GO",
     "panic": "Panic",
     "master": "Master"
+  },
+  "hotCues": {
+    "empty": "No hot cues yet. Add cues to this list to fire them on demand.",
+    "emptyEditable": "Drop assets here or use the flame button to add hot cues.",
+    "noLists": "No hot cue lists yet. Use the flame button to create one.",
+    "childCount": "{{count}} cues",
+    "panelAria": "Hot cues",
+    "moveRight": "Move hot cues to the right",
+    "moveBelow": "Move hot cues below"
   },
   "showMode": {
     "showMode": "Show mode",
@@ -283,6 +298,8 @@
     "closeTabAria": "Close {{name}}",
     "newListTitle": "New cue list",
     "newListAria": "New cue list",
+    "newHotListTitle": "New hot cue list",
+    "newHotListAria": "New hot cue list",
     "emptyHint": "Drag assets here to create cues, or use + Cue below.",
     "noCues": "No cues in this list.",
     "deleteCue": "Delete cue",

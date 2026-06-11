@@ -1,6 +1,7 @@
 import type { CueList } from "../../lib/cue-lists";
 import type {
   Cue,
+  CueListKind,
   CueType,
   DmxCueData,
   FadeCueType,
@@ -19,7 +20,12 @@ export interface ProjectState {
   endDate?: string;
   description?: string;
   cueLists: CueList[];
+  /** The list with the current edit focus (selection, inspector, keyboard). */
   activeCueListId: string;
+  /** Sequence list shown in the main cue panel (independent of edit focus). */
+  mainSequenceListId: string;
+  /** Hot list shown in the hot-cue panel, or null when none exist. */
+  activeHotCueListId: string | null;
   midiMappings: MidiMapping[];
   fixtures: Fixture[];
   fixturePlot: FixturePlot;
@@ -61,7 +67,7 @@ export interface ProjectState {
   cutSelectedCues: () => boolean;
   pasteSelectedCues: () => boolean;
   duplicateSelectedCues: () => boolean;
-  addCueList: (name?: string) => CueList;
+  addCueList: (name?: string, kind?: CueListKind) => CueList;
   removeCueList: (listId: string) => void;
   renameCueList: (listId: string, name: string) => void;
   setActiveCueList: (listId: string) => void;

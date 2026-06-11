@@ -25,6 +25,7 @@ import { isLightFadeReady } from "../../lib/fade";
 import { getParallelGroupOrderConflict } from "../../lib/parallel-group-fire";
 import { usePlaybackStore } from "../../stores/playback";
 import { useProjectStore } from "../../stores/project";
+import { isCueInRunningStep } from "../../stores/transport";
 import { useUiStore } from "../../stores/ui";
 import {
   cueAssetSx,
@@ -117,7 +118,7 @@ export const CueRow = memo(function CueRow({
   const {
     canEdit,
     allCues,
-    runningSequence,
+    runningSequences,
     onGo,
     onRemove,
     onCreateStop,
@@ -154,7 +155,7 @@ export const CueRow = memo(function CueRow({
     isLightFade && !lightFadeTargetMissing && !isLightFadeReady(cue, fixtures, allCues);
   const assetWarning = getCueAssetWarning(cue);
   const parallelConflict = isParallel ? getParallelGroupOrderConflict(cue, allCues) : null;
-  const isCurrentSequenceStep = runningSequence?.stepCueIds.includes(cue.id) ?? false;
+  const isCurrentSequenceStep = isCueInRunningStep(runningSequences, cue.id);
 
   const hasWarning =
     missingAsset ||
@@ -295,7 +296,7 @@ export const CueRow = memo(function CueRow({
           allCues={allCues}
           childCount={childCount}
           active={active}
-          runningSequence={runningSequence}
+          runningSequences={runningSequences}
           playback={playback}
         />
       </Box>

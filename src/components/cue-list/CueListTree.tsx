@@ -11,7 +11,7 @@ export interface CueListTreeProps {
   cues: Cue[];
   collapsedGroups: Set<string>;
   activeCueIds: string[];
-  runningSequence: RunningSequence | null;
+  runningSequences: Record<string, RunningSequence>;
   dmxFadesByFadeCueId: Readonly<Record<string, unknown>>;
   selectedCueIdSet: Set<string>;
   primarySelectedId: string | null;
@@ -35,7 +35,7 @@ export function CueListTree({
   cues,
   collapsedGroups,
   activeCueIds,
-  runningSequence,
+  runningSequences,
   dmxFadesByFadeCueId,
   selectedCueIdSet,
   primarySelectedId,
@@ -71,7 +71,7 @@ export function CueListTree({
         expanded={expanded}
         selected={selectedCueIdSet.has(node.cue.id)}
         primarySelected={node.cue.id === primarySelectedId}
-        active={isCueActive(node.cue, cues, activeCueIds, runningSequence, dmxFadesByFadeCueId)}
+        active={isCueActive(node.cue, cues, activeCueIds, runningSequences, dmxFadesByFadeCueId)}
         missingAsset={cueMissingAsset(node.cue, assetEntries)}
         pulseAsStopTarget={node.cue.id === hoveredStopTargetId}
         staticAsStopTarget={node.cue.id === selectedStopTargetId}
@@ -97,7 +97,7 @@ export function CueListTree({
           cues={cues}
           collapsedGroups={collapsedGroups}
           activeCueIds={activeCueIds}
-          runningSequence={runningSequence}
+          runningSequences={runningSequences}
           dmxFadesByFadeCueId={dmxFadesByFadeCueId}
           selectedCueIdSet={selectedCueIdSet}
           primarySelectedId={primarySelectedId}

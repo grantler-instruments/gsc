@@ -114,7 +114,7 @@ describe("deletePrimarySelectedCue", () => {
       activeCueId: null,
       activeCueIds: [],
       cueStartedAtMs: {},
-      runningSequence: null,
+      runningSequences: {},
       masterVolume: 1,
     });
   });

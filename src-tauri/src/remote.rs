@@ -45,6 +45,7 @@ pub struct RemoteServerStatus {
 pub enum RemoteCommandPayload {
     GoSelected,
     Go { cue_id: String },
+    HotGo { cue_id: String },
     SelectCue { cue_id: String },
     Panic,
     SetMasterVolume { value: f64 },
@@ -384,6 +385,9 @@ fn parse_client_command(msg: RemoteClientMessage) -> Option<RemoteCommandPayload
     match msg.action.as_deref()? {
         "go-selected" => Some(RemoteCommandPayload::GoSelected),
         "go" => Some(RemoteCommandPayload::Go {
+            cue_id: msg.cue_id?,
+        }),
+        "hot-go" => Some(RemoteCommandPayload::HotGo {
             cue_id: msg.cue_id?,
         }),
         "select-cue" => Some(RemoteCommandPayload::SelectCue {

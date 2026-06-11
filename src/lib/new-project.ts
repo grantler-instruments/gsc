@@ -26,13 +26,16 @@ const TAURI_LAST_ROOT_KEY = "gsc-tauri-last-project-root";
 
 function createFreshProjectState(projectName = t("project.defaultName")) {
   const list = createCueList(t("project.defaultListName"));
+  const hotList = createCueList(t("project.defaultHotListName"), "hot");
   const id = randomId();
   setActiveProjectId(id);
   return {
     id,
     name: projectName,
-    cueLists: [list],
+    cueLists: [list, hotList],
     activeCueListId: list.id,
+    mainSequenceListId: list.id,
+    activeHotCueListId: hotList.id as string | null,
   };
 }
 

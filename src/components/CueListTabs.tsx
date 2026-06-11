@@ -1,16 +1,27 @@
+import WhatshotIcon from "@mui/icons-material/Whatshot";
 import Box from "@mui/material/Box";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import { useGscTokens } from "../theme/useGscTokens";
+import type { CueListKind } from "../types/cue";
 
-export function CueListTabs() {
+interface CueListTabsProps {
+  /** Restrict tabs to a single kind. Omit to show every list (unified bar). */
+  kind?: CueListKind;
+  /** Tab to highlight as selected. Defaults to the edit-focus list. */
+  activeListId?: string;
+  /** Extra controls rendered after the tabs (e.g. orientation toggle). */
+  trailing?: ReactNode;
+}
+
+export function CueListTabs({ kind, activeListId, trailing }: CueListTabsProps = {}) {
   const { t } = useTranslation();
   const tokens = useGscTokens();
   const showMode = useUiStore((s) => s.showMode);
   const canEdit = !showMode;
-  const cueLists = useProjectStore((s) => s.cueLists);
+  const allCueLists = useProjectStore((s) => s.cueLists);
   const activeCueListId = useProjectStore((s) => s.activeCueListId);
   const setActiveCueList = useProjectStore((s) => s.setActiveCueList);
   const addCueList = useProjectStore((s) => s.addCueList);
@@ -18,6 +29,11 @@ export function CueListTabs() {
   const renameCueList = useProjectStore((s) => s.renameCueList);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+
+  const cueLists =
+    kind === undefined ? allCueLists : allCueLists.filter((l) => (l.kind ?? "sequence") === kind);
+  const selectedId = activeListId ?? activeCueListId;
+  const closableCount = kind === undefined ? allCueLists.length : cueLists.length;
 
   const startRename = (listId: string, currentName: string) => {
     setRenamingId(listId);
@@ -44,10 +60,12 @@ export function CueListTabs() {
         borderColor: "divider",
         overflowX: "auto",
         flexShrink: 0,
+        flexGrow: 0,
       }}
     >
       {cueLists.map((list) => {
-        const active = list.id === activeCueListId;
+        const active = list.id === selectedId;
+        const isHot = list.kind === "hot";
         const topLevelCount = list.cues.filter((c) => !c.parentId).length;
 
         if (renamingId === list.id) {
@@ -130,6 +148,11 @@ export function CueListTabs() {
               }),
             }}
           >
+            {isHot && (
+              <WhatshotIcon
+                sx={{ fontSize: 14, color: active ? "warning.main" : "text.secondary" }}
+              />
+            )}
             <Box
               component="span"
               sx={{
@@ -154,7 +177,7 @@ export function CueListTabs() {
             >
               {topLevelCount}
             </Box>
-            {canEdit && cueLists.length > 1 && (
+            {canEdit && closableCount > 1 && (
               <Box
                 component="span"
                 role="button"
@@ -186,7 +209,7 @@ export function CueListTabs() {
           </Box>
         );
       })}
-      {canEdit && (
+      {canEdit && kind !== "hot" && (
         <Box
           component="button"
           type="button"
@@ -219,6 +242,40 @@ export function CueListTabs() {
           +
         </Box>
       )}
+      {canEdit && kind !== "sequence" && (
+        <Box
+          component="button"
+          type="button"
+          title={t("cueList.newHotListTitle")}
+          aria-label={t("cueList.newHotListAria")}
+          onClick={() => addCueList(undefined, "hot")}
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minWidth: 32,
+            py: 0.75,
+            px: 1,
+            border: "1px solid transparent",
+            borderBottom: "none",
+            borderRadius: "4px 4px 0 0",
+            bgcolor: "transparent",
+            font: "inherit",
+            fontSize: 16,
+            fontWeight: 400,
+            color: "text.secondary",
+            cursor: "pointer",
+            flexShrink: 0,
+            "&:hover": {
+              bgcolor: tokens.bgHover,
+              color: tokens.text,
+            },
+          }}
+        >
+          +
+        </Box>
+      )}
+      {trailing && <Box sx={{ ml: "auto", display: "flex", alignItems: "center" }}>{trailing}</Box>}
     </Box>
   );
 }

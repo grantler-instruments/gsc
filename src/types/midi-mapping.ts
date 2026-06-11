@@ -6,6 +6,7 @@ export type MidiMatch = MidiCueData;
 export type MidiAction =
   | { type: "go-selected" }
   | { type: "go-cue"; cueId: string }
+  | { type: "fire-hot-cue"; cueId: string }
   | { type: "select-cue"; cueId: string }
   | { type: "panic" };
 
@@ -19,6 +20,7 @@ export interface MidiMapping {
 export const MIDI_ACTION_LABELS: Record<MidiAction["type"], string> = {
   "go-selected": "GO (selected cue)",
   "go-cue": "GO cue",
+  "fire-hot-cue": "Fire hot cue",
   "select-cue": "Select cue",
   panic: "Panic (stop all)",
 };

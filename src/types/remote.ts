@@ -7,7 +7,7 @@ export interface RemoteTransportState {
   activeCueId: string | null;
   activeCueIds: string[];
   cueStartedAtMs: Record<string, number>;
-  runningSequence: RunningSequence | null;
+  runningSequences: Record<string, RunningSequence>;
   masterVolume: number;
 }
 
@@ -34,6 +34,7 @@ export type RemoteServerMessage =
 export type RemoteCommandAction =
   | { action: "go-selected" }
   | { action: "go"; cueId: string }
+  | { action: "hot-go"; cueId: string }
   | { action: "select-cue"; cueId: string }
   | { action: "panic" }
   | { action: "set-master-volume"; value: number }
@@ -60,6 +61,7 @@ export interface RemoteServerStatus {
 export type RemoteHostCommand =
   | { action: "go-selected" }
   | { action: "go"; cue_id: string }
+  | { action: "hot-go"; cue_id: string }
   | { action: "select-cue"; cue_id: string }
   | { action: "panic" }
   | { action: "set-master-volume"; value: number }

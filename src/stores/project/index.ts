@@ -2,6 +2,8 @@ export {
   findProjectCue,
   getActiveCueListFromState,
   useActiveCueList,
+  useActiveHotCueList,
+  useMainSequenceList,
   useProjectCues,
   useProjectStore,
 } from "./store";
