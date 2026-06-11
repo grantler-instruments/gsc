@@ -14,11 +14,13 @@ import {
   setActiveAssetDrag,
   setActiveCueDrag,
 } from "../../lib/drag";
+import { findCueInLists } from "../../lib/cue-lists";
 import { useProjectStore } from "../../stores/project";
 import { useClearOnDragEnd } from "./useClearOnDragEnd";
 
-export function useCueListDrop(canEdit: boolean) {
+export function useCueListDrop(canEdit: boolean, listId: string) {
   const moveCueToGroup = useProjectStore((s) => s.moveCueToGroup);
+  const moveCueToList = useProjectStore((s) => s.moveCueToList);
   const [listDropActive, setListDropActive] = useState(false);
 
   const clearListDropActive = useCallback(() => setListDropActive(false), []);
@@ -54,7 +56,12 @@ export function useCueListDrop(canEdit: boolean) {
         cuePayload?.cueId ?? (isCueDrag(e.dataTransfer) ? readCueDragId(e.dataTransfer) : null);
       if (draggedCueId) {
         if (e.target === e.currentTarget) {
-          moveCueToGroup(draggedCueId, null);
+          const source = findCueInLists(useProjectStore.getState().cueLists, draggedCueId);
+          if (source && source.list.id !== listId) {
+            moveCueToList(draggedCueId, listId, { kind: "append" });
+          } else {
+            moveCueToGroup(draggedCueId, null);
+          }
         }
         setActiveCueDrag(null);
         return;
@@ -73,7 +80,7 @@ export function useCueListDrop(canEdit: boolean) {
         }
       })();
     },
-    [canEdit, moveCueToGroup],
+    [canEdit, listId, moveCueToGroup, moveCueToList],
   );
 
   const onListDropCapture = clearListDropActive;

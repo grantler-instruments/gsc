@@ -13,11 +13,14 @@ import {
   setActiveAssetDrag,
   setActiveCueDrag,
 } from "../../lib/drag";
+import { findCueInLists } from "../../lib/cue-lists";
+import { useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
 import { useClearOnDragEnd } from "./useClearOnDragEnd";
 
 interface UseCueRowDropOptions {
   cue: Cue;
+  listId: string;
   allCues: Cue[];
   canEdit: boolean;
   onCueDrop: (cueId: string) => void;
@@ -26,11 +29,13 @@ interface UseCueRowDropOptions {
 
 export function useCueRowDrop({
   cue,
+  listId,
   allCues,
   canEdit,
   onCueDrop,
   onCueReorder,
 }: UseCueRowDropOptions) {
+  const moveCueToList = useProjectStore((s) => s.moveCueToList);
   const [dropActive, setDropActive] = useState(false);
   const [insertPlace, setInsertPlace] = useState<"before" | "after" | null>(null);
   const insertPlaceRef = useRef<"before" | "after" | null>(null);
@@ -56,7 +61,10 @@ export function useCueRowDrop({
       e.stopPropagation();
 
       if (draggingCue && draggedCueId !== cue.id) {
-        const dragged = allCues.find((c) => c.id === draggedCueId);
+        const source = findCueInLists(useProjectStore.getState().cueLists, draggedCueId);
+        const crossList = source?.list.id !== listId;
+        const dragged = allCues.find((c) => c.id === draggedCueId) ?? source?.cue;
+        if (!dragged) return;
         if (dragged && isContainer) {
           e.dataTransfer.dropEffect = "move";
           insertPlaceRef.current = null;
@@ -64,7 +72,7 @@ export function useCueRowDrop({
           setDropActive(true);
           return;
         }
-        if (dragged && cuesShareParent(dragged, cue)) {
+        if (dragged && (crossList || cuesShareParent(dragged, cue))) {
           const rect = e.currentTarget.getBoundingClientRect();
           const place = e.clientY < rect.top + rect.height / 2 ? "before" : "after";
           e.dataTransfer.dropEffect = "move";
@@ -106,6 +114,19 @@ export function useCueRowDrop({
 
       const draggedCueId = readCueDragId(e.dataTransfer);
       if (draggedCueId) {
+        const source = findCueInLists(useProjectStore.getState().cueLists, draggedCueId);
+        if (source && source.list.id !== listId) {
+          if (isContainer && draggedCueId !== cue.id) {
+            moveCueToList(draggedCueId, listId, { kind: "into-group", groupId: cue.id });
+          } else if (place && draggedCueId !== cue.id) {
+            moveCueToList(draggedCueId, listId, {
+              kind: place,
+              cueId: cue.id,
+            });
+          }
+          setActiveCueDrag(null);
+          return;
+        }
         if (place && draggedCueId !== cue.id) {
           onCueReorder(draggedCueId, cue.id, place);
           setActiveCueDrag(null);
@@ -139,7 +160,7 @@ export function useCueRowDrop({
         }
       })();
     },
-    [canEdit, cue.id, isContainer, onCueDrop, onCueReorder],
+    [canEdit, cue.id, isContainer, listId, moveCueToList, onCueDrop, onCueReorder],
   );
 
   return {

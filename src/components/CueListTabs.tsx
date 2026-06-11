@@ -51,7 +51,7 @@ export function CueListTabs({ kind, activeListId, trailing }: CueListTabsProps =
       aria-label={t("cueList.tabsAria")}
       sx={{
         display: "flex",
-        alignItems: "stretch",
+        alignItems: "center",
         gap: 0.25,
         pt: 0.75,
         px: 1,
@@ -59,6 +59,7 @@ export function CueListTabs({ kind, activeListId, trailing }: CueListTabsProps =
         borderBottom: 1,
         borderColor: "divider",
         overflowX: "auto",
+        overflowY: "clip",
         flexShrink: 0,
         flexGrow: 0,
       }}
@@ -142,15 +143,16 @@ export function CueListTabs({ kind, activeListId, trailing }: CueListTabsProps =
               ...(active && {
                 bgcolor: tokens.bgElevated,
                 borderColor: "divider",
+                borderBottomColor: tokens.bgElevated,
                 color: tokens.text,
-                mb: "-1px",
-                pb: "7px",
+                position: "relative",
+                zIndex: 1,
               }),
             }}
           >
-            {isHot && (
+            {isHot && kind !== "hot" && (
               <WhatshotIcon
-                sx={{ fontSize: 14, color: active ? "warning.main" : "text.secondary" }}
+                sx={{ fontSize: 14, color: active ? "text.primary" : "text.secondary" }}
               />
             )}
             <Box

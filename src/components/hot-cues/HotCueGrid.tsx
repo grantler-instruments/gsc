@@ -1,12 +1,15 @@
 import Box from "@mui/material/Box";
-import { type MouseEvent, useCallback, useState } from "react";
+import { type MouseEvent, useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { getPrimarySelectedCueId } from "../../lib/cue-selection";
+import { pointerLeftElement } from "../../lib/dom";
 import {
   applyAssetPayloads,
   isAssetDropDrag,
   isExternalFileDrag,
   resolveAssetDropPayloads,
 } from "../../lib/asset-drop";
+import { findCueInLists } from "../../lib/cue-lists";
 import {
   getChildCues,
   getCueDisplayName,
@@ -14,16 +17,25 @@ import {
   isContainerCue,
   isCueActive,
 } from "../../lib/cues";
-import { isAssetDrag, setActiveAssetDrag } from "../../lib/drag";
+import {
+  isAssetDrag,
+  readCueDragId,
+  setActiveAssetDrag,
+  setActiveCueDrag,
+  setCueDragData,
+} from "../../lib/drag";
 import { triggerHotCue } from "../../lib/transport-actions";
 import { useFadeStore } from "../../stores/fade";
 import { useActiveCueList, useProjectStore } from "../../stores/project";
 import { useTransportStore } from "../../stores/transport";
 import { useUiStore } from "../../stores/ui";
+import { hotCuePadTargetSx } from "../../theme/cueStyles";
 import { useGscTokens } from "../../theme/useGscTokens";
 import type { Cue } from "../../types/cue";
 import { CueTypeBadge } from "../CueTypeIcon";
 import { CueRowActions } from "../cue-list/CueRowActions";
+import { useCueListStopHighlights } from "../cue-list/useCueListStopHighlights";
+import { useRestartCssAnimation } from "../cue-list/useRestartCssAnimation";
 import { CueTargetActionsMenu, type CueTargetActionsMenuState } from "./CueTargetActionsMenu";
 
 /**
@@ -50,6 +62,8 @@ export function HotCueGrid({ listId }: { listId?: string }) {
   const selectCue = useProjectStore((s) => s.selectCue);
   const addStopCueForTarget = useProjectStore((s) => s.addStopCueForTarget);
   const addFadeCueForTarget = useProjectStore((s) => s.addFadeCueForTarget);
+  const moveCueToList = useProjectStore((s) => s.moveCueToList);
+  const reorderCueRelative = useProjectStore((s) => s.reorderCueRelative);
   const [dropActive, setDropActive] = useState(false);
   const [padMenu, setPadMenu] = useState<CueTargetActionsMenuState | null>(null);
 
@@ -76,6 +90,23 @@ export function HotCueGrid({ listId }: { listId?: string }) {
       setDropActive(false);
       e.preventDefault();
       if (!canEdit) return;
+
+      const draggedCueId = readCueDragId(e.dataTransfer);
+      if (draggedCueId) {
+        focusList();
+        const source = findCueInLists(useProjectStore.getState().cueLists, draggedCueId);
+        if (source && source.list.id !== list.id) {
+          moveCueToList(draggedCueId, list.id, { kind: "append" });
+        } else {
+          const lastTopLevel = getTopLevelCues(list.cues).at(-1);
+          if (lastTopLevel && lastTopLevel.id !== draggedCueId) {
+            reorderCueRelative(draggedCueId, lastTopLevel.id, "after");
+          }
+        }
+        setActiveCueDrag(null);
+        return;
+      }
+
       if (!isAssetDrag(e.dataTransfer) && !isExternalFileDrag(e.dataTransfer)) return;
       focusList();
       void (async () => {
@@ -87,7 +118,7 @@ export function HotCueGrid({ listId }: { listId?: string }) {
         }
       })();
     },
-    [canEdit, focusList],
+    [canEdit, focusList, list.cues, list.id, moveCueToList, reorderCueRelative],
   );
 
   const handleRowDrop = useCallback(
@@ -96,6 +127,22 @@ export function HotCueGrid({ listId }: { listId?: string }) {
       e.stopPropagation();
       setDropActive(false);
       if (!canEdit) return;
+
+      const draggedCueId = readCueDragId(e.dataTransfer);
+      if (draggedCueId && draggedCueId !== cueId) {
+        focusList();
+        const rect = e.currentTarget.getBoundingClientRect();
+        const place = e.clientY < rect.top + rect.height / 2 ? "before" : "after";
+        const source = findCueInLists(useProjectStore.getState().cueLists, draggedCueId);
+        if (source && source.list.id !== list.id) {
+          moveCueToList(draggedCueId, list.id, { kind: place, cueId });
+        } else {
+          reorderCueRelative(draggedCueId, cueId, place);
+        }
+        setActiveCueDrag(null);
+        return;
+      }
+
       if (!isAssetDrag(e.dataTransfer) && !isExternalFileDrag(e.dataTransfer)) return;
       focusList();
       void (async () => {
@@ -107,20 +154,36 @@ export function HotCueGrid({ listId }: { listId?: string }) {
         }
       })();
     },
-    [canEdit, focusList],
+    [canEdit, focusList, list.id, moveCueToList, reorderCueRelative],
   );
 
   const onDragOver = useCallback(
     (e: React.DragEvent) => {
-      if (!canEdit || !isAssetDropDrag(e.dataTransfer)) return;
+      if (!canEdit) return;
+      const draggingCue = readCueDragId(e.dataTransfer) !== null;
+      if (!draggingCue && !isAssetDropDrag(e.dataTransfer)) return;
       e.preventDefault();
-      e.dataTransfer.dropEffect = "copy";
+      e.dataTransfer.dropEffect = draggingCue ? "move" : "copy";
       setDropActive(true);
     },
     [canEdit],
   );
 
+  const onPadDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (!canEdit) return;
+      const draggedCueId = readCueDragId(e.dataTransfer);
+      if (!draggedCueId && !isAssetDropDrag(e.dataTransfer)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = draggedCueId ? "move" : "copy";
+    },
+    [canEdit],
+  );
+
   const topLevel = getTopLevelCues(cues);
+  const primarySelectedId = getPrimarySelectedCueId(selectedCueIds);
+  const stopHighlights = useCueListStopHighlights(cues, primarySelectedId);
   const padMenuCue = padMenu ? cues.find((c) => c.id === padMenu.cueId) : undefined;
 
   const handlePadContextMenu = useCallback(
@@ -190,6 +253,14 @@ export function HotCueGrid({ listId }: { listId?: string }) {
             selected={canEdit && selectedCueIds.includes(cue.id)}
             childCount={isContainerCue(cue) ? getChildCues(cues, cue.id).length : 0}
             accent={tokens.accent}
+            pulseAsStopTarget={cue.id === stopHighlights.hoveredStopTargetId}
+            staticAsStopTarget={cue.id === stopHighlights.selectedStopTargetId}
+            highlightAsFadeTarget={
+              cue.id === stopHighlights.hoveredFadeTargetId ||
+              cue.id === stopHighlights.selectedFadeTargetId
+            }
+            fadeTargetHighlightToken={stopHighlights.fadeTargetHighlightToken}
+            onHoverChange={stopHighlights.setHoveredCueId}
             onSelect={() => handleSelect(cue)}
             onFire={() => triggerHotCue(cue)}
             onContextMenu={(e) => handlePadContextMenu(cue, e)}
@@ -199,7 +270,18 @@ export function HotCueGrid({ listId }: { listId?: string }) {
             onCreatePanFade={() => addFadeCueForTarget(cue.id, "panFade")}
             onCreateLightFade={() => addFadeCueForTarget(cue.id, "lightFade")}
             onDrop={canEdit ? (e) => handleRowDrop(cue.id, e) : undefined}
-            onDragOver={canEdit ? onDragOver : undefined}
+            onDragOver={canEdit ? onPadDragOver : undefined}
+            draggable={canEdit}
+            onDragStart={
+              canEdit
+                ? (e) => {
+                    e.stopPropagation();
+                    setCueDragData(e.dataTransfer, { cueId: cue.id });
+                    setActiveCueDrag(cue.id);
+                  }
+                : undefined
+            }
+            onDragEnd={canEdit ? () => setActiveCueDrag(null) : undefined}
           />
         ))}
       </Box>
@@ -225,6 +307,11 @@ function HotCueButton({
   selected,
   childCount,
   accent,
+  pulseAsStopTarget,
+  staticAsStopTarget,
+  highlightAsFadeTarget,
+  fadeTargetHighlightToken,
+  onHoverChange,
   onSelect,
   onFire,
   onContextMenu,
@@ -235,6 +322,9 @@ function HotCueButton({
   onCreateLightFade,
   onDrop,
   onDragOver,
+  draggable = false,
+  onDragStart,
+  onDragEnd,
 }: {
   cue: Cue;
   cues: Cue[];
@@ -243,6 +333,11 @@ function HotCueButton({
   selected: boolean;
   childCount: number;
   accent: string;
+  pulseAsStopTarget: boolean;
+  staticAsStopTarget: boolean;
+  highlightAsFadeTarget: boolean;
+  fadeTargetHighlightToken: string;
+  onHoverChange: (cueId: string | null) => void;
   onSelect: () => void;
   onFire: () => void;
   onContextMenu: (e: MouseEvent) => void;
@@ -253,10 +348,18 @@ function HotCueButton({
   onCreateLightFade: () => void;
   onDrop?: (e: React.DragEvent) => void;
   onDragOver?: (e: React.DragEvent) => void;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
 }) {
   const { t } = useTranslation();
+  const tokens = useGscTokens();
   const [hovered, setHovered] = useState(false);
   const showActions = canEdit && (selected || hovered);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  useRestartCssAnimation(buttonRef, highlightAsFadeTarget, fadeTargetHighlightToken);
+
+  const isTargetHighlight = pulseAsStopTarget || staticAsStopTarget || highlightAsFadeTarget;
 
   const padSx = {
     display: "flex",
@@ -275,17 +378,36 @@ function HotCueButton({
     transition: "background-color 80ms, border-color 80ms",
     width: "100%",
     height: "100%",
-    "&:hover": { borderColor: accent, bgcolor: `${accent}14` },
+    ...(!isTargetHighlight && {
+      "&:hover": { borderColor: accent, bgcolor: `${accent}14` },
+    }),
     "&:active": { transform: "translateY(1px)" },
+    ...hotCuePadTargetSx({
+      tokens,
+      pulseAsStopTarget,
+      staticAsStopTarget,
+      highlightAsFadeTarget,
+    }),
   } as const;
 
   return (
     <Box
       sx={{ position: "relative", minHeight: 72 }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={() => {
+        setHovered(true);
+        onHoverChange(cue.id);
+      }}
+      onMouseLeave={(e) => {
+        setHovered(false);
+        if (pointerLeftElement(e.currentTarget, e.relatedTarget)) {
+          onHoverChange(null);
+        }
+      }}
       onDrop={onDrop}
       onDragOver={onDragOver}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
     >
       {showActions && (
         <Box
@@ -313,6 +435,7 @@ function HotCueButton({
         </Box>
       )}
       <Box
+        ref={buttonRef}
         component="button"
         type="button"
         onClick={onSelect}

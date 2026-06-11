@@ -14,7 +14,11 @@ import { TransportBar } from "./components/TransportBar";
 import { UnsavedProjectDialog } from "./components/UnsavedProjectDialog";
 import { useAppRuntime } from "./hooks/useAppRuntime";
 import { useCompactLayout } from "./hooks/useCompactLayout";
-import { cueWorkspaceShellSx, cueWorkspaceSplitSx } from "./layout/responsiveLayout";
+import {
+  cueWorkspaceShellSx,
+  cueWorkspaceSplitSx,
+  panelEdgeBorder,
+} from "./layout/responsiveLayout";
 import { getPrimarySelectedCueId } from "./lib/cue-selection";
 import {
   useActiveCueList,
@@ -29,13 +33,14 @@ function App() {
   const compact = useCompactLayout();
   const showMode = useUiStore((s) => s.showMode);
   const hotCuePanelOrientation = useUiStore((s) => s.hotCuePanelOrientation);
+  const hotCuePanelVisible = useUiStore((s) => s.hotCuePanelVisible);
   const fixtures = useProjectStore((s) => s.fixtures);
   const selectedCueIds = useActiveCueList().selectedCueIds;
   const mainSequenceList = useMainSequenceList();
   const hotList = useActiveHotCueList();
   const hasSelectedCue = getPrimarySelectedCueId(selectedCueIds) !== null;
   const hasFixtures = fixtures.length > 0;
-  const showHotPanel = !showMode || hotList !== null;
+  const showHotPanel = hotCuePanelVisible && (showMode ? hotList !== null : true);
 
   if (!sessionReady) {
     return (
@@ -67,6 +72,7 @@ function App() {
             sx={{
               ...cueWorkspaceShellSx,
               flexDirection: "column",
+              borderLeft: panelEdgeBorder,
             }}
           >
             <Box sx={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0, overflow: "hidden" }}>

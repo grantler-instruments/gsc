@@ -191,7 +191,11 @@
     "childCount": "{{count}} Cues",
     "panelAria": "Hot-Cues",
     "moveRight": "Hot-Cues nach rechts verschieben",
-    "moveBelow": "Hot-Cues nach unten verschieben"
+    "moveBelow": "Hot-Cues nach unten verschieben",
+    "showPanel": "Hot-Cues anzeigen",
+    "hidePanel": "Hot-Cues ausblenden",
+    "showPanelAria": "Hot-Cue-Panel anzeigen",
+    "hidePanelAria": "Hot-Cue-Panel ausblenden"
   },
   "showMode": {
     "showMode": "Show-Modus",

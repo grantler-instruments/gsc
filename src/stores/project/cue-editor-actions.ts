@@ -14,6 +14,8 @@ import { defaultFadeCueFields, fadeCueLabel, isValidFadeTarget } from "../../lib
 import { defaultMidiCueData } from "../../lib/midi";
 import { defaultOscCueData } from "../../lib/osc";
 import { runWithoutHistory } from "../../lib/project-history";
+import { moveCueBetweenLists } from "../../lib/cue-list-move";
+import { findCueInLists } from "../../lib/cue-lists";
 import { randomId } from "../../lib/random-id";
 import { canEditProject } from "../../lib/show-mode";
 import type { Cue } from "../../types/cue";
@@ -23,10 +25,28 @@ import {
   getActiveCueListFromState,
   isMediaCueType,
   patchActiveList,
+  patchListById,
 } from "./helpers";
 import type { ProjectState } from "./types";
 
 type ProjectStore = StoreApi<ProjectState>;
+
+function collectCueRemovalIds(cues: Cue[], rootId: string): Set<string> {
+  const toRemove = new Set<string>([rootId]);
+  const collect = (cueId: string) => {
+    for (const child of getChildCues(cues, cueId)) {
+      toRemove.add(child.id);
+      if (isContainerCue(child)) collect(child.id);
+    }
+  };
+  const target = cues.find((c) => c.id === rootId);
+  if (target && isContainerCue(target)) collect(rootId);
+  for (const c of cues) {
+    if (isStopCue(c) && c.stopTargetId === rootId) toRemove.add(c.id);
+    if (isFadeCue(c) && c.fadeTargetId === rootId) toRemove.add(c.id);
+  }
+  return toRemove;
+}
 
 type NewCueOpts = {
   name: string;
@@ -83,7 +103,9 @@ export function createCueEditorActions(
   | "addFadeCueForTarget"
   | "updateCue"
   | "removeCue"
+  | "removeCueFromList"
   | "moveCueToGroup"
+  | "moveCueToList"
   | "addSelectedCueToGroup"
   | "reorderCueRelative"
 > {
@@ -290,30 +312,24 @@ export function createCueEditorActions(
 
     removeCue: (id) => {
       if (!canEditProject()) return;
-      const active = getActiveCueListFromState(get());
-      const { cues } = active;
-      const toRemove = new Set<string>([id]);
-      const collect = (cueId: string) => {
-        for (const child of getChildCues(cues, cueId)) {
-          toRemove.add(child.id);
-          if (isContainerCue(child)) collect(child.id);
-        }
-      };
-      const target = cues.find((c) => c.id === id);
-      if (target && isContainerCue(target)) collect(id);
-      for (const c of cues) {
-        if (isStopCue(c) && c.stopTargetId === id) toRemove.add(c.id);
-        if (isFadeCue(c) && c.fadeTargetId === id) toRemove.add(c.id);
-      }
+      get().removeCueFromList(getActiveCueListFromState(get()).id, id);
+    },
+
+    removeCueFromList: (listId, id) => {
+      if (!canEditProject()) return;
+      const list = get().cueLists.find((l) => l.id === listId);
+      if (!list) return;
+      const toRemove = collectCueRemovalIds(list.cues, id);
 
       set((s) =>
-        patchActiveList(s, (list) => {
-          const selectedCueIds = list.selectedCueIds.filter((cid) => !toRemove.has(cid));
-          const anchorRemoved = list.selectionAnchorId && toRemove.has(list.selectionAnchorId);
+        patchListById(s, listId, (current) => {
+          const selectedCueIds = current.selectedCueIds.filter((cid) => !toRemove.has(cid));
+          const anchorRemoved =
+            current.selectionAnchorId && toRemove.has(current.selectionAnchorId);
           return {
-            cues: applyRenumber(list.cues.filter((c) => !toRemove.has(c.id))),
+            cues: applyRenumber(current.cues.filter((c) => !toRemove.has(c.id))),
             selectedCueIds,
-            selectionAnchorId: anchorRemoved ? (selectedCueIds[0] ?? null) : list.selectionAnchorId,
+            selectionAnchorId: anchorRemoved ? (selectedCueIds[0] ?? null) : current.selectionAnchorId,
           };
         }),
       );
@@ -321,10 +337,11 @@ export function createCueEditorActions(
 
     moveCueToGroup: (cueId, groupId) => {
       if (!canEditProject()) return;
-      const active = getActiveCueListFromState(get());
-      const { cues } = active;
-      const cue = cues.find((c) => c.id === cueId);
-      if (!cue) return;
+      const state = get();
+      const found = findCueInLists(state.cueLists, cueId);
+      if (!found) return;
+      const { list, cue } = found;
+      const { cues } = list;
 
       if (groupId) {
         const group = cues.find((c) => c.id === groupId);
@@ -338,12 +355,21 @@ export function createCueEditorActions(
       }
 
       set((s) => ({
-        ...patchActiveList(s, (list) => ({
+        ...patchListById(s, list.id, (current) => ({
           cues: applyRenumber(
-            list.cues.map((c) => (c.id === cueId ? { ...c, parentId: groupId ?? undefined } : c)),
+            current.cues.map((c) =>
+              c.id === cueId ? { ...c, parentId: groupId ?? undefined } : c,
+            ),
           ),
         })),
       }));
+    },
+
+    moveCueToList: (cueId, targetListId, place) => {
+      if (!canEditProject()) return;
+      const result = moveCueBetweenLists(get().cueLists, cueId, targetListId, place);
+      if (!result) return;
+      set({ cueLists: result.cueLists });
     },
 
     addSelectedCueToGroup: (groupId) => {
@@ -355,11 +381,14 @@ export function createCueEditorActions(
 
     reorderCueRelative: (draggedId, targetId, place) => {
       if (!canEditProject()) return;
-      const active = getActiveCueListFromState(get());
-      const next = reorderSiblingCues(active.cues, draggedId, targetId, place);
+      const state = get();
+      const draggedFound = findCueInLists(state.cueLists, draggedId);
+      const targetFound = findCueInLists(state.cueLists, targetId);
+      if (!draggedFound || !targetFound || draggedFound.list.id !== targetFound.list.id) return;
+      const next = reorderSiblingCues(draggedFound.list.cues, draggedId, targetId, place);
       if (!next) return;
       set({
-        ...patchActiveList(get(), () => ({
+        ...patchListById(state, draggedFound.list.id, () => ({
           cues: applyRenumber(next),
         })),
       });

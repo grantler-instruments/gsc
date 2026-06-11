@@ -191,7 +191,11 @@
     "childCount": "{{count}} 个提示",
     "panelAria": "热点提示",
     "moveRight": "将热点提示移到右侧",
-    "moveBelow": "将热点提示移到下方"
+    "moveBelow": "将热点提示移到下方",
+    "showPanel": "显示热点提示",
+    "hidePanel": "隐藏热点提示",
+    "showPanelAria": "显示热点提示面板",
+    "hidePanelAria": "隐藏热点提示面板"
   },
   "showMode": {
     "showMode": "演出模式",

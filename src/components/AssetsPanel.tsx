@@ -154,7 +154,7 @@ export function AssetsPanel() {
             borderTop: 1,
             borderColor: "divider",
             flexShrink: 0,
-            bgcolor: "background.default",
+            bgcolor: "background.paper",
           }}
         >
           <Button

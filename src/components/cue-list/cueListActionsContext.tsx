@@ -9,6 +9,7 @@ import type { Cue } from "../../types/cue";
 
 export interface CueListActionsContextValue {
   canEdit: boolean;
+  listId: string;
   allCues: Cue[];
   runningSequences: Record<string, RunningSequence>;
   onGo: (cue: Cue) => void;
@@ -36,6 +37,7 @@ export function useCueListActions(): CueListActionsContextValue {
 
 interface CueListActionsProviderProps {
   canEdit: boolean;
+  listId: string;
   allCues: Cue[];
   runningSequences: Record<string, RunningSequence>;
   /** When true, GO fires cues as overlays (hot cues) without advancing the list. */
@@ -45,6 +47,7 @@ interface CueListActionsProviderProps {
 
 export function CueListActionsProvider({
   canEdit,
+  listId,
   allCues,
   runningSequences,
   hot = false,
@@ -60,6 +63,7 @@ export function CueListActionsProvider({
   const value = useMemo<CueListActionsContextValue>(
     () => ({
       canEdit,
+      listId,
       allCues,
       runningSequences,
       onGo: (cue) => (hot ? triggerHotCue(cue) : triggerGoAndAdvance(cue)),
@@ -78,6 +82,7 @@ export function CueListActionsProvider({
     }),
     [
       canEdit,
+      listId,
       allCues,
       runningSequences,
       hot,

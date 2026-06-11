@@ -1,5 +1,8 @@
 import { isRemoteClient } from "../platform/remote-mode";
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import {
+  getMainSequenceListFromState,
+  useProjectStore,
+} from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
 import { selectNextCueAfterGo } from "./cue-navigation";
@@ -12,14 +15,18 @@ export function triggerGoAndAdvance(cue: Cue): void {
     sendRemoteCommand({ action: "go", cueId: cue.id });
     return;
   }
-  const list = getActiveCueListFromState(useProjectStore.getState());
+  const state = useProjectStore.getState();
+  const list =
+    state.cueLists.find((l) => l.cues.some((c) => c.id === cue.id)) ??
+    getMainSequenceListFromState(state);
+  if (!list) return;
   const transport = useTransportStore.getState();
   triggerGo(cue, list.cues, {
     go: transport.go,
     goMany: transport.goMany,
     stopMany: transport.stopMany,
   });
-  selectNextCueAfterGo(cue.id);
+  selectNextCueAfterGo(cue.id, list.id);
 }
 
 function allProjectCues(): Cue[] {
@@ -48,15 +55,16 @@ export function triggerHotCue(cue: Cue): void {
   );
 }
 
-function resolveGoTargetCueId(): string | null {
-  const list = getActiveCueListFromState(useProjectStore.getState());
+function resolveMainGoTargetCueId(): string | null {
+  const list = getMainSequenceListFromState(useProjectStore.getState());
+  if (!list) return null;
   const selectedCueId = getPrimarySelectedCueId(list.selectedCueIds);
   return selectedCueId ?? list.cues.find((c) => !c.parentId)?.id ?? null;
 }
 
-/** GO the selected cue, or the first top-level cue if none selected. */
+/** GO the selected main-list cue (keyboard / transport), or the first top-level cue. */
 export function triggerGoSelected(): void {
-  const targetId = resolveGoTargetCueId();
+  const targetId = resolveMainGoTargetCueId();
   if (!targetId) return;
 
   if (isRemoteClient()) {
@@ -64,15 +72,9 @@ export function triggerGoSelected(): void {
     return;
   }
 
-  const list = getActiveCueListFromState(useProjectStore.getState());
-  const target = list.cues.find((c) => c.id === targetId);
+  const list = getMainSequenceListFromState(useProjectStore.getState());
+  const target = list?.cues.find((c) => c.id === targetId);
   if (!target) return;
 
-  // On a hot list, GO (keyboard, transport button, MIDI go-selected) fires as
-  // an overlay instead of advancing the linear list.
-  if (list.kind === "hot") {
-    triggerHotCue(target);
-  } else {
-    triggerGoAndAdvance(target);
-  }
+  triggerGoAndAdvance(target);
 }

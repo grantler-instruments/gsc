@@ -324,7 +324,7 @@ export function FixturesPanel() {
             borderTop: 1,
             borderColor: "divider",
             flexShrink: 0,
-            bgcolor: "background.default",
+            bgcolor: "background.paper",
           }}
         >
           <AddFixtureMenu

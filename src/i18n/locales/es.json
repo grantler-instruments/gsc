@@ -191,7 +191,11 @@
     "childCount": "{{count}} cues",
     "panelAria": "Hot cues",
     "moveRight": "Mover hot cues a la derecha",
-    "moveBelow": "Mover hot cues abajo"
+    "moveBelow": "Mover hot cues abajo",
+    "showPanel": "Mostrar hot cues",
+    "hidePanel": "Ocultar hot cues",
+    "showPanelAria": "Mostrar panel de hot cues",
+    "hidePanelAria": "Ocultar panel de hot cues"
   },
   "showMode": {
     "showMode": "Modo show",

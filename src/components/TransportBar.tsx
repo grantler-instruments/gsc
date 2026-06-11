@@ -16,9 +16,10 @@ import {
 } from "../lib/remote-client";
 import { triggerGoSelected } from "../lib/transport-actions";
 import { isRemoteClient } from "../platform/remote-mode";
-import { findProjectCue, useActiveCueList, useProjectStore } from "../stores/project";
+import { findProjectCue, useMainSequenceList, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
+import { panelEdgeBorder } from "../layout/responsiveLayout";
 import { SIDEBAR_WIDTH } from "../types/sidebar";
 import { CueTypeBadge } from "./CueTypeIcon";
 import { TransportCueThumbnail } from "./TransportCueThumbnail";
@@ -89,10 +90,10 @@ export function TransportBar() {
     });
   }, [isRemote]);
   const cueLists = useProjectStore((s) => s.cueLists);
-  const activeList = useActiveCueList();
-  const selectedCueIds = activeList.selectedCueIds;
+  const mainList = useMainSequenceList();
+  const selectedCueIds = mainList?.selectedCueIds ?? [];
   const selectedCueId = getPrimarySelectedCueId(selectedCueIds);
-  const cues = activeList.cues;
+  const cues = mainList?.cues ?? [];
   const isPlaying = useTransportStore((s) => s.isPlaying);
   const activeCueId = useTransportStore((s) => s.activeCueId);
   const masterVolume = useTransportStore((s) => s.masterVolume);
@@ -124,8 +125,7 @@ export function TransportBar() {
           px: 1.5,
           gap: 1,
           alignItems: "center",
-          borderRight: 1,
-          borderColor: "divider",
+          borderRight: panelEdgeBorder,
           "& .MuiButton-root": { flex: 1, minWidth: 0 },
         }}
       >

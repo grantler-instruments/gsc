@@ -1,5 +1,9 @@
 import { remoteBroadcast } from "../platform/remote-server";
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import {
+  getActiveCueListFromState,
+  getMainSequenceListFromState,
+  useProjectStore,
+} from "../stores/project";
 import { patchActiveList } from "../stores/project/helpers";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
@@ -43,7 +47,8 @@ export async function broadcastRemoteSnapshot(): Promise<void> {
 export function handleRemoteHostCommand(command: RemoteHostCommand): void {
   switch (command.action) {
     case "go-selected": {
-      const list = getActiveCueListFromState(useProjectStore.getState());
+      const list = getMainSequenceListFromState(useProjectStore.getState());
+      if (!list) break;
       const selectedCueId = getPrimarySelectedCueId(list.selectedCueIds);
       const targetId = selectedCueId ?? list.cues.find((c) => !c.parentId)?.id;
       const target = list.cues.find((c) => c.id === targetId);

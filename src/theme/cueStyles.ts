@@ -84,6 +84,64 @@ function accentRowTint(
 export const FADE_TARGET_ROW_FLASH_SEC = 2;
 export const FADE_TARGET_NUMBER_BLINK_SEC = 2.2;
 
+export interface HotCuePadTargetState {
+  tokens: GscTokenSet;
+  pulseAsStopTarget: boolean;
+  staticAsStopTarget: boolean;
+  highlightAsFadeTarget: boolean;
+}
+
+/** Stop/fade target highlight for hot-cue pads (mirrors cue list row cues). */
+export function hotCuePadTargetSx(state: HotCuePadTargetState): SxProps<Theme> {
+  const { tokens } = state;
+
+  return {
+    ...(state.pulseAsStopTarget && {
+      "@keyframes hotCueStopTargetPulse": {
+        "0%, 100%": {
+          boxShadow: "inset 0 0 0 2px rgba(232, 138, 138, 0.35)",
+        },
+        "50%": {
+          boxShadow: "inset 0 0 0 2px rgba(232, 138, 138, 0.7)",
+        },
+      },
+      animation: "hotCueStopTargetPulse 3s ease-in-out infinite",
+      "@media (prefers-reduced-motion: reduce)": {
+        animation: "none",
+        boxShadow: "inset 0 0 0 2px #e88a8a",
+      },
+    }),
+    ...(state.staticAsStopTarget && {
+      boxShadow: "inset 0 0 0 2px rgba(232, 138, 138, 0.65)",
+    }),
+    ...(state.highlightAsFadeTarget && {
+      "@keyframes hotCueFadeTargetFlash": {
+        "0%": {
+          filter: "brightness(1)",
+          bgcolor: "background.paper",
+          boxShadow: "none",
+        },
+        "40%": {
+          filter: "brightness(1.18)",
+          bgcolor: `color-mix(in srgb, ${tokens.accent} 22%, var(--bg-elevated))`,
+          boxShadow: `inset 0 0 0 2px color-mix(in srgb, ${tokens.accent} 70%, transparent)`,
+        },
+        "100%": {
+          filter: "brightness(1)",
+          bgcolor: "background.paper",
+          boxShadow: "none",
+        },
+      },
+      animation: `hotCueFadeTargetFlash ${FADE_TARGET_ROW_FLASH_SEC}s ease-in-out 1`,
+      "@media (prefers-reduced-motion: reduce)": {
+        animation: "none",
+        bgcolor: `color-mix(in srgb, ${tokens.accent} 12%, var(--bg-elevated))`,
+        boxShadow: `inset 0 0 0 2px color-mix(in srgb, ${tokens.accent} 55%, transparent)`,
+      },
+    }),
+  };
+}
+
 export interface CueRowStyleState {
   tokens: GscTokenSet;
   selected: boolean;

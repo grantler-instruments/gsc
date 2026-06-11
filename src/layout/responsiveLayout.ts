@@ -5,6 +5,9 @@ import { SIDEBAR_WIDTH } from "../types/sidebar";
 /** Viewports below this MUI breakpoint (xs + sm) use compact sidebar layout. */
 export const compactLayoutBreakpoint = "md" as const;
 
+/** Panel edge stroke using design tokens (avoids MUI border shorthand color bugs). */
+export const panelEdgeBorder = "1px solid var(--border)";
+
 export const compactSidebarShellSx: SxProps<Theme> = {
   width: { xs: "100%", [compactLayoutBreakpoint]: SIDEBAR_WIDTH },
   flex: { xs: 1, [compactLayoutBreakpoint]: "0 0 auto" },
@@ -66,7 +69,6 @@ const HOT_PANEL_HEIGHT = 260;
 
 /** Hot-cue cart panel — preferred size with flex shrink when space is tight. */
 export function hotCuePanelShellSx(orientation: "right" | "bottom"): SxProps<Theme> {
-  const edgeBorder = "1px solid var(--border)";
   return {
     display: "flex",
     flexDirection: "column",
@@ -80,14 +82,14 @@ export function hotCuePanelShellSx(orientation: "right" | "bottom"): SxProps<The
           maxWidth: "40%",
           minWidth: 200,
           minHeight: 0,
-          borderLeft: edgeBorder,
+          borderLeft: panelEdgeBorder,
         }
       : {
           flex: `0 1 ${HOT_PANEL_HEIGHT}px`,
           maxHeight: "45%",
           minHeight: 120,
           minWidth: 0,
-          borderTop: edgeBorder,
+          borderTop: panelEdgeBorder,
         }),
   };
 }

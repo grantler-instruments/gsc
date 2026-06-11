@@ -30,6 +30,8 @@ interface UiState {
   compactInspectorDrawerDismissed: boolean;
   /** Where the hot-cue panel sits relative to the main cue list (desktop). */
   hotCuePanelOrientation: HotCuePanelOrientation;
+  /** When false, the hot-cue panel is hidden in the cue workspace. */
+  hotCuePanelVisible: boolean;
   setSidebarTab: (tab: SidebarTabId) => void;
   setRightSidebarTab: (tab: RightSidebarTabId) => void;
   setDarkMode: (dark: boolean) => void;
@@ -45,6 +47,8 @@ interface UiState {
   setCompactInspectorDrawerDismissed: (dismissed: boolean) => void;
   setHotCuePanelOrientation: (orientation: HotCuePanelOrientation) => void;
   toggleHotCuePanelOrientation: () => void;
+  setHotCuePanelVisible: (visible: boolean) => void;
+  toggleHotCuePanelVisible: () => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -64,6 +68,7 @@ export const useUiStore = create<UiState>()(
         compactInspectorDrawerOpen: false,
         compactInspectorDrawerDismissed: true,
         hotCuePanelOrientation: "right",
+        hotCuePanelVisible: true,
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
         setRightSidebarTab: (rightSidebarTab) => set({ rightSidebarTab }),
         setDarkMode: (darkMode) => set({ darkMode }),
@@ -106,6 +111,9 @@ export const useUiStore = create<UiState>()(
           set((s) => ({
             hotCuePanelOrientation: s.hotCuePanelOrientation === "right" ? "bottom" : "right",
           })),
+        setHotCuePanelVisible: (hotCuePanelVisible) => set({ hotCuePanelVisible }),
+        toggleHotCuePanelVisible: () =>
+          set((s) => ({ hotCuePanelVisible: !s.hotCuePanelVisible })),
       }),
       {
         name: "gsc-ui",
@@ -114,6 +122,7 @@ export const useUiStore = create<UiState>()(
           rightSidebarTab: s.rightSidebarTab,
           darkMode: s.darkMode,
           hotCuePanelOrientation: s.hotCuePanelOrientation,
+          hotCuePanelVisible: s.hotCuePanelVisible,
         }),
       },
     ),

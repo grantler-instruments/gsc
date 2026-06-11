@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createCueList } from "../lib/cue-lists";
 import { useFadeStore } from "../stores/fade";
-import { useProjectStore } from "../stores/project";
+import { getMainSequenceListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
 import { resetTestProject, testCue } from "../test/fixtures/cues";
@@ -152,17 +152,25 @@ describe("triggerGoSelected", () => {
     expect(activeListSelection()).toEqual([]);
   });
 
-  it("fires as an overlay (no advance) when the active list is hot", () => {
+  it("GOs the main sequence list when edit focus is on a hot list", () => {
+    resetTestProject([testCue("a", "A", "audio"), testCue("b", "B", "audio")]);
+    const main = useProjectStore.getState().cueLists[0];
     const hot = createCueList("Hot", "hot");
-    hot.cues = [testCue("h1", "Sting", "audio"), testCue("h2", "Stab", "audio")];
-    useProjectStore.setState({ cueLists: [hot], activeCueListId: hot.id });
+    hot.cues = [testCue("h1", "Sting", "audio")];
+    useProjectStore.setState({
+      cueLists: [main, hot],
+      activeCueListId: hot.id,
+      mainSequenceListId: main.id,
+      activeHotCueListId: hot.id,
+    });
     useProjectStore.getState().selectCue("h1");
+    useProjectStore.getState().selectCueInList(main.id, "a");
 
     triggerGoSelected();
 
-    expect(useTransportStore.getState().activeCueIds).toEqual(["h1"]);
-    // Selection stays put — hot GO does not advance.
+    expect(useTransportStore.getState().activeCueIds).toEqual(["a"]);
     expect(activeListSelection()).toEqual(["h1"]);
+    expect(getMainSequenceListFromState(useProjectStore.getState())?.selectedCueIds).toEqual(["b"]);
   });
 
   it("targets the first top-level cue, not a nested child, when nothing is selected", () => {

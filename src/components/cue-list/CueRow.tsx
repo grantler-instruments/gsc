@@ -117,6 +117,7 @@ export const CueRow = memo(function CueRow({
   const tokens = useGscTokens();
   const {
     canEdit,
+    listId,
     allCues,
     runningSequences,
     onGo,
@@ -180,6 +181,7 @@ export const CueRow = memo(function CueRow({
 
   const { dropActive, insertPlace, onDragOver, onDragLeave, onDrop } = useCueRowDrop({
     cue,
+    listId,
     allCues,
     canEdit,
     onCueDrop: (draggedId) => onCueDrop(draggedId, cue.id),

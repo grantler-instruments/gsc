@@ -1,6 +1,7 @@
 export {
   findProjectCue,
   getActiveCueListFromState,
+  getMainSequenceListFromState,
   useActiveCueList,
   useActiveHotCueList,
   useMainSequenceList,

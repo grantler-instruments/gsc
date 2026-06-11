@@ -1,4 +1,5 @@
 import type { CueList } from "../../lib/cue-lists";
+import type { CueListInsertPlace } from "../../lib/cue-list-move";
 import type {
   Cue,
   CueListKind,
@@ -56,10 +57,14 @@ export interface ProjectState {
   addFadeCueForTarget: (targetId: string, fadeType: FadeCueType) => Cue | null;
   updateCue: (id: string, patch: Partial<Cue>) => void;
   removeCue: (id: string) => void;
+  removeCueFromList: (listId: string, id: string) => void;
   moveCueToGroup: (cueId: string, groupId: string | null) => void;
+  moveCueToList: (cueId: string, targetListId: string, place: CueListInsertPlace) => void;
   addSelectedCueToGroup: (groupId: string) => void;
   reorderCueRelative: (draggedId: string, targetId: string, place: "before" | "after") => void;
   selectCue: (id: string | null) => void;
+  /** Select a cue in a specific list without changing edit focus. */
+  selectCueInList: (listId: string, id: string | null) => void;
   toggleSelectCue: (id: string) => void;
   selectCueRange: (id: string, visibleOrder: string[]) => void;
   groupSelectedCues: () => Cue | null;

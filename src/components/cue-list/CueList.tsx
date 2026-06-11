@@ -15,6 +15,7 @@ import { CueContextMenu } from "../CueContextMenu";
 import { CueListTabs } from "../CueListTabs";
 import { FixturePlotMonitor } from "../FixturePlotMonitor";
 import { HotCueGrid } from "../hot-cues/HotCueGrid";
+import { HotCueVisibilityToggle } from "../hot-cues/HotCueVisibilityToggle";
 import { CueListBody } from "./CueListBody";
 import { CueListTree } from "./CueListTree";
 import { CueListActionsProvider } from "./cueListActionsContext";
@@ -67,7 +68,7 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
     selection.selectedCueIdSet,
   );
   const stopHighlights = useCueListStopHighlights(cues, selection.primarySelectedId);
-  const listDrop = useCueListDrop(canEdit);
+  const listDrop = useCueListDrop(canEdit, list.id);
 
   const tree = useMemo(() => buildCueTree(cues), [cues]);
 
@@ -84,7 +85,10 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
         overflow: "hidden",
         // Inspector border only when the list sits directly beside it (no hot panel in between).
         borderRight:
-          !listId && !compact && !showMode && getPrimarySelectedCueId(selection.selectedCueIds)
+          !compact &&
+          !showMode &&
+          getPrimarySelectedCueId(selection.selectedCueIds) &&
+          (!listId || !hotCuePanelVisible)
             ? 1
             : 0,
         borderColor: "divider",
@@ -92,10 +96,17 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
     >
       {fixturePlotExpanded && fixtures.length > 0 && <FixturePlotMonitor expanded />}
 
-      <CueListTabs kind={tabsKind} activeListId={listId} />
+      <CueListTabs
+        kind={tabsKind}
+        activeListId={listId}
+        trailing={
+          listId && tabsKind === "sequence" ? <HotCueVisibilityToggle /> : undefined
+        }
+      />
 
       <CueListActionsProvider
         canEdit={canEdit}
+        listId={list.id}
         allCues={cues}
         runningSequences={runningSequences}
         hot={isHotList}

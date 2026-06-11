@@ -19,7 +19,7 @@ import { createSelectionActions } from "./selection-actions";
 import { createSnapshotActions } from "./snapshot-actions";
 import type { ProjectState } from "./types";
 
-export { getActiveCueListFromState } from "./helpers";
+export { getActiveCueListFromState, getMainSequenceListFromState } from "./helpers";
 
 export const useProjectStore = create<ProjectState>()(
   devtools(
