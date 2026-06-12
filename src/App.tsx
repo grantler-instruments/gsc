@@ -3,6 +3,7 @@ import { AppSnackbar } from "./components/AppSnackbar";
 import { CompactInspectorDrawer } from "./components/CompactInspectorDrawer";
 import { CueInspector } from "./components/CueInspector";
 import { CueList } from "./components/CueList";
+import { DeleteStoredProjectDialog } from "./components/DeleteStoredProjectDialog";
 import { DmxPreviewConfirmDialog } from "./components/DmxPreviewConfirmDialog";
 import { LeftSidebar } from "./components/LeftSidebar";
 import { ProjectLoadingScreen } from "./components/ProjectLoadingScreen";
@@ -12,6 +13,7 @@ import { SettingsDialog } from "./components/SettingsDialog";
 import { StartupProjectsDialog } from "./components/StartupProjectsDialog";
 import { TransportBar } from "./components/TransportBar";
 import { UnsavedProjectDialog } from "./components/UnsavedProjectDialog";
+import { WebOpenProjectsDialog } from "./components/WebOpenProjectsDialog";
 import { useAppRuntime } from "./hooks/useAppRuntime";
 import { useCompactLayout } from "./hooks/useCompactLayout";
 import { getPrimarySelectedCueId } from "./lib/cue-selection";
@@ -37,6 +39,8 @@ function App() {
       <>
         {showProjectLoading && <ProjectLoadingScreen restoring={!sessionReady} />}
         <StartupProjectsDialog />
+        <WebOpenProjectsDialog />
+        <DeleteStoredProjectDialog />
         <UnsavedProjectDialog />
       </>
     );
@@ -92,6 +96,8 @@ function App() {
       <DmxPreviewConfirmDialog />
       <UnsavedProjectDialog />
       <StartupProjectsDialog />
+      <WebOpenProjectsDialog />
+      <DeleteStoredProjectDialog />
       <AppSnackbar />
     </Box>
   );

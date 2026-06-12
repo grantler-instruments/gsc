@@ -1,4 +1,5 @@
 import { notifyErrorFromUnknown } from "../lib/notifications";
+import type { IdbProjectSummary } from "../lib/project-idb";
 import type { RecentProjectEntry } from "../lib/recent-projects";
 import { getPlatform } from "./index";
 
@@ -6,6 +7,26 @@ export async function listRecentProjects(): Promise<RecentProjectEntry[]> {
   if (getPlatform() !== "tauri") return [];
   const { listValidRecentProjects } = await import("./project-storage.tauri");
   return listValidRecentProjects();
+}
+
+export async function listStoredWebProjects(): Promise<IdbProjectSummary[]> {
+  if (getPlatform() === "tauri") return [];
+  const { listStoredProjects } = await import("../lib/project-session");
+  return listStoredProjects();
+}
+
+export async function openStoredWebProject(projectId: string): Promise<boolean> {
+  if (getPlatform() === "tauri") return false;
+  const { withProjectLoading } = await import("../stores/project-loading");
+  const { openStoredWebProject: openStored } = await import("./project-storage.web");
+  return withProjectLoading(() => openStored(projectId));
+}
+
+export async function deleteStoredWebProject(projectId: string): Promise<boolean> {
+  if (getPlatform() === "tauri") return false;
+  const { withProjectLoading } = await import("../stores/project-loading");
+  const { deleteStoredWebProject: deleteStored } = await import("./project-storage.web");
+  return withProjectLoading(() => deleteStored(projectId));
 }
 
 export async function exportProjectBundle(): Promise<{ missing: string[] }> {

@@ -7,6 +7,7 @@
       "browse": "Durchsuchen…",
       "none": "Keine",
       "remove": "Entfernen",
+      "delete": "Löschen",
       "edit": "Bearbeiten",
       "done": "Fertig",
       "import": "Importieren",
@@ -88,7 +89,11 @@
     "installPwa": "PWA installieren…",
     "installPwaHint": "Browser-App installieren, nicht die Desktop-Version",
     "open": "Öffnen…",
-    "openWebHint": "{{extension}}-Datei importieren",
+    "openWebHint": "Gespeichertes Projekt wählen oder {{extension}} importieren",
+    "storedProjects": "Gespeicherte Projekte",
+    "lastOpened": "Geöffnet {{timestamp}}",
+    "deleteStoredProject": "{{projectName}} löschen",
+    "openWebEmpty": "Noch keine gespeicherten Projekte in diesem Browser. Importieren Sie eine {{extension}}-Datei, um zu beginnen.",
     "save": "Speichern",
     "saveChooseLocation": "Speicherort wählen…",
     "export": "Exportieren…",
@@ -221,7 +226,12 @@
   },
   "unsaved": {
     "title": "Änderungen speichern?",
-    "body": "Möchten Sie die Änderungen an \"{{projectName}}\" speichern, bevor Sie ein neues Projekt erstellen?"
+    "body": "Möchten Sie die Änderungen an \"{{projectName}}\" speichern, bevor Sie ein neues Projekt erstellen?",
+    "beforeDeleteBody": "Möchten Sie \"{{projectName}}\" speichern, bevor Sie es aus diesem Browser löschen?"
+  },
+  "deleteStoredProject": {
+    "title": "Gespeichertes Projekt löschen?",
+    "body": "\"{{projectName}}\" aus diesem Browser löschen? Dies kann nicht rückgängig gemacht werden. Exportieren Sie zuerst eine {{extension}}-Datei, wenn Sie ein Backup möchten."
   },
   "dmxPreview": {
     "title": "Vorschau-Änderungen behalten?",
@@ -537,6 +547,7 @@
     "assetReadFailed": "Asset konnte nicht gelesen werden: {{path}}",
     "exportMissingAssets": "Exportiert, aber {{count}} Asset(s) fehlten im Speicher.",
     "openProjectFailed": "Das gewählte Projekt konnte nicht geöffnet werden.",
+    "deleteProjectFailed": "Das gewählte Projekt konnte nicht gelöscht werden.",
     "restoreProjectFailed": "Das letzte Projekt konnte nicht wiederhergestellt werden.",
     "browserSaveFailed": "Projekt konnte nicht im Browser-Speicher gespeichert werden.",
     "autosaveFailed": "Projekt konnte nicht automatisch gespeichert werden.",

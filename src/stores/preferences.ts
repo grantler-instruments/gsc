@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { type SupportedLocale, setAppLocale } from "../i18n";
-import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx";
+import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx-defaults";
 import { getPlatform, type PlatformKind } from "../platform";
 import {
   DEFAULT_NDI_OUTPUT_FPS,

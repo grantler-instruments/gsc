@@ -7,6 +7,7 @@
       "browse": "浏览…",
       "none": "无",
       "remove": "移除",
+      "delete": "删除",
       "edit": "编辑",
       "done": "完成",
       "import": "导入",
@@ -88,7 +89,11 @@
     "installPwa": "安装 PWA…",
     "installPwaHint": "安装浏览器应用，而非桌面版",
     "open": "打开…",
-    "openWebHint": "导入 {{extension}} 文件",
+    "openWebHint": "选择已保存的项目或导入 {{extension}}",
+    "storedProjects": "已保存的项目",
+    "lastOpened": "打开于 {{timestamp}}",
+    "deleteStoredProject": "删除 {{projectName}}",
+    "openWebEmpty": "此浏览器中尚无已保存的项目。导入 {{extension}} 文件以开始。",
     "save": "保存",
     "saveChooseLocation": "选择位置…",
     "export": "导出…",
@@ -221,7 +226,12 @@
   },
   "unsaved": {
     "title": "保存更改？",
-    "body": "创建新项目前，是否保存对「{{projectName}}」的更改？"
+    "body": "创建新项目前，是否保存对「{{projectName}}」的更改？",
+    "beforeDeleteBody": "从本浏览器删除前，是否保存「{{projectName}}」？"
+  },
+  "deleteStoredProject": {
+    "title": "删除已保存的项目？",
+    "body": "从本浏览器中删除「{{projectName}}」？此操作无法撤销。如需备份，请先导出 {{extension}} 文件。"
   },
   "dmxPreview": {
     "title": "保留预览更改？",
@@ -537,6 +547,7 @@
     "assetReadFailed": "无法读取资源：{{path}}",
     "exportMissingAssets": "已导出，但存储中缺少 {{count}} 个资源。",
     "openProjectFailed": "无法打开所选项目。",
+    "deleteProjectFailed": "无法删除所选项目。",
     "restoreProjectFailed": "无法恢复上次项目。",
     "browserSaveFailed": "无法将项目保存到浏览器存储。",
     "autosaveFailed": "无法自动保存项目。",

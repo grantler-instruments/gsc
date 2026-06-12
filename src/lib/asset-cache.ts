@@ -134,6 +134,13 @@ export async function getCachedAsset(projectId: string, path: string): Promise<B
   return undefined;
 }
 
+export async function removeAllCachedAssetsForProject(
+  projectId: string,
+  paths: string[],
+): Promise<void> {
+  await Promise.all(paths.map((path) => removeCachedAsset(projectId, path)));
+}
+
 export async function removeCachedAsset(projectId: string, path: string): Promise<void> {
   try {
     await initProjectIdb();

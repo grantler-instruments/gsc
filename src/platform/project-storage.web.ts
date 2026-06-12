@@ -8,8 +8,14 @@ import {
   parseProjectBundleZip,
 } from "../lib/project-bundle";
 import { replaceProjectWithoutHistory } from "../lib/project-history";
+import { idbTouchProjectOpened } from "../lib/project-idb";
 import { BUNDLE_EXTENSION } from "../lib/project-paths";
-import { collectSessionAssetPaths, persistProjectSessionAsync } from "../lib/project-session";
+import {
+  collectSessionAssetPaths,
+  deleteStoredProject,
+  openStoredProject,
+  persistProjectSessionAsync,
+} from "../lib/project-session";
 import { snapshotToCueLists } from "../lib/project-snapshot";
 import { useProjectStore } from "../stores/project";
 import { useProjectLoadingStore } from "../stores/project-loading";
@@ -43,6 +49,14 @@ export async function exportProjectBundleWeb(): Promise<{ missing: string[] }> {
   URL.revokeObjectURL(url);
 
   return { missing };
+}
+
+export async function openStoredWebProject(projectId: string): Promise<boolean> {
+  return openStoredProject(projectId);
+}
+
+export async function deleteStoredWebProject(projectId: string): Promise<boolean> {
+  return deleteStoredProject(projectId);
 }
 
 export async function importProjectBundleWeb(file: File): Promise<void> {
@@ -106,4 +120,5 @@ export async function importProjectBundleWeb(file: File): Promise<void> {
   });
 
   await persistProjectSessionAsync();
+  await idbTouchProjectOpened(loaded.id);
 }

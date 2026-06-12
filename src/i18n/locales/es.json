@@ -7,6 +7,7 @@
       "browse": "Examinar…",
       "none": "Ninguno",
       "remove": "Eliminar",
+      "delete": "Eliminar",
       "edit": "Editar",
       "done": "Listo",
       "import": "Importar",
@@ -88,7 +89,11 @@
     "installPwa": "Instalar PWA…",
     "installPwaHint": "Instalar la app del navegador, no la descarga de escritorio",
     "open": "Abrir…",
-    "openWebHint": "Importar un archivo {{extension}}",
+    "openWebHint": "Elegir un proyecto guardado o importar {{extension}}",
+    "storedProjects": "Proyectos guardados",
+    "lastOpened": "Abierto {{timestamp}}",
+    "deleteStoredProject": "Eliminar {{projectName}}",
+    "openWebEmpty": "Aún no hay proyectos guardados en este navegador. Importe un archivo {{extension}} para empezar.",
     "save": "Guardar",
     "saveChooseLocation": "Elegir ubicación…",
     "export": "Exportar…",
@@ -221,7 +226,12 @@
   },
   "unsaved": {
     "title": "¿Guardar cambios?",
-    "body": "¿Desea guardar los cambios realizados en \"{{projectName}}\" antes de crear un proyecto nuevo?"
+    "body": "¿Desea guardar los cambios realizados en \"{{projectName}}\" antes de crear un proyecto nuevo?",
+    "beforeDeleteBody": "¿Desea guardar \"{{projectName}}\" antes de eliminarlo de este navegador?"
+  },
+  "deleteStoredProject": {
+    "title": "¿Eliminar proyecto guardado?",
+    "body": "¿Eliminar \"{{projectName}}\" de este navegador? Esto no se puede deshacer. Exporte un archivo {{extension}} primero si desea una copia de seguridad."
   },
   "dmxPreview": {
     "title": "¿Mantener cambios de vista previa?",
@@ -537,6 +547,7 @@
     "assetReadFailed": "No se pudo leer el asset: {{path}}",
     "exportMissingAssets": "Exportado, pero faltaban {{count}} asset(s) en el almacenamiento.",
     "openProjectFailed": "No se pudo abrir el proyecto seleccionado.",
+    "deleteProjectFailed": "No se pudo eliminar el proyecto seleccionado.",
     "restoreProjectFailed": "No se pudo restaurar el último proyecto.",
     "browserSaveFailed": "No se pudo guardar el proyecto en el almacenamiento del navegador.",
     "autosaveFailed": "No se pudo autoguardar el proyecto.",

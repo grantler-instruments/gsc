@@ -7,6 +7,7 @@
       "browse": "Browse…",
       "none": "None",
       "remove": "Remove",
+      "delete": "Delete",
       "edit": "Edit",
       "done": "Done",
       "import": "Import",
@@ -88,7 +89,11 @@
     "installPwa": "Install PWA…",
     "installPwaHint": "Install the browser app, not the desktop download",
     "open": "Open…",
-    "openWebHint": "Import a {{extension}} file",
+    "openWebHint": "Choose a saved project or import {{extension}}",
+    "storedProjects": "Saved projects",
+    "lastOpened": "Opened {{timestamp}}",
+    "deleteStoredProject": "Delete {{projectName}}",
+    "openWebEmpty": "No saved projects in this browser yet. Import a {{extension}} file to get started.",
     "save": "Save",
     "saveChooseLocation": "Choose location…",
     "export": "Export…",
@@ -250,7 +255,12 @@
   },
   "unsaved": {
     "title": "Save changes?",
-    "body": "Do you want to save the changes you made to \"{{projectName}}\" before creating a new project?"
+    "body": "Do you want to save the changes you made to \"{{projectName}}\" before creating a new project?",
+    "beforeDeleteBody": "Do you want to save \"{{projectName}}\" before deleting it from this browser?"
+  },
+  "deleteStoredProject": {
+    "title": "Delete saved project?",
+    "body": "Delete \"{{projectName}}\" from this browser? This cannot be undone. Export a {{extension}} file first if you want a backup."
   },
   "dmxPreview": {
     "title": "Keep preview changes?",
@@ -566,6 +576,7 @@
     "assetReadFailed": "Could not read asset: {{path}}",
     "exportMissingAssets": "Exported, but {{count}} asset(s) were missing from storage.",
     "openProjectFailed": "Could not open the selected project.",
+    "deleteProjectFailed": "Could not delete the selected project.",
     "restoreProjectFailed": "Could not restore the last project.",
     "browserSaveFailed": "Could not save the project to browser storage.",
     "autosaveFailed": "Could not autosave the project.",
