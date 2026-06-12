@@ -22,11 +22,17 @@ export async function pressTransportGo(page: Page): Promise<void> {
   await page.keyboard.press("Space");
 }
 
+/** Stop all playback via the Escape shortcut (same as the transport Panic button). */
+export async function pressPanic(page: Page): Promise<void> {
+  await page.keyboard.press("Escape");
+}
+
+export function activeCuesEmptyMessage(page: Page) {
+  return activeCuesPanel(page).getByText("No active cues. Press GO to run the selected cue.");
+}
+
 /** Wait until the active-cue progress bar advances. */
-export async function expectPlaybackProgressToAdvance(
-  page: Page,
-  cueName: string,
-): Promise<void> {
+export async function expectPlaybackProgressToAdvance(page: Page, cueName: string): Promise<void> {
   const progress = activeCueRow(page, cueName).getByRole("progressbar");
 
   await expect(progress).toBeVisible();
