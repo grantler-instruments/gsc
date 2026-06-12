@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "test:e2e": "cross-env PLAYWRIGHT_BROWSERS_PATH=0 playwright test",
     "test:e2e:install": "cross-env PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium",
-    "test:e2e:fixtures": "node e2e/fixtures/generate-audio-fixtures.mjs",
+    "test:e2e:fixtures": "node e2e/fixtures/generate-audio-fixtures.mjs && node e2e/fixtures/generate-video-fixtures.mjs",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "icons": "vite-node --script scripts/sync-favicon.ts",

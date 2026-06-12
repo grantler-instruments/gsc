@@ -19,6 +19,11 @@ const MIME_BY_EXT: Record<string, string> = {
   flac: "audio/flac",
   aiff: "audio/aiff",
   aif: "audio/aiff",
+  mp4: "video/mp4",
+  webm: "video/webm",
+  mov: "video/quicktime",
+  mkv: "video/x-matroska",
+  m4v: "video/mp4",
 };
 
 export function fixturePath(fileName: string): string {
@@ -32,7 +37,12 @@ export function mimeTypeForFileName(fileName: string): string {
 
 export type AudioDropTarget = "cue-list" | "hot-cue-panel";
 
-async function createAudioDataTransfer(page: Page, bytes: Buffer, fileName: string, mimeType: string) {
+async function createAudioDataTransfer(
+  page: Page,
+  bytes: Buffer,
+  fileName: string,
+  mimeType: string,
+) {
   return page.evaluateHandle(
     (data) => {
       const dt = new DataTransfer();
@@ -71,9 +81,12 @@ export async function dropAudioFile(
   const dropZone =
     (await emptyDropZone.count()) > 0
       ? emptyDropZone
-      : hotPanel.locator("div").filter({
-          has: page.locator('button:has-text("GO")'),
-        }).first();
+      : hotPanel
+          .locator("div")
+          .filter({
+            has: page.locator('button:has-text("GO")'),
+          })
+          .first();
 
   await dropZone.dispatchEvent("dragover", { dataTransfer });
   await dropZone.dispatchEvent("drop", { dataTransfer });
