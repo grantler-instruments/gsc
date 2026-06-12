@@ -545,6 +545,7 @@
   "playback": {
     "inPointAria": "In point",
     "outPointAria": "Out point",
+    "seekAria": "Seek playback position",
     "progressAria": "Playback {{time}}{{loopPart}}",
     "loopIteration": "Loop iteration {{number}}",
     "loopOfTotal": "Loop {{current}} of {{total}}",

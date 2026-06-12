@@ -513,6 +513,7 @@
   "playback": {
     "inPointAria": "Punto in",
     "outPointAria": "Punto out",
+    "seekAria": "Buscar posición de reproducción",
     "progressAria": "Reproducción {{time}}{{loopPart}}",
     "loopIteration": "Iteración de bucle {{number}}",
     "loopOfTotal": "Bucle {{current}} de {{total}}",

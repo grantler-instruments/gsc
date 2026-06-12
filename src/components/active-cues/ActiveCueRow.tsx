@@ -24,6 +24,7 @@ import {
 } from "../../stores/fade";
 import { usePlaybackStore } from "../../stores/playback";
 import { useProjectStore } from "../../stores/project";
+import { useTransportStore } from "../../stores/transport";
 import { useGscTokens } from "../../theme/useGscTokens";
 import type { Cue } from "../../types/cue";
 import { AudioWaveform } from "../AudioWaveform";
@@ -52,6 +53,7 @@ export const ActiveCueRow = memo(function ActiveCueRow({
   const updateCue = useProjectStore((s) => s.updateCue);
   const clearFade = useFadeStore((s) => s.clearFade);
   const playback = usePlaybackStore((s) => s.byCueId[cue.id]);
+  const seekCue = useTransportStore((s) => s.seekCue);
   const fadeProperty = useFadeStore((s) => s.fadesByTargetId[cue.id]?.property);
   const fadeFrameMs = useFadeStore((s) => (cue.id in s.fadesByTargetId ? s.frameMs : 0));
   const lightFadeProgress = useDmxFadeCueProgress(cue.id);
@@ -130,14 +132,22 @@ export const ActiveCueRow = memo(function ActiveCueRow({
             {formatDmxCue(lightFadeEndDmx, fixtures)}
           </Typography>
         )}
-        {cue.type === "audio" && cue.assetPath && (
-          <Box sx={{ mt: 0.5 }}>
+        {(cue.type === "audio" || cue.type === "video") && cue.assetPath && (
+          <Box
+            sx={{ mt: 0.5 }}
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
             <AudioWaveform
               assetPath={cue.assetPath}
               inTime={cue.inTime}
               outTime={cue.outTime}
               positionSec={playback?.positionSec}
-              height={36}
+              height={cue.type === "video" ? 48 : 36}
+              mediaKind={cue.type === "video" ? "video" : "audio"}
+              hoverPreview={cue.type === "video"}
+              seekable={!!playback}
+              onSeek={(positionSec) => seekCue(cue.id, positionSec)}
             />
           </Box>
         )}

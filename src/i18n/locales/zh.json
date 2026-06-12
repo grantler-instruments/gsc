@@ -513,6 +513,7 @@
   "playback": {
     "inPointAria": "入点",
     "outPointAria": "出点",
+    "seekAria": "拖动定位播放位置",
     "progressAria": "播放 {{time}}{{loopPart}}",
     "loopIteration": "循环第 {{number}} 次",
     "loopOfTotal": "循环 {{current}}/{{total}}",

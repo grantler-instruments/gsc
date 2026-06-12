@@ -36,6 +36,11 @@ export const waveformScrubSx = {
   cursor: "crosshair",
 };
 
+export const waveformSeekableSx = {
+  cursor: "pointer",
+  touchAction: "none",
+};
+
 export const waveformDraggingSx = {
   userSelect: "none",
   "& [data-waveform-handle]::before": {

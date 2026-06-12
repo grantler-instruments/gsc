@@ -162,6 +162,20 @@ export function startVideoVoice(
   return voice;
 }
 
+export function seekVideoVoice(voice: VideoVoice, cue: Cue, goAtMs: number): void {
+  voice.goAtMs = goAtMs;
+  voice.loopIteration = 0;
+
+  if (!Number.isFinite(voice.video.duration)) return;
+
+  const target = videoTargetTime(cue, voice.video.duration, goAtMs);
+  try {
+    voice.video.currentTime = target;
+  } catch {
+    /* not seekable yet */
+  }
+}
+
 export function updateVideoVoiceLevels(voice: VideoVoice, cue: Cue, masterVolume: number): void {
   voice.gain.gain.value =
     clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) * clamp01(masterVolume);

@@ -515,6 +515,7 @@
   "playback": {
     "inPointAria": "In-Punkt",
     "outPointAria": "Out-Punkt",
+    "seekAria": "Wiedergabeposition suchen",
     "progressAria": "Wiedergabe {{time}}{{loopPart}}",
     "loopIteration": "Schleifendurchlauf {{number}}",
     "loopOfTotal": "Schleife {{current}} von {{total}}",
