@@ -1,10 +1,10 @@
 import { t } from "../i18n/t";
-import { hydrateAllProjectAssets } from "./hydrate-project-assets";
 import { useProjectStore } from "../stores/project";
 import { useVfsStore } from "../stores/vfs";
 import type { ProjectSnapshot } from "../types/cue";
 import { flushPendingAssetCacheWrites, vfsClear } from "../vfs/engine";
 import { setActiveProjectId } from "./active-project-id";
+import { hydrateAllProjectAssets } from "./hydrate-project-assets";
 import { notifyWarningDeduped } from "./notifications";
 import { collectOflPaths } from "./ofl/import-ofl";
 import { replaceProjectWithoutHistory } from "./project-history";

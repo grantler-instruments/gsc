@@ -1,10 +1,10 @@
-import { prefetchMediaDurations } from "./media-duration";
-import { collectSessionAssetPaths } from "./project-session";
-import type { PersistedAssetEntry } from "./project-idb";
 import { useProjectStore } from "../stores/project";
 import { useVfsStore, type VfsEntry } from "../stores/vfs";
 import { hydrateVfsFromProjectCache, vfsGet, vfsHas } from "../vfs/engine";
 import { assetKindFromPath } from "../vfs/import";
+import { prefetchMediaDurations } from "./media-duration";
+import type { PersistedAssetEntry } from "./project-idb";
+import { collectSessionAssetPaths } from "./project-session";
 
 function mediaPaths(paths: string[]): string[] {
   return paths.filter((path) => {
@@ -13,10 +13,7 @@ function mediaPaths(paths: string[]): string[] {
   });
 }
 
-export function buildVfsEntries(
-  paths: string[],
-  metadata: PersistedAssetEntry[],
-): VfsEntry[] {
+export function buildVfsEntries(paths: string[], metadata: PersistedAssetEntry[]): VfsEntry[] {
   const metadataByPath = new Map(metadata.map((entry) => [entry.path, entry]));
   return paths
     .map((path) => {

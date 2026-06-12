@@ -5,18 +5,18 @@ import { CueInspector } from "./components/CueInspector";
 import { CueList } from "./components/CueList";
 import { DmxPreviewConfirmDialog } from "./components/DmxPreviewConfirmDialog";
 import { LeftSidebar } from "./components/LeftSidebar";
+import { ProjectLoadingScreen } from "./components/ProjectLoadingScreen";
 import { ProjectToolbar } from "./components/ProjectToolbar";
 import { RightSidebar } from "./components/RightSidebar";
 import { SettingsDialog } from "./components/SettingsDialog";
-import { ProjectLoadingScreen } from "./components/ProjectLoadingScreen";
 import { StartupProjectsDialog } from "./components/StartupProjectsDialog";
 import { TransportBar } from "./components/TransportBar";
 import { UnsavedProjectDialog } from "./components/UnsavedProjectDialog";
 import { useAppRuntime } from "./hooks/useAppRuntime";
-import { useProjectLoadingStore } from "./stores/project-loading";
 import { useCompactLayout } from "./hooks/useCompactLayout";
 import { getPrimarySelectedCueId } from "./lib/cue-selection";
 import { useActiveCueList, useProjectStore } from "./stores/project";
+import { useProjectLoadingStore } from "./stores/project-loading";
 import { useUiStore } from "./stores/ui";
 
 function App() {

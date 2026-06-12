@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { PLAYBACK_AUDIO_FIXTURES } from "./fixtures/playback-formats.mjs";
 
 test.describe.configure({ mode: "serial" });
+
 import {
   activeCueRow,
   activeCuesPanel,

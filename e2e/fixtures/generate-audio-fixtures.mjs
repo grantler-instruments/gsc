@@ -77,7 +77,9 @@ function runFfmpeg(inputPath, outputPath, extraArgs) {
   );
 
   if (result.status !== 0) {
-    throw new Error(`ffmpeg failed for ${path.basename(outputPath)} (exit ${result.status ?? "unknown"})`);
+    throw new Error(
+      `ffmpeg failed for ${path.basename(outputPath)} (exit ${result.status ?? "unknown"})`,
+    );
   }
 
   console.log(`Wrote ${path.basename(outputPath)}`);

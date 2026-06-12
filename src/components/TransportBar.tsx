@@ -6,6 +6,8 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useCompactLayout } from "../hooks/useCompactLayout";
+import { compactLayoutBreakpoint } from "../layout/responsiveLayout";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
 import { getCueDisplayName } from "../lib/cues";
 import {
@@ -19,8 +21,6 @@ import { isRemoteClient } from "../platform/remote-mode";
 import { findProjectCue, useActiveCueList, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
-import { useCompactLayout } from "../hooks/useCompactLayout";
-import { compactLayoutBreakpoint } from "../layout/responsiveLayout";
 import { SIDEBAR_WIDTH } from "../types/sidebar";
 import { CueTypeBadge } from "./CueTypeIcon";
 import { TransportCueThumbnail } from "./TransportCueThumbnail";

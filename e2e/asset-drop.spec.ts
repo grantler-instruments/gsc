@@ -4,7 +4,9 @@ import { expectCueInSequenceList, sequenceCueListPanel } from "./helpers/cue-lis
 import { dropAudioOnCueList, fixturePath } from "./helpers/drop-audio";
 
 for (const { fileName, mimeType } of IMPORT_AUDIO_FIXTURES) {
-  test(`dropping ${fileName} onto the cue list creates an audio cue and asset`, async ({ page }) => {
+  test(`dropping ${fileName} onto the cue list creates an audio cue and asset`, async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("./");
 

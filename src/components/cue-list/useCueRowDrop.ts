@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from "react";
-import { useClearOnDragEnd } from "./useClearOnDragEnd";
 import {
   applyAssetPayloads,
   isExternalFileDrag,
@@ -15,6 +14,7 @@ import {
   setActiveCueDrag,
 } from "../../lib/drag";
 import type { Cue } from "../../types/cue";
+import { useClearOnDragEnd } from "./useClearOnDragEnd";
 
 interface UseCueRowDropOptions {
   cue: Cue;
