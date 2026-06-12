@@ -36,7 +36,22 @@ function setCargoToml(version) {
   writeFileSync(path, contents.replace(/^version = ".*"$/m, `version = "${version}"`));
 }
 
+function setCargoLock(version) {
+  const path = join(root, "src-tauri", "Cargo.lock");
+  const contents = readFileSync(path, "utf8");
+  const match = contents.match(/^name = "gsc"\nversion = "(.*)"$/m);
+  if (!match) {
+    throw new Error("Could not find gsc package version in Cargo.lock");
+  }
+  if (match[1] === version) return;
+  writeFileSync(
+    path,
+    contents.replace(/^name = "gsc"\nversion = ".*"$/m, `name = "gsc"\nversion = "${version}"`),
+  );
+}
+
 const version = normalizeVersion(process.argv[2] ?? readVersion());
 setPackageJson(version);
 setCargoToml(version);
+setCargoLock(version);
 console.log(`Synced version to ${version}`);

@@ -1,7 +1,7 @@
 {
   "name": "gsc",
   "private": true,
-  "version": "0.0.7",
+  "version": "0.0.8",
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
@@ -19,7 +19,7 @@
     "lint:fix": "biome check --write .",
     "icons": "vite-node --script scripts/sync-favicon.ts",
     "version:sync": "node scripts/sync-version.mjs",
-    "postversion": "node scripts/sync-version.mjs",
+    "version": "node scripts/sync-version.mjs",
     "screenshots": "node scripts/screenshots/capture.mjs",
     "screenshots:serve": "node scripts/screenshots/capture.mjs --serve",
     "tauri": "tauri",
