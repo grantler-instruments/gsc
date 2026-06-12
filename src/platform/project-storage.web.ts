@@ -12,6 +12,7 @@ import { BUNDLE_EXTENSION } from "../lib/project-paths";
 import { collectSessionAssetPaths, persistProjectSessionAsync } from "../lib/project-session";
 import { snapshotToCueLists } from "../lib/project-snapshot";
 import { useProjectStore } from "../stores/project";
+import { useProjectLoadingStore } from "../stores/project-loading";
 import { useVfsStore } from "../stores/vfs";
 import { vfsClear, vfsGet } from "../vfs/engine";
 import { assetKindFromPath } from "../vfs/import";
@@ -55,8 +56,6 @@ export async function importProjectBundleWeb(file: File): Promise<void> {
     useProjectStore.setState(loaded);
   });
 
-  hydrateVfsFromBundleAssets(assets);
-
   const assetMetadata = assets.map(({ path, data: bytes }) => {
     const name = path.split("/").pop() ?? path;
     const blob = new Blob([bytes]);
@@ -69,11 +68,32 @@ export async function importProjectBundleWeb(file: File): Promise<void> {
     };
   });
 
+  const paths = collectSessionAssetPaths(snapshot, assetMetadata);
+  const metadataByPath = new Map(assetMetadata.map((entry) => [entry.path, entry]));
+  const { initAssetProgress, setAssetStatus } = useProjectLoadingStore.getState();
+  initAssetProgress(
+    paths.map((path) => ({
+      path,
+      name: metadataByPath.get(path)?.name,
+    })),
+  );
+
+  const bundlePaths = new Set(assets.map((asset) => asset.path));
+  for (const { path, data: bytes } of assets) {
+    setAssetStatus(path, "loading");
+    hydrateVfsFromBundleAssets([{ path, data: bytes }]);
+    setAssetStatus(path, "loaded");
+  }
+  for (const path of paths) {
+    if (!bundlePaths.has(path)) {
+      setAssetStatus(path, "missing");
+    }
+  }
+
   await Promise.all(
     assets.map(({ path, data: bytes }) => cacheAsset(loaded.id, path, new Blob([bytes]))),
   );
 
-  const paths = collectSessionAssetPaths(snapshot, assetMetadata);
   prefetchMediaDurations(
     paths.filter((path) => {
       const kind = assetKindFromPath(path);

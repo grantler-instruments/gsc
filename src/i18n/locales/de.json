@@ -61,6 +61,11 @@
     "savingToHint": " · Speichern in {{folder}}",
     "restoringProject": "Projekt wird wiederhergestellt…",
     "loadingAssets": "Assets werden geladen…",
+    "assetLoadProgress": "{{loaded}} / {{total}} geladen",
+    "assetStatusLoaded": "Geladen",
+    "assetStatusMissing": "Fehlt",
+    "assetStatusLoading": "Wird geladen…",
+    "assetStatusPending": "Ausstehend",
     "metadata": {
       "title": "Show-Details",
       "name": "Name",

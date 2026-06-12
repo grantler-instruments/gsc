@@ -61,6 +61,11 @@
     "savingToHint": " · Saving to {{folder}}",
     "restoringProject": "Restoring project…",
     "loadingAssets": "Loading assets…",
+    "assetLoadProgress": "{{loaded}} / {{total}} loaded",
+    "assetStatusLoaded": "Loaded",
+    "assetStatusMissing": "Missing",
+    "assetStatusLoading": "Loading…",
+    "assetStatusPending": "Pending",
     "metadata": {
       "title": "Show details",
       "name": "Name",

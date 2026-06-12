@@ -17,11 +17,14 @@ import { useCompactLayout } from "./hooks/useCompactLayout";
 import { getPrimarySelectedCueId } from "./lib/cue-selection";
 import { useActiveCueList, useProjectStore } from "./stores/project";
 import { useProjectLoadingStore } from "./stores/project-loading";
+import { useStartupProjectsPromptStore } from "./stores/startup-projects-prompt";
 import { useUiStore } from "./stores/ui";
 
 function App() {
   const sessionReady = useAppRuntime();
   const projectLoading = useProjectLoadingStore((s) => s.active);
+  const startupDialogOpen = useStartupProjectsPromptStore((s) => s.open);
+  const showProjectLoading = (!sessionReady || projectLoading) && !startupDialogOpen;
   const compact = useCompactLayout();
   const showMode = useUiStore((s) => s.showMode);
   const fixtures = useProjectStore((s) => s.fixtures);
@@ -32,7 +35,7 @@ function App() {
   if (!sessionReady || projectLoading) {
     return (
       <>
-        <ProjectLoadingScreen restoring={!sessionReady} />
+        {showProjectLoading && <ProjectLoadingScreen restoring={!sessionReady} />}
         <StartupProjectsDialog />
         <UnsavedProjectDialog />
       </>

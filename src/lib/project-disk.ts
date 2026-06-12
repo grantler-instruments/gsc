@@ -38,15 +38,22 @@ export async function registerDiskAssetPaths(
   rootDir: string,
   paths: string[],
   pathExists: (diskPath: string) => Promise<boolean>,
+  options?: {
+    onPathStart?: (path: string) => void;
+    onPathComplete?: (path: string, loaded: boolean) => void;
+  },
 ): Promise<void> {
   const available: string[] = [];
   await Promise.all(
     paths.map(async (virtualPath) => {
       const normalized = normalizePath(virtualPath);
       const diskPath = diskPathForAsset(rootDir, normalized);
-      if (await pathExists(diskPath)) {
+      options?.onPathStart?.(normalized);
+      const existsOnDisk = await pathExists(diskPath);
+      if (existsOnDisk) {
         available.push(normalized);
       }
+      options?.onPathComplete?.(normalized, existsOnDisk);
     }),
   );
   vfsRegisterDiskPaths(available);

@@ -1,4 +1,5 @@
 import { useProjectStore } from "../stores/project";
+import { useProjectLoadingStore } from "../stores/project-loading";
 import { useVfsStore, type VfsEntry } from "../stores/vfs";
 import { hydrateVfsFromProjectCache, vfsGet, vfsHas } from "../vfs/engine";
 import { assetKindFromPath } from "../vfs/import";
@@ -32,6 +33,39 @@ export function buildVfsEntries(paths: string[], metadata: PersistedAssetEntry[]
     .sort((a, b) => a.path.localeCompare(b.path));
 }
 
+async function hydratePathsWithProgress(projectId: string, paths: string[]): Promise<void> {
+  const { setAssetStatus } = useProjectLoadingStore.getState();
+
+  await hydrateVfsFromProjectCache(projectId, paths, {
+    onPathStart: (path) => {
+      if (!vfsHas(path)) setAssetStatus(path, "loading");
+    },
+    onPathComplete: (path, loaded) => {
+      setAssetStatus(path, loaded ? "loaded" : "pending");
+    },
+  });
+
+  const stillMissing = paths.filter((path) => !vfsHas(path));
+  if (stillMissing.length > 0) {
+    const { resolveAssetBlob } = await import("../platform/vfs-asset");
+    await Promise.all(
+      stillMissing.map(async (path) => {
+        setAssetStatus(path, "loading");
+        const blob = await resolveAssetBlob(path);
+        setAssetStatus(path, blob ? "loaded" : "missing");
+      }),
+    );
+  }
+
+  for (const path of paths) {
+    if (vfsHas(path)) {
+      setAssetStatus(path, "loaded");
+    } else {
+      setAssetStatus(path, "missing");
+    }
+  }
+}
+
 /** Load every referenced asset from cache into the VFS and refresh the assets panel. */
 export async function hydrateAllProjectAssets(
   projectId: string,
@@ -41,13 +75,15 @@ export async function hydrateAllProjectAssets(
   if (snapshot.version !== 2) return;
 
   const paths = collectSessionAssetPaths(snapshot, assetMetadata);
-  await hydrateVfsFromProjectCache(projectId, paths);
+  const metadataByPath = new Map(assetMetadata.map((entry) => [entry.path, entry]));
+  useProjectLoadingStore.getState().initAssetProgress(
+    paths.map((path) => ({
+      path,
+      name: metadataByPath.get(path)?.name,
+    })),
+  );
 
-  const stillMissing = paths.filter((path) => !vfsHas(path));
-  if (stillMissing.length > 0) {
-    const { resolveAssetBlob } = await import("../platform/vfs-asset");
-    await Promise.all(stillMissing.map((path) => resolveAssetBlob(path)));
-  }
+  await hydratePathsWithProgress(projectId, paths);
 
   prefetchMediaDurations(mediaPaths(paths));
 

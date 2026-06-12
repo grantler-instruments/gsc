@@ -61,6 +61,11 @@
     "savingToHint": " · Guardando en {{folder}}",
     "restoringProject": "Restaurando proyecto…",
     "loadingAssets": "Cargando recursos…",
+    "assetLoadProgress": "{{loaded}} / {{total}} cargados",
+    "assetStatusLoaded": "Cargado",
+    "assetStatusMissing": "Falta",
+    "assetStatusLoading": "Cargando…",
+    "assetStatusPending": "Pendiente",
     "metadata": {
       "title": "Detalles del show",
       "name": "Nombre",

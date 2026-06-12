@@ -48,6 +48,7 @@ import {
 } from "../lib/recent-projects";
 import { hasMeaningfulProjectContent, snapshotHasMeaningfulContent } from "../lib/unsaved-project";
 import { useProjectStore } from "../stores/project";
+import { useProjectLoadingStore } from "../stores/project-loading";
 import { useProjectLocationStore } from "../stores/project-location";
 import type { PendingDraftProject } from "../stores/startup-projects-prompt";
 import { requestStartupProjectsChoice } from "../stores/startup-projects-prompt";
@@ -266,7 +267,16 @@ export async function loadProjectFromFolder(
   );
   const uniquePaths = [...new Set(paths)];
 
-  await registerDiskAssetPaths(rootDir, uniquePaths, async (diskPath) => exists(diskPath));
+  const { initAssetProgress, setAssetStatus } = useProjectLoadingStore.getState();
+  initAssetProgress(uniquePaths.map((path) => ({ path })));
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
+
+  await registerDiskAssetPaths(rootDir, uniquePaths, async (diskPath) => exists(diskPath), {
+    onPathStart: (path) => setAssetStatus(path, "loading"),
+    onPathComplete: (path, loaded) => setAssetStatus(path, loaded ? "loaded" : "missing"),
+  });
 
   useVfsStore.setState({ entries: vfsEntriesFromPaths(uniquePaths) });
   prefetchMediaDurations(
