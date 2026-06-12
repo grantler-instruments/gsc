@@ -1,0 +1,5 @@
+* text=auto
+
+# Keep Rust manifests LF on all platforms (Windows CI checks out with CRLF otherwise).
+src-tauri/Cargo.toml text eol=lf
+src-tauri/Cargo.lock text eol=lf
