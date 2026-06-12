@@ -16,6 +16,7 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LOCALE_LABELS, SUPPORTED_LOCALES, type SupportedLocale } from "../i18n";
+import { APP_VERSION } from "../lib/app-version";
 import {
   estimateStorage,
   formatStorageBytes,
@@ -260,6 +261,12 @@ export function SettingsDialog() {
                   ) : null}
                 </Box>
               ) : null}
+              <Box sx={inspectorFieldSx}>
+                <Typography sx={inspectorFieldLabelSx}>{t("settings.version")}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {APP_VERSION}
+                </Typography>
+              </Box>
             </Stack>
           ) : null}
 

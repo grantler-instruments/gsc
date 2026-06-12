@@ -109,7 +109,12 @@
     "funding": "Wenn Sie mehr tun möchten, hilft ein Kaffee dabei, Zeit für die Weiterentwicklung freizumachen.",
     "thanks": "Danke, dass Sie GSC nutzen.",
     "buyMeACoffeeAlt": "Buy Me a Coffee",
-    "buyMeACoffeeAria": "Dem Entwickler einen Kaffee spendieren (öffnet in neuem Tab)"
+    "buyMeACoffeeAria": "Dem Entwickler einen Kaffee spendieren (öffnet in neuem Tab)",
+    "version": "Version {{version}}"
+  },
+  "update": {
+    "available": "Version {{latest}} ist verfügbar (Sie haben {{current}}).",
+    "viewRelease": "Release ansehen"
   },
   "installPwa": {
     "title": "PWA installieren",
@@ -120,6 +125,7 @@
     "title": "Einstellungen",
     "navAria": "Einstellungskategorien",
     "categoryGeneral": "Allgemein",
+    "version": "Version",
     "categoryAudio": "Audio",
     "categoryVideo": "Video",
     "categoryDmx": "DMX",

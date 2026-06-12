@@ -111,6 +111,10 @@
     "buyMeACoffeeAlt": "Buy Me a Coffee",
     "buyMeACoffeeAria": "请开发者喝杯咖啡（在新标签页中打开）"
   },
+  "update": {
+    "available": "新版本 {{latest}} 已发布（当前为 {{current}}）。",
+    "viewRelease": "查看发布"
+  },
   "installPwa": {
     "title": "安装 PWA",
     "desktopBody": "请在浏览器地址栏查找安装图标，或在浏览器菜单中选择安装 GSC / 安装应用。",

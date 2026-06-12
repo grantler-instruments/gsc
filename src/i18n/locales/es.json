@@ -111,6 +111,10 @@
     "buyMeACoffeeAlt": "Buy Me a Coffee",
     "buyMeACoffeeAria": "Invitar al desarrollador a un café (se abre en una pestaña nueva)"
   },
+  "update": {
+    "available": "La versión {{latest}} está disponible (tienes la {{current}}).",
+    "viewRelease": "Ver release"
+  },
   "installPwa": {
     "title": "Instalar PWA",
     "desktopBody": "Busca el icono de instalación en la barra de direcciones, o elige Instalar GSC / Instalar app en el menú del navegador.",

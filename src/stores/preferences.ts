@@ -49,12 +49,17 @@ interface PreferencesState {
   ndiOutputFps: number;
   /** One-time hint that the GSC brand opens the file menu. */
   hasSeenFileMenuHint: boolean;
+  /** Remote version for which the update snackbar was dismissed. */
+  acknowledgedUpdateVersion: string | null;
+  /** App version that was running when the update snackbar was dismissed. */
+  acknowledgedUpdateAtVersion: string | null;
   setNdiOutputEnabled: (enabled: boolean) => void;
   setNdiSourceName: (name: string) => void;
   setNdiOutputWidth: (width: number) => void;
   setNdiOutputHeight: (height: number) => void;
   setNdiOutputFps: (fps: number) => void;
   markFileMenuHintSeen: () => void;
+  setAcknowledgedUpdateVersion: (version: string | null, atAppVersion?: string | null) => void;
   /** Desktop remote control HTTP/WebSocket port. */
   remotePort: number;
   /** Preferred remote PIN (6 digits). Empty means auto-generate on first start. */
@@ -84,6 +89,8 @@ export const usePreferencesStore = create<PreferencesState>()(
         ndiOutputHeight: DEFAULT_NDI_OUTPUT_HEIGHT,
         ndiOutputFps: DEFAULT_NDI_OUTPUT_FPS,
         hasSeenFileMenuHint: false,
+        acknowledgedUpdateVersion: null,
+        acknowledgedUpdateAtVersion: null,
         remotePort: 8766,
         remotePin: "",
         remoteAutoStart: false,
@@ -104,6 +111,11 @@ export const usePreferencesStore = create<PreferencesState>()(
         setNdiOutputHeight: (ndiOutputHeight) => set({ ndiOutputHeight }),
         setNdiOutputFps: (ndiOutputFps) => set({ ndiOutputFps }),
         markFileMenuHintSeen: () => set({ hasSeenFileMenuHint: true }),
+        setAcknowledgedUpdateVersion: (acknowledgedUpdateVersion, atAppVersion = null) =>
+          set({
+            acknowledgedUpdateVersion,
+            acknowledgedUpdateAtVersion: atAppVersion,
+          }),
         setRemotePort: (remotePort) => set({ remotePort }),
         setRemotePin: (remotePin) => set({ remotePin }),
         setRemoteAutoStart: (remoteAutoStart) => set({ remoteAutoStart }),
@@ -125,6 +137,8 @@ export const usePreferencesStore = create<PreferencesState>()(
           ndiOutputHeight: s.ndiOutputHeight,
           ndiOutputFps: s.ndiOutputFps,
           hasSeenFileMenuHint: s.hasSeenFileMenuHint,
+          acknowledgedUpdateVersion: s.acknowledgedUpdateVersion,
+          acknowledgedUpdateAtVersion: s.acknowledgedUpdateAtVersion,
           remotePort: s.remotePort,
           remotePin: s.remotePin,
           remoteAutoStart: s.remoteAutoStart,

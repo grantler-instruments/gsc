@@ -42,6 +42,7 @@ function App() {
         <WebOpenProjectsDialog />
         <DeleteStoredProjectDialog />
         <UnsavedProjectDialog />
+        <AppSnackbar />
       </>
     );
   }

@@ -109,7 +109,12 @@
     "funding": "If you want to go a step further, buying a coffee helps carve out time for development.",
     "thanks": "Thanks for using GSC.",
     "buyMeACoffeeAlt": "Buy Me a Coffee",
-    "buyMeACoffeeAria": "Buy the developer a coffee (opens in a new tab)"
+    "buyMeACoffeeAria": "Buy the developer a coffee (opens in a new tab)",
+    "version": "Version {{version}}"
+  },
+  "update": {
+    "available": "Version {{latest}} is available (you have {{current}}).",
+    "viewRelease": "View release"
   },
   "installPwa": {
     "title": "Install PWA",
@@ -120,6 +125,7 @@
     "title": "Settings",
     "navAria": "Settings categories",
     "categoryGeneral": "General",
+    "version": "Version",
     "categoryAudio": "Audio",
     "categoryVideo": "Video",
     "categoryDmx": "DMX",
@@ -175,6 +181,7 @@
     "pin": "PIN (6 digits)",
     "generatePin": "Generate",
     "autoStart": "Start remote automatically on launch",
+    "autoStartFailed": "Remote server could not start automatically",
     "start": "Start remote",
     "stop": "Stop remote",
     "pinLabel": "PIN",

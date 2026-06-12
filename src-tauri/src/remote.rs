@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use axum::body::Body;
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::extract::{Query, State};
-use axum::http::{header, StatusCode};
+use axum::http::{header, HeaderValue, StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
@@ -16,7 +16,6 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::{mpsc, oneshot};
 use tower_http::cors::{Any, CorsLayer};
-use tower_http::services::ServeDir;
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -255,7 +254,102 @@ async fn remote_asset_handler(
     response
 }
 
-fn remote_router(shared: ServerShared, dev_mode: bool, dist_path: PathBuf) -> Router {
+fn remote_ui_asset_key(path: &str) -> String {
+    let trimmed = path.trim().replace('\\', "/").trim_start_matches('/').to_string();
+    if trimmed.is_empty() || trimmed.ends_with('/') {
+        let dir = trimmed.trim_end_matches('/');
+        return if dir.is_empty() {
+            "app/index.html".to_string()
+        } else {
+            format!("{dir}/index.html")
+        };
+    }
+    if !trimmed.contains('.') {
+        return format!("{trimmed}/index.html");
+    }
+    trimmed
+}
+
+fn ui_mime_type_for_asset(asset_key: &str) -> &'static str {
+    let ext = asset_key
+        .rsplit('.')
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    match ext.as_str() {
+        "html" => "text/html; charset=utf-8",
+        "js" => "text/javascript; charset=utf-8",
+        "css" => "text/css; charset=utf-8",
+        "json" => "application/json",
+        "svg" => "image/svg+xml",
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "ico" => "image/x-icon",
+        "woff2" => "font/woff2",
+        "webmanifest" => "application/manifest+json",
+        _ => mime_type_for_asset(asset_key),
+    }
+}
+
+fn ui_bytes_response(bytes: Vec<u8>, asset_key: &str) -> Response {
+    let mut response = Response::new(Body::from(bytes));
+    *response.status_mut() = StatusCode::OK;
+    response.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(ui_mime_type_for_asset(asset_key)),
+    );
+    response
+}
+
+async fn remote_ui_handler(State(shared): State<ServerShared>, uri: Uri) -> Response {
+    let asset_key = remote_ui_asset_key(uri.path());
+
+    let (dist_path, app_handle) = {
+        let inner = shared.remote.lock().expect("remote lock");
+        (inner.dist_path.clone(), inner.app_handle.clone())
+    };
+
+    if !dist_path.as_os_str().is_empty() {
+        let disk_path = dist_path.join(&asset_key);
+        if let Ok(bytes) = tokio::fs::read(&disk_path).await {
+            return ui_bytes_response(bytes, &asset_key);
+        }
+    }
+
+    if let Some(app) = app_handle {
+        if let Some(asset) = app.asset_resolver().get(asset_key.clone()) {
+            return ui_bytes_response(asset.bytes, &asset_key);
+        }
+    }
+
+    StatusCode::NOT_FOUND.into_response()
+}
+
+fn bind_remote_server_error(port: u16, err: std::io::Error) -> String {
+    #[cfg(windows)]
+    {
+        return format!(
+            "Could not bind remote server on port {port}: {err}. On Windows, check that the port is not in an excluded range (`netsh interface ipv4 show excludedportrange protocol=tcp` in an admin terminal) and allow the app through the firewall."
+        );
+    }
+    #[cfg(not(windows))]
+    {
+        format!("Could not bind remote server on port {port}: {err}")
+    }
+}
+
+fn has_remote_ui(app: &AppHandle, dist_path: &Path) -> bool {
+    if dist_path.join("app").join("index.html").exists() {
+        return true;
+    }
+    app.asset_resolver()
+        .get("app/index.html".to_string())
+        .is_some()
+}
+
+fn remote_router(shared: ServerShared, dev_mode: bool) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
@@ -263,16 +357,13 @@ fn remote_router(shared: ServerShared, dev_mode: bool, dist_path: PathBuf) -> Ro
 
     let api = Router::new()
         .route("/ws", get(ws_handler))
-        .route("/remote/asset", get(remote_asset_handler))
-        .with_state(shared);
+        .route("/remote/asset", get(remote_asset_handler));
 
     if dev_mode {
-        api.layer(cors)
+        api.with_state(shared).layer(cors)
     } else {
-        let serve_dir = ServeDir::new(dist_path).append_index_html_on_directories(true);
-        Router::new()
-            .merge(api)
-            .fallback_service(serve_dir)
+        api.fallback(get(remote_ui_handler))
+            .with_state(shared)
             .layer(cors)
     }
 }
@@ -591,7 +682,7 @@ pub async fn start_remote_server(
         PathBuf::new()
     } else {
         let dist_path = resolve_dist_path(&app);
-        if !dist_path.join("app").join("index.html").exists() {
+        if !has_remote_ui(&app, &dist_path) {
             return Err(
                 "Remote UI files not found. Run npm run build once, then restart the desktop app."
                     .to_string(),
@@ -618,12 +709,12 @@ pub async fn start_remote_server(
         remote: Arc::clone(&state.inner),
     };
 
-    let router = remote_router(shared, dev_mode, dist_path.clone());
+    let router = remote_router(shared, dev_mode);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let listener = tokio::net::TcpListener::bind(addr)
         .await
-        .map_err(|e| format!("Could not bind remote server on port {port}: {e}"))?;
+        .map_err(|e| bind_remote_server_error(port, e))?;
 
     let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
 
@@ -667,6 +758,17 @@ pub fn shutdown_on_exit(state: &RemoteServerState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn remote_ui_asset_key_maps_app_routes() {
+        assert_eq!(remote_ui_asset_key("/"), "app/index.html");
+        assert_eq!(remote_ui_asset_key("/app/"), "app/index.html");
+        assert_eq!(remote_ui_asset_key("/app"), "app/index.html");
+        assert_eq!(
+            remote_ui_asset_key("/assets/main.js"),
+            "assets/main.js"
+        );
+    }
 
     #[test]
     fn build_connect_url_includes_mode_and_pin() {
