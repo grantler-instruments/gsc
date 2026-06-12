@@ -1,6 +1,6 @@
 [package]
 name = "gsc"
-version = "0.0.9"
+version = "0.0.10"
 description = "Grantler Stage Control"
 authors = ["Grantler Instruments"]
 edition = "2021"
