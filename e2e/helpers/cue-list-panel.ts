@@ -15,8 +15,14 @@ export function sequenceCueList(page: Page) {
   return sequenceCueListPanel(page).locator('[data-gsc-drop-zone="cue-list"]');
 }
 
+/** Cue row in the main sequence list matched by exact display name. */
+export function sequenceCueRow(page: Page, displayName: string) {
+  return sequenceCueList(page).locator("[data-cue-id]", {
+    has: page.getByText(displayName, { exact: true }),
+  });
+}
+
 /** Wait until a dropped/imported file appears as a cue row in the main list. */
 export async function expectCueInSequenceList(page: Page, fileName: string): Promise<void> {
-  const cue = sequenceCueList(page).locator("[data-cue-id]").filter({ hasText: fileName });
-  await expect(cue).toHaveCount(1);
+  await expect(sequenceCueRow(page, fileName)).toHaveCount(1);
 }
