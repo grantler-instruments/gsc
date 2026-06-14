@@ -17,6 +17,7 @@ interface CueInspectorNameFieldsProps {
   readOnly: boolean;
   onNameChange: (name: string) => void;
   onNotesChange: (notes: string) => void;
+  onTriggerNoteChange: (triggerNote: string) => void;
 }
 
 export function CueInspectorNameFields({
@@ -25,6 +26,7 @@ export function CueInspectorNameFields({
   readOnly,
   onNameChange,
   onNotesChange,
+  onTriggerNoteChange,
 }: CueInspectorNameFieldsProps) {
   const { t } = useTranslation();
 
@@ -64,6 +66,20 @@ export function CueInspectorNameFields({
         placeholder={t("inspector.notesPlaceholder")}
         slotProps={{ input: { readOnly } }}
         onChange={(e) => onNotesChange(e.target.value)}
+        sx={{ mb: 1 }}
+      />
+
+      <TextField
+        label={t("inspector.triggerNote")}
+        multiline
+        minRows={1}
+        maxRows={4}
+        size="small"
+        fullWidth
+        value={cue.triggerNote ?? ""}
+        placeholder={t("inspector.triggerNotePlaceholder")}
+        slotProps={{ input: { readOnly } }}
+        onChange={(e) => onTriggerNoteChange(e.target.value)}
         sx={{ mb: 1 }}
       />
     </>

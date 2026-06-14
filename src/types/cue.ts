@@ -121,6 +121,8 @@ export interface Cue {
   fadeTo?: number;
   /** Production / operator notes for this cue. */
   notes?: string;
+  /** Shown in the top-right when this cue is selected. */
+  triggerNote?: string;
   /** For stop cues: id of the cue to stop when this cue is triggered. */
   stopTargetId?: string;
   /** For wait cues: how long to hold before the next sequence step (seconds). */

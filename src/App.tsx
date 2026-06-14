@@ -12,6 +12,7 @@ import { RightSidebar } from "./components/RightSidebar";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { StartupProjectsDialog } from "./components/StartupProjectsDialog";
 import { TransportBar } from "./components/TransportBar";
+import { TriggerNoteToasts } from "./components/TriggerNoteToasts";
 import { UnsavedProjectDialog } from "./components/UnsavedProjectDialog";
 import { WebOpenProjectsDialog } from "./components/WebOpenProjectsDialog";
 import { useAppRuntime } from "./hooks/useAppRuntime";
@@ -43,6 +44,7 @@ function App() {
         <DeleteStoredProjectDialog />
         <UnsavedProjectDialog />
         <AppSnackbar />
+        <TriggerNoteToasts />
       </>
     );
   }
@@ -100,6 +102,7 @@ function App() {
       <WebOpenProjectsDialog />
       <DeleteStoredProjectDialog />
       <AppSnackbar />
+      <TriggerNoteToasts />
     </Box>
   );
 }

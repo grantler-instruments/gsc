@@ -353,6 +353,8 @@
     "name": "Name",
     "notes": "Notes",
     "notesPlaceholder": "Production notes, lines, reminders…",
+    "triggerNote": "Trigger note",
+    "triggerNotePlaceholder": "Shown when this cue is selected…",
     "sequence": "Sequence",
     "parallelGroup": "Parallel group",
     "playback": "Playback",

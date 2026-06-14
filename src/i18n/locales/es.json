@@ -321,6 +321,8 @@
     "name": "Nombre",
     "notes": "Notas",
     "notesPlaceholder": "Notas de producción, líneas, recordatorios…",
+    "triggerNote": "Nota de disparo",
+    "triggerNotePlaceholder": "Se muestra cuando este cue está seleccionado…",
     "sequence": "Secuencia",
     "parallelGroup": "Grupo paralelo",
     "playback": "Reproducción",

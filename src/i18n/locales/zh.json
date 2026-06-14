@@ -321,6 +321,8 @@
     "name": "名称",
     "notes": "备注",
     "notesPlaceholder": "制作备注、台词、提醒…",
+    "triggerNote": "触发提示",
+    "triggerNotePlaceholder": "选中此提示时显示…",
     "sequence": "序列",
     "parallelGroup": "并行组",
     "playback": "播放",

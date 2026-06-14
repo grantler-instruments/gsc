@@ -323,6 +323,8 @@
     "name": "Name",
     "notes": "Notizen",
     "notesPlaceholder": "Produktionsnotizen, Texte, Erinnerungen…",
+    "triggerNote": "Trigger-Notiz",
+    "triggerNotePlaceholder": "Wird angezeigt, wenn dieser Cue ausgewählt ist…",
     "sequence": "Sequenz",
     "parallelGroup": "Parallelgruppe",
     "playback": "Wiedergabe",
