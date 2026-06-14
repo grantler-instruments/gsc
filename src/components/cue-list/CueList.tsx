@@ -39,6 +39,7 @@ export function CueList() {
   const copySelectedCues = useProjectStore((s) => s.copySelectedCues);
   const cutSelectedCues = useProjectStore((s) => s.cutSelectedCues);
   const duplicateSelectedCues = useProjectStore((s) => s.duplicateSelectedCues);
+  const ungroupCue = useProjectStore((s) => s.ungroupCue);
 
   const selection = useCueListSelection(cues, collapsedGroups);
   useCueListScrollIntoView(selection.primarySelectedId);
@@ -87,6 +88,7 @@ export function CueList() {
           <CueListTree
             nodes={tree}
             cues={cues}
+            canEdit={canEdit}
             collapsedGroups={collapsedGroups}
             activeCueIds={activeCueIds}
             runningSequence={runningSequence}
@@ -114,6 +116,7 @@ export function CueList() {
         <CueContextMenu
           menu={contextMenu.contextMenu}
           canRename={contextMenu.canRenameFromMenu}
+          canUngroup={contextMenu.canUngroupFromMenu}
           onClose={() => contextMenu.setContextMenu(null)}
           onCopy={copySelectedCues}
           onCut={cutSelectedCues}
@@ -121,6 +124,11 @@ export function CueList() {
           onRename={() => {
             if (contextMenu.contextMenu) {
               rename.startRename(contextMenu.contextMenu.cueId);
+            }
+          }}
+          onUngroup={() => {
+            if (contextMenu.contextMenu) {
+              ungroupCue(contextMenu.contextMenu.cueId);
             }
           }}
         />

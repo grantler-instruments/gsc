@@ -331,6 +331,7 @@
     "addWaitStep": "添加等待步骤",
     "noCuesInContainer": "此序列/组中尚无提示。",
     "removeFromContainer": "从容器中移除",
+    "ungroupContainer": "取消分组",
     "waitHint": "等待仅在序列内运行。时长以秒为单位。",
     "durationSeconds": "时长（秒）",
     "stopCue": "停止提示",

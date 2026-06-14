@@ -1,4 +1,8 @@
 import type { StoreApi } from "zustand";
+import {
+  reparentCueRelative as reparentCueRelativeList,
+  reparentCueToListEnd as reparentCueToListEndList,
+} from "../../lib/cue-reparent";
 import { getPrimarySelectedCueId } from "../../lib/cue-selection";
 import {
   appendCueInList,
@@ -84,6 +88,8 @@ export function createCueEditorActions(
   | "updateCue"
   | "removeCue"
   | "moveCueToGroup"
+  | "reparentCueRelative"
+  | "reparentCueToListEnd"
   | "addSelectedCueToGroup"
   | "reorderCueRelative"
 > {
@@ -338,12 +344,40 @@ export function createCueEditorActions(
       }
 
       set((s) => ({
-        ...patchActiveList(s, (list) => ({
-          cues: applyRenumber(
-            list.cues.map((c) => (c.id === cueId ? { ...c, parentId: groupId ?? undefined } : c)),
-          ),
-        })),
+        ...patchActiveList(s, (list) => {
+          const withParent = list.cues.map((c) =>
+            c.id === cueId ? { ...c, parentId: groupId ?? undefined } : c,
+          );
+          const updated = withParent.find((c) => c.id === cueId);
+          if (!updated) return { cues: applyRenumber(withParent) };
+          const without = withParent.filter((c) => c.id !== cueId);
+          return { cues: applyRenumber(appendCueInList(without, updated)) };
+        }),
       }));
+    },
+
+    reparentCueRelative: (draggedId, targetId, place) => {
+      if (!canEditProject()) return;
+      const active = getActiveCueListFromState(get());
+      const next = reparentCueRelativeList(active.cues, draggedId, targetId, place);
+      if (!next) return;
+      set({
+        ...patchActiveList(get(), () => ({
+          cues: applyRenumber(next),
+        })),
+      });
+    },
+
+    reparentCueToListEnd: (draggedId) => {
+      if (!canEditProject()) return;
+      const active = getActiveCueListFromState(get());
+      const next = reparentCueToListEndList(active.cues, draggedId);
+      if (!next) return;
+      set({
+        ...patchActiveList(get(), () => ({
+          cues: applyRenumber(next),
+        })),
+      });
     },
 
     addSelectedCueToGroup: (groupId) => {

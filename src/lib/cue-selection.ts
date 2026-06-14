@@ -96,3 +96,42 @@ export function buildParallelGroupFromSelection(
 
   return [...withParents.slice(0, firstIdx), group, ...withParents.slice(firstIdx)];
 }
+
+/** Dissolve a container: remove it and promote its direct children to its parent level. */
+export function ungroupContainerCue(cues: Cue[], containerId: string): Cue[] | null {
+  const container = cues.find((c) => c.id === containerId);
+  if (!container || !isContainerCue(container)) return null;
+
+  const children = getChildCues(cues, containerId);
+  const childIds = children.map((c) => c.id);
+  const newParentId = container.parentId;
+  const parentKey = container.parentId ?? null;
+
+  const siblingIds = cues.filter((c) => (c.parentId ?? null) === parentKey).map((c) => c.id);
+  const containerIdx = siblingIds.indexOf(containerId);
+  if (containerIdx === -1) return null;
+
+  const nextSiblingIds = [
+    ...siblingIds.slice(0, containerIdx),
+    ...childIds,
+    ...siblingIds.slice(containerIdx + 1),
+  ];
+
+  const updated = cues
+    .filter((c) => c.id !== containerId)
+    .map((c) => (c.parentId === containerId ? { ...c, parentId: newParentId } : c));
+
+  const siblingIndices: number[] = [];
+  updated.forEach((c, i) => {
+    if ((c.parentId ?? null) === parentKey) siblingIndices.push(i);
+  });
+  if (siblingIndices.length !== nextSiblingIds.length) return null;
+
+  const byId = new Map(updated.map((c) => [c.id, c]));
+  const next = [...updated];
+  siblingIndices.forEach((arrIdx, i) => {
+    const cue = byId.get(nextSiblingIds[i]);
+    if (cue) next[arrIdx] = cue;
+  });
+  return next;
+}

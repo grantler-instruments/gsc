@@ -1,5 +1,5 @@
 import { type MouseEvent, useCallback, useState } from "react";
-import { isUtilityCue } from "../../lib/cues";
+import { isContainerCue, isUtilityCue } from "../../lib/cues";
 import { useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
 import type { CueContextMenuState } from "../CueContextMenu";
@@ -31,11 +31,14 @@ export function useCueListContextMenu(
   const contextMenuCue = contextMenu ? cues.find((c) => c.id === contextMenu.cueId) : undefined;
   const canRenameFromMenu =
     !!contextMenuCue && selectedCueIds.length === 1 && !isUtilityCue(contextMenuCue);
+  const canUngroupFromMenu =
+    !!contextMenuCue && selectedCueIds.length === 1 && isContainerCue(contextMenuCue);
 
   return {
     contextMenu,
     setContextMenu,
     handleRowContextMenu,
     canRenameFromMenu,
+    canUngroupFromMenu,
   };
 }

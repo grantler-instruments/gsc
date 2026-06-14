@@ -20,6 +20,8 @@ export interface CueListActionsContextValue {
   onCreateLightFade: (cueId: string) => void;
   onAssetDrop: (cueId: string, payload: AssetDragPayload) => void;
   onCueDrop: (draggedId: string, groupId: string) => void;
+  onCueReparent: (draggedId: string, targetId: string, place: "before" | "after") => void;
+  onCueReparentToListEnd: (draggedId: string) => void;
   onCueReorder: (draggedId: string, targetId: string, place: "before" | "after") => void;
   onToggleExpand: (groupId: string) => void;
 }
@@ -51,6 +53,8 @@ export function CueListActionsProvider({
   const addStopCueForTarget = useProjectStore((s) => s.addStopCueForTarget);
   const addFadeCueForTarget = useProjectStore((s) => s.addFadeCueForTarget);
   const moveCueToGroup = useProjectStore((s) => s.moveCueToGroup);
+  const reparentCueRelative = useProjectStore((s) => s.reparentCueRelative);
+  const reparentCueToListEnd = useProjectStore((s) => s.reparentCueToListEnd);
   const reorderCueRelative = useProjectStore((s) => s.reorderCueRelative);
   const toggleCueGroupCollapsed = useUiStore((s) => s.toggleCueGroupCollapsed);
 
@@ -70,6 +74,8 @@ export function CueListActionsProvider({
         applyAssetPayloads([payload], { kind: "row", cueId });
       },
       onCueDrop: (draggedId, groupId) => moveCueToGroup(draggedId, groupId),
+      onCueReparent: reparentCueRelative,
+      onCueReparentToListEnd: reparentCueToListEnd,
       onCueReorder: reorderCueRelative,
       onToggleExpand: toggleCueGroupCollapsed,
     }),
@@ -81,6 +87,8 @@ export function CueListActionsProvider({
       addStopCueForTarget,
       addFadeCueForTarget,
       moveCueToGroup,
+      reparentCueRelative,
+      reparentCueToListEnd,
       reorderCueRelative,
       toggleCueGroupCollapsed,
     ],

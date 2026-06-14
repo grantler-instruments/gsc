@@ -26,3 +26,10 @@ export function sequenceCueRow(page: Page, displayName: string) {
 export async function expectCueInSequenceList(page: Page, fileName: string): Promise<void> {
   await expect(sequenceCueRow(page, fileName)).toHaveCount(1);
 }
+
+/** Sequence or parallel container row (identified by cue-type badge title). */
+export function containerCueRow(page: Page, type: "Sequence" | "Parallel") {
+  return sequenceCueList(page).locator("[data-cue-id]", {
+    has: page.locator(`span[title="${type}"]`),
+  });
+}

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { cueListDropActiveSx, cueListEmptySx } from "../../theme/cueStyles";
 import type { GscTokenSet } from "../../theme/tokens";
 import { CueListTrailingDrop } from "./CueListTrailingDrop";
+import { useCueDragActive } from "./useCueDragActive";
 
 interface CueListBodyProps {
   canEdit: boolean;
@@ -29,6 +30,7 @@ export function CueListBody({
   children,
 }: CueListBodyProps) {
   const { t } = useTranslation();
+  const cueDragging = useCueDragActive();
 
   return (
     <Box
@@ -57,7 +59,7 @@ export function CueListBody({
         </Box>
       )}
       {children}
-      {!isEmpty && canEdit && <CueListTrailingDrop canEdit={canEdit} />}
+      {!isEmpty && canEdit && cueDragging && <CueListTrailingDrop canEdit={canEdit} />}
     </Box>
   );
 }

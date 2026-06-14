@@ -58,6 +58,26 @@ describe("selection actions", () => {
     expect(activeCues().filter((c) => c.parentId === group?.id)).toHaveLength(2);
   });
 
+  it("ungroups a container and selects its children", () => {
+    resetTestProject([
+      testCue("g", "Group", "group"),
+      testCue("a", "A", "audio", { parentId: "g" }),
+      testCue("b", "B", "audio", { parentId: "g" }),
+    ]);
+    useProjectStore.getState().selectCue("g");
+
+    const childIds = useProjectStore.getState().ungroupCue("g");
+
+    expect(childIds).toEqual(["a", "b"]);
+    expect(activeListSelection()).toEqual(["a", "b"]);
+    expect(activeCues().some((c) => c.id === "g")).toBe(false);
+    expect(
+      activeCues()
+        .filter((c) => !c.parentId)
+        .map((c) => c.id),
+    ).toEqual(["a", "b"]);
+  });
+
   it("cut and paste selected cues", () => {
     let n = 0;
     vi.stubGlobal("crypto", { randomUUID: () => `cut-${++n}` });
@@ -97,6 +117,7 @@ describe("selection actions", () => {
     useProjectStore.getState().toggleSelectCue("b");
 
     expect(useProjectStore.getState().groupSelectedCues()).toBeNull();
+    expect(useProjectStore.getState().ungroupCue("a")).toBeNull();
     expect(useProjectStore.getState().copySelectedCues()).toBe(false);
     expect(useProjectStore.getState().cutSelectedCues()).toBe(false);
     expect(useProjectStore.getState().pasteSelectedCues()).toBe(false);

@@ -331,6 +331,7 @@
     "addWaitStep": "Añadir paso de espera",
     "noCuesInContainer": "Aún no hay cues en esta secuencia/grupo.",
     "removeFromContainer": "Quitar del contenedor",
+    "ungroupContainer": "Desagrupar",
     "waitHint": "Las esperas solo funcionan dentro de una secuencia. La duración es en segundos.",
     "durationSeconds": "Duración (s)",
     "stopCue": "Cue de detener",

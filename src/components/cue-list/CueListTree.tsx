@@ -4,11 +4,15 @@ import { type CueListNode, getChildCues, isContainerCue, isCueActive } from "../
 import type { RunningSequence } from "../../stores/transport";
 import { useVfsStore } from "../../stores/vfs";
 import type { Cue } from "../../types/cue";
+import { CueContainerLeadingDrop } from "./CueContainerLeadingDrop";
+import { CueContainerTrailingDrop } from "./CueContainerTrailingDrop";
 import { CueRow } from "./CueRow";
+import { useCueDragActive } from "./useCueDragActive";
 
 export interface CueListTreeProps {
   nodes: CueListNode[];
   cues: Cue[];
+  canEdit: boolean;
   collapsedGroups: Set<string>;
   activeCueIds: string[];
   runningSequence: RunningSequence | null;
@@ -33,6 +37,7 @@ export interface CueListTreeProps {
 export function CueListTree({
   nodes,
   cues,
+  canEdit,
   collapsedGroups,
   activeCueIds,
   runningSequence,
@@ -54,6 +59,7 @@ export function CueListTree({
   onRenameCancel,
 }: CueListTreeProps) {
   const assetEntries = useVfsStore((s) => s.entries);
+  const cueDragging = useCueDragActive();
 
   return nodes.flatMap((node) => {
     const expanded = !collapsedGroups.has(node.cue.id);
@@ -88,33 +94,67 @@ export function CueListTree({
       />
     );
 
-    if (isContainerCue(node.cue) && expanded && node.children.length > 0) {
+    if (isContainerCue(node.cue) && expanded) {
       return [
         row,
-        <CueListTree
-          key={`${node.cue.id}-children`}
-          nodes={node.children}
-          cues={cues}
-          collapsedGroups={collapsedGroups}
-          activeCueIds={activeCueIds}
-          runningSequence={runningSequence}
-          dmxFadesByFadeCueId={dmxFadesByFadeCueId}
-          selectedCueIdSet={selectedCueIdSet}
-          primarySelectedId={primarySelectedId}
-          hoveredStopTargetId={hoveredStopTargetId}
-          selectedStopTargetId={selectedStopTargetId}
-          hoveredFadeTargetId={hoveredFadeTargetId}
-          selectedFadeTargetId={selectedFadeTargetId}
-          fadeTargetHighlightToken={fadeTargetHighlightToken}
-          renamingCueId={renamingCueId}
-          renameValue={renameValue}
-          onHoverChange={onHoverChange}
-          onSelect={onSelect}
-          onContextMenu={onContextMenu}
-          onRenameChange={onRenameChange}
-          onRenameCommit={onRenameCommit}
-          onRenameCancel={onRenameCancel}
-        />,
+        ...(canEdit && cueDragging && node.children.length > 0
+          ? [
+              <CueContainerLeadingDrop
+                key={`${node.cue.id}-leading`}
+                canEdit={canEdit}
+                containerId={node.cue.id}
+                firstChildId={node.children[0].cue.id}
+                depth={node.depth + 1}
+              />,
+            ]
+          : []),
+        ...(node.children.length > 0
+          ? [
+              <CueListTree
+                key={`${node.cue.id}-children`}
+                nodes={node.children}
+                cues={cues}
+                canEdit={canEdit}
+                collapsedGroups={collapsedGroups}
+                activeCueIds={activeCueIds}
+                runningSequence={runningSequence}
+                dmxFadesByFadeCueId={dmxFadesByFadeCueId}
+                selectedCueIdSet={selectedCueIdSet}
+                primarySelectedId={primarySelectedId}
+                hoveredStopTargetId={hoveredStopTargetId}
+                selectedStopTargetId={selectedStopTargetId}
+                hoveredFadeTargetId={hoveredFadeTargetId}
+                selectedFadeTargetId={selectedFadeTargetId}
+                fadeTargetHighlightToken={fadeTargetHighlightToken}
+                renamingCueId={renamingCueId}
+                renameValue={renameValue}
+                onHoverChange={onHoverChange}
+                onSelect={onSelect}
+                onContextMenu={onContextMenu}
+                onRenameChange={onRenameChange}
+                onRenameCommit={onRenameCommit}
+                onRenameCancel={onRenameCancel}
+              />,
+            ]
+          : []),
+        ...(canEdit && cueDragging
+          ? [
+              <CueContainerTrailingDrop
+                key={`${node.cue.id}-children-trailing`}
+                canEdit={canEdit}
+                containerId={node.cue.id}
+                depth={node.depth + 1}
+                mode="children-end"
+              />,
+              <CueContainerTrailingDrop
+                key={`${node.cue.id}-exit-trailing`}
+                canEdit={canEdit}
+                containerId={node.cue.id}
+                depth={node.depth}
+                mode="exit"
+              />,
+            ]
+          : []),
       ];
     }
 

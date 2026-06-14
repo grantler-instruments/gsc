@@ -363,6 +363,7 @@
     "addWaitStep": "Add wait step",
     "noCuesInContainer": "No cues in this sequence/group yet.",
     "removeFromContainer": "Remove from container",
+    "ungroupContainer": "Ungroup",
     "waitHint": "Waits only run inside a sequence. Duration is in seconds.",
     "durationSeconds": "Duration (s)",
     "stopCue": "Stop cue",

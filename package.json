@@ -1,7 +1,7 @@
 {
   "name": "gsc",
   "private": true,
-  "version": "0.0.10",
+  "version": "0.0.11",
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "cross-env PLAYWRIGHT_BROWSERS_PATH=0 playwright test",
+    "test:e2e:smoke": "cross-env PLAYWRIGHT_BROWSERS_PATH=0 playwright test --project=smoke",
     "test:e2e:install": "cross-env PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium",
     "test:e2e:fixtures": "node e2e/fixtures/generate-audio-fixtures.mjs && node e2e/fixtures/generate-video-fixtures.mjs",
     "lint": "biome check .",

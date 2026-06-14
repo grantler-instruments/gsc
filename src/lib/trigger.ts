@@ -24,6 +24,7 @@ function triggerParallelGroup(
   actions: { goMany: GoMany; stopMany: StopMany },
 ): string[] {
   return fireParallelGroupChildren(cue, cues, actions, {
+    runSequence: (seqCue, list) => runSequence(seqCue, list),
     onSequenceStop: cancelAllSequences,
   });
 }

@@ -51,12 +51,15 @@ export interface ProjectState {
   updateCue: (id: string, patch: Partial<Cue>) => void;
   removeCue: (id: string) => void;
   moveCueToGroup: (cueId: string, groupId: string | null) => void;
+  reparentCueRelative: (draggedId: string, targetId: string, place: "before" | "after") => void;
+  reparentCueToListEnd: (draggedId: string) => void;
   addSelectedCueToGroup: (groupId: string) => void;
   reorderCueRelative: (draggedId: string, targetId: string, place: "before" | "after") => void;
   selectCue: (id: string | null) => void;
   toggleSelectCue: (id: string) => void;
   selectCueRange: (id: string, visibleOrder: string[]) => void;
   groupSelectedCues: () => Cue | null;
+  ungroupCue: (cueId: string) => string[] | null;
   copySelectedCues: () => boolean;
   cutSelectedCues: () => boolean;
   pasteSelectedCues: () => boolean;

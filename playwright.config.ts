@@ -16,6 +16,12 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      grepInvert: /@smoke/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "smoke",
+      grep: /@smoke/,
       use: { ...devices["Desktop Chrome"] },
     },
   ],

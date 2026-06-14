@@ -126,7 +126,7 @@ export const CueRow = memo(function CueRow({
     onCreatePanFade,
     onCreateLightFade,
     onCueDrop,
-    onCueReorder,
+    onCueReparent,
     onToggleExpand,
   } = useCueListActions();
 
@@ -182,7 +182,7 @@ export const CueRow = memo(function CueRow({
     allCues,
     canEdit,
     onCueDrop: (draggedId) => onCueDrop(draggedId, cue.id),
-    onCueReorder,
+    onCueReparent,
   });
 
   const rowStyleState = {

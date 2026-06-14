@@ -333,6 +333,7 @@
     "addWaitStep": "Warte-Schritt hinzufügen",
     "noCuesInContainer": "Noch keine Cues in dieser Sequenz/Gruppe.",
     "removeFromContainer": "Aus Container entfernen",
+    "ungroupContainer": "Gruppierung aufheben",
     "waitHint": "Warte-Cues laufen nur innerhalb einer Sequenz. Dauer in Sekunden.",
     "durationSeconds": "Dauer (s)",
     "stopCue": "Stopp-Cue",
