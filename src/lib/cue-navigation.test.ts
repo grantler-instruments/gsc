@@ -7,7 +7,9 @@ import { createCueList } from "./cue-lists";
 import {
   deletePrimarySelectedCue,
   selectAdjacentVisibleCue,
+  selectNextCue,
   selectNextCueAfterGo,
+  selectPreviousCue,
 } from "./cue-navigation";
 
 function activeListSelection(): string[] {
@@ -45,6 +47,70 @@ describe("selectAdjacentVisibleCue", () => {
     useProjectStore.getState().selectCue("g");
 
     selectAdjacentVisibleCue(1);
+    expect(activeListSelection()).toEqual(["b"]);
+  });
+});
+
+describe("selectNextCue", () => {
+  beforeEach(() => {
+    useUiStore.setState({ collapsedCueGroupIds: [] });
+  });
+
+  it("skips visible children when moving forward from a container", () => {
+    resetTestProject([
+      testCue("g", "Group", "group"),
+      testCue("a", "A", "audio", { parentId: "g" }),
+      testCue("b", "B", "audio"),
+    ]);
+    useProjectStore.getState().selectCue("g");
+
+    selectNextCue();
+    expect(activeListSelection()).toEqual(["b"]);
+  });
+
+  it("selects the first visible cue when nothing is selected", () => {
+    resetTestProject([testCue("a", "A", "audio"), testCue("b", "B", "audio")]);
+
+    selectNextCue();
+    expect(activeListSelection()).toEqual(["a"]);
+  });
+});
+
+describe("selectPreviousCue", () => {
+  beforeEach(() => {
+    useUiStore.setState({ collapsedCueGroupIds: [] });
+  });
+
+  it("selects the container when approaching from below an expanded group", () => {
+    resetTestProject([
+      testCue("g", "Group", "group"),
+      testCue("a", "A", "audio", { parentId: "g" }),
+      testCue("b", "B", "audio", { parentId: "g" }),
+      testCue("c", "C", "audio"),
+    ]);
+    useProjectStore.getState().selectCue("c");
+
+    selectPreviousCue();
+    expect(activeListSelection()).toEqual(["g"]);
+  });
+
+  it("moves between siblings inside a group", () => {
+    resetTestProject([
+      testCue("g", "Group", "group"),
+      testCue("a", "A", "audio", { parentId: "g" }),
+      testCue("b", "B", "audio", { parentId: "g" }),
+      testCue("c", "C", "audio"),
+    ]);
+    useProjectStore.getState().selectCue("b");
+
+    selectPreviousCue();
+    expect(activeListSelection()).toEqual(["a"]);
+  });
+
+  it("selects the last visible cue when nothing is selected", () => {
+    resetTestProject([testCue("a", "A", "audio"), testCue("b", "B", "audio")]);
+
+    selectPreviousCue();
     expect(activeListSelection()).toEqual(["b"]);
   });
 });

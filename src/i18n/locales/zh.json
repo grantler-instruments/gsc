@@ -188,7 +188,11 @@
     "goMissingCue": "GO（提示缺失）",
     "selectMissingCue": "选择（提示缺失）",
     "goCueWithName": "GO {{number}} — {{name}}",
-    "selectCueWithName": "选择 {{number}} — {{name}}"
+    "selectCueWithName": "选择 {{number}} — {{name}}",
+    "previousCue": "上一个提示",
+    "nextCue": "下一个提示",
+    "previousCueShort": "上一个",
+    "nextCueShort": "下一个"
   },
   "transport": {
     "go": "GO",

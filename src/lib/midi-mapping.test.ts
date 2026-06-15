@@ -143,6 +143,31 @@ describe("dispatchMidiAction", () => {
     dispatchMidiAction({ type: "go-selected" });
     expect(useTransportStore.getState().activeCueIds).toContain("a");
   });
+
+  it("selects the previous cue", () => {
+    resetTestProject([
+      testCue("g", "Group", "group"),
+      testCue("a", "A", "audio", { parentId: "g" }),
+      testCue("b", "B", "audio", { parentId: "g" }),
+      testCue("c", "C", "audio"),
+    ]);
+    useProjectStore.getState().selectCue("c");
+
+    dispatchMidiAction({ type: "previous-cue" });
+    expect(activeListSelection()).toEqual(["g"]);
+  });
+
+  it("selects the next cue", () => {
+    resetTestProject([
+      testCue("g", "Group", "group"),
+      testCue("a", "A", "audio", { parentId: "g" }),
+      testCue("b", "B", "audio"),
+    ]);
+    useProjectStore.getState().selectCue("g");
+
+    dispatchMidiAction({ type: "next-cue" });
+    expect(activeListSelection()).toEqual(["b"]);
+  });
 });
 
 describe("buildNoteToCueMappings", () => {
@@ -175,5 +200,7 @@ describe("formatMidiActionLabel", () => {
     const cues = [testCue("a", "Intro", "audio", { number: "1" })];
     expect(formatMidiActionLabel({ type: "go-cue", cueId: "a" }, cues)).toBe("GO 1 — Intro");
     expect(formatMidiActionLabel({ type: "go-selected" }, cues)).toBe("GO (selected cue)");
+    expect(formatMidiActionLabel({ type: "previous-cue" }, cues)).toBe("Previous cue");
+    expect(formatMidiActionLabel({ type: "next-cue" }, cues)).toBe("Next cue");
   });
 });

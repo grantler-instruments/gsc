@@ -76,6 +76,8 @@ export function MidiMapPanel() {
             <MenuItem value="go-selected">{t("midiMap.goSelected")}</MenuItem>
             <MenuItem value="go-cue">{t("midiMap.goCue")}</MenuItem>
             <MenuItem value="select-cue">{t("midiMap.selectCue")}</MenuItem>
+            <MenuItem value="previous-cue">{t("midiMap.previousCue")}</MenuItem>
+            <MenuItem value="next-cue">{t("midiMap.nextCue")}</MenuItem>
             <MenuItem value="panic">{t("midiMap.panic")}</MenuItem>
           </Select>
         </Box>
@@ -207,6 +209,8 @@ export function MidiMapPanel() {
                 <MenuItem value="go-selected">{t("midiMap.goSelShort")}</MenuItem>
                 <MenuItem value="go-cue">{t("midiMap.goCueShort")}</MenuItem>
                 <MenuItem value="select-cue">{t("midiMap.selectShort")}</MenuItem>
+                <MenuItem value="previous-cue">{t("midiMap.previousCueShort")}</MenuItem>
+                <MenuItem value="next-cue">{t("midiMap.nextCueShort")}</MenuItem>
                 <MenuItem value="panic">{t("midiMap.panic")}</MenuItem>
               </Select>
               {(m.action.type === "go-cue" || m.action.type === "select-cue") && (

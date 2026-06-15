@@ -3,6 +3,7 @@ import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
 import type { MidiAction, MidiMapping, MidiMatch } from "../types/midi-mapping";
+import { selectNextCue, selectPreviousCue } from "./cue-navigation";
 import { midiMatches, parseMidiMessage } from "./midi";
 import { randomId } from "./random-id";
 import { triggerGoAndAdvance, triggerGoSelected } from "./transport-actions";
@@ -43,6 +44,12 @@ export function dispatchMidiAction(action: MidiAction): void {
       break;
     case "panic":
       useTransportStore.getState().panic();
+      break;
+    case "previous-cue":
+      selectPreviousCue();
+      break;
+    case "next-cue":
+      selectNextCue();
       break;
   }
 }
@@ -98,5 +105,9 @@ export function formatMidiActionLabel(action: MidiAction, cues: Cue[]): string {
         ? t("midiMap.selectCueWithName", { number: cue.number, name: cue.name })
         : t("midiMap.selectMissingCue");
     }
+    case "previous-cue":
+      return t("midiMap.previousCue");
+    case "next-cue":
+      return t("midiMap.nextCue");
   }
 }

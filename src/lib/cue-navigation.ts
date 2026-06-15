@@ -52,6 +52,62 @@ export function selectNextCueAfterGo(triggeredCueId: string): void {
   advanceToNextCueListTab();
 }
 
+/** Select the next cue (container-aware; mirrors post-GO advance). */
+export function selectNextCue(): void {
+  const list = getActiveCueListFromState(useProjectStore.getState());
+  const collapsed = new Set(useUiStore.getState().collapsedCueGroupIds);
+  const order = flattenVisibleCueIds(list.cues, collapsed);
+  if (order.length === 0) return;
+
+  const current = getPrimarySelectedCueId(list.selectedCueIds);
+  if (!current) {
+    useProjectStore.getState().selectCue(order[0]);
+    return;
+  }
+
+  selectNextCueAfterGo(current);
+}
+
+/**
+ * Select the previous cue. When approaching a container from outside, land on
+ * the shallowest containing group instead of its last visible child.
+ */
+export function selectPreviousCue(): void {
+  const list = getActiveCueListFromState(useProjectStore.getState());
+  const collapsed = new Set(useUiStore.getState().collapsedCueGroupIds);
+  const order = flattenVisibleCueIds(list.cues, collapsed);
+  if (order.length === 0) return;
+
+  const cues = list.cues;
+  const current = getPrimarySelectedCueId(list.selectedCueIds);
+  if (!current) {
+    useProjectStore.getState().selectCue(order[order.length - 1]);
+    return;
+  }
+
+  const index = order.indexOf(current);
+  if (index <= 0) return;
+
+  const prevId = order[index - 1];
+  let shallowest: string | null = null;
+
+  let parentId = cues.find((c) => c.id === prevId)?.parentId;
+  while (parentId) {
+    const parent = cues.find((c) => c.id === parentId);
+    if (
+      parent &&
+      isContainerCue(parent) &&
+      isCueDescendantOf(cues, parent.id, prevId) &&
+      !isCueDescendantOf(cues, parent.id, current)
+    ) {
+      shallowest = parent.id;
+    }
+    parentId = parent?.parentId;
+  }
+
+  useProjectStore.getState().selectCue(shallowest ?? prevId);
+}
+
 /** After the last cue in a list, switch to the next tab and select its first visible cue. */
 function advanceToNextCueListTab(): void {
   const state = useProjectStore.getState();

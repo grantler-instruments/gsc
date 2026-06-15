@@ -7,7 +7,9 @@ export type MidiAction =
   | { type: "go-selected" }
   | { type: "go-cue"; cueId: string }
   | { type: "select-cue"; cueId: string }
-  | { type: "panic" };
+  | { type: "panic" }
+  | { type: "previous-cue" }
+  | { type: "next-cue" };
 
 export interface MidiMapping {
   id: string;
@@ -21,4 +23,6 @@ export const MIDI_ACTION_LABELS: Record<MidiAction["type"], string> = {
   "go-cue": "GO cue",
   "select-cue": "Select cue",
   panic: "Panic (stop all)",
+  "previous-cue": "Previous cue",
+  "next-cue": "Next cue",
 };

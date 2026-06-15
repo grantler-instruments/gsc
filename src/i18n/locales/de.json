@@ -190,7 +190,11 @@
     "goMissingCue": "GO (Cue fehlt)",
     "selectMissingCue": "Wählen (Cue fehlt)",
     "goCueWithName": "GO {{number}} — {{name}}",
-    "selectCueWithName": "Wählen {{number}} — {{name}}"
+    "selectCueWithName": "Wählen {{number}} — {{name}}",
+    "previousCue": "Vorheriger Cue",
+    "nextCue": "Nächster Cue",
+    "previousCueShort": "Vorher.",
+    "nextCueShort": "Nächster"
   },
   "transport": {
     "go": "GO",
