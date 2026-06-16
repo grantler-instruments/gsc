@@ -51,7 +51,11 @@ export default function WebsiteApp() {
         }}
       >
         <Toolbar>
-          <GscLogo size={28} aria-label={t("common.brand.gsc")} />
+          <GscLogo
+            size={28}
+            background={theme.palette.primary.main}
+            aria-label={t("common.brand.gsc")}
+          />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600, ml: 1.5 }}>
             {t("common.brand.gsc")}
           </Typography>
@@ -92,23 +96,18 @@ export default function WebsiteApp() {
                 >
                   <Box
                     sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
                       width: heroMarkHeight,
                       height: heroMarkHeight,
                       borderRadius: 2,
-                      bgcolor: "background.paper",
-                      border: 1,
-                      borderColor: "divider",
                       flexShrink: 0,
                       lineHeight: 0,
+                      overflow: "hidden",
                     }}
                   >
                     <GscLogo
                       size={80}
-                      color={theme.palette.text.primary}
-                      style={{ width: "100%", height: "100%" }}
+                      background={theme.palette.primary.main}
+                      style={{ width: "100%", height: "100%", display: "block" }}
                     />
                   </Box>
                   <Typography

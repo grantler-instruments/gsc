@@ -3,6 +3,7 @@ import { editTokens } from "../theme/tokens";
 import {
   GSC_LOGO_COLOR,
   GSC_LOGO_MARK,
+  GSC_LOGO_MUTED_COLOR,
   gscLogoRowHeight,
   gscLogoRowYs,
   gscLogoStripeFill,
@@ -14,6 +15,8 @@ type GscLogoProps = SVGProps<SVGSVGElement> & {
   color?: string;
   /** Gray second-to-last stripe and square. */
   mutedColor?: string;
+  /** Filled square behind the mark (favicon / app icon treatment). */
+  background?: string;
 };
 
 export { GSC_LOGO_COLOR } from "./gscLogoMark";
@@ -22,12 +25,15 @@ export function GscLogo({
   size = 32,
   color = GSC_LOGO_COLOR,
   mutedColor = editTokens.textMuted,
+  background,
   ...rest
 }: GscLogoProps) {
   const { block, gap, rowGap, xSquare, y, viewBox } = GSC_LOGO_MARK;
   const rowH = gscLogoRowHeight(block, rowGap);
   const xRows = xSquare + block + gap;
   const rowYs = gscLogoRowYs(y, rowH, rowGap);
+  const markColor = background ? GSC_LOGO_COLOR : color;
+  const markMuted = background ? GSC_LOGO_MUTED_COLOR : mutedColor;
 
   return (
     <svg
@@ -40,7 +46,8 @@ export function GscLogo({
       {...rest}
     >
       <title>GSC</title>
-      <rect x={xSquare} y={y} width={block} height={block} fill={mutedColor} />
+      {background ? <rect width={viewBox} height={viewBox} fill={background} /> : null}
+      <rect x={xSquare} y={y} width={block} height={block} fill={markMuted} />
       {rowYs.map((rowY, i) => (
         <rect
           key={rowY}
@@ -48,7 +55,7 @@ export function GscLogo({
           y={rowY}
           width={block}
           height={rowH}
-          fill={gscLogoStripeFill(i, color, mutedColor)}
+          fill={gscLogoStripeFill(i, markColor, markMuted)}
         />
       ))}
     </svg>

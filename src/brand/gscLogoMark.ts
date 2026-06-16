@@ -3,6 +3,9 @@ import { editTokens } from "../theme/tokens";
 /** Dark mark color — used on light or accent backgrounds. */
 export const GSC_LOGO_COLOR = "#1a1a1a";
 
+/** Muted mark fill on accent backgrounds (square and third stripe). */
+export const GSC_LOGO_MUTED_COLOR = `${GSC_LOGO_COLOR}73`;
+
 export const GSC_LOGO_MARK = {
   viewBox: 48,
   block: 18,
@@ -39,7 +42,7 @@ type GscLogoMarkSvgOptions = {
 export function renderGscLogoMarkSvg({
   background = editTokens.accent,
   stripeColor = GSC_LOGO_COLOR,
-  mutedStripeColor = `${GSC_LOGO_COLOR}73`,
+  mutedStripeColor = GSC_LOGO_MUTED_COLOR,
 }: GscLogoMarkSvgOptions = {}): string {
   const { block, gap, rowGap, xSquare, y, viewBox } = GSC_LOGO_MARK;
   const rowH = gscLogoRowHeight(block, rowGap);
