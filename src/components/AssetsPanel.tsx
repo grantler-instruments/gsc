@@ -33,6 +33,7 @@ export function AssetsPanel() {
   const importFromFileList = useVfsStore((s) => s.importFromFileList);
   const removeEntry = useVfsStore((s) => s.removeEntry);
   const addCue = useProjectStore((s) => s.addCue);
+  const setHoveredAssetPath = useUiStore((s) => s.setHoveredAssetPath);
   const inputRef = useRef<HTMLInputElement>(null);
   const [dropActive, setDropActive] = useState(false);
 
@@ -110,6 +111,11 @@ export function AssetsPanel() {
 
       <Box
         component="ul"
+        onMouseLeave={(e) => {
+          if (pointerLeftElement(e.currentTarget, e.relatedTarget)) {
+            setHoveredAssetPath(null);
+          }
+        }}
         sx={{
           listStyle: "none",
           m: 0,
@@ -131,6 +137,7 @@ export function AssetsPanel() {
             entry={entry}
             canEdit={canEdit}
             tokens={tokens}
+            onHoverChange={setHoveredAssetPath}
             onAddCue={() =>
               addCue({
                 name: entry.name,
@@ -195,12 +202,14 @@ function AssetRow({
   entry,
   canEdit,
   tokens,
+  onHoverChange,
   onAddCue,
   onRemove,
 }: {
   entry: VfsEntry;
   canEdit: boolean;
   tokens: ReturnType<typeof useGscTokens>;
+  onHoverChange: (path: string | null) => void;
   onAddCue: () => void;
   onRemove: () => void;
 }) {
@@ -211,7 +220,18 @@ function AssetRow({
   return (
     <Box
       component="li"
+      data-asset-path={entry.path}
       draggable={canEdit && !unavailable}
+      onMouseEnter={unavailable ? undefined : () => onHoverChange(entry.path)}
+      onMouseLeave={
+        unavailable
+          ? undefined
+          : (e) => {
+              if (pointerLeftElement(e.currentTarget, e.relatedTarget)) {
+                onHoverChange(null);
+              }
+            }
+      }
       onDragStart={canEdit && !unavailable ? (e) => onAssetDragStart(e, entry) : undefined}
       onDragEnd={canEdit && !unavailable ? () => setActiveAssetDrag(null) : undefined}
       sx={{

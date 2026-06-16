@@ -25,6 +25,8 @@ interface UiState {
   compactInspectorDrawerOpen: boolean;
   /** Compact inspector drawer stays closed until the user selects a cue. */
   compactInspectorDrawerDismissed: boolean;
+  /** Asset row under the pointer in the assets panel (session only). */
+  hoveredAssetPath: string | null;
   setSidebarTab: (tab: SidebarTabId) => void;
   setRightSidebarTab: (tab: RightSidebarTabId) => void;
   setDarkMode: (dark: boolean) => void;
@@ -38,6 +40,7 @@ interface UiState {
   toggleFixturePlotExpanded: () => void;
   setCompactInspectorDrawerOpen: (open: boolean) => void;
   setCompactInspectorDrawerDismissed: (dismissed: boolean) => void;
+  setHoveredAssetPath: (path: string | null) => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -56,6 +59,7 @@ export const useUiStore = create<UiState>()(
         fixturePlotExpanded: false,
         compactInspectorDrawerOpen: false,
         compactInspectorDrawerDismissed: true,
+        hoveredAssetPath: null,
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
         setRightSidebarTab: (rightSidebarTab) => set({ rightSidebarTab }),
         setDarkMode: (darkMode) => set({ darkMode }),
@@ -93,6 +97,7 @@ export const useUiStore = create<UiState>()(
           set({ compactInspectorDrawerOpen }),
         setCompactInspectorDrawerDismissed: (compactInspectorDrawerDismissed) =>
           set({ compactInspectorDrawerDismissed }),
+        setHoveredAssetPath: (hoveredAssetPath) => set({ hoveredAssetPath }),
       }),
       {
         name: "gsc-ui",

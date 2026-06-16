@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { VfsEntry } from "../stores/vfs";
 import { testCue } from "../test/fixtures/cues";
-import { cueMissingAsset, getCueAssetWarning } from "./cue-asset";
+import { cueMissingAsset, cueUsesAsset, getCueAssetWarning } from "./cue-asset";
 
 vi.mock("../platform/remote-mode", () => ({
   isRemoteClient: vi.fn(() => false),
@@ -15,6 +15,16 @@ const audioEntry: VfsEntry = {
   kind: "audio",
   loaded: false,
 };
+
+describe("cueUsesAsset", () => {
+  it("matches cue asset paths after normalization", () => {
+    const cue = testCue("a", "Intro", "audio", { assetPath: "/assets/intro.wav" });
+    expect(cueUsesAsset(cue, "/assets/intro.wav")).toBe(true);
+    expect(cueUsesAsset(cue, "assets/intro.wav")).toBe(true);
+    expect(cueUsesAsset(cue, "/assets/other.wav")).toBe(false);
+    expect(cueUsesAsset(cue, null)).toBe(false);
+  });
+});
 
 describe("getCueAssetWarning", () => {
   it("reports re-import when metadata exists but the file is unavailable", () => {

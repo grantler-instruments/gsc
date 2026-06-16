@@ -1,7 +1,8 @@
 import type { MouseEvent } from "react";
-import { cueMissingAsset } from "../../lib/cue-asset";
+import { cueMissingAsset, cueUsesAsset } from "../../lib/cue-asset";
 import { type CueListNode, getChildCues, isContainerCue, isCueActive } from "../../lib/cues";
 import type { RunningSequence } from "../../stores/transport";
+import { useUiStore } from "../../stores/ui";
 import { useVfsStore } from "../../stores/vfs";
 import type { Cue } from "../../types/cue";
 import { CueContainerLeadingDrop } from "./CueContainerLeadingDrop";
@@ -55,13 +56,17 @@ export function CueListTree({
   onRenameCancel,
 }: CueListTreeProps) {
   const assetEntries = useVfsStore((s) => s.entries);
+  const hoveredAssetPath = useUiStore((s) => s.hoveredAssetPath);
   const cueDragging = useCueDragActive();
 
   return nodes.flatMap((node) => {
     const expanded = !collapsedGroups.has(node.cue.id);
     const childCount = isContainerCue(node.cue) ? getChildCues(cues, node.cue.id).length : 0;
 
-    const highlightAsTarget = node.cue.id === hoveredTargetId || node.cue.id === selectedTargetId;
+    const highlightAsTarget =
+      node.cue.id === hoveredTargetId ||
+      node.cue.id === selectedTargetId ||
+      cueUsesAsset(node.cue, hoveredAssetPath);
 
     const row = (
       <CueRow

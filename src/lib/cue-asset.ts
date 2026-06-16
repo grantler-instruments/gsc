@@ -6,6 +6,11 @@ import type { AssetKind, Cue } from "../types/cue";
 import { normalizePath, vfsHas } from "../vfs/engine";
 import type { AssetDragPayload } from "./drag";
 
+export function cueUsesAsset(cue: Cue, assetPath: string | null | undefined): boolean {
+  if (!assetPath || !cue.assetPath) return false;
+  return normalizePath(cue.assetPath) === normalizePath(assetPath);
+}
+
 export function assetPayloadMatchesCue(cue: Cue, payload: AssetDragPayload): boolean {
   return cueNeedsAsset(cue) && cue.type === payload.kind;
 }
