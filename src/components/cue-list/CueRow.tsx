@@ -54,10 +54,8 @@ export interface CueRowProps {
   primarySelected: boolean;
   active: boolean;
   missingAsset: boolean;
-  pulseAsStopTarget: boolean;
-  staticAsStopTarget: boolean;
-  highlightAsFadeTarget: boolean;
-  fadeTargetHighlightToken: string;
+  highlightAsTarget: boolean;
+  targetHighlightToken: string;
   onHoverChange: (cueId: string | null) => void;
   onSelect: (e: MouseEvent) => void;
   onContextMenu: (e: MouseEvent) => void;
@@ -83,10 +81,8 @@ function cueRowPropsAreEqual(prev: CueRowProps, next: CueRowProps): boolean {
     prev.primarySelected === next.primarySelected &&
     prev.active === next.active &&
     prev.missingAsset === next.missingAsset &&
-    prev.pulseAsStopTarget === next.pulseAsStopTarget &&
-    prev.staticAsStopTarget === next.staticAsStopTarget &&
-    prev.highlightAsFadeTarget === next.highlightAsFadeTarget &&
-    prev.fadeTargetHighlightToken === next.fadeTargetHighlightToken
+    prev.highlightAsTarget === next.highlightAsTarget &&
+    prev.targetHighlightToken === next.targetHighlightToken
   );
 }
 
@@ -99,10 +95,8 @@ export const CueRow = memo(function CueRow({
   primarySelected,
   active,
   missingAsset,
-  pulseAsStopTarget,
-  staticAsStopTarget,
-  highlightAsFadeTarget,
-  fadeTargetHighlightToken,
+  highlightAsTarget,
+  targetHighlightToken,
   onHoverChange,
   onSelect,
   onContextMenu,
@@ -132,8 +126,8 @@ export const CueRow = memo(function CueRow({
 
   const rowRef = useRef<HTMLLIElement>(null);
   const cueNumberRef = useRef<HTMLSpanElement>(null);
-  useRestartCssAnimation(rowRef, highlightAsFadeTarget, fadeTargetHighlightToken);
-  useRestartCssAnimation(cueNumberRef, highlightAsFadeTarget, fadeTargetHighlightToken);
+  useRestartCssAnimation(rowRef, highlightAsTarget, targetHighlightToken);
+  useRestartCssAnimation(cueNumberRef, highlightAsTarget, targetHighlightToken);
 
   const playback = usePlaybackStore((s) => (active ? s.byCueId[cue.id] : undefined));
 
@@ -197,9 +191,7 @@ export const CueRow = memo(function CueRow({
     isLightFade: isFade && cue.type === "lightFade",
     isSequenceStep: isCurrentSequenceStep,
     hasWarning,
-    pulseAsStopTarget,
-    staticAsStopTarget,
-    highlightAsFadeTarget,
+    highlightAsTarget,
     isPreviewing,
     dropActive: dropActive && isContainer,
     insertBefore: insertPlace === "before",
@@ -264,7 +256,7 @@ export const CueRow = memo(function CueRow({
         ref={cueNumberRef}
         component="span"
         data-cue-number=""
-        sx={cueNumberSx(tokens, primarySelected, highlightAsFadeTarget)}
+        sx={cueNumberSx(tokens, primarySelected, highlightAsTarget)}
       >
         {cue.number}
       </Box>

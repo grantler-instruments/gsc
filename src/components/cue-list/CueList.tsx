@@ -20,7 +20,7 @@ import { useCueListDrop } from "./useCueListDrop";
 import { useCueListRename } from "./useCueListRename";
 import { useCueListScrollIntoView } from "./useCueListScrollIntoView";
 import { useCueListSelection } from "./useCueListSelection";
-import { useCueListStopHighlights } from "./useCueListStopHighlights";
+import { useCueListTargetHighlights } from "./useCueListTargetHighlights";
 
 export function CueList() {
   const tokens = useGscTokens();
@@ -50,7 +50,7 @@ export function CueList() {
     selection.selectedCueIds,
     selection.selectedCueIdSet,
   );
-  const stopHighlights = useCueListStopHighlights(cues, selection.primarySelectedId);
+  const targetHighlights = useCueListTargetHighlights(cues, selection.primarySelectedId);
   const listDrop = useCueListDrop(canEdit);
 
   const tree = useMemo(() => buildCueTree(cues), [cues]);
@@ -95,14 +95,12 @@ export function CueList() {
             dmxFadesByFadeCueId={dmxFadesByFadeCueId}
             selectedCueIdSet={selection.selectedCueIdSet}
             primarySelectedId={selection.primarySelectedId}
-            hoveredStopTargetId={stopHighlights.hoveredStopTargetId}
-            selectedStopTargetId={stopHighlights.selectedStopTargetId}
-            hoveredFadeTargetId={stopHighlights.hoveredFadeTargetId}
-            selectedFadeTargetId={stopHighlights.selectedFadeTargetId}
-            fadeTargetHighlightToken={stopHighlights.fadeTargetHighlightToken}
+            hoveredTargetId={targetHighlights.hoveredTargetId}
+            selectedTargetId={targetHighlights.selectedTargetId}
+            targetHighlightToken={targetHighlights.targetHighlightToken}
             renamingCueId={rename.renamingCueId}
             renameValue={rename.renameValue}
-            onHoverChange={stopHighlights.setHoveredCueId}
+            onHoverChange={targetHighlights.setHoveredCueId}
             onSelect={selection.handleRowSelect}
             onContextMenu={contextMenu.handleRowContextMenu}
             onRenameChange={rename.setRenameValue}

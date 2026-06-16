@@ -19,11 +19,9 @@ export interface CueListTreeProps {
   dmxFadesByFadeCueId: Readonly<Record<string, unknown>>;
   selectedCueIdSet: Set<string>;
   primarySelectedId: string | null;
-  hoveredStopTargetId: string | null;
-  selectedStopTargetId: string | null;
-  hoveredFadeTargetId: string | null;
-  selectedFadeTargetId: string | null;
-  fadeTargetHighlightToken: string;
+  hoveredTargetId: string | null;
+  selectedTargetId: string | null;
+  targetHighlightToken: string;
   renamingCueId: string | null;
   renameValue: string;
   onHoverChange: (cueId: string | null) => void;
@@ -44,11 +42,9 @@ export function CueListTree({
   dmxFadesByFadeCueId,
   selectedCueIdSet,
   primarySelectedId,
-  hoveredStopTargetId,
-  selectedStopTargetId,
-  hoveredFadeTargetId,
-  selectedFadeTargetId,
-  fadeTargetHighlightToken,
+  hoveredTargetId,
+  selectedTargetId,
+  targetHighlightToken,
   renamingCueId,
   renameValue,
   onHoverChange,
@@ -65,8 +61,7 @@ export function CueListTree({
     const expanded = !collapsedGroups.has(node.cue.id);
     const childCount = isContainerCue(node.cue) ? getChildCues(cues, node.cue.id).length : 0;
 
-    const highlightAsFadeTarget =
-      node.cue.id === hoveredFadeTargetId || node.cue.id === selectedFadeTargetId;
+    const highlightAsTarget = node.cue.id === hoveredTargetId || node.cue.id === selectedTargetId;
 
     const row = (
       <CueRow
@@ -79,10 +74,8 @@ export function CueListTree({
         primarySelected={node.cue.id === primarySelectedId}
         active={isCueActive(node.cue, cues, activeCueIds, runningSequence, dmxFadesByFadeCueId)}
         missingAsset={cueMissingAsset(node.cue, assetEntries)}
-        pulseAsStopTarget={node.cue.id === hoveredStopTargetId}
-        staticAsStopTarget={node.cue.id === selectedStopTargetId}
-        highlightAsFadeTarget={highlightAsFadeTarget}
-        fadeTargetHighlightToken={fadeTargetHighlightToken}
+        highlightAsTarget={highlightAsTarget}
+        targetHighlightToken={targetHighlightToken}
         onHoverChange={onHoverChange}
         onSelect={(e) => onSelect(node.cue.id, e)}
         onContextMenu={(e) => onContextMenu(node.cue.id, e)}
@@ -121,11 +114,9 @@ export function CueListTree({
                 dmxFadesByFadeCueId={dmxFadesByFadeCueId}
                 selectedCueIdSet={selectedCueIdSet}
                 primarySelectedId={primarySelectedId}
-                hoveredStopTargetId={hoveredStopTargetId}
-                selectedStopTargetId={selectedStopTargetId}
-                hoveredFadeTargetId={hoveredFadeTargetId}
-                selectedFadeTargetId={selectedFadeTargetId}
-                fadeTargetHighlightToken={fadeTargetHighlightToken}
+                hoveredTargetId={hoveredTargetId}
+                selectedTargetId={selectedTargetId}
+                targetHighlightToken={targetHighlightToken}
                 renamingCueId={renamingCueId}
                 renameValue={renameValue}
                 onHoverChange={onHoverChange}

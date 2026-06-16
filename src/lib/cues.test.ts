@@ -7,6 +7,7 @@ import {
   expandSequenceSteps,
   getChildCues,
   getCueDisplayName,
+  getCueTargetId,
   getFadeTarget,
   getStopTarget,
   getTopLevelCues,
@@ -199,6 +200,24 @@ describe("getFadeTarget", () => {
       testCue("fade", "Fade", "lightFade", { fadeTargetId: "l" }),
     ];
     expect(getFadeTarget(cues[1], cues)?.id).toBe("l");
+  });
+});
+
+describe("getCueTargetId", () => {
+  it("resolves stop and fade targets", () => {
+    const cues = [
+      testCue("a", "A", "audio"),
+      testCue("l", "Look", "dmx", {
+        dmx: { mode: "partial", fixtures: [{ fixtureId: "f1", values: [128] }] },
+      }),
+      testCue("stop", "Stop", "stop", { stopTargetId: "a" }),
+      testCue("pan", "Pan", "panFade", { fadeTargetId: "a" }),
+      testCue("light", "Light", "lightFade", { fadeTargetId: "l" }),
+    ];
+    expect(getCueTargetId(cues[2], cues)).toBe("a");
+    expect(getCueTargetId(cues[3], cues)).toBe("a");
+    expect(getCueTargetId(cues[4], cues)).toBe("l");
+    expect(getCueTargetId(cues[0], cues)).toBeNull();
   });
 });
 
