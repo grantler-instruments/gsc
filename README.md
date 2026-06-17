@@ -129,6 +129,8 @@ MyShow.gsc/
 - **Open…:** select a `.gsc` folder, or import a `.gsc.zip` bundle (extracted into a new `.gsc` folder).
 - **Drag-and-drop:** drop a `.gsc` folder or `.gsc.zip` onto the window to open/import.
 
+**Experimental QLab 5 import:** GSC can also import QLab 5 workspaces through the same **Open…** flow (no separate menu item). Choose a `.qlab5` file, or on desktop a project folder that contains one. GSC shows a confirmation dialog and an import report when done. Coverage is incomplete — treat imported shows as a starting point and review cues, fades, and media before relying on them in production.
+
 ### Web project
 
 The web app autosaves to browser storage. Use **Open…** / **Export…** to import or download a `.gsc.zip` bundle (with media) when moving shows between machines or backing up.
