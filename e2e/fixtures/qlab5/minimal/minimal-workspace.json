@@ -1,0 +1,481 @@
+{
+  "$archiver": "NSKeyedArchiver",
+  "$version": 100000,
+  "$top": {
+    "root": {
+      "UID": 98
+    }
+  },
+  "$objects": [
+    "$null",
+    {
+      "$classname": "F53Workspace",
+      "$classes": ["F53Workspace", "NSObject"]
+    },
+    "GSC Import Fixture",
+    "ws-fixture-001",
+    "list-main-001",
+    "5.0-test",
+    {
+      "$classname": "F53CueList",
+      "$classes": ["F53CueList", "NSObject"]
+    },
+    "Main Cue List",
+    "CueList",
+    {
+      "$classname": "F53AudioCue",
+      "$classes": ["F53AudioCue", "NSObject"]
+    },
+    "cue-audio-001",
+    "1",
+    "Intro Audio",
+    "Audio",
+    "do_not_continue",
+    "audio/white-noise-short-a.wav",
+    0.85,
+    0,
+    1,
+    0.5,
+    2,
+    false,
+    {
+      "$class": {
+        "UID": 9
+      },
+      "uniqueID": {
+        "UID": 10
+      },
+      "number": {
+        "UID": 11
+      },
+      "name": {
+        "UID": 12
+      },
+      "type": {
+        "UID": 13
+      },
+      "continueMode": {
+        "UID": 14
+      },
+      "fileTarget": {
+        "UID": 15
+      },
+      "level": {
+        "UID": 16
+      },
+      "pan": {
+        "UID": 17
+      },
+      "fadeInTime": {
+        "UID": 18
+      },
+      "fadeOutTime": {
+        "UID": 19
+      },
+      "startTime": {
+        "UID": 17
+      },
+      "endTime": {
+        "UID": 20
+      },
+      "loop": {
+        "UID": 21
+      }
+    },
+    {
+      "$classname": "F53VideoCue",
+      "$classes": ["F53VideoCue", "NSObject"]
+    },
+    "cue-video-001",
+    "2",
+    "Intro Video",
+    "Video",
+    "auto_continue",
+    "video/test-video-playback.mp4",
+    {
+      "$class": {
+        "UID": 23
+      },
+      "uniqueID": {
+        "UID": 24
+      },
+      "number": {
+        "UID": 25
+      },
+      "name": {
+        "UID": 26
+      },
+      "type": {
+        "UID": 27
+      },
+      "continueMode": {
+        "UID": 28
+      },
+      "fileTarget": {
+        "UID": 29
+      },
+      "opacity": {
+        "UID": 18
+      }
+    },
+    {
+      "$classname": "F53GroupCue",
+      "$classes": ["F53GroupCue", "NSObject"]
+    },
+    "cue-group-001",
+    "3",
+    "Parallel Group",
+    "Group",
+    "start_all",
+    {
+      "$classname": "F53AudioCue",
+      "$classes": ["F53AudioCue", "NSObject"]
+    },
+    "cue-audio-002",
+    "3.1",
+    "Stinger",
+    "audio/white-noise-short-b.wav",
+    {
+      "$class": {
+        "UID": 37
+      },
+      "uniqueID": {
+        "UID": 38
+      },
+      "number": {
+        "UID": 39
+      },
+      "name": {
+        "UID": 40
+      },
+      "type": {
+        "UID": 13
+      },
+      "fileTarget": {
+        "UID": 41
+      }
+    },
+    [
+      {
+        "UID": 42
+      }
+    ],
+    {
+      "$class": {
+        "UID": 31
+      },
+      "uniqueID": {
+        "UID": 32
+      },
+      "number": {
+        "UID": 33
+      },
+      "name": {
+        "UID": 34
+      },
+      "type": {
+        "UID": 35
+      },
+      "groupMode": {
+        "UID": 36
+      },
+      "cues": {
+        "UID": 43
+      }
+    },
+    {
+      "$classname": "F53GroupCue",
+      "$classes": ["F53GroupCue", "NSObject"]
+    },
+    "cue-seq-001",
+    "4",
+    "Timeline Group",
+    "timeline",
+    {
+      "$classname": "F53WaitCue",
+      "$classes": ["F53WaitCue", "NSObject"]
+    },
+    "cue-wait-001",
+    "4.1",
+    "Hold",
+    "Wait",
+    {
+      "$class": {
+        "UID": 50
+      },
+      "uniqueID": {
+        "UID": 51
+      },
+      "number": {
+        "UID": 52
+      },
+      "name": {
+        "UID": 53
+      },
+      "type": {
+        "UID": 54
+      },
+      "duration": {
+        "UID": 20
+      }
+    },
+    {
+      "$classname": "F53StopCue",
+      "$classes": ["F53StopCue", "NSObject"]
+    },
+    "cue-stop-001",
+    "4.2",
+    "Stop Intro",
+    "Stop",
+    {
+      "$class": {
+        "UID": 56
+      },
+      "uniqueID": {
+        "UID": 57
+      },
+      "number": {
+        "UID": 58
+      },
+      "name": {
+        "UID": 59
+      },
+      "type": {
+        "UID": 60
+      },
+      "targetUniqueID": {
+        "UID": 10
+      }
+    },
+    [
+      {
+        "UID": 55
+      },
+      {
+        "UID": 61
+      }
+    ],
+    {
+      "$class": {
+        "UID": 45
+      },
+      "uniqueID": {
+        "UID": 46
+      },
+      "number": {
+        "UID": 47
+      },
+      "name": {
+        "UID": 48
+      },
+      "type": {
+        "UID": 35
+      },
+      "groupMode": {
+        "UID": 49
+      },
+      "cues": {
+        "UID": 62
+      }
+    },
+    {
+      "$classname": "F53MIDICue",
+      "$classes": ["F53MIDICue", "NSObject"]
+    },
+    "cue-midi-001",
+    "5",
+    "MIDI Note",
+    "MIDI",
+    "note-on",
+    60,
+    100,
+    {
+      "$class": {
+        "UID": 64
+      },
+      "uniqueID": {
+        "UID": 65
+      },
+      "number": {
+        "UID": 66
+      },
+      "name": {
+        "UID": 67
+      },
+      "type": {
+        "UID": 68
+      },
+      "midiMessageType": {
+        "UID": 69
+      },
+      "channel": {
+        "UID": 18
+      },
+      "note": {
+        "UID": 70
+      },
+      "velocity": {
+        "UID": 71
+      }
+    },
+    {
+      "$classname": "F53NetworkCue",
+      "$classes": ["F53NetworkCue", "NSObject"]
+    },
+    "cue-osc-001",
+    "6",
+    "OSC Cue",
+    "Network",
+    "127.0.0.1",
+    53000,
+    "/cue/1/start",
+    {
+      "$class": {
+        "UID": 73
+      },
+      "uniqueID": {
+        "UID": 74
+      },
+      "number": {
+        "UID": 75
+      },
+      "name": {
+        "UID": 76
+      },
+      "type": {
+        "UID": 77
+      },
+      "destinationHost": {
+        "UID": 78
+      },
+      "destinationPort": {
+        "UID": 79
+      },
+      "oscAddress": {
+        "UID": 80
+      }
+    },
+    {
+      "$classname": "F53MemoCue",
+      "$classes": ["F53MemoCue", "NSObject"]
+    },
+    "cue-memo-001",
+    "7",
+    "Operator Note",
+    "Memo",
+    "Check levels before GO",
+    {
+      "$class": {
+        "UID": 82
+      },
+      "uniqueID": {
+        "UID": 83
+      },
+      "number": {
+        "UID": 84
+      },
+      "name": {
+        "UID": 85
+      },
+      "type": {
+        "UID": 86
+      },
+      "notes": {
+        "UID": 87
+      }
+    },
+    {
+      "$classname": "F53ScriptCue",
+      "$classes": ["F53ScriptCue", "NSObject"]
+    },
+    "cue-script-001",
+    "8",
+    "AppleScript",
+    "Script",
+    {
+      "$class": {
+        "UID": 89
+      },
+      "uniqueID": {
+        "UID": 90
+      },
+      "number": {
+        "UID": 91
+      },
+      "name": {
+        "UID": 92
+      },
+      "type": {
+        "UID": 93
+      }
+    },
+    [
+      {
+        "UID": 22
+      },
+      {
+        "UID": 30
+      },
+      {
+        "UID": 44
+      },
+      {
+        "UID": 63
+      },
+      {
+        "UID": 72
+      },
+      {
+        "UID": 81
+      },
+      {
+        "UID": 88
+      },
+      {
+        "UID": 94
+      }
+    ],
+    {
+      "$class": {
+        "UID": 6
+      },
+      "uniqueID": {
+        "UID": 4
+      },
+      "name": {
+        "UID": 7
+      },
+      "type": {
+        "UID": 8
+      },
+      "cues": {
+        "UID": 95
+      }
+    },
+    [
+      {
+        "UID": 96
+      }
+    ],
+    {
+      "$class": {
+        "UID": 1
+      },
+      "name": {
+        "UID": 2
+      },
+      "uniqueID": {
+        "UID": 3
+      },
+      "currentCueListID": {
+        "UID": 4
+      },
+      "archiveVersion": {
+        "UID": 5
+      },
+      "cueLists": {
+        "UID": 97
+      }
+    }
+  ]
+}

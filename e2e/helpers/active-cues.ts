@@ -59,6 +59,11 @@ export async function seekWaveformAtRatio(
   });
 }
 
+export async function expectActiveCueStopped(page: Page, cueName: string): Promise<void> {
+  await expect(activeCueRow(page, cueName)).toBeHidden({ timeout: 10_000 });
+  await expect(activeCuesEmptyMessage(page)).toBeVisible();
+}
+
 /** Wait until the active-cue progress bar advances. */
 export async function expectPlaybackProgressToAdvance(page: Page, cueName: string): Promise<void> {
   const progress = activeCueRow(page, cueName).getByRole("progressbar");
