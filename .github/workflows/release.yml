@@ -29,6 +29,15 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Install Playwright
+        run: npm run test:e2e:install -- --with-deps
+
+      - name: Web E2E tests
+        run: npm run test:e2e
+
+      - name: Desktop E2E (Tauri WebDriver)
+        uses: ./.github/actions/desktop-e2e
+
   release:
     needs: test
     strategy:

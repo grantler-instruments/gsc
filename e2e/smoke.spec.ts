@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { createPlaywrightDriver } from "./adapters/playwright-driver";
 import {
   activeCueRow,
   activeCuesEmptyMessage,
   activeCuesPanel,
-  expectPlaybackProgressToAdvance,
   openActiveCuesTab,
   pressPanic,
   pressTransportGo,
@@ -22,8 +22,10 @@ import {
   waitForAutosavedCue,
   waitForAutosavedShowName,
 } from "./helpers/project-session";
+import { PLAYBACK_WAV, PLAYBACK_WAV_MIME } from "./shared/constants";
+import { smokeGoPlaysAudio } from "./shared/scenarios/smoke-go-plays-audio";
 
-const FIXTURE = "white-noise-playback.wav";
+const FIXTURE = PLAYBACK_WAV;
 const RECOVERED_SHOW_NAME = "Recovered Show";
 const RECOVERED_LIST_NAME = "Act 2";
 const RECOVERED_AUDIO = "white-noise-playback.wav";
@@ -40,15 +42,10 @@ test("drop WAV creates cue and asset @smoke", async ({ page }) => {
 test("GO plays audio with advancing progress @smoke", async ({ page }) => {
   test.setTimeout(60_000);
 
-  await gotoApp(page);
-  await dropAudioOnCueList(page, fixturePath(FIXTURE), FIXTURE, "audio/wav");
-  await expectCueInSequenceList(page, FIXTURE);
-  await openActiveCuesTab(page);
-  await pressTransportGo(page);
-
-  await expect(activeCuesPanel(page).getByRole("button", { name: "Stop all" })).toBeVisible();
-  await expect(activeCueRow(page, FIXTURE)).toBeVisible();
-  await expectPlaybackProgressToAdvance(page, FIXTURE);
+  await smokeGoPlaysAudio(createPlaywrightDriver(page), {
+    fileName: FIXTURE,
+    mimeType: PLAYBACK_WAV_MIME,
+  });
 });
 
 test("Space GO and Escape panic @smoke", async ({ page }) => {
