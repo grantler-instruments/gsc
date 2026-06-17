@@ -158,7 +158,7 @@ export function AssetsPanel() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             sx={{ mb: 1 }}
-            inputProps={{ "aria-label": t("assets.search") }}
+            slotProps={{ htmlInput: { "aria-label": t("assets.search") } }}
           />
           <Stack direction="row" sx={{ gap: 1 }}>
             <AssetTypeFilterMenu enabledKinds={enabledKinds} onChange={setEnabledKinds} />
