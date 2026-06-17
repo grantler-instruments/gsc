@@ -22,7 +22,7 @@
     "lint:fix": "biome check --write .",
     "icons": "vite-node --script scripts/sync-favicon.ts",
     "version:sync": "node scripts/sync-version.mjs",
-    "version": "node scripts/sync-version.mjs",
+    "version": "node scripts/sync-version.mjs && git add src-tauri/Cargo.toml src-tauri/Cargo.lock",
     "screenshots": "node scripts/screenshots/capture.mjs",
     "screenshots:serve": "node scripts/screenshots/capture.mjs --serve",
     "tauri": "tauri",
