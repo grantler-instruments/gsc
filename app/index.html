@@ -11,6 +11,15 @@
     <title>Grantler Stage Control</title>
     <script>
       (() => {
+        const syncViewport = () => {
+          const root = document.documentElement;
+          root.style.setProperty("--app-vh", `${window.innerHeight}px`);
+          root.style.setProperty("--app-vw", `${window.innerWidth}px`);
+        };
+        syncViewport();
+        window.addEventListener("resize", syncViewport);
+      })();
+      (() => {
         var c = globalThis.crypto;
         var bytes;
         var hex;

@@ -97,7 +97,21 @@
     "save": "Save",
     "saveChooseLocation": "Choose location…",
     "export": "Export…",
-    "exportHint": "Download {{extension}} with all assets"
+    "exportHint": "Download {{extension}} with all assets",
+    "openFromDisk": "Open file…",
+    "openQlabFolder": "QLab project folder…"
+  },
+  "qlab5Import": {
+    "confirmTitle": "Import QLab project?",
+    "confirmMessage": "“{{name}}” is a QLab 5 project. Import it as a GSC project?",
+    "confirmImport": "Import",
+    "reportTitle": "QLab import report",
+    "reportIntro": "Imported “{{name}}” with {{cueCount}} cues in {{listCount}} list(s).",
+    "reportClean": "All cues were imported without issues.",
+    "skippedTitle": "Skipped or partial cues",
+    "missingAssetsTitle": "Missing media files",
+    "warningsTitle": "Warnings",
+    "failed": "Could not import the QLab workspace."
   },
   "support": {
     "menuItem": "Support…",
@@ -475,7 +489,20 @@
     "selectAnAsset": "Select an asset",
     "assetNotLoaded": "Asset not loaded",
     "fileNotAvailable": "File not available — re-import in Assets",
-    "assetMissingFromProject": "Asset missing from project"
+    "assetMissingFromProject": "Asset missing from project",
+    "search": "Search assets",
+    "filterType": "Filter by type",
+    "filterTypeCount": "Type ({{count}})",
+    "filterAll": "All types",
+    "sort": "Sort",
+    "sortNameAsc": "Name A–Z",
+    "sortNameDesc": "Name Z–A",
+    "sortTypeAsc": "Type",
+    "sortTypeDesc": "Type (reverse)",
+    "noMatches": "No assets match your search.",
+    "filtersActive": "{{count}} active filter(s)",
+    "showingFiltered": "Showing {{visible}} of {{total}}",
+    "clearFilters": "Clear filters"
   },
   "fixtures": {
     "dropHint": "Add fixtures with + Fixture below, or import a profile.",

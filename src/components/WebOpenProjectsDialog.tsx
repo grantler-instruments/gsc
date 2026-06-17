@@ -90,16 +90,22 @@ export function WebOpenProjectsDialog() {
           </Typography>
         )}
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
+      <DialogActions sx={{ px: 3, pb: 2, gap: 1, flexWrap: "wrap" }}>
         <Button onClick={() => resolveWebOpenProjectsChoice({ type: "cancel" })}>
           {t("common.action.cancel")}
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={() => resolveWebOpenProjectsChoice({ type: "import-qlab-folder" })}
+        >
+          {t("fileMenu.openQlabFolder")}
         </Button>
         <Button
           variant="contained"
           startIcon={<FileUploadOutlinedIcon />}
           onClick={() => resolveWebOpenProjectsChoice({ type: "import" })}
         >
-          {t("common.action.import")}
+          {t("fileMenu.openFromDisk")}
         </Button>
       </DialogActions>
     </Dialog>

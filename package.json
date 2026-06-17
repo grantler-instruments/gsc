@@ -39,6 +39,8 @@
     "@tauri-apps/plugin-dialog": "^2.7.1",
     "@tauri-apps/plugin-fs": "^2.5.1",
     "@tauri-apps/plugin-opener": "^2",
+    "bplist-parser": "^0.3.2",
+    "buffer": "^6.0.3",
     "fflate": "^0.8.3",
     "i18next": "^26.2.0",
     "qrcode": "^1.5.4",

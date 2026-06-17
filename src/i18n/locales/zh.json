@@ -97,7 +97,21 @@
     "save": "保存",
     "saveChooseLocation": "选择位置…",
     "export": "导出…",
-    "exportHint": "下载包含所有资源的 {{extension}}"
+    "exportHint": "下载包含所有资源的 {{extension}}",
+    "openFromDisk": "打开文件…",
+    "openQlabFolder": "QLab 项目文件夹…"
+  },
+  "qlab5Import": {
+    "confirmTitle": "导入 QLab 项目？",
+    "confirmMessage": "“{{name}}” 是 QLab 5 项目。是否导入为 GSC 项目？",
+    "confirmImport": "导入",
+    "reportTitle": "QLab 导入报告",
+    "reportIntro": "已导入“{{name}}”，包含 {{listCount}} 个列表中的 {{cueCount}} 个 cue。",
+    "reportClean": "所有 cue 均已成功导入。",
+    "skippedTitle": "已跳过或部分导入的 cue",
+    "missingAssetsTitle": "缺失的媒体文件",
+    "warningsTitle": "警告",
+    "failed": "无法导入 QLab 工作区。"
   },
   "support": {
     "menuItem": "支持…",
@@ -443,7 +457,20 @@
     "selectAnAsset": "选择资源",
     "assetNotLoaded": "资源未加载",
     "fileNotAvailable": "文件不可用 — 在资源中重新导入",
-    "assetMissingFromProject": "项目中缺少资源"
+    "assetMissingFromProject": "项目中缺少资源",
+    "search": "搜索资源",
+    "filterType": "按类型筛选",
+    "filterTypeCount": "类型 ({{count}})",
+    "filterAll": "所有类型",
+    "sort": "排序",
+    "sortNameAsc": "名称 A–Z",
+    "sortNameDesc": "名称 Z–A",
+    "sortTypeAsc": "类型",
+    "sortTypeDesc": "类型（倒序）",
+    "noMatches": "没有匹配的资源。",
+    "filtersActive": "{{count}} 个筛选条件已启用",
+    "showingFiltered": "显示 {{visible}} / {{total}}",
+    "clearFilters": "清除筛选"
   },
   "fixtures": {
     "dropHint": "使用下方 + 灯具添加灯具，或导入配置文件。",

@@ -17,10 +17,16 @@ import { useProjectLocationStore } from "../stores/project-location";
 import { requestUnsavedProjectChoice } from "../stores/unsaved-project-prompt";
 import { requestWebOpenProjectsChoice } from "../stores/web-open-projects-prompt";
 import { notifyWarning } from "./notifications";
+import { isQlab5WorkspacePath } from "./qlab5/import-qlab5-project";
+import {
+  confirmAndImportQlab5FolderFiles,
+  confirmAndImportQlab5WorkspaceFile,
+  pickWebQlab5ProjectFolder,
+} from "./qlab5-import-actions";
 import { canEditProject } from "./show-mode";
 import { isProjectUnsaved } from "./unsaved-project";
 
-async function prepareToSwitchProject(): Promise<boolean> {
+export async function prepareToSwitchProject(): Promise<boolean> {
   if (getPlatform() === "tauri" && isProjectUnsaved()) {
     const choice = await requestUnsavedProjectChoice(useProjectStore.getState().name);
     if (choice === "cancel") return false;
@@ -34,11 +40,11 @@ async function prepareToSwitchProject(): Promise<boolean> {
   return true;
 }
 
-function pickWebBundleFile(): Promise<File | undefined> {
+function pickWebOpenFile(): Promise<File | undefined> {
   return new Promise((resolve) => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = ".zip,.gsc.zip,application/zip";
+    input.accept = ".zip,.gsc.zip,application/zip,.qlab5";
     input.hidden = true;
     input.onchange = () => {
       const file = input.files?.[0];
@@ -63,12 +69,25 @@ export async function openProjectFile(): Promise<void> {
   if (!(await prepareToSwitchProject())) return;
 
   if (choice.type === "import") {
-    const file = await pickWebBundleFile();
-    if (file) {
+    const file = await pickWebOpenFile();
+    if (!file) return;
+    if (isQlab5WorkspacePath(file.name)) {
+      await confirmAndImportQlab5WorkspaceFile(file);
+    } else {
       await importProjectBundle(file);
     }
     return;
   }
+
+  if (choice.type === "import-qlab-folder") {
+    const files = await pickWebQlab5ProjectFolder();
+    if (files?.length) {
+      await confirmAndImportQlab5FolderFiles(files);
+    }
+    return;
+  }
+
+  if (choice.type !== "open-stored") return;
 
   const opened = await openStoredWebProject(choice.projectId);
   if (!opened) {

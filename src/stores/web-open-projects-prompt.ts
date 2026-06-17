@@ -5,6 +5,7 @@ import type { IdbProjectSummary } from "../lib/project-idb";
 export type WebOpenProjectsChoice =
   | { type: "open-stored"; projectId: string }
   | { type: "import" }
+  | { type: "import-qlab-folder" }
   | { type: "cancel" };
 
 interface WebOpenProjectsPromptState {

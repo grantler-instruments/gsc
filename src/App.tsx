@@ -8,6 +8,8 @@ import { DmxPreviewConfirmDialog } from "./components/DmxPreviewConfirmDialog";
 import { LeftSidebar } from "./components/LeftSidebar";
 import { ProjectLoadingScreen } from "./components/ProjectLoadingScreen";
 import { ProjectToolbar } from "./components/ProjectToolbar";
+import { Qlab5ImportConfirmDialogHost } from "./components/Qlab5ImportConfirmDialogHost";
+import { Qlab5ImportReportDialogHost } from "./components/Qlab5ImportReportDialogHost";
 import { RightSidebar } from "./components/RightSidebar";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { StartupProjectsDialog } from "./components/StartupProjectsDialog";
@@ -43,6 +45,8 @@ function App() {
         <WebOpenProjectsDialog />
         <DeleteStoredProjectDialog />
         <UnsavedProjectDialog />
+        <Qlab5ImportConfirmDialogHost />
+        <Qlab5ImportReportDialogHost />
         <AppSnackbar />
         <TriggerNoteToasts />
       </>
@@ -101,6 +105,8 @@ function App() {
       <StartupProjectsDialog />
       <WebOpenProjectsDialog />
       <DeleteStoredProjectDialog />
+      <Qlab5ImportConfirmDialogHost />
+      <Qlab5ImportReportDialogHost />
       <AppSnackbar />
       <TriggerNoteToasts />
     </Box>
