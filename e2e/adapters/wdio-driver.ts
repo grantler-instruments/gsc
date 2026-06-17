@@ -3,23 +3,59 @@ import type { AppDriver, WaitUntilOptions } from "../shared/driver";
 
 type WdioBrowser = WebdriverIO.Browser;
 
+function roleSelector(role: string): string {
+  switch (role) {
+    case "button":
+      // Native <button> has implicit button role; Playwright getByRole matches both.
+      return 'button,[role="button"]';
+    default:
+      return `[role="${role}"]`;
+  }
+}
+
+async function elementLabel(element: WebdriverIO.Element): Promise<string> {
+  const text = (await element.getText())?.trim();
+  if (text) return text;
+
+  const innerText = (await element.getAttribute("innerText"))?.trim();
+  if (innerText) return innerText;
+
+  const ariaLabel = (await element.getAttribute("aria-label"))?.trim();
+  if (ariaLabel) return ariaLabel;
+
+  return "";
+}
+
 async function findByRole(
   browser: WdioBrowser,
   role: string,
   name: string | RegExp,
 ): Promise<WebdriverIO.Element> {
   const pattern =
-    name instanceof RegExp ? name : new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    name instanceof RegExp ? name : new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
 
-  const byLabel = await browser.$(`[role="${role}"][aria-label="${String(name)}"]`);
-  if (await byLabel.isExisting()) {
-    return byLabel;
+  if (typeof name === "string") {
+    const byLabel = await browser.$(`[role="${role}"][aria-label="${name}"]`);
+    if (await byLabel.isExisting()) {
+      return byLabel;
+    }
   }
 
-  const elements = await browser.$$(`[role="${role}"]`);
+  if (role === "button" && name === "GO") {
+    const footer = await browser.$("footer");
+    if (await footer.isExisting()) {
+      const footerButtons = await footer.$$(roleSelector(role));
+      for (const element of footerButtons) {
+        const label = await elementLabel(element);
+        if (pattern.test(label)) return element;
+      }
+    }
+  }
+
+  const elements = await browser.$$(roleSelector(role));
   for (const element of elements) {
-    const text = await element.getText();
-    if (pattern.test(text)) return element;
+    const label = await elementLabel(element);
+    if (pattern.test(label)) return element;
   }
 
   throw new Error(`Could not find role="${role}" matching ${String(name)}`);
@@ -42,10 +78,25 @@ async function waitUntil(
   throw new Error(options?.timeoutMsg ?? "waitUntil timed out");
 }
 
+async function waitForAppReady(browser: WdioBrowser): Promise<void> {
+  await waitUntil(
+    browser,
+    async () => {
+      try {
+        const go = await findByRole(browser, "button", "GO");
+        return await go.isDisplayed();
+      } catch {
+        return false;
+      }
+    },
+    { timeout: 30_000, timeoutMsg: "Timed out waiting for app transport GO button" },
+  );
+}
+
 export function createWdioDriver(browser: WdioBrowser): AppDriver {
   return {
     async gotoApp() {
-      await findByRole(browser, "button", "GO");
+      await waitForAppReady(browser);
     },
 
     async clickByRole(role, name) {
