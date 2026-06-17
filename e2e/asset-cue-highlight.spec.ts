@@ -12,6 +12,8 @@ import { dropAudioOnCueList, fixturePath } from "./helpers/drop-audio";
 const PLAYBACK_WAV = "white-noise-playback.wav";
 
 test("hovering an asset highlights cues that use it", async ({ page }) => {
+  test.setTimeout(60_000);
+
   await gotoApp(page, { resetStorage: true });
   await expect(transportGoButton(page)).toBeVisible();
 

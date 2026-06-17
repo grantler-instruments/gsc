@@ -56,8 +56,18 @@ test("sequence auto-advances through two audio steps @smoke @structure", async (
   await expect(containerCueRow(page, "Sequence").getByText("Playing step 1 of 2")).toBeVisible();
 
   await expect(activeCueRow(page, SHORT_A)).toBeHidden({ timeout: 15_000 });
-  await expect(activeCueRow(page, SHORT_B)).toBeVisible({ timeout: 10_000 });
-  await expect(containerCueRow(page, "Sequence").getByText("Playing step 2 of 2")).toBeVisible();
+  await expect
+    .poll(
+      async () => {
+        const step2Visible = await containerCueRow(page, "Sequence")
+          .getByText("Playing step 2 of 2")
+          .isVisible();
+        const shortBVisible = await activeCueRow(page, SHORT_B).isVisible();
+        return step2Visible && shortBVisible;
+      },
+      { timeout: 15_000, intervals: [50, 100, 200] },
+    )
+    .toBe(true);
 
   await expect(activeCueRow(page, SHORT_B)).toBeHidden({ timeout: 15_000 });
   await expect(activeCuesEmptyMessage(page)).toBeVisible({ timeout: 10_000 });

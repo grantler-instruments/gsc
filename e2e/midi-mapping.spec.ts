@@ -25,9 +25,14 @@ import {
   selectSequenceCue,
   sendMidiNoteOn,
 } from "./helpers/midi";
+import { PLAYBACK_WAV, PLAYBACK_WAV_MIME } from "./shared/constants";
 
 const SHORT_A = "white-noise-short-a.wav";
 const SHORT_B = "white-noise-short-b.wav";
+const PLAYBACK_FIXTURE = fixturePath(PLAYBACK_WAV);
+const PLAYBACK_ALT_FIXTURE = fixturePath("white-noise-playback.mp3");
+const PLAYBACK_ALT_NAME = "white-noise-playback.mp3";
+const PLAYBACK_ALT_MIME = "audio/mpeg";
 
 test.describe.configure({ mode: "serial" });
 
@@ -62,23 +67,24 @@ test("MIDI learn maps next and previous cue actions", async ({ page }) => {
 test("MIDI GO (selected cue) starts playback", async ({ page }) => {
   await gotoApp(page, { resetStorage: true });
 
-  await dropAudioOnCueList(page, WHITE_NOISE_FIXTURE, WHITE_NOISE_NAME);
-  await expectCueInSequenceList(page, WHITE_NOISE_NAME);
-  await selectSequenceCue(page, WHITE_NOISE_NAME);
+  await dropAudioOnCueList(page, PLAYBACK_FIXTURE, PLAYBACK_WAV, PLAYBACK_WAV_MIME);
+  await expectCueInSequenceList(page, PLAYBACK_WAV);
+  await selectSequenceCue(page, PLAYBACK_WAV);
 
   await configureMidiInput(page);
   await learnMidiMapping(page, { action: "GO (selected cue)", note: 60 });
   await closeSettings(page);
 
+  await selectSequenceCue(page, PLAYBACK_WAV);
   await sendMidiNoteOn(page, 60);
-  await expectActiveCue(page, WHITE_NOISE_NAME);
+  await expectActiveCue(page, PLAYBACK_WAV);
 });
 
 test("MIDI panic stops playback", async ({ page }) => {
   await gotoApp(page, { resetStorage: true });
 
-  await dropAudioOnCueList(page, WHITE_NOISE_FIXTURE, WHITE_NOISE_NAME);
-  await selectSequenceCue(page, WHITE_NOISE_NAME);
+  await dropAudioOnCueList(page, PLAYBACK_FIXTURE, PLAYBACK_WAV, PLAYBACK_WAV_MIME);
+  await selectSequenceCue(page, PLAYBACK_WAV);
 
   await configureMidiInput(page);
   await learnMidiMapping(page, { action: "GO (selected cue)", note: 60 });
@@ -86,7 +92,7 @@ test("MIDI panic stops playback", async ({ page }) => {
   await closeSettings(page);
 
   await sendMidiNoteOn(page, 60);
-  await expectActiveCue(page, WHITE_NOISE_NAME);
+  await expectActiveCue(page, PLAYBACK_WAV);
 
   await sendMidiNoteOn(page, 61);
   await expectNoActiveCues(page);
@@ -95,37 +101,37 @@ test("MIDI panic stops playback", async ({ page }) => {
 test("MIDI GO cue fires a specific cue", async ({ page }) => {
   await gotoApp(page, { resetStorage: true });
 
-  await dropAudioOnCueList(page, WHITE_NOISE_FIXTURE, WHITE_NOISE_NAME);
-  await dropAudioOnCueList(page, WHITE_NOISE_ALT_FIXTURE, WHITE_NOISE_ALT_NAME);
-  await selectSequenceCue(page, WHITE_NOISE_NAME);
+  await dropAudioOnCueList(page, PLAYBACK_FIXTURE, PLAYBACK_WAV, PLAYBACK_WAV_MIME);
+  await dropAudioOnCueList(page, PLAYBACK_ALT_FIXTURE, PLAYBACK_ALT_NAME, PLAYBACK_ALT_MIME);
+  await selectSequenceCue(page, PLAYBACK_WAV);
 
   await configureMidiInput(page);
   await learnGoCueMapping(page, {
-    cueOption: `2 — ${WHITE_NOISE_ALT_NAME}`,
+    cueOption: `2 — ${PLAYBACK_ALT_NAME}`,
     note: 62,
-    expectedLabel: `GO 2 — ${WHITE_NOISE_ALT_NAME}`,
+    expectedLabel: `GO 2 — ${PLAYBACK_ALT_NAME}`,
   });
   await closeSettings(page);
 
   await sendMidiNoteOn(page, 62);
-  await expectActiveCue(page, WHITE_NOISE_ALT_NAME);
+  await expectActiveCue(page, PLAYBACK_ALT_NAME);
 });
 
 test("auto-map notes to cues GOs top-level cues from C2", async ({ page }) => {
   await gotoApp(page, { resetStorage: true });
 
-  await dropAudioOnCueList(page, WHITE_NOISE_FIXTURE, WHITE_NOISE_NAME);
-  await dropAudioOnCueList(page, WHITE_NOISE_ALT_FIXTURE, WHITE_NOISE_ALT_NAME);
+  await dropAudioOnCueList(page, PLAYBACK_FIXTURE, PLAYBACK_WAV, PLAYBACK_WAV_MIME);
+  await dropAudioOnCueList(page, PLAYBACK_ALT_FIXTURE, PLAYBACK_ALT_NAME, PLAYBACK_ALT_MIME);
 
   await configureMidiInput(page);
   await autoMapNotesToCues(page);
   await closeSettings(page);
 
   await sendMidiNoteOn(page, AUTO_MAP_START_NOTE);
-  await expectActiveCue(page, WHITE_NOISE_NAME);
+  await expectActiveCue(page, PLAYBACK_WAV);
 
   await sendMidiNoteOn(page, AUTO_MAP_START_NOTE + 1);
-  await expectActiveCue(page, WHITE_NOISE_ALT_NAME);
+  await expectActiveCue(page, PLAYBACK_ALT_NAME);
 });
 
 test("multiple MIDI messages can map to the same action", async ({ page }) => {

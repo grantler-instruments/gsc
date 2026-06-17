@@ -60,7 +60,10 @@ export async function expectCueRowTargetNotHighlighted(row: Locator): Promise<vo
 
 /** Deselect utility cues and move the pointer away from the cue list. */
 export async function clearCueTargetHighlightState(page: Page, targetName: string): Promise<void> {
-  await sequenceCueRow(page, targetName).click();
+  const row = sequenceCueRow(page, targetName);
+  await expect(row).toBeVisible();
+  await row.scrollIntoViewIfNeeded();
+  await row.click();
   await page.getByRole("button", { name: "GO" }).hover();
 }
 
