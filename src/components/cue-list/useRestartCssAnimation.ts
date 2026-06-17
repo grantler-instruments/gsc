@@ -7,6 +7,7 @@ export function useRestartCssAnimation(
   token: string,
 ): void {
   useLayoutEffect(() => {
+    void token;
     if (!active || !ref.current) return;
     const el = ref.current;
     el.style.animation = "none";
