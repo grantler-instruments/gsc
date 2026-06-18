@@ -168,6 +168,8 @@
     "noMidiOutputsBrowser": "Keine MIDI-Ausgänge gefunden. Zugriff gewähren, wenn der Browser danach fragt.",
     "noMidiInputs": "Keine MIDI-Eingänge gefunden.",
     "noMidiInputsBrowser": "Keine MIDI-Eingänge gefunden. Zugriff gewähren, wenn der Browser danach fragt.",
+    "midiDebounceMs": "MIDI-Entprellung (ms)",
+    "midiDebounceMsHint": "Wiederholte Betätigungen derselben Taste in diesem Zeitfenster ignorieren. 0 deaktiviert die Entprellung.",
     "dmxOutput": "DMX-Ausgang",
     "artNetUdp": "Art-Net (UDP)",
     "enttecDmxUsbPro": "Enttec DMX USB Pro",

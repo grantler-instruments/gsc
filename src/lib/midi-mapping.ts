@@ -1,4 +1,5 @@
 import { t } from "../i18n/t";
+import { usePreferencesStore } from "../stores/preferences";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
@@ -8,20 +9,47 @@ import { midiMatches, parseMidiMessage } from "./midi";
 import { randomId } from "./random-id";
 import { triggerGoAndAdvance, triggerGoSelected } from "./transport-actions";
 
-const DEBOUNCE_MS = 50;
+const lastFireByControl = new Map<string, number>();
 
-let lastFireKey = "";
-let lastFireAt = 0;
-
-function shouldDebounce(match: MidiMatch): boolean {
-  const key = `${match.channel}:${match.kind}:${match.note ?? ""}:${match.controller ?? ""}:${match.pitchBend ?? ""}`;
-  const now = performance.now();
-  if (key === lastFireKey && now - lastFireAt < DEBOUNCE_MS) {
-    return true;
+/** Physical control identity for debounce (ignores on/off message type). */
+export function midiControlKey(match: MidiMatch): string | null {
+  switch (match.kind) {
+    case "note-on":
+      return (match.velocity ?? 0) > 0 ? `note:${match.channel}:${match.note ?? 60}` : null;
+    case "note-off":
+      return `note:${match.channel}:${match.note ?? 60}`;
+    case "control-change":
+      return (match.value ?? 0) >= 64 ? `cc:${match.channel}:${match.controller ?? 0}` : null;
+    case "program-change":
+      return `pc:${match.channel}:${match.program ?? 0}`;
+    case "pitch-bend":
+      return `pb:${match.channel}`;
+    case "start":
+    case "stop":
+    case "continue":
+      return match.kind;
+    default:
+      return null;
   }
-  lastFireKey = key;
-  lastFireAt = now;
+}
+
+function shouldDebounceControl(match: MidiMatch, debounceMs: number): boolean {
+  if (debounceMs <= 0) return false;
+
+  const key = midiControlKey(match);
+  if (!key) return false;
+
+  const now = performance.now();
+  const last = lastFireByControl.get(key) ?? 0;
+  if (now - last < debounceMs) return true;
+
+  lastFireByControl.set(key, now);
   return false;
+}
+
+/** Clears per-control debounce timers (for tests). */
+export function resetMidiControlDebounceState(): void {
+  lastFireByControl.clear();
 }
 
 function findCueInActiveList(cueId: string): Cue | undefined {
@@ -62,14 +90,14 @@ export function handleIncomingMidi(data: number[], mappings: MidiMapping[]): voi
     return;
   }
 
-  if (shouldDebounce(incoming)) return;
+  const debounceMs = usePreferencesStore.getState().midiDebounceMs;
 
   for (const mapping of mappings) {
     if (mapping.enabled === false) continue;
-    if (midiMatches(mapping.match, incoming)) {
-      dispatchMidiAction(mapping.action);
-      return;
-    }
+    if (!midiMatches(mapping.match, incoming)) continue;
+    if (shouldDebounceControl(incoming, debounceMs)) return;
+    dispatchMidiAction(mapping.action);
+    return;
   }
 }
 

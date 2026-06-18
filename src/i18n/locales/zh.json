@@ -166,6 +166,8 @@
     "noMidiOutputsBrowser": "未找到 MIDI 输出。请在浏览器提示时授予访问权限。",
     "noMidiInputs": "未找到 MIDI 输入。",
     "noMidiInputsBrowser": "未找到 MIDI 输入。请在浏览器提示时授予访问权限。",
+    "midiDebounceMs": "MIDI 防抖 (ms)",
+    "midiDebounceMsHint": "在此时间窗口内忽略同一控件的重复按下。设为 0 可禁用。",
     "dmxOutput": "DMX 输出",
     "artNetUdp": "Art-Net (UDP)",
     "enttecDmxUsbPro": "Enttec DMX USB Pro",

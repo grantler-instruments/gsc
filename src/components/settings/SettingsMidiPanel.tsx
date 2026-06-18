@@ -3,8 +3,10 @@ import Divider from "@mui/material/Divider";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import { DEFAULT_MIDI_DEBOUNCE_MS } from "../../lib/midi-defaults";
 import { usePreferencesStore } from "../../stores/preferences";
 import type { DeviceOption } from "../../types/device";
 import { inspectorFieldLabelSx, inspectorFieldSx, inspectorFieldsSx } from "../inspectorSx";
@@ -27,8 +29,10 @@ export function SettingsMidiPanel({
   const { t } = useTranslation();
   const midiInterfaceId = usePreferencesStore((s) => s.midiInterfaceId);
   const midiInputId = usePreferencesStore((s) => s.midiInputId);
+  const midiDebounceMs = usePreferencesStore((s) => s.midiDebounceMs);
   const setMidiInterfaceId = usePreferencesStore((s) => s.setMidiInterfaceId);
   const setMidiInputId = usePreferencesStore((s) => s.setMidiInputId);
+  const setMidiDebounceMs = usePreferencesStore((s) => s.setMidiDebounceMs);
 
   return (
     <Stack sx={{ ...inspectorFieldsSx, gap: 2 }}>
@@ -88,6 +92,27 @@ export function SettingsMidiPanel({
             {isTauri ? t("settings.noMidiInputs") : t("settings.noMidiInputsBrowser")}
           </Typography>
         ) : null}
+      </Box>
+
+      <Box sx={inspectorFieldSx}>
+        <Typography component="label" htmlFor="midi-debounce-ms" sx={inspectorFieldLabelSx}>
+          {t("settings.midiDebounceMs")}
+        </Typography>
+        <TextField
+          id="midi-debounce-ms"
+          size="small"
+          fullWidth
+          type="number"
+          slotProps={{ htmlInput: { min: 0, max: 2000, step: 10 } }}
+          value={midiDebounceMs}
+          onChange={(e) => {
+            const next = Number.parseInt(e.target.value, 10);
+            setMidiDebounceMs(Number.isFinite(next) ? Math.max(0, next) : DEFAULT_MIDI_DEBOUNCE_MS);
+          }}
+        />
+        <Typography variant="caption" color="text.secondary">
+          {t("settings.midiDebounceMsHint")}
+        </Typography>
       </Box>
 
       <Divider />

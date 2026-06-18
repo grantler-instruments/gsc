@@ -100,8 +100,8 @@ export async function sendMidiNoteOn(
     },
     { bytes: [status, note, velocity] },
   );
-  // Allow debounce window (50ms) to elapse before a follow-up message.
-  await page.waitForTimeout(60);
+  // Allow debounce window (100ms default) to elapse before a follow-up message.
+  await page.waitForTimeout(110);
 }
 
 export function settingsDialog(page: Page) {

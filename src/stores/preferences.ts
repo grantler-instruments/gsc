@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { type SupportedLocale, setAppLocale } from "../i18n";
 import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx-defaults";
+import { DEFAULT_MIDI_DEBOUNCE_MS } from "../lib/midi-defaults";
 import { getPlatform, type PlatformKind } from "../platform";
 import {
   DEFAULT_NDI_OUTPUT_FPS,
@@ -29,6 +30,8 @@ interface PreferencesState {
   midiInterfaceId: string | null;
   /** Web MIDI input id or Tauri MIDI port index (input). */
   midiInputId: string | null;
+  /** Ignore repeat presses on the same MIDI control within this window (ms). 0 disables. */
+  midiDebounceMs: number;
   dmxOutputBackend: DmxOutputBackend;
   artNetHost: string;
   artNetPort: number;
@@ -38,6 +41,7 @@ interface PreferencesState {
   setSoundCardId: (soundCardId: string | null) => void;
   setMidiInterfaceId: (midiInterfaceId: string | null) => void;
   setMidiInputId: (midiInputId: string | null) => void;
+  setMidiDebounceMs: (midiDebounceMs: number) => void;
   setDmxOutputBackend: (dmxOutputBackend: DmxOutputBackend) => void;
   setArtNetHost: (artNetHost: string) => void;
   setArtNetPort: (artNetPort: number) => void;
@@ -79,6 +83,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         soundCardId: null,
         midiInterfaceId: null,
         midiInputId: null,
+        midiDebounceMs: DEFAULT_MIDI_DEBOUNCE_MS,
         dmxOutputBackend: "artnet",
         artNetHost: DEFAULT_ART_NET_HOST,
         artNetPort: DEFAULT_ART_NET_PORT,
@@ -101,6 +106,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         setSoundCardId: (soundCardId) => set({ soundCardId }),
         setMidiInterfaceId: (midiInterfaceId) => set({ midiInterfaceId }),
         setMidiInputId: (midiInputId) => set({ midiInputId }),
+        setMidiDebounceMs: (midiDebounceMs) => set({ midiDebounceMs }),
         setDmxOutputBackend: (dmxOutputBackend) => set({ dmxOutputBackend }),
         setArtNetHost: (artNetHost) => set({ artNetHost }),
         setArtNetPort: (artNetPort) => set({ artNetPort }),
@@ -127,6 +133,7 @@ export const usePreferencesStore = create<PreferencesState>()(
           soundCardId: s.soundCardId,
           midiInterfaceId: s.midiInterfaceId,
           midiInputId: s.midiInputId,
+          midiDebounceMs: s.midiDebounceMs,
           dmxOutputBackend: s.dmxOutputBackend,
           artNetHost: s.artNetHost,
           artNetPort: s.artNetPort,

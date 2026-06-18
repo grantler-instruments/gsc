@@ -1,9 +1,26 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProjectSnapshot } from "../../types/cue";
 import { createImportReport } from "./import-report";
 import { resolveAndImportAssets } from "./resolve-assets";
 
+vi.mock("../../vfs/engine", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../vfs/engine")>();
+  return {
+    ...actual,
+    vfsPut: vi.fn(),
+    vfsRegisterDiskPath: vi.fn(),
+  };
+});
+
+vi.mock("../../platform", () => ({
+  getPlatform: () => "web" as const,
+  isTauri: () => false,
+}));
+
 describe("resolveAndImportAssets", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
   it("remaps asset paths when folder files are available", async () => {
     const snapshot: ProjectSnapshot = {
       version: 2,

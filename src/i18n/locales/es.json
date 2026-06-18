@@ -166,6 +166,8 @@
     "noMidiOutputsBrowser": "No se encontraron salidas MIDI. Conceda acceso cuando el navegador lo solicite.",
     "noMidiInputs": "No se encontraron entradas MIDI.",
     "noMidiInputsBrowser": "No se encontraron entradas MIDI. Conceda acceso cuando el navegador lo solicite.",
+    "midiDebounceMs": "Antirrebote MIDI (ms)",
+    "midiDebounceMsHint": "Ignorar pulsaciones repetidas del mismo control en este intervalo. 0 para desactivar.",
     "dmxOutput": "Salida DMX",
     "artNetUdp": "Art-Net (UDP)",
     "enttecDmxUsbPro": "Enttec DMX USB Pro",

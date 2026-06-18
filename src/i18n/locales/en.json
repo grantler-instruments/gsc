@@ -168,6 +168,8 @@
     "noMidiOutputsBrowser": "No MIDI outputs found. Grant access when the browser prompts.",
     "noMidiInputs": "No MIDI inputs found.",
     "noMidiInputsBrowser": "No MIDI inputs found. Grant access when the browser prompts.",
+    "midiDebounceMs": "MIDI debounce (ms)",
+    "midiDebounceMsHint": "Ignore repeat presses on the same control within this window. Set to 0 to disable.",
     "dmxOutput": "DMX output",
     "artNetUdp": "Art-Net (UDP)",
     "enttecDmxUsbPro": "Enttec DMX USB Pro",
