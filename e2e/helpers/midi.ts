@@ -78,30 +78,61 @@ export async function installMidiMock(page: Page): Promise<void> {
   );
 }
 
-export async function sendMidiNoteOn(
-  page: Page,
-  note: number,
-  velocity = 127,
-  channel = 1,
-): Promise<void> {
-  const status = 0x90 + (channel - 1);
+const DEFAULT_DEBOUNCE_WAIT_MS = 110;
+
+export type SendMidiOptions = {
+  /** When true (default), wait for the debounce window before returning. */
+  waitForDebounce?: boolean;
+};
+
+async function waitForMidiMock(page: Page): Promise<void> {
   // Brief pause so async Web MIDI attach can complete after input selection.
   await page.waitForFunction(
     () => (window as Window & { __gscE2eSendMidi?: (data: number[]) => void }).__gscE2eSendMidi,
   );
+}
+
+export async function sendMidiBytes(
+  page: Page,
+  bytes: number[],
+  options: SendMidiOptions = {},
+): Promise<void> {
+  await waitForMidiMock(page);
   await page.evaluate(
-    ({ bytes }) => {
+    ({ data }) => {
       const send = (window as Window & { __gscE2eSendMidi?: (data: number[]) => void })
         .__gscE2eSendMidi;
       if (!send) {
         throw new Error("E2E MIDI mock is not installed");
       }
-      send(bytes);
+      send(data);
     },
-    { bytes: [status, note, velocity] },
+    { data: bytes },
   );
-  // Allow debounce window (100ms default) to elapse before a follow-up message.
-  await page.waitForTimeout(110);
+  if (options.waitForDebounce !== false) {
+    await page.waitForTimeout(DEFAULT_DEBOUNCE_WAIT_MS);
+  }
+}
+
+export async function sendMidiNoteOn(
+  page: Page,
+  note: number,
+  velocity = 127,
+  channel = 1,
+  options: SendMidiOptions = {},
+): Promise<void> {
+  const status = 0x90 + (channel - 1);
+  await sendMidiBytes(page, [status, note, velocity], options);
+}
+
+export async function sendMidiNoteOff(
+  page: Page,
+  note: number,
+  channel = 1,
+  options: SendMidiOptions = {},
+): Promise<void> {
+  const status = 0x80 + (channel - 1);
+  await sendMidiBytes(page, [status, note, 0], options);
 }
 
 export function settingsDialog(page: Page) {
@@ -118,6 +149,12 @@ export async function openSettingsMidi(page: Page): Promise<void> {
       name: "MIDI",
     })
     .click();
+}
+
+export async function setMidiDebounceMs(page: Page, ms: number): Promise<void> {
+  const field = settingsDialog(page).locator("#midi-debounce-ms");
+  await field.fill(String(ms));
+  await field.blur();
 }
 
 export async function selectMidiInput(page: Page, label = E2E_MIDI_INPUT_NAME): Promise<void> {
