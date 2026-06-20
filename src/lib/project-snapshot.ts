@@ -1,7 +1,9 @@
+import type { AudioBus } from "../types/audio-bus";
 import type { Cue, ProjectSnapshot } from "../types/cue";
 import type { Fixture } from "../types/fixture";
 import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
+import { normalizeAudioBuses } from "./audio-buses";
 import type { CueList } from "./cue-lists";
 import { defaultDmxCueData, normalizeDmxCueData } from "./dmx";
 import { normalizeFixturePlot } from "./fixture-plot";
@@ -47,9 +49,11 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   midiMappings: MidiMapping[];
   fixtures: Fixture[];
   fixturePlot: FixturePlot;
+  audioBuses: AudioBus[];
 } {
   const fixtures = normalizeFixtures(snap.fixtures);
   const fixturePlot = normalizeFixturePlot(snap.fixturePlot, fixtures);
+  const audioBuses = normalizeAudioBuses(snap.audioBuses);
   const cueLists: CueList[] = snap.cueLists.map((list) => ({
     id: list.id,
     name: list.name,
@@ -69,6 +73,7 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
     midiMappings: snap.midiMappings ?? [],
     fixtures,
     fixturePlot,
+    audioBuses,
   };
 }
 
@@ -80,6 +85,7 @@ export function cueListsToSnapshot(
   midiMappings: MidiMapping[] = [],
   fixtures: Fixture[] = [],
   fixturePlot?: FixturePlot,
+  audioBuses: AudioBus[] = [],
   startDate?: string,
   endDate?: string,
   description?: string,
@@ -101,5 +107,6 @@ export function cueListsToSnapshot(
     midiMappings,
     fixtures: normalizedFixtures,
     fixturePlot: normalizeFixturePlot(fixturePlot, normalizedFixtures),
+    ...(audioBuses.length > 0 ? { audioBuses: normalizeAudioBuses(audioBuses) } : {}),
   };
 }

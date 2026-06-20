@@ -21,17 +21,17 @@ export function sidebarTabsForLayout(compact: boolean, showMode: boolean): reado
 }
 
 export function normalizeSidebarTab(
-  tab: SidebarTabId,
+  tab: string,
   compact: boolean,
   showMode: boolean,
 ): SidebarTabId {
   const tabs = sidebarTabsForLayout(compact, showMode);
-  if (tabs.includes(tab)) {
-    return tab;
+  if (tabs.includes(tab as SidebarTabId)) {
+    return tab as SidebarTabId;
   }
   if (showMode) {
     if (tab === "cues" || tab === "active") {
-      return tab;
+      return tab as SidebarTabId;
     }
     return "cues";
   }

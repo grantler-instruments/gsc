@@ -1,6 +1,8 @@
+import GraphicEqOutlinedIcon from "@mui/icons-material/GraphicEqOutlined";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
 import Slider from "@mui/material/Slider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -20,6 +22,7 @@ import { triggerGoSelected } from "../lib/transport-actions";
 import { isRemoteClient } from "../platform/remote-mode";
 import { findProjectCue, useActiveCueList, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
+import { useUiStore } from "../stores/ui";
 import type { Cue } from "../types/cue";
 import { SIDEBAR_WIDTH } from "../types/sidebar";
 import { CueTypeBadge } from "./CueTypeIcon";
@@ -101,6 +104,8 @@ export function TransportBar() {
   const masterVolume = useTransportStore((s) => s.masterVolume);
   const panic = useTransportStore((s) => s.panic);
   const setMasterVolume = useTransportStore((s) => s.setMasterVolume);
+  const audioMixerOpen = useUiStore((s) => s.audioMixerOpen);
+  const toggleAudioMixer = useUiStore((s) => s.toggleAudioMixer);
   const selectedCue = cues.find((c) => c.id === selectedCueId);
   const activeCue = activeCueId ? findProjectCue(cueLists, activeCueId) : undefined;
   const activeCount = useTransportStore((s) => s.activeCueIds.length);
@@ -222,6 +227,16 @@ export function TransportBar() {
           px: { xs: 1, sm: 2 },
         }}
       >
+        <IconButton
+          size="small"
+          color={audioMixerOpen ? "primary" : "default"}
+          aria-pressed={audioMixerOpen}
+          title={audioMixerOpen ? t("audioMixer.close") : t("audioMixer.open")}
+          aria-label={audioMixerOpen ? t("audioMixer.close") : t("audioMixer.open")}
+          onClick={toggleAudioMixer}
+        >
+          <GraphicEqOutlinedIcon fontSize="small" />
+        </IconButton>
         <Typography
           variant="caption"
           color="inherit"

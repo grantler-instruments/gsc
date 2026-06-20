@@ -22,6 +22,7 @@ function projectState(overrides: Partial<ProjectPersistSlice> = {}): ProjectPers
     midiMappings: [],
     fixtures: [],
     fixturePlot: emptyFixturePlot(),
+    audioBuses: [],
     ...overrides,
   };
 }

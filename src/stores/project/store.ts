@@ -4,6 +4,7 @@ import type { CueList } from "../../lib/cue-lists";
 import { findCueInLists } from "../../lib/cue-lists";
 import type { Cue } from "../../types/cue";
 import { registerDmxPreviewProjectAccess } from "../dmx-preview-session";
+import { createAudioBusActions } from "./audio-bus-actions";
 import { createCueEditorActions } from "./cue-editor-actions";
 import { createCueListActions } from "./cue-list-actions";
 import { createFixtureActions } from "./fixture-actions";
@@ -23,12 +24,14 @@ export const useProjectStore = create<ProjectState>()(
       ...initialProjectData,
       midiMappings: [...initialProjectData.midiMappings],
       fixtures: [...initialProjectData.fixtures],
+      audioBuses: [...initialProjectData.audioBuses],
       fixturePlot: { ...initialProjectData.fixturePlot, entries: [] },
       ...createCueEditorActions(set, get),
       ...createSelectionActions(set, get),
       ...createCueListActions(set, get),
       ...createMidiMappingActions(set, get),
       ...createFixtureActions(set, get),
+      ...createAudioBusActions(set, get),
       ...createFixturePlotActions(set, get),
       ...createSnapshotActions(set, get),
     }),

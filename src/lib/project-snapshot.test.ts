@@ -54,6 +54,7 @@ describe("project snapshot round-trip", () => {
       [],
       [],
       undefined,
+      [],
       "2026-05-27",
       "2026-06-15",
       "Opening night at the amphitheater.",
@@ -101,5 +102,15 @@ describe("project snapshot round-trip", () => {
 
     const loaded = snapshotToCueLists(snap);
     expect(loaded.fixtures).toEqual(fixtures);
+  });
+
+  it("preserves audio buses through snapshot", () => {
+    const list = createCueList("Main");
+    const snap = cueListsToSnapshot("project-1", "My Show", [list], list.id, [], [], undefined, [
+      { id: "b1", name: "Music", volume: 0.8 },
+    ]);
+
+    const loaded = snapshotToCueLists(snap);
+    expect(loaded.audioBuses).toEqual([{ id: "b1", name: "Music", volume: 0.8 }]);
   });
 });

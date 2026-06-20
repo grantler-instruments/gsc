@@ -1,4 +1,5 @@
 import type { VfsEntry } from "../stores/vfs";
+import type { AudioBus } from "../types/audio-bus";
 import type { Fixture } from "../types/fixture";
 import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
@@ -16,6 +17,7 @@ export interface ProjectPersistSlice {
   midiMappings: MidiMapping[];
   fixtures: Fixture[];
   fixturePlot: FixturePlot;
+  audioBuses: AudioBus[];
 }
 
 /** True when persisted project data changed (ignores cue selection state). */
@@ -32,7 +34,8 @@ export function projectPersistStateChanged(
     prev.activeCueListId !== next.activeCueListId ||
     prev.midiMappings !== next.midiMappings ||
     prev.fixtures !== next.fixtures ||
-    prev.fixturePlot !== next.fixturePlot
+    prev.fixturePlot !== next.fixturePlot ||
+    prev.audioBuses !== next.audioBuses
   ) {
     return true;
   }
