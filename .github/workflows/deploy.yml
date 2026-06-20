@@ -52,6 +52,13 @@ jobs:
 
       - run: npm ci
 
+      - name: Restore Pages site cache
+        uses: actions/cache/restore@v4
+        with:
+          path: site
+          key: pages-site-${{ github.run_id }}
+          restore-keys: pages-site-
+
       - name: Install ImageMagick
         run: sudo apt-get update && sudo apt-get install -y imagemagick
 
@@ -61,9 +68,20 @@ jobs:
         env:
           VITE_BASE: /gsc/
 
+      - name: Merge stable build into site
+        run: |
+          mkdir -p site
+          rsync -a dist/ site/
+
+      - name: Save Pages site cache
+        uses: actions/cache/save@v4
+        with:
+          path: site
+          key: pages-site-${{ github.run_id }}
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
 
   deploy:
     needs: build
