@@ -1,0 +1,192 @@
+name: Experimental Release
+
+on:
+  push:
+    branches: [experimental]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: experimental-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Install Playwright
+        run: npm run test:e2e:install -- --with-deps
+
+      - name: Web E2E tests
+        run: npm run test:e2e
+
+  build-web:
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Restore Pages site cache
+        uses: actions/cache/restore@v4
+        with:
+          path: site
+          key: pages-site-${{ github.run_id }}
+          restore-keys: pages-site-
+
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
+      - name: Bootstrap stable site from main if needed
+        run: |
+          if [ ! -f site/index.html ]; then
+            git fetch origin main
+            git archive origin/main | tar -x -C "${RUNNER_TEMP}/stable-src"
+            cd "${RUNNER_TEMP}/stable-src"
+            npm ci
+            npm run build:pages
+            mkdir -p "${GITHUB_WORKSPACE}/site"
+            rsync -a dist/ "${GITHUB_WORKSPACE}/site/"
+          fi
+        env:
+          VITE_BASE: /gsc/
+
+      - run: npm ci
+
+      - name: Build experimental web app
+        run: npm run build:pages
+        env:
+          VITE_BASE: /gsc/experimental/
+          VITE_CHANNEL: experimental
+
+      - name: Merge experimental build into site
+        run: |
+          mkdir -p site/experimental
+          rsync -a dist/ site/experimental/
+
+      - name: Save Pages site cache
+        uses: actions/cache/save@v4
+        with:
+          path: site
+          key: pages-site-${{ github.run_id }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy-web:
+    needs: build-web
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: https://grantler-instruments.github.io/gsc/experimental/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  release:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin
+          - platform: macos-latest
+            args: --target x86_64-apple-darwin
+          - platform: ubuntu-22.04
+            args: ""
+          - platform: windows-latest
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            imagemagick \
+            patchelf \
+            libasound2-dev \
+            libudev-dev
+
+      - run: npm ci
+
+      - name: Set experimental version
+        id: version
+        run: |
+          BASE=$(node -p "require('./package.json').version")
+          VERSION="${BASE}-experimental.${{ github.run_number }}"
+          node scripts/sync-version.mjs "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install ImageMagick (macOS)
+        if: matrix.platform == 'macos-latest'
+        run: brew install imagemagick
+
+      - name: Install ImageMagick (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: choco install imagemagick --yes
+
+      - name: Build and upload experimental release assets
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_BUNDLER_DMG_IGNORE_CI: false
+        with:
+          tagName: experimental
+          releaseName: Grantler Stage Control (Experimental)
+          releaseBody: |
+            Experimental desktop build ${{ steps.version.outputs.version }}.
+
+            - Commit: ${{ github.sha }}
+            - Workflow run: ${{ github.run_number }}
+            - Web app: https://grantler-instruments.github.io/gsc/experimental/
+          releaseDraft: false
+          prerelease: true
+          args: ${{ matrix.args }}
