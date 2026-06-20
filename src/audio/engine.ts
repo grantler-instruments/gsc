@@ -1,10 +1,13 @@
+import { resolveCueAudioBusId } from "../lib/audio-buses";
 import { getLoopPlayCount } from "../lib/loop";
 import { getMediaDurationSec } from "../lib/media-duration";
 import { videoTargetTime } from "../lib/video-playback";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
+import type { AudioBus } from "../types/audio-bus";
 import type { Cue } from "../types/cue";
 import { getCachedAudioBuffer, loadAudioBuffer } from "./buffer-cache";
+import { MixerGraph } from "./mixer";
 import {
   seekVideoVoice,
   startVideoVoice,
@@ -38,6 +41,7 @@ interface ActiveVoice {
   gain: GainNode;
   panner: StereoPannerNode;
   goAtMs: number;
+  audioBusId?: string;
 }
 
 type VoiceEndedHandler = (cueId: string) => void;
@@ -48,6 +52,9 @@ type VoiceEndedHandler = (cueId: string) => void;
  */
 export class AudioEngine {
   private ctx: AudioContext | null = null;
+  private mixer: MixerGraph | null = null;
+  private audioBuses: AudioBus[] = [];
+  private masterVolume = 1;
   private voices = new Map<string, ActiveVoice>();
   private videoVoices = new Map<string, VideoVoice>();
   private syncGeneration = 0;
@@ -60,6 +67,9 @@ export class AudioEngine {
   async unlock(): Promise<AudioContext> {
     if (!this.ctx) {
       this.ctx = new AudioContext();
+      this.mixer = new MixerGraph(this.ctx);
+      this.mixer.sync(this.audioBuses);
+      this.mixer.setMasterVolume(this.masterVolume);
     }
     if (this.ctx.state === "suspended") {
       await this.ctx.resume();
@@ -73,6 +83,27 @@ export class AudioEngine {
 
   private handleVoiceEnded(cueId: string): void {
     this.onVoiceEndedHandler?.(cueId);
+  }
+
+  syncMixer(buses: AudioBus[], masterVolume: number): void {
+    this.audioBuses = buses;
+    this.masterVolume = masterVolume;
+    this.mixer?.sync(buses);
+    this.mixer?.setMasterVolume(masterVolume);
+  }
+
+  private voiceDestination(cue: Cue): AudioNode {
+    const busId = resolveCueAudioBusId(cue, this.audioBuses);
+    if (this.mixer) {
+      return this.mixer.resolveOutput(busId);
+    }
+    return this.ctx?.destination ?? (null as unknown as AudioNode);
+  }
+
+  private connectVoicePanner(panner: StereoPannerNode, cue: Cue): string | undefined {
+    const busId = resolveCueAudioBusId(cue, this.audioBuses);
+    panner.connect(this.voiceDestination(cue));
+    return busId;
   }
 
   private stopVoice(cueId: string): void {
@@ -97,13 +128,7 @@ export class AudioEngine {
     this.videoVoices.delete(cueId);
   }
 
-  private startVoice(
-    cue: Cue,
-    buffer: AudioBuffer,
-    ctx: AudioContext,
-    masterVolume: number,
-    goAtMs: number,
-  ): void {
+  private startVoice(cue: Cue, buffer: AudioBuffer, ctx: AudioContext, goAtMs: number): void {
     const { offsetSec, durationSec } = playbackWindow(cue, buffer.duration);
     const loopPlayCount = getLoopPlayCount(cue);
     const shouldLoop = loopPlayCount !== 1;
@@ -115,15 +140,14 @@ export class AudioEngine {
     source.buffer = buffer;
 
     const gain = ctx.createGain();
-    gain.gain.value =
-      clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) * clamp01(masterVolume);
+    gain.gain.value = clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1));
 
     const panner = ctx.createStereoPanner();
     panner.pan.value = clampPan(resolveEffectivePan(cue.id, cue.pan ?? 0));
 
     source.connect(gain);
     gain.connect(panner);
-    panner.connect(ctx.destination);
+    const audioBusId = this.connectVoicePanner(panner, cue);
 
     const when = ctx.currentTime;
 
@@ -150,29 +174,35 @@ export class AudioEngine {
       }
     };
 
-    this.voices.set(cue.id, { source, gain, panner, goAtMs });
+    this.voices.set(cue.id, { source, gain, panner, goAtMs, audioBusId });
   }
 
-  private updateVoiceLevels(cueId: string, cue: Cue, masterVolume: number): void {
+  private updateVoiceLevels(cueId: string, cue: Cue): void {
     const voice = this.voices.get(cueId);
     if (!voice) return;
-    voice.gain.gain.value =
-      clamp01(resolveEffectiveVolume(cueId, cue.volume ?? 1)) * clamp01(masterVolume);
+    voice.gain.gain.value = clamp01(resolveEffectiveVolume(cueId, cue.volume ?? 1));
     voice.panner.pan.value = clampPan(resolveEffectivePan(cueId, cue.pan ?? 0));
   }
 
+  private rerouteVoiceIfNeeded(voice: ActiveVoice, cue: Cue): void {
+    const nextBusId = resolveCueAudioBusId(cue, this.audioBuses);
+    if (voice.audioBusId === nextBusId) return;
+    voice.panner.disconnect();
+    voice.audioBusId = this.connectVoicePanner(voice.panner, cue);
+  }
+
   /** Refresh gain and pan for all active voices (e.g. during a fade). */
-  updateActiveVoiceLevels(cues: Cue[], masterVolume: number): void {
+  updateActiveVoiceLevels(cues: Cue[]): void {
     for (const cueId of this.voices.keys()) {
       const cue = cues.find((c) => c.id === cueId);
       if (cue) {
-        this.updateVoiceLevels(cueId, cue, masterVolume);
+        this.updateVoiceLevels(cueId, cue);
       }
     }
     for (const voice of this.videoVoices.values()) {
       const cue = cues.find((c) => c.id === voice.cueId);
       if (cue) {
-        updateVideoVoiceLevels(voice, cue, masterVolume);
+        updateVideoVoiceLevels(voice, cue);
       }
     }
   }
@@ -182,8 +212,10 @@ export class AudioEngine {
     cues: Cue[],
     masterVolume: number,
     cueStartedAtMs: Record<string, number> = {},
+    audioBuses: AudioBus[] = [],
   ): Promise<void> {
     const generation = ++this.syncGeneration;
+    this.syncMixer(audioBuses, masterVolume);
 
     try {
       const ctx = await this.ensureContext();
@@ -221,11 +253,17 @@ export class AudioEngine {
           const existing = this.videoVoices.get(cueId);
           if (!existing) continue;
           if (existing.goAtMs === goAtMs) {
-            updateVideoVoiceLevels(existing, cue, masterVolume);
+            rerouteVideoVoiceIfNeeded(existing, cue, this.audioBuses, () =>
+              this.voiceDestination(cue),
+            );
+            updateVideoVoiceLevels(existing, cue);
             continue;
           }
           seekVideoVoice(existing, cue, goAtMs);
-          updateVideoVoiceLevels(existing, cue, masterVolume);
+          rerouteVideoVoiceIfNeeded(existing, cue, this.audioBuses, () =>
+            this.voiceDestination(cue),
+          );
+          updateVideoVoiceLevels(existing, cue);
           continue;
         }
 
@@ -234,12 +272,19 @@ export class AudioEngine {
         }
         if (generation !== this.syncGeneration) return;
 
-        const voice = startVideoVoice(cue, ctx, masterVolume, goAtMs, (id) => {
-          if (this.videoVoices.get(id) === voice) {
-            this.stopVideoVoice(id);
-            this.handleVoiceEnded(id);
-          }
-        });
+        const voice = startVideoVoice(
+          cue,
+          ctx,
+          goAtMs,
+          (id) => {
+            if (this.videoVoices.get(id) === voice) {
+              this.stopVideoVoice(id);
+              this.handleVoiceEnded(id);
+            }
+          },
+          this.voiceDestination(cue),
+          this.audioBuses,
+        );
 
         if (!voice) {
           console.warn(`[audio] Missing video asset in VFS: ${cue.assetPath}`);
@@ -264,7 +309,8 @@ export class AudioEngine {
           const existing = this.voices.get(cueId);
           if (!existing) continue;
           if (existing.goAtMs === goAtMs) {
-            this.updateVoiceLevels(cueId, cue, masterVolume);
+            this.rerouteVoiceIfNeeded(existing, cue);
+            this.updateVoiceLevels(cueId, cue);
             continue;
           }
           this.stopVoice(cueId);
@@ -287,7 +333,7 @@ export class AudioEngine {
         if (generation !== this.syncGeneration) return;
 
         try {
-          this.startVoice(cue, buffer, ctx, masterVolume, goAtMs);
+          this.startVoice(cue, buffer, ctx, goAtMs);
         } catch (err) {
           console.warn(`[audio] Could not play ${assetPath}`, err);
         }
@@ -324,3 +370,16 @@ export class AudioEngine {
 }
 
 export const audioEngine = new AudioEngine();
+
+function rerouteVideoVoiceIfNeeded(
+  voice: VideoVoice,
+  cue: Cue,
+  audioBuses: AudioBus[],
+  destination: () => AudioNode,
+): void {
+  const nextBusId = resolveCueAudioBusId(cue, audioBuses);
+  if (voice.audioBusId === nextBusId) return;
+  voice.panner.disconnect();
+  voice.panner.connect(destination());
+  voice.audioBusId = nextBusId;
+}

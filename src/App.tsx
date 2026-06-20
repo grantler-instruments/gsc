@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import { AppSnackbar } from "./components/AppSnackbar";
+import { AudioMixerDock } from "./components/AudioMixerDock";
 import { CompactInspectorDrawer } from "./components/CompactInspectorDrawer";
 import { CueInspector } from "./components/CueInspector";
 import { CueList } from "./components/CueList";
@@ -32,6 +33,7 @@ function App() {
   const showProjectLoading = (!sessionReady || projectLoading) && !startupDialogOpen;
   const compact = useCompactLayout();
   const showMode = useUiStore((s) => s.showMode);
+  const audioMixerOpen = useUiStore((s) => s.audioMixerOpen);
   const fixtures = useProjectStore((s) => s.fixtures);
   const selectedCueIds = useActiveCueList().selectedCueIds;
   const hasSelectedCue = getPrimarySelectedCueId(selectedCueIds) !== null;
@@ -97,7 +99,10 @@ function App() {
         )}
       </Box>
 
-      <TransportBar />
+      <Box sx={{ flexShrink: 0, minWidth: 0 }}>
+        {audioMixerOpen && <AudioMixerDock />}
+        <TransportBar />
+      </Box>
       {compact && <CompactInspectorDrawer />}
       <SettingsDialog />
       <DmxPreviewConfirmDialog />

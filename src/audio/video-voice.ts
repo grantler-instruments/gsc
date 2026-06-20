@@ -1,3 +1,4 @@
+import { resolveCueAudioBusId } from "../lib/audio-buses";
 import { getLoopPlayCount } from "../lib/loop";
 import {
   isVideoLooping,
@@ -7,6 +8,7 @@ import {
   videoTargetTime,
 } from "../lib/video-playback";
 import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
+import type { AudioBus } from "../types/audio-bus";
 import type { Cue } from "../types/cue";
 import { vfsGetObjectUrl } from "../vfs/engine";
 
@@ -26,6 +28,7 @@ export interface VideoVoice {
   panner: StereoPannerNode;
   goAtMs: number;
   loopIteration: number;
+  audioBusId?: string;
 }
 
 export type VideoVoiceEndedHandler = (cueId: string) => void;
@@ -33,9 +36,10 @@ export type VideoVoiceEndedHandler = (cueId: string) => void;
 export function startVideoVoice(
   cue: Cue,
   ctx: AudioContext,
-  masterVolume: number,
   goAtMs: number,
   onEnded: VideoVoiceEndedHandler,
+  destination: AudioNode,
+  audioBuses: AudioBus[] = [],
 ): VideoVoice | null {
   const objectUrl = cue.assetPath ? vfsGetObjectUrl(cue.assetPath) : undefined;
   if (!objectUrl) return null;
@@ -49,15 +53,14 @@ export function startVideoVoice(
 
   const source = ctx.createMediaElementSource(video);
   const gain = ctx.createGain();
-  gain.gain.value =
-    clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) * clamp01(masterVolume);
+  gain.gain.value = clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1));
 
   const panner = ctx.createStereoPanner();
   panner.pan.value = clampPan(resolveEffectivePan(cue.id, cue.pan ?? 0));
 
   source.connect(gain);
   gain.connect(panner);
-  panner.connect(ctx.destination);
+  panner.connect(destination);
 
   const voice: VideoVoice = {
     cueId: cue.id,
@@ -67,6 +70,7 @@ export function startVideoVoice(
     panner,
     goAtMs,
     loopIteration: 0,
+    audioBusId: resolveCueAudioBusId(cue, audioBuses),
   };
 
   const loopPlayCount = getLoopPlayCount(cue);
@@ -176,9 +180,8 @@ export function seekVideoVoice(voice: VideoVoice, cue: Cue, goAtMs: number): voi
   }
 }
 
-export function updateVideoVoiceLevels(voice: VideoVoice, cue: Cue, masterVolume: number): void {
-  voice.gain.gain.value =
-    clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) * clamp01(masterVolume);
+export function updateVideoVoiceLevels(voice: VideoVoice, cue: Cue): void {
+  voice.gain.gain.value = clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1));
   voice.panner.pan.value = clampPan(resolveEffectivePan(cue.id, cue.pan ?? 0));
 }
 
