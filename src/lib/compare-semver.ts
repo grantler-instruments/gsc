@@ -3,6 +3,11 @@ export function normalizeSemver(version: string): string {
   return version.trim().replace(/^v/i, "");
 }
 
+/** True for stable release tags like `0.0.14` or `v1.2.3` (not `experimental` or prereleases). */
+export function isStableReleaseTag(tag: string): boolean {
+  return /^\d+\.\d+\.\d+$/.test(normalizeSemver(tag));
+}
+
 function parseSemverParts(version: string): [number, number, number] | null {
   const normalized = normalizeSemver(version);
   const match = /^(\d+)\.(\d+)\.(\d+)/.exec(normalized);

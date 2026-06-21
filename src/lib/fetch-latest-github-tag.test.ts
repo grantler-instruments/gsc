@@ -18,6 +18,18 @@ describe("fetchLatestGitHubTag", () => {
     await expect(fetchLatestGitHubTag()).resolves.toBe("0.0.8");
   });
 
+  it("ignores the experimental rolling release tag", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [{ name: "experimental" }, { name: "0.0.14" }, { name: "0.0.13" }],
+      }),
+    );
+
+    await expect(fetchLatestGitHubTag()).resolves.toBe("0.0.14");
+  });
+
   it("returns null when the request fails", async () => {
     vi.stubGlobal(
       "fetch",

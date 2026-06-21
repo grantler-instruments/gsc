@@ -1,4 +1,4 @@
-import { compareSemver } from "./compare-semver";
+import { compareSemver, isStableReleaseTag } from "./compare-semver";
 import { GITHUB_TAGS_API_URL } from "./support-links";
 
 interface GitHubTag {
@@ -14,11 +14,12 @@ export async function fetchLatestGitHubTag(): Promise<string | null> {
     if (!response.ok) return null;
 
     const tags = (await response.json()) as GitHubTag[];
-    if (tags.length === 0) return null;
+    const stableTags = tags.filter((tag) => isStableReleaseTag(tag.name));
+    if (stableTags.length === 0) return null;
 
-    return tags.reduce(
+    return stableTags.reduce(
       (latest, tag) => (compareSemver(tag.name, latest) > 0 ? tag.name : latest),
-      tags[0].name,
+      stableTags[0].name,
     );
   } catch {
     return null;

@@ -1,9 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { compareSemver, normalizeSemver } from "./compare-semver";
+import { compareSemver, isStableReleaseTag, normalizeSemver } from "./compare-semver";
 
 describe("normalizeSemver", () => {
   it("strips a leading v", () => {
     expect(normalizeSemver("v1.2.3")).toBe("1.2.3");
+  });
+});
+
+describe("isStableReleaseTag", () => {
+  it("accepts plain semver tags", () => {
+    expect(isStableReleaseTag("0.0.14")).toBe(true);
+    expect(isStableReleaseTag("v1.2.3")).toBe(true);
+  });
+
+  it("rejects experimental and prerelease tags", () => {
+    expect(isStableReleaseTag("experimental")).toBe(false);
+    expect(isStableReleaseTag("0.0.14-experimental.847")).toBe(false);
   });
 });
 
