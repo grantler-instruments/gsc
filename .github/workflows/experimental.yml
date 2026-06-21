@@ -69,6 +69,7 @@ jobs:
         run: |
           if [ ! -f site/index.html ]; then
             git fetch origin main
+            mkdir -p "${RUNNER_TEMP}/stable-src"
             git archive origin/main | tar -x -C "${RUNNER_TEMP}/stable-src"
             cd "${RUNNER_TEMP}/stable-src"
             npm ci
