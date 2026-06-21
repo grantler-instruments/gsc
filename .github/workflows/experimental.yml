@@ -43,9 +43,6 @@ jobs:
   build-web:
     needs: test
     runs-on: ubuntu-latest
-    concurrency:
-      group: pages
-      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v6
 
@@ -58,8 +55,10 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: site
-          key: pages-site-${{ github.run_id }}
-          restore-keys: pages-site-
+          key: pages-site-stable-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            pages-site-stable-
+            pages-site-
 
       - name: Install ImageMagick
         run: sudo apt-get update && sudo apt-get install -y imagemagick
@@ -96,7 +95,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: site
-          key: pages-site-${{ github.run_id }}
+          key: pages-site-stable-${{ hashFiles('package-lock.json') }}
 
       - name: Upload Pages site artifact
         uses: actions/upload-artifact@v4
