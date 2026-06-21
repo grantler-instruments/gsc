@@ -11,6 +11,10 @@ export function isAudioOutputSelectionSupported(): boolean {
   return canRouteAudioOutputDevice();
 }
 
+export function normalizeDeviceKey(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
 export async function resolveMediaSinkId(deviceId: string | null): Promise<string> {
   if (!deviceId || deviceId === "default") return "";
   if (!canRouteAudioOutputDevice()) return "";
@@ -23,14 +27,17 @@ export async function resolveMediaSinkId(deviceId: string | null): Promise<strin
   const byId = outputs.find((device) => device.deviceId === deviceId);
   if (byId) return byId.deviceId;
 
-  const needle = deviceId.toLowerCase();
-  const byLabel =
-    outputs.find((device) => device.label.toLowerCase() === needle) ??
-    outputs.find((device) => device.label.toLowerCase().includes(needle)) ??
-    outputs.find((device) => needle.includes(device.label.toLowerCase()));
+  const needleKey = normalizeDeviceKey(deviceId);
+  const byLabel = outputs.find((device) => {
+    const labelKey = normalizeDeviceKey(device.label);
+    if (!labelKey || !needleKey) return false;
+    return labelKey === needleKey || labelKey.includes(needleKey) || needleKey.includes(labelKey);
+  });
   if (byLabel) return byLabel.deviceId;
 
-  console.warn(`[audio] No media sink for output device "${deviceId}"`);
+  console.warn(`[audio] No media sink for output device "${deviceId}"`, {
+    available: outputs.map((device) => device.label || device.deviceId),
+  });
   return "";
 }
 

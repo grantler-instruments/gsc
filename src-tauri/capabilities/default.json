@@ -36,6 +36,7 @@
     {
       "identifier": "fs:scope",
       "allow": [
+        { "path": "$APPCACHE/**" },
         { "path": "$HOME/**" },
         { "path": "$DOCUMENT/**" },
         { "path": "$DESKTOP/**" },

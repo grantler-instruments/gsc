@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { audioEngine } from "../../audio/engine";
+import { canRouteAudioOutputDevice, normalizeDeviceKey } from "../../lib/audio-output";
 import {
   estimateStorage,
   formatStorageBytes,
@@ -45,6 +47,11 @@ export function useSettingsDevices(open: boolean, isTauri: boolean) {
 
     void (async () => {
       try {
+        if (isTauri) {
+          if (canRouteAudioOutputDevice()) {
+            await audioEngine.unlock();
+          }
+        }
         const [audio, midiOut, midiIn, serial] = await Promise.all([
           isTauri ? listAudioOutputDevices() : Promise.resolve([]),
           listMidiOutputDevices(),
@@ -52,7 +59,26 @@ export function useSettingsDevices(open: boolean, isTauri: boolean) {
           isTauri ? listSerialPorts() : Promise.resolve([]),
         ]);
         if (cancelled) return;
-        setAudioDevices(audio);
+
+        let resolvedAudio = audio;
+        const soundCardId = usePreferencesStore.getState().soundCardId;
+        if (
+          canRouteAudioOutputDevice() &&
+          soundCardId &&
+          !audio.some((device) => device.id === soundCardId)
+        ) {
+          const needle = normalizeDeviceKey(soundCardId);
+          const match = audio.find((device) => {
+            const key = normalizeDeviceKey(device.label);
+            return key && (key === needle || key.includes(needle) || needle.includes(key));
+          });
+          if (match) {
+            usePreferencesStore.getState().setSoundCardId(match.id);
+            resolvedAudio = audio;
+          }
+        }
+
+        setAudioDevices(resolvedAudio);
         setMidiOutDevices(midiOut);
         setMidiInDevices(midiIn);
         setSerialPorts(serial);

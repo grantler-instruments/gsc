@@ -3,6 +3,13 @@ identifier = "gsc-devices"
 description = "Enumerate audio output, MIDI, and serial devices; send MIDI, OSC, and DMX"
 commands.allow = [
   "list_audio_output_devices",
+  "set_audio_output_device",
+  "reset_native_playback_buffer",
+  "append_native_playback_pcm_bytes",
+  "load_native_playback_pcm_file",
+  "start_native_playback",
+  "stop_native_playback",
+  "get_default_audio_output_device",
   "list_midi_ports",
   "send_midi",
   "send_dmx",

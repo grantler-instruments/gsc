@@ -1,3 +1,4 @@
+mod audio_output;
 mod devices;
 mod dmx;
 mod enttec_pro;
@@ -10,6 +11,11 @@ mod remote;
 
 use std::sync::Mutex;
 
+use audio_output::{
+    append_native_playback_pcm_bytes, get_default_audio_output_device, load_native_playback_pcm_file,
+    reset_native_playback_buffer, set_audio_output_device, start_native_playback,
+    stop_native_playback, AudioOutputState,
+};
 use devices::{list_audio_output_devices, list_midi_ports, send_midi};
 use dmx::send_dmx;
 use enttec_pro::{
@@ -40,12 +46,20 @@ pub fn run() {
         .manage(NdiService::default())
         .manage(PendingOpenPaths(Mutex::new(Vec::new())))
         .manage(RemoteServerState::default())
+        .manage(AudioOutputState::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_keepawake::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             list_audio_output_devices,
+            set_audio_output_device,
+            reset_native_playback_buffer,
+            append_native_playback_pcm_bytes,
+            load_native_playback_pcm_file,
+            start_native_playback,
+            stop_native_playback,
+            get_default_audio_output_device,
             list_midi_ports,
             send_midi,
             send_dmx,

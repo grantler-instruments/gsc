@@ -21,9 +21,12 @@ export class MixerGraph {
   private buses = new Map<string, BusRuntime>();
   private master: GainNode;
 
-  constructor(private ctx: AudioContext) {
+  constructor(
+    private ctx: AudioContext,
+    output: AudioNode = ctx.destination,
+  ) {
     this.master = ctx.createGain();
-    this.master.connect(ctx.destination);
+    this.master.connect(output);
   }
 
   dispose(): void {
@@ -117,6 +120,11 @@ export class MixerGraph {
   resolveOutput(busId: string | undefined): AudioNode {
     if (!busId) return this.master;
     return this.buses.get(busId)?.input ?? this.master;
+  }
+
+  setOutputDestination(destination: AudioNode): void {
+    this.master.disconnect();
+    this.master.connect(destination);
   }
 
   get masterOutput(): AudioNode {
