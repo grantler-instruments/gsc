@@ -123,11 +123,14 @@ jobs:
           - platform: ubuntu-22.04
             args: ""
           - platform: windows-latest
-            args: ""
+            # MSI requires numeric pre-release/build segments; hex commit hashes fail WiX.
+            args: "--bundles nsis"
 
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v6
         with:
@@ -159,8 +162,10 @@ jobs:
         id: version
         shell: bash
         run: |
-          BASE=$(node -p "require('./package.json').version")
-          VERSION="${BASE}-experimental.${{ github.run_number }}"
+          git fetch --tags --force origin '+refs/tags/*:refs/tags/*'
+          BASE=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || node -p "require('./package.json').version")
+          SHORT_SHA="${GITHUB_SHA::7}"
+          VERSION="${BASE}-${SHORT_SHA}"
           node scripts/sync-version.mjs "$VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
@@ -184,7 +189,6 @@ jobs:
             Experimental desktop build ${{ steps.version.outputs.version }}.
 
             - Commit: ${{ github.sha }}
-            - Workflow run: ${{ github.run_number }}
             - Web app: https://grantler-instruments.github.io/gsc/experimental/
           releaseDraft: false
           prerelease: true
