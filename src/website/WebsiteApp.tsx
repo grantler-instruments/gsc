@@ -13,10 +13,17 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GscLogo } from "../brand/GscLogo";
 import { CueTypeBadge } from "../components/CueTypeIcon";
-import { GITHUB_RELEASES_URL, GITHUB_REPO_URL } from "../lib/support-links";
+import { experimentalWebAppUrl } from "../lib/experimental-web-url";
+import { fetchExperimentalAheadOfMain } from "../lib/fetch-experimental-ahead-of-main";
+import {
+  GITHUB_EXPERIMENTAL_RELEASE_URL,
+  GITHUB_RELEASES_URL,
+  GITHUB_REPO_URL,
+} from "../lib/support-links";
 import { featureCategoryKeys } from "./features";
 import { useCaseKeys } from "./useCases";
 
@@ -37,6 +44,11 @@ const screenshotUrl = `${import.meta.env.BASE_URL}gsc_edit_screenshot.png`;
 export default function WebsiteApp() {
   const theme = useTheme();
   const { t } = useTranslation();
+  const [showExperimental, setShowExperimental] = useState(false);
+
+  useEffect(() => {
+    void fetchExperimentalAheadOfMain().then(setShowExperimental);
+  }, []);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -160,6 +172,53 @@ export default function WebsiteApp() {
                   {t("website.tryWeb")}
                 </Button>
               </Stack>
+
+              {showExperimental ? (
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: { xs: 2.5, sm: 3 },
+                    width: "100%",
+                    maxWidth: 560,
+                    bgcolor: "background.paper",
+                  }}
+                >
+                  <Stack spacing={2}>
+                    <Typography variant="subtitle1" component="h2" sx={{ fontWeight: 600 }}>
+                      {t("website.experimentalHeading")}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {t("website.experimentalDesc")}
+                    </Typography>
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={1.5}
+                      sx={{ width: "100%" }}
+                    >
+                      <Button
+                        variant="outlined"
+                        size="medium"
+                        href={GITHUB_EXPERIMENTAL_RELEASE_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        startIcon={<DownloadOutlinedIcon />}
+                        sx={{ flex: 1 }}
+                      >
+                        {t("website.experimentalDownloadDesktop")}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="medium"
+                        href={experimentalWebAppUrl()}
+                        startIcon={<OpenInBrowserOutlinedIcon />}
+                        sx={{ flex: 1 }}
+                      >
+                        {t("website.experimentalTryWeb")}
+                      </Button>
+                    </Stack>
+                  </Stack>
+                </Paper>
+              ) : null}
 
               <Box
                 component="img"

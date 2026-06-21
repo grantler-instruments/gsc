@@ -33,8 +33,13 @@ const isVitest = !!process.env.VITEST;
 
 const baseNoSlash = base.replace(/\/$/, "") || "";
 const escapedBase = baseNoSlash.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const isExperimentalBase = baseNoSlash.endsWith("/experimental");
 const websiteNavigateDenylist = baseNoSlash
-  ? [new RegExp(`^${escapedBase}/?$`), new RegExp(`^${escapedBase}/index\\.html$`)]
+  ? [
+      new RegExp(`^${escapedBase}/?$`),
+      new RegExp(`^${escapedBase}/index\\.html$`),
+      ...(!isExperimentalBase ? [new RegExp(`^${escapedBase}/experimental/`)] : []),
+    ]
   : [/^\/$/, /^\/index\.html$/];
 
 export default defineConfig({
