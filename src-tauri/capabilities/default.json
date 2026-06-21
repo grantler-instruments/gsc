@@ -33,6 +33,10 @@
     "fs:allow-desktop-write-recursive",
     "fs:allow-download-read-recursive",
     "fs:allow-download-write-recursive",
+    "fs:allow-app-read-recursive",
+    "fs:allow-app-write-recursive",
+    "fs:allow-appcache-read-recursive",
+    "fs:allow-appcache-write-recursive",
     {
       "identifier": "fs:scope",
       "allow": [

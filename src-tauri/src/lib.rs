@@ -7,6 +7,7 @@ mod ndi;
 mod osc;
 mod project_open;
 mod remote;
+mod speech_model_cache;
 
 use std::sync::Mutex;
 
@@ -28,6 +29,11 @@ use project_open::{
 use remote::{
     get_local_ip, get_remote_server_status, remote_broadcast, remote_set_project_root,
     start_remote_server, stop_remote_server, RemoteServerState,
+};
+use speech_model_cache::{
+    speech_model_cache_append, speech_model_cache_exists, speech_model_cache_list_dir,
+    speech_model_cache_mkdir, speech_model_cache_read, speech_model_cache_remove_all,
+    speech_model_cache_resolve_path, speech_model_cache_write,
 };
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::{Emitter, Manager, RunEvent};
@@ -72,6 +78,14 @@ pub fn run() {
             stop_remote_server,
             remote_broadcast,
             remote_set_project_root,
+            speech_model_cache_write,
+            speech_model_cache_append,
+            speech_model_cache_read,
+            speech_model_cache_resolve_path,
+            speech_model_cache_exists,
+            speech_model_cache_mkdir,
+            speech_model_cache_list_dir,
+            speech_model_cache_remove_all,
         ])
         .setup(|app| {
             handle_cli_open_files(app.handle());

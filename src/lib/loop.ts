@@ -2,7 +2,7 @@ import { t } from "../i18n/t";
 import type { Cue } from "../types/cue";
 
 export function isLoopableMediaCue(cue: Cue): boolean {
-  return cue.type === "audio" || cue.type === "video";
+  return cue.type === "audio" || cue.type === "video" || cue.type === "tts";
 }
 
 /** Total times the in/out slice plays (1 = no loop). */

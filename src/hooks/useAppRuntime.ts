@@ -16,6 +16,7 @@ import { useProjectHistory } from "./useProjectHistory";
 import { useProjectSession } from "./useProjectSession";
 import { useRemoteHost } from "./useRemoteHost";
 import { useShowModeKeepAwake } from "./useShowModeKeepAwake";
+import { useSpeechModelWarmup } from "./useSpeechModelWarmup";
 import { useTauriAppMenu } from "./useTauriAppMenu";
 import { useTauriOpenProject } from "./useTauriOpenProject";
 import { useUpdateCheck } from "./useUpdateCheck";
@@ -43,6 +44,7 @@ export function useAppRuntime(): boolean {
   useTauriOpenProject(sessionReady);
   useEnttecProConnection();
   useRemoteHost(sessionReady);
+  useSpeechModelWarmup(sessionReady);
   useUpdateCheck(sessionReady);
 
   return sessionReady;

@@ -70,6 +70,9 @@ interface PreferencesState {
   remotePin: string;
   /** Start remote server automatically on app launch. */
   remoteAutoStart: boolean;
+  /** Kokoro speech model downloaded and ready for TTS cues. */
+  speechModelReady: boolean;
+  setSpeechModelReady: (ready: boolean) => void;
   setRemotePort: (remotePort: number) => void;
   setRemotePin: (remotePin: string) => void;
   setRemoteAutoStart: (remoteAutoStart: boolean) => void;
@@ -99,6 +102,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         remotePort: 8766,
         remotePin: "",
         remoteAutoStart: false,
+        speechModelReady: false,
         setLocale: (locale) => {
           setAppLocale(locale);
           set({ locale });
@@ -125,6 +129,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         setRemotePort: (remotePort) => set({ remotePort }),
         setRemotePin: (remotePin) => set({ remotePin }),
         setRemoteAutoStart: (remoteAutoStart) => set({ remoteAutoStart }),
+        setSpeechModelReady: (speechModelReady) => set({ speechModelReady }),
       }),
       {
         name: "gsc-preferences",
@@ -149,6 +154,7 @@ export const usePreferencesStore = create<PreferencesState>()(
           remotePort: s.remotePort,
           remotePin: s.remotePin,
           remoteAutoStart: s.remoteAutoStart,
+          speechModelReady: s.speechModelReady,
         }),
       },
     ),
