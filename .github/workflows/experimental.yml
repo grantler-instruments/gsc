@@ -7,8 +7,7 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
+  actions: write
 
 concurrency:
   group: experimental-${{ github.ref }}
@@ -99,19 +98,17 @@ jobs:
           path: site
           key: pages-site-${{ github.run_id }}
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Upload Pages site artifact
+        uses: actions/upload-artifact@v4
         with:
+          name: pages-site
           path: site
+          retention-days: 7
 
-  deploy-web:
-    needs: build-web
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: https://grantler-instruments.github.io/gsc/experimental/
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Trigger Pages deploy on main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run pages-deploy-experimental.yml --ref main -f artifact_run_id="${{ github.run_id }}"
 
   release:
     needs: test
