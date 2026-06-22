@@ -6,6 +6,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vitest/config";
 import { kokoroVoicesPlugin } from "./vite-plugin-kokoro-voices";
+import { onnxWasmPlugin } from "./vite-plugin-onnx-wasm";
 import { syncFaviconPlugin } from "./vite-plugin-sync-favicon";
 import { trailingSlashRedirectPlugin } from "./vite-trailing-slash-redirect";
 
@@ -46,6 +47,7 @@ export default defineConfig({
   plugins: [
     ...(isVitest ? [] : [syncFaviconPlugin(__dirname)]),
     ...(isVitest ? [] : [kokoroVoicesPlugin(__dirname)]),
+    ...(isVitest ? [] : [onnxWasmPlugin(__dirname)]),
     trailingSlashRedirectPlugin(base),
     react(),
     VitePWA({
@@ -93,6 +95,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@brand": path.resolve(__dirname, "src/brand"),
+      phonemizer: path.resolve(__dirname, "src/platform/phonemizer-shim.ts"),
+      "phonemizer-original": path.resolve(__dirname, "node_modules/phonemizer/dist/phonemizer.js"),
     },
   },
   build: {

@@ -70,7 +70,6 @@ export function kokoroVoicesPlugin(rootDir: string): Plugin {
     name: "kokoro-voices",
     buildStart() {
       copyBundledVoices(srcDir, path.join(rootDir, "public/kokoro/voices"));
-      copyBundledVoices(srcDir, path.join(rootDir, "public/gsc/kokoro/voices"));
     },
     configureServer(server) {
       const base = server.config.base;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   configureOnnxWasmForPlatform,
+  getLocalOnnxWasmBase,
   getOnnxWasmSettings,
   getTransformersOnnxWasmCdnBase,
 } from "./onnx-wasm-config";
@@ -25,7 +26,7 @@ describe("onnx-wasm-config", () => {
     expect(env.backends.onnx.wasm).toEqual({
       proxy: false,
       numThreads: 1,
-      wasmPaths: getTransformersOnnxWasmCdnBase(),
+      wasmPaths: getLocalOnnxWasmBase(),
     });
   });
 

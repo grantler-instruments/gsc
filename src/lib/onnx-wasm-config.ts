@@ -13,6 +13,14 @@ export function getTransformersOnnxWasmCdnBase(): string {
   return `https://cdn.jsdelivr.net/npm/@huggingface/transformers@${TRANSFORMERS_VERSION}/dist/`;
 }
 
+export function getLocalOnnxWasmBase(): string {
+  const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
+  if (typeof window !== "undefined") {
+    return new URL(`${base}ort/`, window.location.href).href;
+  }
+  return `${base}ort/`;
+}
+
 type TransformersEnv = {
   backends?: {
     onnx?: {
@@ -43,5 +51,5 @@ export function configureOnnxWasmForPlatform(env: TransformersEnv, platform: Pla
   onnxWasm.proxy = false;
   // WKWebView is not cross-origin isolated — multi-threaded ORT WASM can hang indefinitely.
   onnxWasm.numThreads = 1;
-  onnxWasm.wasmPaths = getTransformersOnnxWasmCdnBase();
+  onnxWasm.wasmPaths = getLocalOnnxWasmBase();
 }

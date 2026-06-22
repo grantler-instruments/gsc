@@ -50,7 +50,7 @@ import {
 } from "../lib/recent-projects";
 import { hasMeaningfulProjectContent, snapshotHasMeaningfulContent } from "../lib/unsaved-project";
 import { useProjectStore } from "../stores/project";
-import { useProjectLoadingStore } from "../stores/project-loading";
+import { beginProjectLoadUi, useProjectLoadingStore } from "../stores/project-loading";
 import { useProjectLocationStore } from "../stores/project-location";
 import type { PendingDraftProject } from "../stores/startup-projects-prompt";
 import { requestStartupProjectsChoice } from "../stores/startup-projects-prompt";
@@ -93,11 +93,16 @@ async function removeDraftProjectRoot(rootDir: string): Promise<void> {
 
 /** Bind a draft `.gsc` folder in app cache (autosaved until the user picks a location). */
 export async function bindTemporaryProjectRoot(showName?: string): Promise<string> {
-  const name = showName ?? useProjectStore.getState().name;
-  const rootDir = await createDraftProjectRoot(name);
-  useProjectLocationStore.getState().setRootDir(rootDir, { temporary: true });
-  await saveProjectToFolder(rootDir);
-  return rootDir;
+  const endProjectLoadUi = await beginProjectLoadUi();
+  try {
+    const name = showName ?? useProjectStore.getState().name;
+    const rootDir = await createDraftProjectRoot(name);
+    useProjectLocationStore.getState().setRootDir(rootDir, { temporary: true });
+    await saveProjectToFolder(rootDir);
+    return rootDir;
+  } finally {
+    endProjectLoadUi();
+  }
 }
 
 export async function discardTemporaryProjectRoot(rootDir: string): Promise<void> {
@@ -222,6 +227,18 @@ export async function loadProjectFromFolder(
   rootDir: string,
   options?: { temporary?: boolean },
 ): Promise<void> {
+  const endProjectLoadUi = await beginProjectLoadUi();
+  try {
+    await loadProjectFromFolderInner(rootDir, options);
+  } finally {
+    endProjectLoadUi();
+  }
+}
+
+async function loadProjectFromFolderInner(
+  rootDir: string,
+  options?: { temporary?: boolean },
+): Promise<void> {
   if (!isGscProjectDirPath(rootDir)) {
     throw new Error(t("notification.selectGscFolder"));
   }
@@ -271,9 +288,6 @@ export async function loadProjectFromFolder(
 
   const { initAssetProgress, setAssetStatus } = useProjectLoadingStore.getState();
   initAssetProgress(uniquePaths.map((path) => ({ path })));
-  await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => resolve());
-  });
 
   await registerDiskAssetPaths(rootDir, uniquePaths, async (diskPath) => exists(diskPath), {
     onPathStart: (path) => setAssetStatus(path, "loading"),
@@ -570,52 +584,59 @@ export async function listValidRecentProjects(): Promise<RecentProjectEntry[]> {
 }
 
 async function doRestoreLastTauriProject(): Promise<boolean> {
-  const draft = await getPendingDraftInfo();
+  // Keep loading active through the startup dialog so the in-app spinner appears
+  // immediately when the user picks an option (avoids the macOS beachball).
+  const endBootLoadUi = await beginProjectLoadUi();
+  try {
+    const draft = await getPendingDraftInfo();
 
-  if (!draft) {
-    setActiveProjectId(useProjectStore.getState().id);
-    await bindTemporaryProjectRoot();
-    return false;
-  }
-
-  const recents = await listValidRecentProjects();
-  const choice = await requestStartupProjectsChoice({ draft, recents });
-
-  if (draft && choice.type !== "restore-draft") {
-    await discardPendingDraft(draft.path);
-  }
-
-  switch (choice.type) {
-    case "restore-draft":
-      if (!draft) {
-        await bindTemporaryProjectRoot();
-        return false;
-      }
-      await loadProjectFromFolder(draft.path, { temporary: true });
-      return true;
-    case "open-recent":
-      try {
-        await loadProjectFromFolder(choice.path);
-        return true;
-      } catch (err) {
-        showError(err);
-        removeRecentProject(choice.path);
-        setActiveProjectId(useProjectStore.getState().id);
-        await bindTemporaryProjectRoot();
-        return false;
-      }
-    case "browse": {
-      const opened = await pickAndOpenProject();
-      if (!opened) {
-        setActiveProjectId(useProjectStore.getState().id);
-        await bindTemporaryProjectRoot();
-      }
-      return opened;
-    }
-    case "new-show":
+    if (!draft) {
       setActiveProjectId(useProjectStore.getState().id);
       await bindTemporaryProjectRoot();
       return false;
+    }
+
+    const recents = await listValidRecentProjects();
+    const choice = await requestStartupProjectsChoice({ draft, recents });
+
+    if (draft && choice.type !== "restore-draft") {
+      await discardPendingDraft(draft.path);
+    }
+
+    switch (choice.type) {
+      case "restore-draft":
+        if (!draft) {
+          await bindTemporaryProjectRoot();
+          return false;
+        }
+        await loadProjectFromFolder(draft.path, { temporary: true });
+        return true;
+      case "open-recent":
+        try {
+          await loadProjectFromFolder(choice.path);
+          return true;
+        } catch (err) {
+          showError(err);
+          removeRecentProject(choice.path);
+          setActiveProjectId(useProjectStore.getState().id);
+          await bindTemporaryProjectRoot();
+          return false;
+        }
+      case "browse": {
+        const opened = await pickAndOpenProject();
+        if (!opened) {
+          setActiveProjectId(useProjectStore.getState().id);
+          await bindTemporaryProjectRoot();
+        }
+        return opened;
+      }
+      case "new-show":
+        setActiveProjectId(useProjectStore.getState().id);
+        await bindTemporaryProjectRoot();
+        return false;
+    }
+  } finally {
+    endBootLoadUi();
   }
 }
 

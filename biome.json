@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!!**/dist", "!!**/dev-dist"]
+    "includes": ["**", "!!**/dist", "!!**/dev-dist", "!**/ort/ort-wasm-*.mjs"]
   },
   "formatter": {
     "enabled": true,

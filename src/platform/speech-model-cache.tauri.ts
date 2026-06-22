@@ -74,7 +74,12 @@ async function getOrCreateCache(name: string): Promise<SpeechModelFsCache> {
 
 /** Route Kokoro/transformers cache reads and writes to app cache via Rust (WKWebView Cache API is not durable). */
 export async function installTauriSpeechModelCache(): Promise<void> {
-  if (cachesOpenInstalled || typeof caches === "undefined") return;
+  if (typeof caches === "undefined") return;
+
+  const { installTauriKokoroFetchGuard } = await import("./kokoro-fetch-guard.tauri");
+  installTauriKokoroFetchGuard();
+
+  if (cachesOpenInstalled) return;
 
   const originalOpen = caches.open.bind(caches);
   caches.open = async (name: string) => {

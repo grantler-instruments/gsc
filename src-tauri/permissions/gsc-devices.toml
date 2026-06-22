@@ -35,4 +35,5 @@ commands.allow = [
   "speech_model_cache_mkdir",
   "speech_model_cache_list_dir",
   "speech_model_cache_remove_all",
+  "kokoro_phonemize",
 ]

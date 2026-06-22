@@ -87,19 +87,7 @@ export class SpeechModelFsCache {
   }
 
   private async loadBodyResponse(bodyPath: string): Promise<Response | undefined> {
-    if (this.storage.resolveAbsolutePath) {
-      try {
-        const absolutePath = await this.storage.resolveAbsolutePath(bodyPath);
-        if (absolutePath) {
-          const { convertFileSrc } = await import("@tauri-apps/api/core");
-          const response = await fetch(convertFileSrc(absolutePath));
-          if (response.ok) return response;
-        }
-      } catch {
-        /* fall back to IPC read */
-      }
-    }
-
+    // Always read via storage — fetch(convertFileSrc(...)) can hang indefinitely in WKWebView.
     const body = await this.storage.readBytes(bodyPath);
     return new Response(body);
   }

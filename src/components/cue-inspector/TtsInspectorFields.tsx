@@ -6,7 +6,11 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { clearCachedAudioBuffer } from "../../audio/buffer-cache";
-import { generateSpeechWav, getLoadedKokoroDevice } from "../../lib/kokoro-engine";
+import {
+  generateSpeechWav,
+  getLoadedKokoroDevice,
+  type SpeechGeneratePhase,
+} from "../../lib/kokoro-engine";
 import { formatAppError, notifyError } from "../../lib/notifications";
 import {
   DEFAULT_TTS_SPEED,
@@ -33,6 +37,7 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
   const { t } = useTranslation();
   const [generating, setGenerating] = useState(false);
   const [generatingSeconds, setGeneratingSeconds] = useState(0);
+  const [generatePhase, setGeneratePhase] = useState<SpeechGeneratePhase | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [lastGenerateMs, setLastGenerateMs] = useState<number | null>(null);
 
@@ -47,6 +52,7 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
   useEffect(() => {
     if (!generating) {
       setGeneratingSeconds(0);
+      setGeneratePhase(null);
       return;
     }
     const started = performance.now();
@@ -63,11 +69,17 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
 
     setGenerating(true);
     setGenerateError(null);
+    setGeneratePhase(null);
     const started = performance.now();
     try {
       const voice = cue.ttsVoice ?? DEFAULT_TTS_VOICE;
       const speed = cue.ttsSpeed ?? DEFAULT_TTS_SPEED;
-      const blob = await generateSpeechWav({ text, voice, speed });
+      const blob = await generateSpeechWav({
+        text,
+        voice,
+        speed,
+        onPhase: setGeneratePhase,
+      });
       const path = ttsAssetPath(cue.id);
       if (cue.assetPath && cue.assetPath !== path) {
         clearCachedAudioBuffer(cue.assetPath);
@@ -159,7 +171,9 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
         {generating
           ? speechModelLoading || !inferenceDevice
             ? t("tts.generatingLoadingModel", { seconds: generatingSeconds || 1 })
-            : t("tts.generatingElapsed", { seconds: generatingSeconds || 1 })
+            : generatePhase === "fallback-wasm"
+              ? t("tts.generatingFallbackWasm", { seconds: generatingSeconds || 1 })
+              : t("tts.generatingElapsed", { seconds: generatingSeconds || 1 })
           : t("tts.generate")}
       </Button>
 
@@ -171,7 +185,7 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
         </Typography>
       ) : null}
 
-      {generating && inferenceDevice === "wasm" ? (
+      {generating && inferenceDevice === "wasm" && generatePhase === "synthesizing" ? (
         <Typography variant="caption" color="text.secondary">
           {t("tts.generatingWasmHint")}
         </Typography>

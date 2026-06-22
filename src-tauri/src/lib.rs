@@ -1,3 +1,4 @@
+mod kokoro_phonemize;
 mod devices;
 mod dmx;
 mod enttec_pro;
@@ -11,6 +12,7 @@ mod speech_model_cache;
 
 use std::sync::Mutex;
 
+use kokoro_phonemize::kokoro_phonemize;
 use devices::{list_audio_output_devices, list_midi_ports, send_midi};
 use dmx::send_dmx;
 use enttec_pro::{
@@ -86,6 +88,7 @@ pub fn run() {
             speech_model_cache_mkdir,
             speech_model_cache_list_dir,
             speech_model_cache_remove_all,
+            kokoro_phonemize,
         ])
         .setup(|app| {
             handle_cli_open_files(app.handle());
