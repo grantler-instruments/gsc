@@ -16,13 +16,20 @@ export function cueDropZoneSx(tokens: GscTokenSet, dropActive: boolean, expanded
   };
 }
 
-/** List trailing zone: only fills remaining space while hovered during a drag. */
+/**
+ * List trailing zone: empty space at the end of the cue list that always fills the
+ * remaining area, giving an obvious place to drop assets or cues (e.g. for
+ * reordering to the end). It subtly highlights while hovered during a drag.
+ */
 export function cueListTrailingDropZoneSx(tokens: GscTokenSet, dropActive: boolean) {
-  const hitSlop = 4;
   return {
-    ...cueDropZoneSx(tokens, dropActive, 40),
-    flex: dropActive ? 1 : "none",
-    minHeight: dropActive ? 40 : hitSlop,
-    height: dropActive ? undefined : hitSlop,
+    flex: 1,
+    minHeight: 48,
+    listStyle: "none" as const,
+    transition: "background-color 0.12s ease-out, box-shadow 0.12s ease-out",
+    ...(dropActive && {
+      boxShadow: `inset 0 2px 0 ${tokens.accent}`,
+      bgcolor: "rgba(201, 162, 39, 0.06)",
+    }),
   };
 }
