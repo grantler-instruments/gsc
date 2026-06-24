@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import LinearProgress from "@mui/material/LinearProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { usePreferencesStore } from "../../stores/preferences";
 import { useSpeechModelStore } from "../../stores/speech-model";
@@ -19,6 +20,12 @@ export function SettingsSpeechPanel() {
   const error = useSpeechModelStore((s) => s.error);
   const downloadModel = useSpeechModelStore((s) => s.downloadModel);
   const clearModel = useSpeechModelStore((s) => s.clearModel);
+  const warmUpIfReady = useSpeechModelStore((s) => s.warmUpIfReady);
+
+  useEffect(() => {
+    if (!speechModelReady) return;
+    void warmUpIfReady();
+  }, [speechModelReady, warmUpIfReady]);
 
   const loading = status === "loading";
   const installed = speechModelReady;
