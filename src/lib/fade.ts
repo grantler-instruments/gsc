@@ -25,11 +25,11 @@ export function isFadeCue(cue: Cue): boolean {
 }
 
 export function canVolumeFadeTarget(cue: Cue): boolean {
-  return cue.type === "audio" || cue.type === "video";
+  return cue.type === "audio" || cue.type === "video" || cue.type === "tts";
 }
 
 export function canPanFadeTarget(cue: Cue): boolean {
-  return cue.type === "audio" || cue.type === "video";
+  return cue.type === "audio" || cue.type === "video" || cue.type === "tts";
 }
 
 export function canOpacityFadeTarget(cue: Cue): boolean {

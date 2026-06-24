@@ -17,6 +17,7 @@ import { SettingsAudioPanel } from "./SettingsAudioPanel";
 import { SettingsDmxPanel } from "./SettingsDmxPanel";
 import { SettingsGeneralPanel } from "./SettingsGeneralPanel";
 import { SettingsMidiPanel } from "./SettingsMidiPanel";
+import { SettingsSpeechPanel } from "./SettingsSpeechPanel";
 import { SettingsVideoPanel } from "./SettingsVideoPanel";
 import { CATEGORY_LABEL_KEYS, SETTINGS_CATEGORIES, type SettingsCategory } from "./types";
 import { useSettingsDevices } from "./useSettingsDevices";
@@ -90,6 +91,8 @@ export function SettingsDialog() {
           {category === "audio" ? (
             <SettingsAudioPanel isTauri={isTauri} audioDevices={devices.audioDevices} />
           ) : null}
+
+          {category === "speech" ? <SettingsSpeechPanel /> : null}
 
           {category === "video" ? <SettingsVideoPanel isTauri={isTauri} /> : null}
 

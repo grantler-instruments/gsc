@@ -20,6 +20,7 @@ import { defaultOscCueData } from "../../lib/osc";
 import { runWithoutHistory } from "../../lib/project-history";
 import { randomId } from "../../lib/random-id";
 import { canEditProject } from "../../lib/show-mode";
+import { DEFAULT_TTS_SPEED, DEFAULT_TTS_VOICE } from "../../lib/tts";
 import type { Cue } from "../../types/cue";
 import {
   applyRenumber,
@@ -61,14 +62,17 @@ function createCueFromOpts(opts: NewCueOpts, fixtures: ProjectState["fixtures"])
     midi: type === "midi" ? (midi ?? defaultMidiCueData()) : undefined,
     osc: type === "osc" ? (osc ?? defaultOscCueData()) : undefined,
     dmx: type === "dmx" || type === "lightFade" ? (dmx ?? defaultDmxCueData(fixtures)) : undefined,
-    volume: isMediaCueType(type) ? 1 : undefined,
-    pan: type === "audio" || type === "video" ? 0 : undefined,
+    volume: isMediaCueType(type) || type === "tts" ? 1 : undefined,
+    pan: type === "audio" || type === "video" || type === "tts" ? 0 : undefined,
     opacity: type === "video" || type === "image" ? 1 : undefined,
-    fadeIn: type === "audio" || type === "video" ? 0 : undefined,
-    fadeOut: type === "audio" || type === "video" ? 0 : undefined,
-    inTime: isMediaCueType(type) ? 0 : undefined,
+    fadeIn: type === "audio" || type === "video" || type === "tts" ? 0 : undefined,
+    fadeOut: type === "audio" || type === "video" || type === "tts" ? 0 : undefined,
+    inTime: isMediaCueType(type) || type === "tts" ? 0 : undefined,
     outTime: undefined,
     waitDurationSec: type === "wait" ? 1 : undefined,
+    ttsText: type === "tts" ? "" : undefined,
+    ttsVoice: type === "tts" ? DEFAULT_TTS_VOICE : undefined,
+    ttsSpeed: type === "tts" ? DEFAULT_TTS_SPEED : undefined,
     ...(type === "lightFade" ? defaultFadeCueFields("lightFade") : {}),
   };
 }

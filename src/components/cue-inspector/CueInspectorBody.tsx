@@ -1,6 +1,8 @@
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { getCueAssetWarning } from "../../lib/cue-asset";
 import { isContainerCue, isFadeCue, isStopCue, isWaitCue } from "../../lib/cues";
+import { getTtsCueWarning, isTtsCue } from "../../lib/tts";
 import type { Cue, MidiCueData, OscCueData } from "../../types/cue";
 import { ContainerInspectorFields } from "../ContainerInspectorFields";
 import { CueAssetAssign } from "../CueAssetAssign";
@@ -12,6 +14,7 @@ import { DmxInspectorFields } from "./DmxInspectorFields";
 import { MediaInspectorFields } from "./MediaInspectorFields";
 import { MidiInspectorFields } from "./MidiInspectorFields";
 import { OscInspectorFields } from "./OscInspectorFields";
+import { TtsInspectorFields } from "./TtsInspectorFields";
 
 interface CueInspectorBodyProps {
   cue: Cue;
@@ -34,7 +37,7 @@ export function CueInspectorBody({
   dmxDisabled,
   onUpdate,
 }: CueInspectorBodyProps) {
-  const assetWarning = getCueAssetWarning(cue);
+  const assetWarning = isTtsCue(cue) ? getTtsCueWarning(cue) : getCueAssetWarning(cue);
 
   const patchMidi = (midiPatch: Partial<MidiCueData>) => {
     if (readOnly || cue.type !== "midi" || !cue.midi) return;
@@ -100,7 +103,13 @@ export function CueInspectorBody({
         onTriggerNoteChange={(triggerNote) => onUpdate({ triggerNote })}
       />
 
-      {assetWarning && <CueAssetAssign cue={cue} readOnly={readOnly} />}
+      {assetWarning && !isTtsCue(cue) ? <CueAssetAssign cue={cue} readOnly={readOnly} /> : null}
+
+      {isTtsCue(cue) && assetWarning ? (
+        <Typography variant="body2" color="warning.main" sx={{ m: 0 }}>
+          {assetWarning.detail}
+        </Typography>
+      ) : null}
 
       {isContainerCue(cue) && <ContainerInspectorFields container={cue} />}
 
@@ -118,6 +127,8 @@ export function CueInspectorBody({
         oscDisabled={oscDisabled}
         onPatch={patchOsc}
       />
+
+      <TtsInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
 
       <MediaInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
     </>

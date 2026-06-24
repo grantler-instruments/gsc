@@ -3,7 +3,6 @@ import { createPlaywrightDriver } from "./adapters/playwright-driver";
 import {
   activeCueRow,
   activeCuesEmptyMessage,
-  activeCuesPanel,
   openActiveCuesTab,
   pressPanic,
   pressTransportGo,

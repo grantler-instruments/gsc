@@ -3,7 +3,7 @@
  * Usage: npx vite-node scripts/import-qlab5-to-disk.ts <qlab-folder> <output-dir>
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 import { assetRelativePath } from "../src/lib/project-paths";
 import { convertQlabWorkspaceToSnapshot } from "../src/lib/qlab5/convert-to-snapshot";
 import type { createImportReport } from "../src/lib/qlab5/import-report";

@@ -27,4 +27,13 @@ commands.allow = [
   "stop_remote_server",
   "remote_broadcast",
   "remote_set_project_root",
+  "speech_model_cache_write",
+  "speech_model_cache_append",
+  "speech_model_cache_read",
+  "speech_model_cache_resolve_path",
+  "speech_model_cache_exists",
+  "speech_model_cache_mkdir",
+  "speech_model_cache_list_dir",
+  "speech_model_cache_remove_all",
+  "kokoro_phonemize",
 ]
