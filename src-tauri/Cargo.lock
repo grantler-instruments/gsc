@@ -2093,7 +2093,7 @@ dependencies = [
 
 [[package]]
 name = "gsc"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "axum",
  "cpal",
