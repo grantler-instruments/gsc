@@ -212,6 +212,12 @@ If you already use NeopixelBlocks secrets, reuse the same certificate values; cr
 
 Without these secrets, macOS jobs still build but releases stay unsigned (Gatekeeper may report the app as “damaged”).
 
+### Hardened runtime & entitlements
+
+The macOS bundle runs under the **hardened runtime** (`bundle.macOS.hardenedRuntime` in [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json)) with entitlements declared in [`src-tauri/entitlements.plist`](src-tauri/entitlements.plist): audio input (`cpal`), local-network server/client (remote control + OSC), USB serial (Enttec DMX Pro), and the JIT/library-validation exceptions the WebView needs. Matching privacy usage strings (`NSMicrophoneUsageDescription`, `NSLocalNetworkUsageDescription`) live in [`src-tauri/Info.plist`](src-tauri/Info.plist). Without these, a notarized build launches but mic/network/USB features fail silently.
+
+After building, CI runs `codesign --verify`, `spctl`, and `xcrun stapler validate` on the `.app` so an unsigned or un-notarized release fails the job instead of shipping broken.
+
 ## Contributing
 
 Bug reports and pull requests are welcome.
