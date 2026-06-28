@@ -15,30 +15,7 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-
-      - name: Typecheck
-        run: npx tsc --noEmit
-
-      - name: Unit tests
-        run: npm test
-
-      - name: Install Playwright
-        run: npm run test:e2e:install -- --with-deps
-
-      - name: Web E2E tests
-        run: npm run test:e2e
+    uses: ./.github/workflows/test.yml
 
   build-web:
     needs: test
