@@ -28,7 +28,8 @@
       "duplicate": "Duplicar",
       "rename": "Renombrar",
       "collapse": "Contraer",
-      "expand": "Expandir"
+      "expand": "Expandir",
+      "ok": "Aceptar"
     },
     "state": {
       "connected": "Conectado",
@@ -257,6 +258,14 @@
   "deleteStoredProject": {
     "title": "¿Eliminar proyecto guardado?",
     "body": "¿Eliminar \"{{projectName}}\" de este navegador? Esto no se puede deshacer. Exporte un archivo {{extension}} primero si desea una copia de seguridad."
+  },
+  "deleteAssetInUse": {
+    "title": "Recurso en uso",
+    "body": "\"{{assetName}}\" se usa en {{count}} cue(s) y no se puede eliminar. Puede eliminar los cue(s) que lo usan o dejar todo como está.",
+    "deleteCues": "Eliminar cues que usan este recurso",
+    "confirmTitle": "¿Eliminar los cues que usan este recurso?",
+    "confirmBody": "Esto elimina permanentemente {{count}} cue(s) que usan \"{{assetName}}\" y luego elimina el recurso. Esto no se puede deshacer.",
+    "confirmDelete": "Eliminar cues"
   },
   "dmxPreview": {
     "title": "¿Mantener cambios de vista previa?",

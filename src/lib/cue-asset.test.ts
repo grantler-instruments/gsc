@@ -7,8 +7,10 @@ import {
   cueMissingAsset,
   cueUsesAsset,
   filterAndSortAssets,
+  findAssetCueUsages,
   getCueAssetWarning,
 } from "./cue-asset";
+import { createCueList } from "./cue-lists";
 
 vi.mock("../platform/remote-mode", () => ({
   isRemoteClient: vi.fn(() => false),
@@ -30,6 +32,42 @@ describe("cueUsesAsset", () => {
     expect(cueUsesAsset(cue, "assets/intro.wav")).toBe(true);
     expect(cueUsesAsset(cue, "/assets/other.wav")).toBe(false);
     expect(cueUsesAsset(cue, null)).toBe(false);
+  });
+});
+
+describe("findAssetCueUsages", () => {
+  function listWith(id: string, name: string, cues: ReturnType<typeof testCue>[]) {
+    return { ...createCueList(name), id, cues };
+  }
+
+  it("collects matching cues across all lists with list context", () => {
+    const lists = [
+      listWith("l1", "Main", [
+        testCue("a", "Intro", "audio", { number: "1", assetPath: "/assets/intro.wav" }),
+        testCue("b", "Other", "audio", { number: "2", assetPath: "/assets/other.wav" }),
+      ]),
+      listWith("l2", "Backups", [
+        testCue("c", "Reprise", "audio", { number: "5", assetPath: "assets/intro.wav" }),
+      ]),
+    ];
+
+    const usages = findAssetCueUsages(lists, "/assets/intro.wav");
+
+    expect(usages).toEqual([
+      { cueId: "a", number: "1", name: "Intro", listId: "l1", listName: "Main" },
+      { cueId: "c", number: "5", name: "Reprise", listId: "l2", listName: "Backups" },
+    ]);
+  });
+
+  it("returns an empty array when no cue references the asset", () => {
+    const lists = [
+      listWith("l1", "Main", [
+        testCue("a", "Intro", "audio", { assetPath: "/assets/other.wav" }),
+        testCue("g", "Group", "group"),
+      ]),
+    ];
+
+    expect(findAssetCueUsages(lists, "/assets/intro.wav")).toEqual([]);
   });
 });
 

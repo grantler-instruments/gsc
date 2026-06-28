@@ -28,7 +28,8 @@
       "duplicate": "复制",
       "rename": "重命名",
       "collapse": "折叠",
-      "expand": "展开"
+      "expand": "展开",
+      "ok": "确定"
     },
     "state": {
       "connected": "已连接",
@@ -257,6 +258,14 @@
   "deleteStoredProject": {
     "title": "删除已保存的项目？",
     "body": "从本浏览器中删除「{{projectName}}」？此操作无法撤销。如需备份，请先导出 {{extension}} 文件。"
+  },
+  "deleteAssetInUse": {
+    "title": "素材正在使用中",
+    "body": "「{{assetName}}」被 {{count}} 个提示使用，无法删除。你可以删除使用它的提示，或保持原样。",
+    "deleteCues": "删除使用此素材的提示",
+    "confirmTitle": "删除使用此素材的提示？",
+    "confirmBody": "此操作将永久删除使用「{{assetName}}」的 {{count}} 个提示，然后移除该素材。此操作无法撤销。",
+    "confirmDelete": "删除提示"
   },
   "dmxPreview": {
     "title": "保留预览更改？",

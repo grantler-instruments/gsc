@@ -50,6 +50,8 @@ export interface ProjectState {
   addFadeCueForTarget: (targetId: string, fadeType: FadeCueType) => Cue | null;
   updateCue: (id: string, patch: Partial<Cue>) => void;
   removeCue: (id: string) => void;
+  /** Remove every cue across all lists that references the given asset path. */
+  removeCuesUsingAsset: (assetPath: string) => void;
   moveCueToGroup: (cueId: string, groupId: string | null) => void;
   reparentCueRelative: (draggedId: string, targetId: string, place: "before" | "after") => void;
   reparentCueToListEnd: (draggedId: string) => void;

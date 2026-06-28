@@ -28,7 +28,8 @@
       "duplicate": "Duplizieren",
       "rename": "Umbenennen",
       "collapse": "Einklappen",
-      "expand": "Ausklappen"
+      "expand": "Ausklappen",
+      "ok": "OK"
     },
     "state": {
       "connected": "Verbunden",
@@ -259,6 +260,14 @@
   "deleteStoredProject": {
     "title": "Gespeichertes Projekt löschen?",
     "body": "\"{{projectName}}\" aus diesem Browser löschen? Dies kann nicht rückgängig gemacht werden. Exportieren Sie zuerst eine {{extension}}-Datei, wenn Sie ein Backup möchten."
+  },
+  "deleteAssetInUse": {
+    "title": "Asset wird verwendet",
+    "body": "\"{{assetName}}\" wird von {{count}} Cue(s) verwendet und kann nicht gelöscht werden. Sie können die Cue(s) löschen, die es verwenden, oder alles unverändert lassen.",
+    "deleteCues": "Cues löschen, die dieses Asset verwenden",
+    "confirmTitle": "Cues löschen, die dieses Asset verwenden?",
+    "confirmBody": "Dies löscht dauerhaft {{count}} Cue(s), die \"{{assetName}}\" verwenden, und entfernt anschließend das Asset. Dies kann nicht rückgängig gemacht werden.",
+    "confirmDelete": "Cues löschen"
   },
   "dmxPreview": {
     "title": "Vorschau-Änderungen behalten?",

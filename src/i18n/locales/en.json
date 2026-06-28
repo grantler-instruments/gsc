@@ -28,7 +28,8 @@
       "duplicate": "Duplicate",
       "rename": "Rename",
       "collapse": "Collapse",
-      "expand": "Expand"
+      "expand": "Expand",
+      "ok": "OK"
     },
     "state": {
       "connected": "Connected",
@@ -289,6 +290,14 @@
   "deleteStoredProject": {
     "title": "Delete saved project?",
     "body": "Delete \"{{projectName}}\" from this browser? This cannot be undone. Export a {{extension}} file first if you want a backup."
+  },
+  "deleteAssetInUse": {
+    "title": "Asset in use",
+    "body": "\"{{assetName}}\" is used by {{count}} cue(s) and can't be deleted. You can delete the cue(s) that use it, or keep everything as is.",
+    "deleteCues": "Delete cues using this asset",
+    "confirmTitle": "Delete cues using this asset?",
+    "confirmBody": "This permanently deletes {{count}} cue(s) that use \"{{assetName}}\" and then removes the asset. This can't be undone.",
+    "confirmDelete": "Delete cues"
   },
   "dmxPreview": {
     "title": "Keep preview changes?",
