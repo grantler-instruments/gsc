@@ -4,7 +4,7 @@ import { randomId } from "./random-id";
 
 let clipboard: Cue[] | null = null;
 
-function cloneCueFields(cue: Cue): Cue {
+export function cloneCueFields(cue: Cue): Cue {
   return {
     ...cue,
     midi: cue.midi ? { ...cue.midi } : undefined,

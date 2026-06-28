@@ -49,8 +49,10 @@ const CUE_NAME_TINT = {
   warning: "#e8a87c",
 } as const;
 
+const FALLBACK_CUE_TYPE_COLOR = { color: "#c0c6d0", bgcolor: "#2a2f38" } as const;
+
 export function cueTypeBadgeSx(type: CueType | AssetKind, compact = false): SxProps<Theme> {
-  const palette = CUE_TYPE_COLORS[type];
+  const palette = CUE_TYPE_COLORS[type] ?? FALLBACK_CUE_TYPE_COLOR;
   return {
     display: "inline-flex",
     alignItems: "center",

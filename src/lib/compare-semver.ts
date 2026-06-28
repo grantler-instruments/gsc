@@ -10,6 +10,14 @@ function parseSemverParts(version: string): [number, number, number] | null {
   return [Number(match[1]), Number(match[2]), Number(match[3])];
 }
 
+/**
+ * True only for plain `major.minor.patch` tags (after stripping a leading `v`).
+ * Rejects pre-release / channel tags like `experimental` or `0.0.18-experimental.4`.
+ */
+export function isStableSemver(version: string): boolean {
+  return /^\d+\.\d+\.\d+$/.test(normalizeSemver(version));
+}
+
 /** Returns positive when `a` is newer than `b`, negative when older, 0 when equal. */
 export function compareSemver(a: string, b: string): number {
   const partsA = parseSemverParts(a);

@@ -4,6 +4,7 @@ import { AudioMixerDock } from "./components/AudioMixerDock";
 import { CompactInspectorDrawer } from "./components/CompactInspectorDrawer";
 import { CueInspector } from "./components/CueInspector";
 import { CueList } from "./components/CueList";
+import { DeleteAssetInUseDialog } from "./components/DeleteAssetInUseDialog";
 import { DeleteStoredProjectDialog } from "./components/DeleteStoredProjectDialog";
 import { DmxPreviewConfirmDialog } from "./components/DmxPreviewConfirmDialog";
 import { LeftSidebar } from "./components/LeftSidebar";
@@ -110,6 +111,7 @@ function App() {
       <StartupProjectsDialog />
       <WebOpenProjectsDialog />
       <DeleteStoredProjectDialog />
+      <DeleteAssetInUseDialog />
       <Qlab5ImportConfirmDialogHost />
       <Qlab5ImportReportDialogHost />
       <AppSnackbar />

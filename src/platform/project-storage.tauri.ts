@@ -27,6 +27,7 @@ import {
   saveAllVfsAssetsToDisk,
   virtualPathsFromRelativeFiles,
   writeAssetToDisk,
+  writeBundleFilesToDisk,
 } from "../lib/project-disk";
 import { replaceProjectWithoutHistory } from "../lib/project-history";
 import {
@@ -165,15 +166,7 @@ export async function promptTauriProjectFolder(
 
 async function writeBundleFilesToFolder(rootDir: string, zipData: Uint8Array): Promise<void> {
   const { files } = projectBundleDiskFiles(zipData);
-  const sep = rootDir.includes("\\") ? "\\" : "/";
-  const base = rootDir.replace(/[/\\]+$/, "");
-
-  for (const { relativePath, data } of files) {
-    const diskPath = `${base}${sep}${relativePath.replace(/\//g, sep)}`;
-    const dir = diskPath.replace(/[/\\][^/\\]+$/, "");
-    await ensureDiskDir(dir);
-    await writeDiskFile(diskPath, data);
-  }
+  await writeBundleFilesToDisk(rootDir, files, writeDiskFile, ensureDiskDir);
 }
 
 async function writeDiskFile(diskPath: string, data: Uint8Array): Promise<void> {

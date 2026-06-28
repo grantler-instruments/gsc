@@ -4,11 +4,40 @@ import type { VfsEntry } from "../stores/vfs";
 import { useVfsStore } from "../stores/vfs";
 import type { AssetKind, Cue } from "../types/cue";
 import { normalizePath, vfsHas } from "../vfs/engine";
+import type { CueList } from "./cue-lists";
 import type { AssetDragPayload } from "./drag";
 
 export function cueUsesAsset(cue: Cue, assetPath: string | null | undefined): boolean {
   if (!assetPath || !cue.assetPath) return false;
   return normalizePath(cue.assetPath) === normalizePath(assetPath);
+}
+
+/** A cue that references an asset, paired with the cue list it lives in. */
+export interface AssetCueUsage {
+  cueId: string;
+  number: string;
+  name: string;
+  listId: string;
+  listName: string;
+}
+
+/** Collect every cue across all cue lists that references the given asset path. */
+export function findAssetCueUsages(cueLists: CueList[], assetPath: string): AssetCueUsage[] {
+  const usages: AssetCueUsage[] = [];
+  for (const list of cueLists) {
+    for (const cue of list.cues) {
+      if (cueUsesAsset(cue, assetPath)) {
+        usages.push({
+          cueId: cue.id,
+          number: cue.number,
+          name: cue.name,
+          listId: list.id,
+          listName: list.name,
+        });
+      }
+    }
+  }
+  return usages;
 }
 
 export function assetPayloadMatchesCue(cue: Cue, payload: AssetDragPayload): boolean {

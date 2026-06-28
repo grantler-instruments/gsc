@@ -24,10 +24,12 @@
       "stopAll": "Alle stoppen",
       "copy": "Kopieren",
       "cut": "Ausschneiden",
+      "paste": "Einfügen",
       "duplicate": "Duplizieren",
       "rename": "Umbenennen",
       "collapse": "Einklappen",
-      "expand": "Ausklappen"
+      "expand": "Ausklappen",
+      "ok": "OK"
     },
     "state": {
       "connected": "Verbunden",
@@ -259,6 +261,14 @@
     "title": "Gespeichertes Projekt löschen?",
     "body": "\"{{projectName}}\" aus diesem Browser löschen? Dies kann nicht rückgängig gemacht werden. Exportieren Sie zuerst eine {{extension}}-Datei, wenn Sie ein Backup möchten."
   },
+  "deleteAssetInUse": {
+    "title": "Asset wird verwendet",
+    "body": "\"{{assetName}}\" wird von {{count}} Cue(s) verwendet und kann nicht gelöscht werden. Sie können die Cue(s) löschen, die es verwenden, oder alles unverändert lassen.",
+    "deleteCues": "Cues löschen, die dieses Asset verwenden",
+    "confirmTitle": "Cues löschen, die dieses Asset verwenden?",
+    "confirmBody": "Dies löscht dauerhaft {{count}} Cue(s), die \"{{assetName}}\" verwenden, und entfernt anschließend das Asset. Dies kann nicht rückgängig gemacht werden.",
+    "confirmDelete": "Cues löschen"
+  },
   "dmxPreview": {
     "title": "Vorschau-Änderungen behalten?",
     "body": "DMX-Werte, die Sie für \"{{cueName}}\" in der Vorschau gesetzt haben, auf diesen Cue anwenden oder gespeicherte Werte wiederherstellen?"
@@ -293,6 +303,8 @@
   },
   "cueList": {
     "tabsAria": "Cue-Listen",
+    "tabContextMenuAria": "Cue-Listen-Aktionen",
+    "copySuffix": "Kopie",
     "tabTitleEditable": "{{name}} ({{count}} Cues). Doppelklick zum Umbenennen.",
     "tabTitle": "{{name}} ({{count}} Cues)",
     "closeTabAria": "{{name}} schließen",

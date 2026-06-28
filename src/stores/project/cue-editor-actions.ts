@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand";
+import { cueUsesAsset } from "../../lib/cue-asset";
 import {
   reparentCueRelative as reparentCueRelativeList,
   reparentCueToListEnd as reparentCueToListEndList,
@@ -9,7 +10,6 @@ import {
   canStopTarget,
   getChildCues,
   isContainerCue,
-  isFadeCue,
   isStopCue,
   reorderSiblingCues,
 } from "../../lib/cues";
@@ -23,6 +23,7 @@ import { canEditProject } from "../../lib/show-mode";
 import type { Cue } from "../../types/cue";
 import {
   applyRenumber,
+  expandCueRemovalSet,
   firstCueOrStub,
   getActiveCueListFromState,
   isMediaCueType,
@@ -87,6 +88,7 @@ export function createCueEditorActions(
   | "addFadeCueForTarget"
   | "updateCue"
   | "removeCue"
+  | "removeCuesUsingAsset"
   | "moveCueToGroup"
   | "reparentCueRelative"
   | "reparentCueToListEnd"
@@ -297,20 +299,7 @@ export function createCueEditorActions(
     removeCue: (id) => {
       if (!canEditProject()) return;
       const active = getActiveCueListFromState(get());
-      const { cues } = active;
-      const toRemove = new Set<string>([id]);
-      const collect = (cueId: string) => {
-        for (const child of getChildCues(cues, cueId)) {
-          toRemove.add(child.id);
-          if (isContainerCue(child)) collect(child.id);
-        }
-      };
-      const target = cues.find((c) => c.id === id);
-      if (target && isContainerCue(target)) collect(id);
-      for (const c of cues) {
-        if (isStopCue(c) && c.stopTargetId === id) toRemove.add(c.id);
-        if (isFadeCue(c) && c.fadeTargetId === id) toRemove.add(c.id);
-      }
+      const toRemove = expandCueRemovalSet(active.cues, [id]);
 
       set((s) =>
         patchActiveList(s, (list) => {
@@ -323,6 +312,25 @@ export function createCueEditorActions(
           };
         }),
       );
+    },
+
+    removeCuesUsingAsset: (assetPath) => {
+      if (!canEditProject()) return;
+      set((s) => ({
+        cueLists: s.cueLists.map((list) => {
+          const matchingIds = list.cues.filter((c) => cueUsesAsset(c, assetPath)).map((c) => c.id);
+          if (matchingIds.length === 0) return list;
+          const toRemove = expandCueRemovalSet(list.cues, matchingIds);
+          const selectedCueIds = list.selectedCueIds.filter((cid) => !toRemove.has(cid));
+          const anchorRemoved = list.selectionAnchorId && toRemove.has(list.selectionAnchorId);
+          return {
+            ...list,
+            cues: applyRenumber(list.cues.filter((c) => !toRemove.has(c.id))),
+            selectedCueIds,
+            selectionAnchorId: anchorRemoved ? (selectedCueIds[0] ?? null) : list.selectionAnchorId,
+          };
+        }),
+      }));
     },
 
     moveCueToGroup: (cueId, groupId) => {

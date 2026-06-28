@@ -1,0 +1,42 @@
+name: Deploy Pages (experimental)
+
+# Runs on default branch (main) so it can use the github-pages environment.
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_run_id:
+        description: Workflow run ID that uploaded the pages-site artifact
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: https://grantler-instruments.github.io/gsc/experimental/
+    steps:
+      - name: Download experimental Pages artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pages-site
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.artifact_run_id }}
+          path: site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

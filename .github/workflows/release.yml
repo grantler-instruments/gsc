@@ -94,8 +94,52 @@ jobs:
         if: matrix.platform == 'windows-latest'
         run: choco install imagemagick --yes
 
-      # macOS signing/notarization disabled on CI for now (both aarch64 and x86_64).
-      # Re-enable: https://v2.tauri.app/distribute/sign/macos/
+      # macOS: import Developer ID cert so tauri-action can sign + notarize.
+      # https://v2.tauri.app/distribute/sign/macos/
+      - name: Import Apple Developer certificate
+        if: matrix.platform == 'macos-latest'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          # Keep the keychain unlocked for the whole job; notarization can run long.
+          security set-keychain-settings -u build.keychain
+          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          rm certificate.p12
+
+      - name: Get signing identity
+        if: matrix.platform == 'macos-latest'
+        id: apple_identity
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          SIGNING_IDENTITY=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application" | head -1 | sed -n 's/.*"\(.*\)".*/\1/p')
+          if [ -z "$SIGNING_IDENTITY" ]; then
+            echo "No Developer ID Application identity found in build.keychain"
+            security find-identity -v -p codesigning build.keychain
+            exit 1
+          fi
+          echo "identity=$SIGNING_IDENTITY" >> "$GITHUB_OUTPUT"
+
+          # Notarization needs the 10-char Team ID. Prefer the APPLE_TEAM_ID secret,
+          # but fall back to the Team ID embedded in the identity, e.g.
+          # "Developer ID Application: Thomas Geissl (DP9DFGMC65)".
+          TEAM_ID="$APPLE_TEAM_ID"
+          if [ -z "$TEAM_ID" ]; then
+            TEAM_ID=$(echo "$SIGNING_IDENTITY" | sed -n 's/.*(\([A-Z0-9]\{10\}\))$/\1/p')
+          fi
+          if [ -z "$TEAM_ID" ]; then
+            echo "Could not determine Apple Team ID from secret or signing identity ($SIGNING_IDENTITY)"
+            exit 1
+          fi
+          echo "team_id=$TEAM_ID" >> "$GITHUB_OUTPUT"
+          echo "Using Team ID: $TEAM_ID"
 
       - name: Build and upload release assets
         uses: tauri-apps/tauri-action@v0
@@ -103,6 +147,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Use CI-safe DMG creation (no Finder AppleScript). Required on GHA macOS runners.
           TAURI_BUNDLER_DMG_IGNORE_CI: false
+          # macOS sign + notarize (tauri-action / Tauri bundler). Ignored on Linux/Windows.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ steps.apple_identity.outputs.identity }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ steps.apple_identity.outputs.team_id }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: Grantler Stage Control ${{ github.ref_name }}
@@ -110,3 +161,17 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+
+      # Fail loudly if a macOS build shipped unsigned / un-notarized / un-stapled.
+      - name: Verify macOS signature & notarization
+        if: matrix.platform == 'macos-latest'
+        run: |
+          APP=$(find src-tauri/target -type d -name "Grantler Stage Control.app" | head -1)
+          if [ -z "$APP" ]; then
+            echo "Could not locate built .app bundle"; exit 1
+          fi
+          echo "Verifying: $APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          codesign --display --verbose=4 "$APP"
+          spctl -a -vvv --type execute "$APP"
+          xcrun stapler validate "$APP"
