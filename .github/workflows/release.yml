@@ -116,6 +116,8 @@ jobs:
       - name: Get signing identity
         if: matrix.platform == 'macos-latest'
         id: apple_identity
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           SIGNING_IDENTITY=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application" | head -1 | sed -n 's/.*"\(.*\)".*/\1/p')
           if [ -z "$SIGNING_IDENTITY" ]; then
@@ -124,6 +126,20 @@ jobs:
             exit 1
           fi
           echo "identity=$SIGNING_IDENTITY" >> "$GITHUB_OUTPUT"
+
+          # Notarization needs the 10-char Team ID. Prefer the APPLE_TEAM_ID secret,
+          # but fall back to the Team ID embedded in the identity, e.g.
+          # "Developer ID Application: Thomas Geissl (DP9DFGMC65)".
+          TEAM_ID="$APPLE_TEAM_ID"
+          if [ -z "$TEAM_ID" ]; then
+            TEAM_ID=$(echo "$SIGNING_IDENTITY" | sed -n 's/.*(\([A-Z0-9]\{10\}\))$/\1/p')
+          fi
+          if [ -z "$TEAM_ID" ]; then
+            echo "Could not determine Apple Team ID from secret or signing identity ($SIGNING_IDENTITY)"
+            exit 1
+          fi
+          echo "team_id=$TEAM_ID" >> "$GITHUB_OUTPUT"
+          echo "Using Team ID: $TEAM_ID"
 
       - name: Build and upload release assets
         uses: tauri-apps/tauri-action@v0
@@ -137,7 +153,7 @@ jobs:
           APPLE_SIGNING_IDENTITY: ${{ steps.apple_identity.outputs.identity }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_TEAM_ID: ${{ steps.apple_identity.outputs.team_id }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: Grantler Stage Control ${{ github.ref_name }}
