@@ -1,0 +1,67 @@
+name: Test
+
+# Single source of truth for the CI gate. Called by ci, deploy, experimental,
+# and release via `uses: ./.github/workflows/test.yml` so every path runs the
+# identical checks (typecheck, lint, build, unit + web e2e, desktop e2e).
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build:pages
+
+      - name: Unit tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+
+      - name: Install Playwright
+        run: npm run test:e2e:install -- --with-deps
+
+      - name: E2E tests
+        run: npm run test:e2e
+
+  desktop-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Desktop E2E (Tauri WebDriver)
+        uses: ./.github/actions/desktop-e2e
