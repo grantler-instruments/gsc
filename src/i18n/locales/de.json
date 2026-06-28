@@ -24,6 +24,7 @@
       "stopAll": "Alle stoppen",
       "copy": "Kopieren",
       "cut": "Ausschneiden",
+      "paste": "Einfügen",
       "duplicate": "Duplizieren",
       "rename": "Umbenennen",
       "collapse": "Einklappen",
@@ -293,6 +294,8 @@
   },
   "cueList": {
     "tabsAria": "Cue-Listen",
+    "tabContextMenuAria": "Cue-Listen-Aktionen",
+    "copySuffix": "Kopie",
     "tabTitleEditable": "{{name}} ({{count}} Cues). Doppelklick zum Umbenennen.",
     "tabTitle": "{{name}} ({{count}} Cues)",
     "closeTabAria": "{{name}} schließen",

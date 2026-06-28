@@ -67,6 +67,11 @@ export interface ProjectState {
   addCueList: (name?: string) => CueList;
   removeCueList: (listId: string) => void;
   renameCueList: (listId: string, name: string) => void;
+  reorderCueListRelative: (draggedId: string, targetId: string, place: "before" | "after") => void;
+  copyCueList: (listId: string) => void;
+  cutCueList: (listId: string) => void;
+  pasteCueList: (afterListId?: string) => void;
+  duplicateCueList: (listId: string) => void;
   setActiveCueList: (listId: string) => void;
   setShowMetadata: (metadata: {
     name: string;

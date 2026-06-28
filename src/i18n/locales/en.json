@@ -24,6 +24,7 @@
       "stopAll": "Stop all",
       "copy": "Copy",
       "cut": "Cut",
+      "paste": "Paste",
       "duplicate": "Duplicate",
       "rename": "Rename",
       "collapse": "Collapse",
@@ -323,6 +324,8 @@
   },
   "cueList": {
     "tabsAria": "Cue lists",
+    "tabContextMenuAria": "Cue list actions",
+    "copySuffix": "copy",
     "tabTitleEditable": "{{name}} ({{count}} cues). Double-click to rename.",
     "tabTitle": "{{name}} ({{count}} cues)",
     "closeTabAria": "Close {{name}}",

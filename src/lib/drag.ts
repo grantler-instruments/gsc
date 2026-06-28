@@ -98,3 +98,46 @@ export function getActiveCueDragId(): string | null {
 export function readCueDragId(dataTransfer: DataTransfer): string | null {
   return readCueDragData(dataTransfer)?.cueId ?? activeCueDragId;
 }
+
+export const GSC_CUE_LIST_TAB_DRAG_TYPE = "application/x-gsc-cue-list-tab";
+
+export interface CueListTabDragPayload {
+  listId: string;
+}
+
+/** List id for the in-flight tab reorder drag (getData is empty until drop). */
+let activeCueListTabDragId: string | null = null;
+
+export function setCueListTabDragData(
+  dataTransfer: DataTransfer,
+  payload: CueListTabDragPayload,
+): void {
+  activeCueListTabDragId = payload.listId;
+  dataTransfer.setData(GSC_CUE_LIST_TAB_DRAG_TYPE, JSON.stringify(payload));
+  dataTransfer.effectAllowed = "move";
+}
+
+export function setActiveCueListTabDrag(listId: string | null): void {
+  activeCueListTabDragId = listId;
+}
+
+function readCueListTabDragData(dataTransfer: DataTransfer): CueListTabDragPayload | null {
+  const raw = dataTransfer.getData(GSC_CUE_LIST_TAB_DRAG_TYPE);
+  if (!raw) return null;
+  try {
+    const data = JSON.parse(raw) as CueListTabDragPayload;
+    if (typeof data.listId === "string") return data;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+/** Resolve cue-list id during a tab drag or on drop. */
+export function readCueListTabDragId(dataTransfer: DataTransfer): string | null {
+  return readCueListTabDragData(dataTransfer)?.listId ?? activeCueListTabDragId;
+}
+
+export function isCueListTabDrag(dataTransfer: DataTransfer): boolean {
+  return dataTransfer.types.includes(GSC_CUE_LIST_TAB_DRAG_TYPE) || activeCueListTabDragId !== null;
+}

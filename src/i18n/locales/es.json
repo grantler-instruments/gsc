@@ -24,6 +24,7 @@
       "stopAll": "Detener todo",
       "copy": "Copiar",
       "cut": "Cortar",
+      "paste": "Pegar",
       "duplicate": "Duplicar",
       "rename": "Renombrar",
       "collapse": "Contraer",
@@ -291,6 +292,8 @@
   },
   "cueList": {
     "tabsAria": "Listas de cues",
+    "tabContextMenuAria": "Acciones de lista de cues",
+    "copySuffix": "copia",
     "tabTitleEditable": "{{name}} ({{count}} cues). Doble clic para renombrar.",
     "tabTitle": "{{name}} ({{count}} cues)",
     "closeTabAria": "Cerrar {{name}}",

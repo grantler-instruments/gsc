@@ -24,6 +24,7 @@
       "stopAll": "全部停止",
       "copy": "复制",
       "cut": "剪切",
+      "paste": "粘贴",
       "duplicate": "复制",
       "rename": "重命名",
       "collapse": "折叠",
@@ -291,6 +292,8 @@
   },
   "cueList": {
     "tabsAria": "提示列表",
+    "tabContextMenuAria": "提示列表操作",
+    "copySuffix": "副本",
     "tabTitleEditable": "{{name}}（{{count}} 个提示）。双击重命名。",
     "tabTitle": "{{name}}（{{count}} 个提示）",
     "closeTabAria": "关闭 {{name}}",
