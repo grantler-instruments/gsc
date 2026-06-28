@@ -1,4 +1,4 @@
-import { compareSemver } from "./compare-semver";
+import { compareSemver, isStableSemver } from "./compare-semver";
 import { GITHUB_TAGS_API_URL } from "./support-links";
 
 interface GitHubTag {
@@ -14,11 +14,14 @@ export async function fetchLatestGitHubTag(): Promise<string | null> {
     if (!response.ok) return null;
 
     const tags = (await response.json()) as GitHubTag[];
-    if (tags.length === 0) return null;
+    // Ignore pre-release / channel tags (e.g. `experimental`, `0.0.18-experimental.4`)
+    // so they are never offered as an available update.
+    const releaseTags = tags.filter((tag) => isStableSemver(tag.name));
+    if (releaseTags.length === 0) return null;
 
-    return tags.reduce(
+    return releaseTags.reduce(
       (latest, tag) => (compareSemver(tag.name, latest) > 0 ? tag.name : latest),
-      tags[0].name,
+      releaseTags[0].name,
     );
   } catch {
     return null;
