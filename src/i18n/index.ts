@@ -1,11 +1,13 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import { applyDocumentDirection } from "./direction";
+import ar from "./locales/ar.json";
 import de from "./locales/de.json";
 import en from "./locales/en.json";
 import es from "./locales/es.json";
 import zh from "./locales/zh.json";
 
-export const SUPPORTED_LOCALES = ["en", "de", "es", "zh"] as const;
+export const SUPPORTED_LOCALES = ["en", "de", "es", "zh", "ar"] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
 export const LOCALE_LABELS: Record<SupportedLocale, string> = {
@@ -13,6 +15,7 @@ export const LOCALE_LABELS: Record<SupportedLocale, string> = {
   de: "Deutsch",
   es: "Español",
   zh: "中文",
+  ar: "العربية",
 };
 
 const PREFERENCES_STORAGE_KEY = "gsc-preferences";
@@ -56,17 +59,25 @@ function detectInitialLocale(): SupportedLocale {
   return "en";
 }
 
+const initialLocale = detectInitialLocale();
+
 void i18n.use(initReactI18next).init({
   resources: {
     en: { translation: en },
     de: { translation: de },
     es: { translation: es },
     zh: { translation: zh },
+    ar: { translation: ar },
   },
-  lng: detectInitialLocale(),
+  lng: initialLocale,
   fallbackLng: "en",
   interpolation: { escapeValue: false },
 });
+
+// Keep the document direction (LTR/RTL) in sync with the active locale for all
+// change paths (settings, website switcher, store rehydration).
+i18n.on("languageChanged", (lng) => applyDocumentDirection(lng));
+applyDocumentDirection(initialLocale);
 
 export function setAppLocale(locale: SupportedLocale): void {
   void i18n.changeLanguage(locale);
