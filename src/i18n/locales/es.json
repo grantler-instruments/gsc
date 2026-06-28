@@ -53,7 +53,10 @@
     "german": "Deutsch",
     "spanish": "Español",
     "chinese": "中文",
-    "arabic": "العربية"
+    "arabic": "العربية",
+    "french": "Français",
+    "portuguese": "Português",
+    "russian": "Русский"
   },
   "project": {
     "defaultName": "Show sin título",
@@ -126,7 +129,8 @@
     "funding": "Si quieres ir un paso más allá, invitar a un café ayuda a reservar tiempo para seguir desarrollando.",
     "thanks": "Gracias por usar GSC.",
     "buyMeACoffeeAlt": "Buy Me a Coffee",
-    "buyMeACoffeeAria": "Invitar al desarrollador a un café (se abre en una pestaña nueva)"
+    "buyMeACoffeeAria": "Invitar al desarrollador a un café (se abre en una pestaña nueva)",
+    "version": "Versión {{version}}"
   },
   "update": {
     "available": "La versión {{latest}} está disponible (tienes la {{current}}).",
@@ -141,6 +145,7 @@
     "title": "Ajustes",
     "navAria": "Categorías de ajustes",
     "categoryGeneral": "General",
+    "version": "Versión",
     "categoryAudio": "Audio",
     "categoryVideo": "Vídeo",
     "categoryDmx": "DMX",
@@ -182,6 +187,7 @@
     "grantChromeAccess": "Conceda acceso cuando Chrome lo solicite",
     "webSerialUnavailable": "Web Serial no está disponible en este navegador",
     "enttecBaudHint": "57600 baud · universo 1 (Pro) · universos 1–2 (Pro MK2)",
+    "categoryRemote": "Remoto",
     "storageTitle": "Almacenamiento sin conexión",
     "storageUsed": "{{used}} de {{quota}} en uso",
     "storageUnavailable": "Estimación de almacenamiento no disponible en este navegador.",
@@ -189,6 +195,35 @@
     "storageCritical": "El almacenamiento está casi lleno. Exporte una copia de seguridad ahora para evitar perder su show.",
     "storagePersisted": "Almacenamiento persistente concedido — el navegador borrará sus datos con menos frecuencia.",
     "storageNotPersisted": "Obtenga almacenamiento persistente importando o editando un proyecto para que el navegador conserve sus datos."
+  },
+  "remote": {
+    "title": "Control remoto",
+    "description": "Permita que teléfonos o tabletas en la misma red Wi-Fi disparen cues desde el modo show. Escanee el código QR o abra la URL e introduzca el PIN si se solicita.",
+    "port": "Puerto",
+    "pin": "PIN (6 dígitos)",
+    "generatePin": "Generar",
+    "autoStart": "Iniciar el remoto automáticamente al arrancar",
+    "autoStartFailed": "El servidor remoto no pudo iniciarse automáticamente",
+    "start": "Iniciar remoto",
+    "stop": "Detener remoto",
+    "pinLabel": "PIN",
+    "urlLabel": "URL de conexión",
+    "qrAlt": "Código QR para conectar un dispositivo remoto",
+    "clientsConnected": "{{count}} dispositivo(s) remoto(s) conectado(s)",
+    "buildHint": "Las compilaciones de producción sirven la interfaz remota desde esta app. Las versiones de lanzamiento incluyen la interfaz automáticamente.",
+    "devHint": "Desarrollo: la interfaz remota se carga desde el servidor de desarrollo de Vite (puerto 1421). WebSocket permanece en el puerto anterior. Reinicie el remoto tras cambiar el puerto.",
+    "startError": "No se pudo iniciar el servidor remoto",
+    "stopError": "No se pudo detener el servidor remoto",
+    "statusError": "No se pudo leer el estado del remoto",
+    "statusConnected": "Conectado",
+    "statusConnecting": "Conectando…",
+    "statusDisconnected": "Desconectado",
+    "statusAuthFailed": "Error de autenticación",
+    "missingPin": "PIN requerido",
+    "enterPinTitle": "Introducir PIN remoto",
+    "enterPinDescription": "Introduzca el PIN de 6 dígitos del ordenador de la cabina para conectar este dispositivo remoto.",
+    "enterPinValidation": "El PIN debe tener 6 dígitos",
+    "missingPinUrlHint": "Consejo: use el código QR para configuración con un toque, con el PIN incluido en la URL."
   },
   "midiMap": {
     "description": "Asigne MIDI entrante a acciones de transporte. Las asignaciones se guardan con el proyecto.",

@@ -5,15 +5,21 @@ import ar from "./locales/ar.json";
 import de from "./locales/de.json";
 import en from "./locales/en.json";
 import es from "./locales/es.json";
+import fr from "./locales/fr.json";
+import pt from "./locales/pt.json";
+import ru from "./locales/ru.json";
 import zh from "./locales/zh.json";
 
-export const SUPPORTED_LOCALES = ["en", "de", "es", "zh", "ar"] as const;
+export const SUPPORTED_LOCALES = ["en", "de", "es", "fr", "pt", "ru", "zh", "ar"] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
 export const LOCALE_LABELS: Record<SupportedLocale, string> = {
   en: "English",
   de: "Deutsch",
   es: "Español",
+  fr: "Français",
+  pt: "Português",
+  ru: "Русский",
   zh: "中文",
   ar: "العربية",
 };
@@ -66,6 +72,9 @@ void i18n.use(initReactI18next).init({
     en: { translation: en },
     de: { translation: de },
     es: { translation: es },
+    fr: { translation: fr },
+    pt: { translation: pt },
+    ru: { translation: ru },
     zh: { translation: zh },
     ar: { translation: ar },
   },

@@ -53,7 +53,10 @@
     "german": "Deutsch",
     "spanish": "Español",
     "chinese": "中文",
-    "arabic": "العربية"
+    "arabic": "العربية",
+    "french": "Français",
+    "portuguese": "Português",
+    "russian": "Русский"
   },
   "project": {
     "defaultName": "未命名演出",
@@ -126,7 +129,8 @@
     "funding": "如果想更进一步，请开发者喝杯咖啡也能帮助腾出时间继续改进。",
     "thanks": "感谢使用 GSC。",
     "buyMeACoffeeAlt": "Buy Me a Coffee",
-    "buyMeACoffeeAria": "请开发者喝杯咖啡（在新标签页中打开）"
+    "buyMeACoffeeAria": "请开发者喝杯咖啡（在新标签页中打开）",
+    "version": "版本 {{version}}"
   },
   "update": {
     "available": "新版本 {{latest}} 已发布（当前为 {{current}}）。",
@@ -141,6 +145,7 @@
     "title": "设置",
     "navAria": "设置分类",
     "categoryGeneral": "常规",
+    "version": "版本",
     "categoryAudio": "音频",
     "categoryVideo": "视频",
     "categoryDmx": "DMX",
@@ -182,6 +187,7 @@
     "grantChromeAccess": "请在 Chrome 提示时授予访问权限",
     "webSerialUnavailable": "此浏览器不支持 Web Serial",
     "enttecBaudHint": "57600 波特 · 域 1 (Pro) · 域 1–2 (Pro MK2)",
+    "categoryRemote": "远程",
     "storageTitle": "离线存储",
     "storageUsed": "已用 {{used}} / {{quota}}",
     "storageUnavailable": "此浏览器无法估算存储空间。",
@@ -189,6 +195,35 @@
     "storageCritical": "存储空间几乎已满。请立即导出备份，以免丢失节目数据。",
     "storagePersisted": "已获得持久存储 — 浏览器更不容易清除您的节目数据。",
     "storageNotPersisted": "通过导入或编辑项目来获取持久存储，以便浏览器保留您的节目数据。"
+  },
+  "remote": {
+    "title": "远程控制",
+    "description": "让同一 Wi-Fi 网络中的手机或平板从演出模式触发提示。扫描二维码或打开 URL，如有提示请输入 PIN。",
+    "port": "端口",
+    "pin": "PIN（6 位数字）",
+    "generatePin": "生成",
+    "autoStart": "启动时自动开启远程",
+    "autoStartFailed": "远程服务器无法自动启动",
+    "start": "启动远程",
+    "stop": "停止远程",
+    "pinLabel": "PIN",
+    "urlLabel": "连接 URL",
+    "qrAlt": "用于连接远程设备的二维码",
+    "clientsConnected": "已连接 {{count}} 个远程设备",
+    "buildHint": "生产版本从此应用提供远程界面。发布版本会自动打包界面。",
+    "devHint": "开发环境：远程界面从 Vite 开发服务器（端口 1421）加载。WebSocket 仍使用上方端口。更改端口后请重启远程。",
+    "startError": "无法启动远程服务器",
+    "stopError": "无法停止远程服务器",
+    "statusError": "无法读取远程状态",
+    "statusConnected": "已连接",
+    "statusConnecting": "连接中…",
+    "statusDisconnected": "已断开",
+    "statusAuthFailed": "认证失败",
+    "missingPin": "需要 PIN",
+    "enterPinTitle": "输入远程 PIN",
+    "enterPinDescription": "输入控台电脑上的 6 位 PIN 以连接此远程设备。",
+    "enterPinValidation": "PIN 必须为 6 位数字",
+    "missingPinUrlHint": "提示：使用二维码可一键设置，PIN 会包含在 URL 中。"
   },
   "midiMap": {
     "description": "将传入 MIDI 映射到传输操作。映射随项目保存。",

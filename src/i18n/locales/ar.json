@@ -53,7 +53,10 @@
     "german": "Deutsch",
     "spanish": "Español",
     "chinese": "中文",
-    "arabic": "العربية"
+    "arabic": "العربية",
+    "french": "Français",
+    "portuguese": "Português",
+    "russian": "Русский"
   },
   "project": {
     "defaultName": "عرض بلا عنوان",
