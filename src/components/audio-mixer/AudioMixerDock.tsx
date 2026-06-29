@@ -169,7 +169,7 @@ function BusStrip({
             variant="caption"
             sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", color: "text.secondary" }}
           >
-            {t("audioMixer.fader")}
+            {t("audioMixer.volume")}
           </Typography>
           <Box
             sx={{

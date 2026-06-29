@@ -566,7 +566,6 @@
     "resize": "Resize audio mixer",
     "hintShort": "Assign buses on audio and video cues in the inspector.",
     "premixer": "Premixer",
-    "fader": "Fader",
     "noEffects": "No effects",
     "expandPremixer": "Show premixer",
     "collapsePremixer": "Hide premixer",

@@ -566,7 +566,6 @@
     "resize": "Redimensionner le mixeur audio",
     "hintShort": "Assignez des bus sur les tops audio et vidéo dans l'inspecteur.",
     "premixer": "Prémixeur",
-    "fader": "Fader",
     "noEffects": "Aucun effet",
     "expandPremixer": "Afficher le prémixeur",
     "collapsePremixer": "Masquer le prémixeur",

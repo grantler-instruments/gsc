@@ -566,7 +566,6 @@
     "resize": "调整混音器高度",
     "hintShort": "在检查器中为音频和视频提示分配总线。",
     "premixer": "预混",
-    "fader": "推子",
     "noEffects": "无效果",
     "expandPremixer": "显示预混",
     "collapsePremixer": "隐藏预混",
