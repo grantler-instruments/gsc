@@ -10,6 +10,7 @@ import {
   buildParallelGroupFromSelection,
   flattenVisibleCueIds,
   getPrimarySelectedCueId,
+  ungroupContainerCue,
 } from "../../lib/cue-selection";
 import { getChildCues, isContainerCue, isFadeCue, isStopCue } from "../../lib/cues";
 import { syncHostSelectionToRemotes } from "../../lib/host-selection-bridge";
@@ -61,6 +62,7 @@ export function createSelectionActions(
   | "toggleSelectCue"
   | "selectCueRange"
   | "groupSelectedCues"
+  | "ungroupCue"
   | "copySelectedCues"
   | "cutSelectedCues"
   | "pasteSelectedCues"
@@ -182,6 +184,24 @@ export function createSelectionActions(
         })),
       });
       return group;
+    },
+
+    ungroupCue: (cueId) => {
+      if (!canEditProject()) return null;
+      const active = getActiveCueListFromState(get());
+      const childIds = getChildCues(active.cues, cueId).map((c) => c.id);
+      const next = ungroupContainerCue(active.cues, cueId);
+      if (!next) return null;
+
+      const renumbered = applyRenumber(next);
+      set({
+        ...patchActiveList(get(), () => ({
+          cues: renumbered,
+          selectedCueIds: childIds,
+          selectionAnchorId: childIds[0] ?? null,
+        })),
+      });
+      return childIds;
     },
 
     copySelectedCues: () => {

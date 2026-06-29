@@ -1,6 +1,7 @@
 import type { AssetKind, ProjectSnapshot } from "../types/cue";
 import { normalizePath } from "../vfs/engine";
 import { randomId } from "./random-id";
+import { sessionHasMeaningfulContent } from "./unsaved-project";
 
 const DB_NAME = "gsc-v1";
 const DB_VERSION = 1;
@@ -29,8 +30,20 @@ export interface IdbProjectRecord {
   id: string;
   name: string;
   updatedAt: number;
+  openedAt?: number;
   snapshot: ProjectSnapshot;
   assets: PersistedAssetEntry[];
+}
+
+export interface IdbProjectSummary {
+  id: string;
+  name: string;
+  updatedAt: number;
+  openedAt: number;
+}
+
+export function projectOpenedAt(record: Pick<IdbProjectRecord, "openedAt" | "updatedAt">): number {
+  return record.openedAt ?? record.updatedAt;
 }
 
 interface IdbActiveMeta {
@@ -166,6 +179,43 @@ export async function idbGetProject(projectId: string): Promise<IdbProjectRecord
   return record;
 }
 
+export async function idbListProjects(): Promise<IdbProjectSummary[]> {
+  const db = await openDb();
+  const tx = db.transaction(STORES.projects, "readonly");
+  const records = await requestToPromise<IdbProjectRecord[]>(
+    tx.objectStore(STORES.projects).getAll(),
+  );
+  await txDone(tx);
+  return records
+    .map((record) => ({
+      id: record.id,
+      name: record.name,
+      updatedAt: record.updatedAt,
+      openedAt: projectOpenedAt(record),
+    }))
+    .sort((a, b) => b.openedAt - a.openedAt);
+}
+
+export async function idbTouchProjectOpened(projectId: string): Promise<void> {
+  const record = await idbGetProject(projectId);
+  if (!record) return;
+  await idbPutProject({ ...record, openedAt: Date.now() });
+}
+
+export async function idbDeleteProject(projectId: string): Promise<void> {
+  const db = await openDb();
+  const tx = db.transaction(STORES.projects, "readwrite");
+  tx.objectStore(STORES.projects).delete(projectId);
+  await txDone(tx);
+}
+
+export async function idbClearActiveProjectId(): Promise<void> {
+  const db = await openDb();
+  const tx = db.transaction(STORES.meta, "readwrite");
+  tx.objectStore(STORES.meta).delete("active");
+  await txDone(tx);
+}
+
 export async function idbPutAsset(projectId: string, path: string, blob: Blob): Promise<void> {
   const db = await openDb();
   const tx = db.transaction(STORES.assets, "readwrite");
@@ -298,11 +348,18 @@ async function migrateLegacyStorageIfNeeded(): Promise<void> {
     return;
   }
 
+  if (!sessionHasMeaningfulContent(session.snapshot, session.assets)) {
+    await idbSetMeta(MIGRATED_META_KEY, true);
+    return;
+  }
+
   const projectId = session.snapshot.id || randomId();
+  const now = Date.now();
   await idbPutProject({
     id: projectId,
     name: session.snapshot.name,
-    updatedAt: Date.now(),
+    updatedAt: now,
+    openedAt: now,
     snapshot: session.snapshot,
     assets: session.assets,
   });

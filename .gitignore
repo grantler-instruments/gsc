@@ -20,6 +20,9 @@ playwright-report/
 test-results/
 blob-report/
 
+# Vitest
+coverage/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,4 +1,8 @@
-import { type NotificationSeverity, useNotificationsStore } from "../stores/notifications";
+import {
+  type AppNotificationAction,
+  type NotificationSeverity,
+  useNotificationsStore,
+} from "../stores/notifications";
 
 const dedupeUntil = new Map<string, number>();
 const DEFAULT_DEDUPE_MS = 8_000;
@@ -12,8 +16,17 @@ export function formatAppError(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-export function notify(message: string, severity: NotificationSeverity = "info"): void {
-  useNotificationsStore.getState().push(message, severity);
+interface NotifyExtras {
+  action?: AppNotificationAction;
+  updateVersion?: string;
+}
+
+export function notify(
+  message: string,
+  severity: NotificationSeverity = "info",
+  extras?: NotifyExtras,
+): void {
+  useNotificationsStore.getState().push(message, severity, extras);
 }
 
 export function notifyError(message: string): void {

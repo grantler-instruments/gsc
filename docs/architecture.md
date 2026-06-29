@@ -169,6 +169,8 @@ The Rust layer (`src-tauri/`) is thin: list devices, send MIDI/DMX/OSC, serial (
 
 Project shape is defined in `lib/project-snapshot.ts` (`ProjectSnapshotV2`). Bundles add an `assets/` media folder via `lib/project-bundle.ts`. The VFS (`vfs/`) maps asset paths like `/assets/audio/intro.wav` to blobs or disk files depending on platform.
 
+**Experimental QLab 5 import** (`lib/qlab5/`): opening a `.qlab5` workspace (or a folder containing one on desktop) via the normal Open flow runs the importer — confirm dialog, conversion to `ProjectSnapshot`, asset copy, then import report. Not all QLab cue types or fade semantics are supported yet.
+
 ## UI structure
 
 `App.tsx` layout:

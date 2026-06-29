@@ -4,6 +4,7 @@ import { diskPathsMayHaveMedia, handleTauriMediaDrop } from "../lib/asset-drop";
 import { notifyWarning } from "../lib/notifications";
 import { openProjectPath } from "../lib/open-project-path";
 import { isGscProjectDirPath, isProjectBundlePath } from "../lib/project-paths";
+import { isQlab5WorkspacePath } from "../lib/qlab5/import-qlab5-project";
 import { dropTargetAtPhysicalPosition, tauriDragHighlightState } from "../lib/tauri-drop";
 import { dispatchTauriCueListDrag, dispatchTauriFileDrag } from "../lib/tauri-file-drag";
 import { getPlatform } from "../platform";
@@ -94,9 +95,23 @@ export function useTauriProjectBundleDrop(): void {
             return;
           }
 
+          const qlabWorkspace = paths.find(isQlab5WorkspacePath);
+          if (qlabWorkspace) {
+            void openProjectPath(qlabWorkspace);
+            return;
+          }
+
           const projectDir = paths.find(isGscProjectDirPath);
           if (projectDir) {
             void openProjectPath(projectDir);
+            return;
+          }
+
+          const folderPath = paths.find(
+            (p) => !isProjectBundlePath(p) && !isGscProjectDirPath(p) && !isQlab5WorkspacePath(p),
+          );
+          if (folderPath) {
+            void openProjectPath(folderPath);
             return;
           }
 

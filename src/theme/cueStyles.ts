@@ -49,8 +49,10 @@ const CUE_NAME_TINT = {
   warning: "#e8a87c",
 } as const;
 
+const FALLBACK_CUE_TYPE_COLOR = { color: "#c0c6d0", bgcolor: "#2a2f38" } as const;
+
 export function cueTypeBadgeSx(type: CueType | AssetKind, compact = false): SxProps<Theme> {
-  const palette = CUE_TYPE_COLORS[type];
+  const palette = CUE_TYPE_COLORS[type] ?? FALLBACK_CUE_TYPE_COLOR;
   return {
     display: "inline-flex",
     alignItems: "center",
@@ -89,8 +91,12 @@ function rememberedRowChrome(tokens: GscTokenSet): { bgcolor: string; boxShadow:
   };
 }
 
-export const FADE_TARGET_ROW_FLASH_SEC = 2;
-export const FADE_TARGET_NUMBER_BLINK_SEC = 2.2;
+export const CUE_TARGET_ROW_FLASH_SEC = 2;
+export const CUE_TARGET_NUMBER_BLINK_SEC = 2.2;
+
+function cueTargetBorderShadow(tokens: GscTokenSet): string {
+  return `inset 3px 0 0 color-mix(in srgb, ${tokens.accent} 55%, transparent)`;
+}
 
 export interface HotCuePadTargetState {
   tokens: GscTokenSet;
@@ -140,7 +146,7 @@ export function hotCuePadTargetSx(state: HotCuePadTargetState): SxProps<Theme> {
           boxShadow: "none",
         },
       },
-      animation: `hotCueFadeTargetFlash ${FADE_TARGET_ROW_FLASH_SEC}s ease-in-out 1`,
+      animation: `hotCueFadeTargetFlash ${CUE_TARGET_ROW_FLASH_SEC}s ease-in-out 1`,
       "@media (prefers-reduced-motion: reduce)": {
         animation: "none",
         bgcolor: `color-mix(in srgb, ${tokens.accent} 12%, var(--bg-elevated))`,
@@ -164,9 +170,7 @@ export interface CueRowStyleState {
   isLightFade: boolean;
   isSequenceStep: boolean;
   hasWarning: boolean;
-  pulseAsStopTarget: boolean;
-  staticAsStopTarget: boolean;
-  highlightAsFadeTarget: boolean;
+  highlightAsTarget: boolean;
   isPreviewing: boolean;
   dropActive: boolean;
   insertBefore: boolean;
@@ -239,47 +243,26 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
     ...(state.isSequenceStep && {
       boxShadow: `inset 3px 0 0 #9eb8ff`,
     }),
-    ...(state.pulseAsStopTarget && {
-      "@keyframes cueStopTargetPulse": {
-        "0%, 100%": {
-          boxShadow: "inset 3px 0 0 rgba(232, 138, 138, 0.3)",
-        },
-        "50%": {
-          boxShadow: "inset 3px 0 0 rgba(232, 138, 138, 0.55)",
-        },
-      },
-      animation: "cueStopTargetPulse 3s ease-in-out infinite",
-      "@media (prefers-reduced-motion: reduce)": {
-        animation: "none",
-        boxShadow: "inset 3px 0 0 #e88a8a",
-      },
-    }),
-    ...(state.staticAsStopTarget && {
-      boxShadow: "inset 3px 0 0 rgba(232, 138, 138, 0.65)",
-    }),
-    ...(state.highlightAsFadeTarget && {
-      "@keyframes cueFadeTargetRowFlash": {
+    ...(state.highlightAsTarget && {
+      boxShadow: cueTargetBorderShadow(tokens),
+      "@keyframes cueTargetRowFlash": {
         "0%": {
           filter: "brightness(1)",
           bgcolor: "transparent",
-          boxShadow: "none",
         },
         "40%": {
           filter: "brightness(1.22)",
           bgcolor: `color-mix(in srgb, ${tokens.accent} 20%, transparent)`,
-          boxShadow: `inset 3px 0 0 color-mix(in srgb, ${tokens.accent} 70%, transparent)`,
         },
         "100%": {
           filter: "brightness(1)",
           bgcolor: "transparent",
-          boxShadow: "none",
         },
       },
-      animation: `cueFadeTargetRowFlash ${FADE_TARGET_ROW_FLASH_SEC}s ease-in-out 1`,
+      animation: `cueTargetRowFlash ${CUE_TARGET_ROW_FLASH_SEC}s ease-in-out 1`,
       "@media (prefers-reduced-motion: reduce)": {
         animation: "none",
         bgcolor: `color-mix(in srgb, ${tokens.accent} 12%, transparent)`,
-        boxShadow: `inset 3px 0 0 color-mix(in srgb, ${tokens.accent} 55%, transparent)`,
       },
     }),
     ...(state.isPreviewing && {
@@ -291,7 +274,7 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
 export function cueNumberSx(
   tokens: GscTokenSet,
   primarySelected = false,
-  highlightAsFadeTarget = false,
+  highlightAsTarget = false,
   _selectionRemembered = false,
 ): SxProps<Theme> {
   return {
@@ -303,8 +286,8 @@ export function cueNumberSx(
     ...(primarySelected && {
       textShadow: `0 0 10px color-mix(in srgb, ${tokens.accent} 45%, transparent)`,
     }),
-    ...(highlightAsFadeTarget && {
-      "@keyframes cueFadeTargetNumberBlink": {
+    ...(highlightAsTarget && {
+      "@keyframes cueTargetNumberBlink": {
         "0%, 100%": {
           opacity: 1,
           transform: "scale(1)",
@@ -316,7 +299,7 @@ export function cueNumberSx(
           textShadow: `0 0 12px color-mix(in srgb, ${tokens.accent} 65%, transparent)`,
         },
       },
-      animation: `cueFadeTargetNumberBlink ${FADE_TARGET_NUMBER_BLINK_SEC}s ease-in-out ${FADE_TARGET_ROW_FLASH_SEC}s infinite`,
+      animation: `cueTargetNumberBlink ${CUE_TARGET_NUMBER_BLINK_SEC}s ease-in-out ${CUE_TARGET_ROW_FLASH_SEC}s infinite`,
       "@media (prefers-reduced-motion: reduce)": {
         animation: "none",
         textShadow: `0 0 8px color-mix(in srgb, ${tokens.accent} 50%, transparent)`,
@@ -361,7 +344,9 @@ export function cueNameSx(
       color: cueNameColor ?? "text.primary",
       opacity: 0.88,
     }),
-    ...(cueNameColor && !state.primarySelected && !state.selectionRemembered && { color: cueNameColor }),
+    ...(cueNameColor &&
+      !state.primarySelected &&
+      !state.selectionRemembered && { color: cueNameColor }),
   };
 }
 

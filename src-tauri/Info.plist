@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Grantler Stage Control uses audio input to analyze and react to live audio.</string>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>Grantler Stage Control hosts the remote-control session and discovers devices on your local network.</string>
   <key>CFBundleDocumentTypes</key>
   <array>
     <dict>

@@ -2,6 +2,7 @@ import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import ContentCutOutlinedIcon from "@mui/icons-material/ContentCutOutlined";
 import ControlPointDuplicateOutlinedIcon from "@mui/icons-material/ControlPointDuplicateOutlined";
 import DriveFileRenameOutlineOutlinedIcon from "@mui/icons-material/DriveFileRenameOutlineOutlined";
+import LayersClearOutlinedIcon from "@mui/icons-material/LayersClearOutlined";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
@@ -19,11 +20,13 @@ export interface CueContextMenuState {
 interface CueContextMenuProps {
   menu: CueContextMenuState | null;
   canRename: boolean;
+  canUngroup: boolean;
   onClose: () => void;
   onCopy: () => void;
   onCut: () => void;
   onDuplicate: () => void;
   onRename: () => void;
+  onUngroup: () => void;
 }
 
 function Shortcut({ label }: { label: string }) {
@@ -37,11 +40,13 @@ function Shortcut({ label }: { label: string }) {
 export function CueContextMenu({
   menu,
   canRename,
+  canUngroup,
   onClose,
   onCopy,
   onCut,
   onDuplicate,
   onRename,
+  onUngroup,
 }: CueContextMenuProps) {
   const { t } = useTranslation();
 
@@ -100,6 +105,19 @@ export function CueContextMenu({
         </ListItemIcon>
         <ListItemText>{t("common.action.rename")}</ListItemText>
       </MenuItem>
+      {canUngroup ? (
+        <MenuItem
+          onClick={() => {
+            onUngroup();
+            onClose();
+          }}
+        >
+          <ListItemIcon>
+            <LayersClearOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t("inspector.ungroupContainer")}</ListItemText>
+        </MenuItem>
+      ) : null}
     </Menu>
   );
 }

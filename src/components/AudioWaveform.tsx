@@ -14,6 +14,7 @@ import {
   waveformHandlesSx,
   waveformRootSx,
   waveformScrubSx,
+  waveformSeekableSx,
   waveformStatusSx,
   waveformThumbnailSx,
   waveformThumbnailTimeSx,
@@ -33,6 +34,9 @@ export interface AudioWaveformProps {
   mediaKind?: MediaWaveformKind;
   /** Video only — show frame thumbnail while hovering/scrubbing. */
   hoverPreview?: boolean;
+  /** Click or drag on the waveform to jump playback (active cues). */
+  seekable?: boolean;
+  onSeek?: (positionSec: number) => void;
 }
 
 const END_SNAP_SEC = 0.05;
@@ -160,27 +164,53 @@ export function AudioWaveform({
   onRangeChange,
   mediaKind = "audio",
   hoverPreview = false,
+  seekable = false,
+  onSeek,
 }: AudioWaveformProps) {
   const { t } = useTranslation();
   const { data, loading, missing } = useMediaWaveform(assetPath, mediaKind);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [dragging, setDragging] = useState<"in" | "out" | null>(null);
+  const [dragging, setDragging] = useState<"in" | "out" | "seek" | null>(null);
+  const seekThrottleRef = useRef(0);
   const [hoverSec, setHoverSec] = useState<number | null>(null);
   const [hoverPct, setHoverPct] = useState(0);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const thumbRequestRef = useRef(0);
 
+  const durationSec = data?.durationSec ?? 0;
+  const effectiveIn = inTime ?? 0;
+  const effectiveOut =
+    outTime !== undefined ? Math.min(durationSec, Math.max(effectiveIn, outTime)) : durationSec;
+
   const timeFromClientX = useCallback(
     (clientX: number): number => {
       const wrap = wrapRef.current;
-      if (!wrap || !data) return 0;
+      if (!wrap || !data) return effectiveIn;
       const rect = wrap.getBoundingClientRect();
-      if (rect.width <= 0) return 0;
+      if (rect.width <= 0) return effectiveIn;
       const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
       return snapTime(ratio * data.durationSec);
     },
-    [data],
+    [data, effectiveIn],
+  );
+
+  const clampSeekTime = useCallback(
+    (seconds: number): number => {
+      return Math.max(effectiveIn, Math.min(effectiveOut, seconds));
+    },
+    [effectiveIn, effectiveOut],
+  );
+
+  const commitSeek = useCallback(
+    (clientX: number, force = false) => {
+      if (!seekable || !onSeek) return;
+      const now = performance.now();
+      if (!force && now - seekThrottleRef.current < 80) return;
+      seekThrottleRef.current = now;
+      onSeek(clampSeekTime(timeFromClientX(clientX)));
+    },
+    [clampSeekTime, onSeek, seekable, timeFromClientX],
   );
 
   const applyDrag = useCallback(
@@ -217,7 +247,8 @@ export function AudioWaveform({
 
   const updateHover = useCallback(
     (clientX: number) => {
-      if (!data || !hoverPreview || dragging) return;
+      if (!data || dragging) return;
+      if (!hoverPreview && !seekable) return;
 
       const wrap = wrapRef.current;
       if (!wrap) return;
@@ -225,9 +256,11 @@ export function AudioWaveform({
       if (rect.width <= 0) return;
 
       const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-      const t = snapTime(ratio * data.durationSec);
+      const t = clampSeekTime(snapTime(ratio * data.durationSec));
       setHoverSec(t);
       setHoverPct(ratio * 100);
+
+      if (!hoverPreview) return;
 
       const requestId = ++thumbRequestRef.current;
       void getVideoThumbnailDataUrl(assetPath, t).then((url) => {
@@ -235,7 +268,7 @@ export function AudioWaveform({
         setThumbnailUrl(url);
       });
     },
-    [assetPath, data, dragging, hoverPreview],
+    [assetPath, clampSeekTime, data, dragging, hoverPreview, seekable],
   );
 
   const clearHover = useCallback(() => {
@@ -251,7 +284,10 @@ export function AudioWaveform({
       inTime: inTime ?? 0,
       outTime,
       positionSec,
-      hoverSec: dragging ? undefined : (hoverSec ?? undefined),
+      hoverSec:
+        dragging === "seek" || (!dragging && hoverSec != null)
+          ? (hoverSec ?? undefined)
+          : undefined,
       height,
     });
   }, [data, dragging, height, hoverSec, inTime, outTime, positionSec]);
@@ -269,16 +305,19 @@ export function AudioWaveform({
   }, [paint]);
 
   const label = assetPath.split("/").pop() ?? assetPath;
-  const durationSec = data?.durationSec ?? 0;
-  const effectiveIn = inTime ?? 0;
-  const effectiveOut =
-    outTime !== undefined ? Math.min(durationSec, Math.max(effectiveIn, outTime)) : durationSec;
   const inPct = durationSec > 0 ? (effectiveIn / durationSec) * 100 : 0;
   const outPct = durationSec > 0 ? (effectiveOut / durationSec) * 100 : 100;
   const showHandles = editable && !!data && !!onRangeChange;
-  const showThumbnail = hoverPreview && hoverSec !== null && !dragging && thumbnailUrl;
+  const showThumbnail = hoverPreview && hoverSec !== null && dragging !== "seek" && thumbnailUrl;
+  const interactive = hoverPreview || seekable;
 
   const handlePointerMove = (e: React.PointerEvent) => {
+    if (dragging === "seek") {
+      const t = clampSeekTime(timeFromClientX(e.clientX));
+      setHoverSec(t);
+      commitSeek(e.clientX);
+      return;
+    }
     if (dragging) {
       applyDrag(dragging, e.clientX);
       return;
@@ -287,10 +326,27 @@ export function AudioWaveform({
   };
 
   const endDrag = (e: React.PointerEvent) => {
+    if (dragging === "seek") {
+      commitSeek(e.clientX, true);
+      clearHover();
+    }
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
     }
     setDragging(null);
+  };
+
+  const startSeek = (e: React.PointerEvent) => {
+    if (!seekable || !onSeek || !data) return;
+    if ((e.target as HTMLElement).closest("[data-waveform-handle]")) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDragging("seek");
+    const t = clampSeekTime(timeFromClientX(e.clientX));
+    setHoverSec(t);
+    commitSeek(e.clientX, true);
   };
 
   return (
@@ -298,15 +354,26 @@ export function AudioWaveform({
       ref={wrapRef}
       className={className}
       title={label}
+      role={seekable ? "slider" : undefined}
+      aria-label={seekable ? t("playback.seekAria") : undefined}
+      aria-valuemin={seekable ? Math.round(effectiveIn * 100) / 100 : undefined}
+      aria-valuemax={seekable ? Math.round(effectiveOut * 100) / 100 : undefined}
+      aria-valuenow={
+        seekable && positionSec !== undefined ? Math.round(positionSec * 100) / 100 : undefined
+      }
       sx={{
         ...waveformRootSx,
         height,
         ...(editable && waveformEditableSx),
         ...(hoverPreview && waveformScrubSx),
+        ...(seekable && !hoverPreview && waveformSeekableSx),
         ...(dragging && waveformDraggingSx),
       }}
-      onPointerMove={hoverPreview ? handlePointerMove : undefined}
-      onPointerLeave={hoverPreview ? clearHover : undefined}
+      onPointerDown={seekable ? startSeek : undefined}
+      onPointerMove={interactive ? handlePointerMove : undefined}
+      onPointerUp={interactive ? endDrag : undefined}
+      onPointerCancel={interactive ? endDrag : undefined}
+      onPointerLeave={interactive && dragging !== "seek" ? clearHover : undefined}
     >
       {loading && (
         <Typography component="span" sx={waveformStatusSx}>

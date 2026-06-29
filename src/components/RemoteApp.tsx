@@ -22,6 +22,7 @@ import { AppSnackbar } from "./AppSnackbar";
 import { CueList } from "./CueList";
 import { LeftSidebar } from "./LeftSidebar";
 import { TransportBar } from "./TransportBar";
+import { TriggerNoteToasts } from "./TriggerNoteToasts";
 
 /** Phone/tablet remote — show-mode UI only, no local engines. */
 export function RemoteApp() {
@@ -122,6 +123,7 @@ export function RemoteApp() {
 
       <TransportBar />
       <AppSnackbar />
+      <TriggerNoteToasts />
 
       <Dialog open={needsPin} maxWidth="xs" fullWidth>
         <DialogTitle>{t("remote.enterPinTitle")}</DialogTitle>

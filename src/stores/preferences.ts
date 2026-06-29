@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { type SupportedLocale, setAppLocale } from "../i18n";
-import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx";
+import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx-defaults";
+import { DEFAULT_MIDI_DEBOUNCE_MS } from "../lib/midi-defaults";
 import { getPlatform, type PlatformKind } from "../platform";
 import {
   DEFAULT_NDI_OUTPUT_FPS,
@@ -29,6 +30,8 @@ interface PreferencesState {
   midiInterfaceId: string | null;
   /** Web MIDI input id or Tauri MIDI port index (input). */
   midiInputId: string | null;
+  /** Ignore repeat presses on the same MIDI control within this window (ms). 0 disables. */
+  midiDebounceMs: number;
   dmxOutputBackend: DmxOutputBackend;
   artNetHost: string;
   artNetPort: number;
@@ -38,6 +41,7 @@ interface PreferencesState {
   setSoundCardId: (soundCardId: string | null) => void;
   setMidiInterfaceId: (midiInterfaceId: string | null) => void;
   setMidiInputId: (midiInputId: string | null) => void;
+  setMidiDebounceMs: (midiDebounceMs: number) => void;
   setDmxOutputBackend: (dmxOutputBackend: DmxOutputBackend) => void;
   setArtNetHost: (artNetHost: string) => void;
   setArtNetPort: (artNetPort: number) => void;
@@ -49,12 +53,17 @@ interface PreferencesState {
   ndiOutputFps: number;
   /** One-time hint that the GSC brand opens the file menu. */
   hasSeenFileMenuHint: boolean;
+  /** Remote version for which the update snackbar was dismissed. */
+  acknowledgedUpdateVersion: string | null;
+  /** App version that was running when the update snackbar was dismissed. */
+  acknowledgedUpdateAtVersion: string | null;
   setNdiOutputEnabled: (enabled: boolean) => void;
   setNdiSourceName: (name: string) => void;
   setNdiOutputWidth: (width: number) => void;
   setNdiOutputHeight: (height: number) => void;
   setNdiOutputFps: (fps: number) => void;
   markFileMenuHintSeen: () => void;
+  setAcknowledgedUpdateVersion: (version: string | null, atAppVersion?: string | null) => void;
   /** Desktop remote control HTTP/WebSocket port. */
   remotePort: number;
   /** Preferred remote PIN (6 digits). Empty means auto-generate on first start. */
@@ -74,6 +83,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         soundCardId: null,
         midiInterfaceId: null,
         midiInputId: null,
+        midiDebounceMs: DEFAULT_MIDI_DEBOUNCE_MS,
         dmxOutputBackend: "artnet",
         artNetHost: DEFAULT_ART_NET_HOST,
         artNetPort: DEFAULT_ART_NET_PORT,
@@ -84,6 +94,8 @@ export const usePreferencesStore = create<PreferencesState>()(
         ndiOutputHeight: DEFAULT_NDI_OUTPUT_HEIGHT,
         ndiOutputFps: DEFAULT_NDI_OUTPUT_FPS,
         hasSeenFileMenuHint: false,
+        acknowledgedUpdateVersion: null,
+        acknowledgedUpdateAtVersion: null,
         remotePort: 8766,
         remotePin: "",
         remoteAutoStart: false,
@@ -94,6 +106,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         setSoundCardId: (soundCardId) => set({ soundCardId }),
         setMidiInterfaceId: (midiInterfaceId) => set({ midiInterfaceId }),
         setMidiInputId: (midiInputId) => set({ midiInputId }),
+        setMidiDebounceMs: (midiDebounceMs) => set({ midiDebounceMs }),
         setDmxOutputBackend: (dmxOutputBackend) => set({ dmxOutputBackend }),
         setArtNetHost: (artNetHost) => set({ artNetHost }),
         setArtNetPort: (artNetPort) => set({ artNetPort }),
@@ -104,6 +117,11 @@ export const usePreferencesStore = create<PreferencesState>()(
         setNdiOutputHeight: (ndiOutputHeight) => set({ ndiOutputHeight }),
         setNdiOutputFps: (ndiOutputFps) => set({ ndiOutputFps }),
         markFileMenuHintSeen: () => set({ hasSeenFileMenuHint: true }),
+        setAcknowledgedUpdateVersion: (acknowledgedUpdateVersion, atAppVersion = null) =>
+          set({
+            acknowledgedUpdateVersion,
+            acknowledgedUpdateAtVersion: atAppVersion,
+          }),
         setRemotePort: (remotePort) => set({ remotePort }),
         setRemotePin: (remotePin) => set({ remotePin }),
         setRemoteAutoStart: (remoteAutoStart) => set({ remoteAutoStart }),
@@ -115,6 +133,7 @@ export const usePreferencesStore = create<PreferencesState>()(
           soundCardId: s.soundCardId,
           midiInterfaceId: s.midiInterfaceId,
           midiInputId: s.midiInputId,
+          midiDebounceMs: s.midiDebounceMs,
           dmxOutputBackend: s.dmxOutputBackend,
           artNetHost: s.artNetHost,
           artNetPort: s.artNetPort,
@@ -125,6 +144,8 @@ export const usePreferencesStore = create<PreferencesState>()(
           ndiOutputHeight: s.ndiOutputHeight,
           ndiOutputFps: s.ndiOutputFps,
           hasSeenFileMenuHint: s.hasSeenFileMenuHint,
+          acknowledgedUpdateVersion: s.acknowledgedUpdateVersion,
+          acknowledgedUpdateAtVersion: s.acknowledgedUpdateAtVersion,
           remotePort: s.remotePort,
           remotePin: s.remotePin,
           remoteAutoStart: s.remoteAutoStart,

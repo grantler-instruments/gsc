@@ -1,5 +1,6 @@
 import { useProjectLocationStore } from "../stores/project-location";
 import { normalizePath, vfsGet, vfsPut, vfsRegisterDiskPaths } from "../vfs/engine";
+import type { ProjectBundleDiskFile } from "./project-bundle";
 import {
   assetRelativePath,
   isAssetsRelativePath,
@@ -38,15 +39,22 @@ export async function registerDiskAssetPaths(
   rootDir: string,
   paths: string[],
   pathExists: (diskPath: string) => Promise<boolean>,
+  options?: {
+    onPathStart?: (path: string) => void;
+    onPathComplete?: (path: string, loaded: boolean) => void;
+  },
 ): Promise<void> {
   const available: string[] = [];
   await Promise.all(
     paths.map(async (virtualPath) => {
       const normalized = normalizePath(virtualPath);
       const diskPath = diskPathForAsset(rootDir, normalized);
-      if (await pathExists(diskPath)) {
+      options?.onPathStart?.(normalized);
+      const existsOnDisk = await pathExists(diskPath);
+      if (existsOnDisk) {
         available.push(normalized);
       }
+      options?.onPathComplete?.(normalized, existsOnDisk);
     }),
   );
   vfsRegisterDiskPaths(available);
@@ -75,6 +83,24 @@ export async function saveAllVfsAssetsToDisk(
     const blob = vfsGet(virtualPath);
     if (!blob) continue;
     await writeAssetToDisk(rootDir, virtualPath, blob, writeFile, mkdir);
+  }
+}
+
+/** Write flattened bundle files (project.json + assets/*) under a project root. */
+export async function writeBundleFilesToDisk(
+  rootDir: string,
+  files: ProjectBundleDiskFile[],
+  writeFile: (diskPath: string, data: Uint8Array) => Promise<void>,
+  mkdir: (dir: string) => Promise<void>,
+): Promise<void> {
+  const sep = rootDir.includes("\\") ? "\\" : "/";
+  const base = rootDir.replace(/[/\\]+$/, "");
+
+  for (const { relativePath, data } of files) {
+    const diskPath = `${base}${sep}${relativePath.replace(/\//g, sep)}`;
+    const dir = diskPath.replace(/[/\\][^/\\]+$/, "");
+    await mkdir(dir);
+    await writeFile(diskPath, data);
   }
 }
 

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
@@ -7,6 +9,11 @@ import { syncFaviconPlugin } from "./vite-plugin-sync-favicon";
 import { trailingSlashRedirectPlugin } from "./vite-trailing-slash-redirect";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const appVersion = (
+  JSON.parse(readFileSync(path.join(__dirname, "package.json"), "utf8")) as {
+    version: string;
+  }
+).version;
 
 // GitHub Pages project site: https://grantler-instruments.github.io/gsc/
 export const SITE_BASENAME = "gsc";
@@ -18,7 +25,9 @@ const base = process.env.VITE_BASE ?? `/${SITE_BASENAME}/`;
 const host = process.env.TAURI_DEV_HOST;
 
 /** Bind all interfaces in dev so phones on the LAN can load the remote UI from Vite. */
-const devHost = host ?? true;
+const exposeOnLan = !host;
+const isWindows = os.platform() === "win32";
+const devHost = host ?? (isWindows ? "0.0.0.0" : true);
 
 const isVitest = !!process.env.VITEST;
 
@@ -30,6 +39,9 @@ const websiteNavigateDenylist = baseNoSlash
 
 export default defineConfig({
   base,
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   plugins: [
     ...(isVitest ? [] : [syncFaviconPlugin(__dirname)]),
     trailingSlashRedirectPlugin(base),
@@ -92,11 +104,27 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    pool: "forks",
+    maxWorkers: "50%",
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "lcov"],
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/**/*.test.ts",
+        "src/test/**",
+        "src/**/*.d.ts",
+        "src/website/**",
+        "src/app/main.tsx",
+      ],
+    },
   },
   server: {
     port: 1421,
     strictPort: true,
     host: devHost,
+    // Allow phones/tablets on the LAN to load the remote UI (Vite 6+ host allowlist).
+    ...(exposeOnLan ? { allowedHosts: true as const } : {}),
     hmr: host
       ? {
           protocol: "ws",

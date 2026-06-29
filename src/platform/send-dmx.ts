@@ -1,5 +1,5 @@
 import type { DmxUniverseFrame } from "../lib/dmx";
-import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx";
+import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx-defaults";
 import { resolveDmxOutputBackend, usePreferencesStore } from "../stores/preferences";
 import { getPlatform } from "./index";
 

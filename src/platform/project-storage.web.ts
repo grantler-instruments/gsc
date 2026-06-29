@@ -1,36 +1,27 @@
 import { setActiveProjectId, tryGetActiveProjectId } from "../lib/active-project-id";
 import { cacheAsset, getCachedAsset } from "../lib/asset-cache";
+import { buildVfsEntries } from "../lib/hydrate-project-assets";
+import { prefetchMediaDurations } from "../lib/media-duration";
 import {
   buildProjectBundleZip,
   hydrateVfsFromBundleAssets,
   parseProjectBundleZip,
 } from "../lib/project-bundle";
 import { replaceProjectWithoutHistory } from "../lib/project-history";
+import { idbTouchProjectOpened } from "../lib/project-idb";
 import { BUNDLE_EXTENSION } from "../lib/project-paths";
-import { collectSessionAssetPaths, persistProjectSessionAsync } from "../lib/project-session";
+import {
+  collectSessionAssetPaths,
+  deleteStoredProject,
+  openStoredProject,
+  persistProjectSessionAsync,
+} from "../lib/project-session";
 import { snapshotToCueLists } from "../lib/project-snapshot";
 import { useProjectStore } from "../stores/project";
-import type { VfsEntry } from "../stores/vfs";
+import { useProjectLoadingStore } from "../stores/project-loading";
 import { useVfsStore } from "../stores/vfs";
 import { vfsClear, vfsGet } from "../vfs/engine";
 import { assetKindFromPath } from "../vfs/import";
-
-function vfsEntriesFromPaths(paths: string[]): VfsEntry[] {
-  return paths
-    .map((path) => {
-      const name = path.split("/").pop() ?? path;
-      const blob = vfsGet(path);
-      return {
-        path,
-        name,
-        size: blob?.size ?? 0,
-        mimeType: blob?.type ?? "",
-        kind: assetKindFromPath(path),
-        loaded: Boolean(blob),
-      };
-    })
-    .sort((a, b) => a.path.localeCompare(b.path));
-}
 
 async function readBlobForBundle(path: string): Promise<Blob | undefined> {
   const fromVfs = vfsGet(path);
@@ -60,6 +51,14 @@ export async function exportProjectBundleWeb(): Promise<{ missing: string[] }> {
   return { missing };
 }
 
+export async function openStoredWebProject(projectId: string): Promise<boolean> {
+  return openStoredProject(projectId);
+}
+
+export async function deleteStoredWebProject(projectId: string): Promise<boolean> {
+  return deleteStoredProject(projectId);
+}
+
 export async function importProjectBundleWeb(file: File): Promise<void> {
   const data = new Uint8Array(await file.arrayBuffer());
   const { snapshot, assets } = parseProjectBundleZip(data);
@@ -71,15 +70,55 @@ export async function importProjectBundleWeb(file: File): Promise<void> {
     useProjectStore.setState(loaded);
   });
 
-  hydrateVfsFromBundleAssets(assets);
+  const assetMetadata = assets.map(({ path, data: bytes }) => {
+    const name = path.split("/").pop() ?? path;
+    const blob = new Blob([bytes]);
+    return {
+      path,
+      name,
+      size: blob.size,
+      mimeType: blob.type,
+      kind: assetKindFromPath(path),
+    };
+  });
 
+  const paths = collectSessionAssetPaths(snapshot, assetMetadata);
+  const metadataByPath = new Map(assetMetadata.map((entry) => [entry.path, entry]));
+  const { initAssetProgress, setAssetStatus } = useProjectLoadingStore.getState();
+  initAssetProgress(
+    paths.map((path) => ({
+      path,
+      name: metadataByPath.get(path)?.name,
+    })),
+  );
+
+  const bundlePaths = new Set(assets.map((asset) => asset.path));
   for (const { path, data: bytes } of assets) {
-    await cacheAsset(loaded.id, path, new Blob([bytes]));
+    setAssetStatus(path, "loading");
+    hydrateVfsFromBundleAssets([{ path, data: bytes }]);
+    setAssetStatus(path, "loaded");
+  }
+  for (const path of paths) {
+    if (!bundlePaths.has(path)) {
+      setAssetStatus(path, "missing");
+    }
   }
 
+  await Promise.all(
+    assets.map(({ path, data: bytes }) => cacheAsset(loaded.id, path, new Blob([bytes]))),
+  );
+
+  prefetchMediaDurations(
+    paths.filter((path) => {
+      const kind = assetKindFromPath(path);
+      return kind === "audio" || kind === "video";
+    }),
+  );
+
   useVfsStore.setState({
-    entries: vfsEntriesFromPaths(assets.map((a) => a.path)),
+    entries: buildVfsEntries(paths, assetMetadata),
   });
 
   await persistProjectSessionAsync();
+  await idbTouchProjectOpened(loaded.id);
 }

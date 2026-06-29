@@ -1,7 +1,11 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { getMediaDurationSec } from "../lib/media-duration";
+import { goAtMsForSeekPosition } from "../lib/playback-seek";
 import { clearSequenceTimers } from "../lib/sequence-timers";
+import type { Cue } from "../types/cue";
 import { useFadeStore } from "./fade";
+import { getActiveCueListFromState, useProjectStore } from "./project";
 
 /**
  * Where a sequence was launched from. Main-list sequences cancel each other on
@@ -38,6 +42,13 @@ interface TransportState {
   stopMany: (cueIds: string[]) => void;
   panic: () => void;
   setMasterVolume: (v: number) => void;
+  /** Jump an active audio/video cue to a position in the source file (seconds). */
+  seekCue: (cueId: string, positionSec: number) => void;
+}
+
+function findActiveCue(cueId: string): Cue | undefined {
+  const list = getActiveCueListFromState(useProjectStore.getState());
+  return list?.cues.find((c) => c.id === cueId);
 }
 
 /** Running sequence whose root is `cueId`, or that has `cueId` in its current step. */
@@ -203,6 +214,21 @@ export const useTransportStore = create<TransportState>()(
 
       setMasterVolume: (masterVolume) =>
         set({ masterVolume: Math.max(0, Math.min(1, masterVolume)) }),
+
+      seekCue: (cueId, positionSec) =>
+        set((s) => {
+          if (!s.activeCueIds.includes(cueId)) return s;
+
+          const cue = findActiveCue(cueId);
+          if (!cue || (cue.type !== "audio" && cue.type !== "video")) return s;
+
+          const sourceDurationSec = cue.assetPath ? getMediaDurationSec(cue.assetPath) : undefined;
+          const goAtMs = goAtMsForSeekPosition(cue, positionSec, sourceDurationSec);
+
+          return {
+            cueStartedAtMs: { ...s.cueStartedAtMs, [cueId]: goAtMs },
+          };
+        }),
     }),
     { name: "TransportStore" },
   ),

@@ -4,7 +4,7 @@ import {
   registerDmxPreviewProjectAccess,
   useDmxPreviewSessionStore,
 } from "../stores/dmx-preview-session";
-import { useProjectStore } from "../stores/project";
+import { useProjectStore } from "../stores/project/store";
 import { useUiStore } from "../stores/ui";
 import type { Cue } from "../types/cue";
 

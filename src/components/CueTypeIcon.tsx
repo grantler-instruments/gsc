@@ -37,7 +37,7 @@ const CUE_TYPE_ICONS: Record<CueType, ElementType<SvgIconProps>> = {
 };
 
 export function CueTypeIcon({ type, ...props }: { type: CueType | AssetKind } & SvgIconProps) {
-  const Icon = CUE_TYPE_ICONS[type];
+  const Icon = CUE_TYPE_ICONS[type as CueType] ?? LayersIcon;
   return <Icon fontSize="inherit" aria-hidden {...props} />;
 }
 

@@ -1,14 +1,19 @@
 import type { MouseEvent } from "react";
-import { cueMissingAsset } from "../../lib/cue-asset";
+import { cueMissingAsset, cueUsesAsset } from "../../lib/cue-asset";
 import { type CueListNode, getChildCues, isContainerCue, isCueActive } from "../../lib/cues";
 import type { RunningSequence } from "../../stores/transport";
+import { useUiStore } from "../../stores/ui";
 import { useVfsStore } from "../../stores/vfs";
 import type { Cue } from "../../types/cue";
+import { CueContainerLeadingDrop } from "./CueContainerLeadingDrop";
+import { CueContainerTrailingDrop } from "./CueContainerTrailingDrop";
 import { CueRow } from "./CueRow";
+import { useCueDragActive } from "./useCueDragActive";
 
 export interface CueListTreeProps {
   nodes: CueListNode[];
   cues: Cue[];
+  canEdit: boolean;
   collapsedGroups: Set<string>;
   activeCueIds: string[];
   runningSequences: Record<string, RunningSequence>;
@@ -16,11 +21,9 @@ export interface CueListTreeProps {
   selectedCueIdSet: Set<string>;
   primarySelectedId: string | null;
   listHasEditFocus: boolean;
-  hoveredStopTargetId: string | null;
-  selectedStopTargetId: string | null;
-  hoveredFadeTargetId: string | null;
-  selectedFadeTargetId: string | null;
-  fadeTargetHighlightToken: string;
+  hoveredTargetId: string | null;
+  selectedTargetId: string | null;
+  targetHighlightToken: string;
   renamingCueId: string | null;
   renameValue: string;
   onHoverChange: (cueId: string | null) => void;
@@ -34,6 +37,7 @@ export interface CueListTreeProps {
 export function CueListTree({
   nodes,
   cues,
+  canEdit,
   collapsedGroups,
   activeCueIds,
   runningSequences,
@@ -41,11 +45,9 @@ export function CueListTree({
   selectedCueIdSet,
   primarySelectedId,
   listHasEditFocus,
-  hoveredStopTargetId,
-  selectedStopTargetId,
-  hoveredFadeTargetId,
-  selectedFadeTargetId,
-  fadeTargetHighlightToken,
+  hoveredTargetId,
+  selectedTargetId,
+  targetHighlightToken,
   renamingCueId,
   renameValue,
   onHoverChange,
@@ -56,13 +58,17 @@ export function CueListTree({
   onRenameCancel,
 }: CueListTreeProps) {
   const assetEntries = useVfsStore((s) => s.entries);
+  const hoveredAssetPath = useUiStore((s) => s.hoveredAssetPath);
+  const cueDragging = useCueDragActive();
 
   return nodes.flatMap((node) => {
     const expanded = !collapsedGroups.has(node.cue.id);
     const childCount = isContainerCue(node.cue) ? getChildCues(cues, node.cue.id).length : 0;
 
-    const highlightAsFadeTarget =
-      node.cue.id === hoveredFadeTargetId || node.cue.id === selectedFadeTargetId;
+    const highlightAsTarget =
+      node.cue.id === hoveredTargetId ||
+      node.cue.id === selectedTargetId ||
+      cueUsesAsset(node.cue, hoveredAssetPath);
 
     const isPrimary = node.cue.id === primarySelectedId;
     const isRowSelected = selectedCueIdSet.has(node.cue.id);
@@ -78,10 +84,8 @@ export function CueListTree({
         selectionRemembered={!listHasEditFocus && isPrimary}
         active={isCueActive(node.cue, cues, activeCueIds, runningSequences, dmxFadesByFadeCueId)}
         missingAsset={cueMissingAsset(node.cue, assetEntries)}
-        pulseAsStopTarget={node.cue.id === hoveredStopTargetId}
-        staticAsStopTarget={node.cue.id === selectedStopTargetId}
-        highlightAsFadeTarget={highlightAsFadeTarget}
-        fadeTargetHighlightToken={fadeTargetHighlightToken}
+        highlightAsTarget={highlightAsTarget}
+        targetHighlightToken={targetHighlightToken}
         onHoverChange={onHoverChange}
         onSelect={(e) => onSelect(node.cue.id, e)}
         onContextMenu={(e) => onContextMenu(node.cue.id, e)}
@@ -93,34 +97,66 @@ export function CueListTree({
       />
     );
 
-    if (isContainerCue(node.cue) && expanded && node.children.length > 0) {
+    if (isContainerCue(node.cue) && expanded) {
       return [
         row,
-        <CueListTree
-          key={`${node.cue.id}-children`}
-          nodes={node.children}
-          cues={cues}
-          collapsedGroups={collapsedGroups}
-          activeCueIds={activeCueIds}
-          runningSequences={runningSequences}
-          dmxFadesByFadeCueId={dmxFadesByFadeCueId}
-          selectedCueIdSet={selectedCueIdSet}
-          primarySelectedId={primarySelectedId}
-          listHasEditFocus={listHasEditFocus}
-          hoveredStopTargetId={hoveredStopTargetId}
-          selectedStopTargetId={selectedStopTargetId}
-          hoveredFadeTargetId={hoveredFadeTargetId}
-          selectedFadeTargetId={selectedFadeTargetId}
-          fadeTargetHighlightToken={fadeTargetHighlightToken}
-          renamingCueId={renamingCueId}
-          renameValue={renameValue}
-          onHoverChange={onHoverChange}
-          onSelect={onSelect}
-          onContextMenu={onContextMenu}
-          onRenameChange={onRenameChange}
-          onRenameCommit={onRenameCommit}
-          onRenameCancel={onRenameCancel}
-        />,
+        ...(canEdit && cueDragging && node.children.length > 0
+          ? [
+              <CueContainerLeadingDrop
+                key={`${node.cue.id}-leading`}
+                canEdit={canEdit}
+                containerId={node.cue.id}
+                firstChildId={node.children[0].cue.id}
+                depth={node.depth + 1}
+              />,
+            ]
+          : []),
+        ...(node.children.length > 0
+          ? [
+              <CueListTree
+                key={`${node.cue.id}-children`}
+                nodes={node.children}
+                cues={cues}
+                canEdit={canEdit}
+                collapsedGroups={collapsedGroups}
+                activeCueIds={activeCueIds}
+                runningSequences={runningSequences}
+                dmxFadesByFadeCueId={dmxFadesByFadeCueId}
+                selectedCueIdSet={selectedCueIdSet}
+                primarySelectedId={primarySelectedId}
+                listHasEditFocus={listHasEditFocus}
+                hoveredTargetId={hoveredTargetId}
+                selectedTargetId={selectedTargetId}
+                targetHighlightToken={targetHighlightToken}
+                renamingCueId={renamingCueId}
+                renameValue={renameValue}
+                onHoverChange={onHoverChange}
+                onSelect={onSelect}
+                onContextMenu={onContextMenu}
+                onRenameChange={onRenameChange}
+                onRenameCommit={onRenameCommit}
+                onRenameCancel={onRenameCancel}
+              />,
+            ]
+          : []),
+        ...(canEdit && cueDragging
+          ? [
+              <CueContainerTrailingDrop
+                key={`${node.cue.id}-children-trailing`}
+                canEdit={canEdit}
+                containerId={node.cue.id}
+                depth={node.depth + 1}
+                mode="children-end"
+              />,
+              <CueContainerTrailingDrop
+                key={`${node.cue.id}-exit-trailing`}
+                canEdit={canEdit}
+                containerId={node.cue.id}
+                depth={node.depth}
+                mode="exit"
+              />,
+            ]
+          : []),
       ];
     }
 

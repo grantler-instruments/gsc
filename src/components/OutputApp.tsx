@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import GlobalStyles from "@mui/material/GlobalStyles";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useAppViewport } from "../hooks/useAppViewport";
 import { useNdiFramePublisher } from "../hooks/useNdiFramePublisher";
 import { useOutputAssetReceiver } from "../hooks/useOutputAssetReceiver";
 import { useOutputWindowKeyboard } from "../hooks/useOutputWindowKeyboard";
@@ -22,6 +23,7 @@ export function OutputApp() {
   const layers = useResolvedOutputLayers(state);
   const channelRef = useRef<BroadcastChannel | null>(null);
 
+  useAppViewport();
   useNdiFramePublisher();
   useOutputAssetReceiver();
   useOutputWindowLifecycle();
@@ -70,16 +72,16 @@ export function OutputApp() {
       <GlobalStyles
         styles={{
           "#root": {
-            width: "100vw",
-            height: "100vh",
+            width: "var(--app-vw, 100vw)",
+            height: "var(--app-vh, 100vh)",
             background: "#000",
           },
         }}
       />
       <Box
         sx={{
-          width: "100vw",
-          height: "100vh",
+          width: "var(--app-vw, 100vw)",
+          height: "var(--app-vh, 100vh)",
           bgcolor: "#000",
           overflow: "hidden",
         }}

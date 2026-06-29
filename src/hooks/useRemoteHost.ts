@@ -1,6 +1,8 @@
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useRef } from "react";
+import { t } from "../i18n/t";
 import { registerHostSelectionBroadcaster } from "../lib/host-selection-bridge";
+import { formatAppError, notifyWarningDeduped } from "../lib/notifications";
 import { broadcastRemoteSnapshot, handleRemoteHostCommand } from "../lib/remote-host";
 import { getPlatform } from "../platform";
 import {
@@ -57,19 +59,21 @@ export function useRemoteHost(sessionReady: boolean): void {
       void broadcastRemoteSnapshot();
     };
 
-    void (async () => {
+    const attemptAutoStart = async () => {
+      if (autoStartAttempted.current) return;
+      if (!usePreferencesStore.persist.hasHydrated()) return;
+
+      autoStartAttempted.current = true;
+
       const status = await getRemoteServerStatus();
       if (status.running) {
         pushSnapshot();
         return;
       }
-      if (autoStartAttempted.current) {
-        return;
-      }
-      autoStartAttempted.current = true;
 
       const prefs = usePreferencesStore.getState();
       if (!prefs.remoteAutoStart) return;
+
       const preferredPin = /^\d{6}$/.test(prefs.remotePin) ? prefs.remotePin : undefined;
       try {
         const info = await startRemoteServer(prefs.remotePort, preferredPin);
@@ -79,8 +83,14 @@ export function useRemoteHost(sessionReady: boolean): void {
         pushSnapshot();
       } catch (err) {
         console.warn("[remote] auto-start failed", err);
+        notifyWarningDeduped(`${t("remote.autoStartFailed")}: ${formatAppError(err)}`);
       }
-    })();
+    };
+
+    void attemptAutoStart();
+    const unsubPrefsHydrated = usePreferencesStore.persist.onFinishHydration(() => {
+      void attemptAutoStart();
+    });
 
     const scheduleBroadcast = () => {
       if (broadcastTimer.current !== null) {
@@ -117,6 +127,7 @@ export function useRemoteHost(sessionReady: boolean): void {
     ];
 
     return () => {
+      unsubPrefsHydrated();
       unsubRoot();
       void setRemoteProjectRoot(null);
       unregisterSelectionBroadcaster();

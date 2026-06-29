@@ -98,19 +98,30 @@ export function usePlaybackProgress(): void {
       }
 
       sessionsRef.current.set(cueId, {
-        goAtMs: goAtByCueIdRef.current.get(cueId) ?? performance.now(),
+        goAtMs: goAtByCueIdRef.current.get(cueId) ?? Date.now(),
         bounds: createPlaybackBounds(cue, sourceDurationSec),
       });
     };
 
     const syncSessions = (activeCueIds: string[]) => {
-      const now = performance.now();
+      const now = Date.now();
+      const { cueStartedAtMs } = useTransportStore.getState();
       const cueById = allProjectCuesById();
 
       for (const id of activeCueIds) {
-        if (!goAtByCueIdRef.current.has(id)) {
+        const transportGoAt = cueStartedAtMs[id];
+        if (transportGoAt !== undefined) {
+          goAtByCueIdRef.current.set(id, transportGoAt);
+        } else if (!goAtByCueIdRef.current.has(id)) {
           goAtByCueIdRef.current.set(id, now);
         }
+
+        const session = sessionsRef.current.get(id);
+        const resolvedGoAt = goAtByCueIdRef.current.get(id) ?? now;
+        if (session && session.goAtMs !== resolvedGoAt) {
+          session.goAtMs = resolvedGoAt;
+        }
+
         const cue = cueById.get(id);
         if (cue && cueShowsPlaybackProgress(cue)) {
           tryStartSession(id, cue);
@@ -135,12 +146,13 @@ export function usePlaybackProgress(): void {
 
       const { activeCueIds, runningSequences } = useTransportStore.getState();
       const cueById = allProjectCuesById();
-      const now = performance.now();
+      const nowWall = Date.now();
+      const nowPerf = performance.now();
       const entries: CuePlaybackProgress[] = [];
       const completedCueIds: string[] = [];
 
       for (const runningSequence of Object.values(runningSequences)) {
-        const stepElapsedSec = (now - runningSequence.stepStartedAtMs) / 1000;
+        const stepElapsedSec = (nowPerf - runningSequence.stepStartedAtMs) / 1000;
         for (const cueId of runningSequence.stepCueIds) {
           const cue = cueById.get(cueId);
           if (!cue || !isWaitCue(cue)) continue;
@@ -158,7 +170,7 @@ export function usePlaybackProgress(): void {
       for (const cueId of activeCueIds) {
         const session = sessionsRef.current.get(cueId);
         if (session) {
-          const elapsedSec = (now - session.goAtMs) / 1000;
+          const elapsedSec = (nowWall - session.goAtMs) / 1000;
           const snapshot = computePlaybackProgressWithBounds(session.bounds, elapsedSec);
 
           entries.push({
@@ -183,8 +195,8 @@ export function usePlaybackProgress(): void {
         }
 
         const bounds = createPlaybackBounds(cue, sourceDurationSec);
-        const goAtMs = goAtByCueIdRef.current.get(cueId) ?? now;
-        const elapsedSec = (now - goAtMs) / 1000;
+        const goAtMs = goAtByCueIdRef.current.get(cueId) ?? nowWall;
+        const elapsedSec = (nowWall - goAtMs) / 1000;
         const snapshot = computePlaybackProgressWithBounds(bounds, elapsedSec);
 
         entries.push({
@@ -240,7 +252,8 @@ export function usePlaybackProgress(): void {
     const unsub = useTransportStore.subscribe((state, prev) => {
       if (
         state.activeCueIds === prev.activeCueIds &&
-        state.runningSequences === prev.runningSequences
+        state.runningSequences === prev.runningSequences &&
+        state.cueStartedAtMs === prev.cueStartedAtMs
       ) {
         return;
       }

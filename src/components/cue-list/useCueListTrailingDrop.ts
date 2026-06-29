@@ -4,6 +4,7 @@ import {
   isExternalFileDrag,
   resolveAssetDropPayloads,
 } from "../../lib/asset-drop";
+import { findCueInLists } from "../../lib/cue-lists";
 import { getLastSiblingOfCue } from "../../lib/cues";
 import { pointerLeftElement } from "../../lib/dom";
 import {
@@ -13,14 +14,13 @@ import {
   setActiveAssetDrag,
   setActiveCueDrag,
 } from "../../lib/drag";
-import { findCueInLists } from "../../lib/cue-lists";
 import { useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
 import { useCueListActions } from "./cueListActionsContext";
 import { useClearOnDragEnd } from "./useClearOnDragEnd";
 
 export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
-  const { listId, onCueReorder } = useCueListActions();
+  const { listId, onCueReparent, onCueReparentToListEnd } = useCueListActions();
   const moveCueToList = useProjectStore((s) => s.moveCueToList);
   const [dropActive, setDropActive] = useState(false);
 
@@ -47,6 +47,14 @@ export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
           setDropActive(true);
           return;
         }
+
+        const dragged = allCues.find((c) => c.id === draggedCueId);
+        if (dragged?.parentId) {
+          e.dataTransfer.dropEffect = "move";
+          setDropActive(true);
+          return;
+        }
+
         const lastSibling = getLastSiblingOfCue(allCues, draggedCueId);
         if (!lastSibling || lastSibling.id === draggedCueId) {
           setDropActive(false);
@@ -60,7 +68,7 @@ export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
       e.dataTransfer.dropEffect = "copy";
       setDropActive(true);
     },
-    [allCues, canEdit],
+    [allCues, canEdit, listId],
   );
 
   const onDragLeave = useCallback((e: React.DragEvent) => {
@@ -81,11 +89,20 @@ export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
         const source = findCueInLists(useProjectStore.getState().cueLists, draggedCueId);
         if (source && source.list.id !== listId) {
           moveCueToList(draggedCueId, listId, { kind: "append" });
-        } else {
-          const lastSibling = getLastSiblingOfCue(allCues, draggedCueId);
-          if (lastSibling && lastSibling.id !== draggedCueId) {
-            onCueReorder(draggedCueId, lastSibling.id, "after");
-          }
+          setActiveCueDrag(null);
+          return;
+        }
+
+        const dragged = allCues.find((c) => c.id === draggedCueId);
+        if (dragged?.parentId) {
+          onCueReparentToListEnd(draggedCueId);
+          setActiveCueDrag(null);
+          return;
+        }
+
+        const lastSibling = getLastSiblingOfCue(allCues, draggedCueId);
+        if (lastSibling && lastSibling.id !== draggedCueId) {
+          onCueReparent(draggedCueId, lastSibling.id, "after");
         }
         setActiveCueDrag(null);
         return;
@@ -109,7 +126,7 @@ export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
         }
       })();
     },
-    [allCues, canEdit, listId, moveCueToList, onCueReorder],
+    [allCues, canEdit, listId, moveCueToList, onCueReparent, onCueReparentToListEnd],
   );
 
   return {

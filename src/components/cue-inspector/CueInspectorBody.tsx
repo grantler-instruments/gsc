@@ -72,6 +72,7 @@ export function CueInspectorBody({
             readOnly={readOnly}
             onNameChange={(name) => onUpdate({ name })}
             onNotesChange={(notes) => onUpdate({ notes })}
+            onTriggerNoteChange={(triggerNote) => onUpdate({ triggerNote })}
           />
 
           {isFadeCue(cue) && <FadeInspectorFields fadeCue={cue} />}
@@ -96,6 +97,7 @@ export function CueInspectorBody({
         readOnly={readOnly}
         onNameChange={(name) => onUpdate({ name })}
         onNotesChange={(notes) => onUpdate({ notes })}
+        onTriggerNoteChange={(triggerNote) => onUpdate({ triggerNote })}
       />
 
       {assetWarning && <CueAssetAssign cue={cue} readOnly={readOnly} />}

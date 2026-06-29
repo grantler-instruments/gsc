@@ -6,6 +6,7 @@ import { persistProjectSession, persistProjectSessionAsync } from "../lib/projec
 import { getPlatform } from "../platform";
 import { persistPlatformProject, restorePlatformProject } from "../platform/project-storage";
 import { useProjectStore } from "../stores/project";
+import { useProjectLoadingStore } from "../stores/project-loading";
 import { useProjectLocationStore } from "../stores/project-location";
 import { useVfsStore } from "../stores/vfs";
 
@@ -75,6 +76,7 @@ export function useProjectSession(): boolean {
           }
         }),
       );
+      useProjectLoadingStore.getState().clearAssetProgress();
       setReady(true);
     })();
 

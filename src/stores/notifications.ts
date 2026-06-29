@@ -4,15 +4,28 @@ import { randomId } from "../lib/random-id";
 
 export type NotificationSeverity = "error" | "warning" | "info" | "success";
 
+export interface AppNotificationAction {
+  label: string;
+  href: string;
+}
+
 export interface AppNotification {
   id: string;
   message: string;
   severity: NotificationSeverity;
+  action?: AppNotificationAction;
+  /** Persist dismissal for update prompts keyed by remote version. */
+  updateVersion?: string;
+}
+
+interface NotificationExtras {
+  action?: AppNotificationAction;
+  updateVersion?: string;
 }
 
 interface NotificationsState {
   queue: AppNotification[];
-  push: (message: string, severity?: NotificationSeverity) => void;
+  push: (message: string, severity?: NotificationSeverity, extras?: NotificationExtras) => void;
   dismiss: (id: string) => void;
 }
 
@@ -21,9 +34,18 @@ export const useNotificationsStore = create<NotificationsState>()(
     (set) => ({
       queue: [],
 
-      push: (message, severity = "info") =>
+      push: (message, severity = "info", extras) =>
         set((s) => ({
-          queue: [...s.queue, { id: randomId(), message, severity }],
+          queue: [
+            ...s.queue,
+            {
+              id: randomId(),
+              message,
+              severity,
+              action: extras?.action,
+              updateVersion: extras?.updateVersion,
+            },
+          ],
         })),
 
       dismiss: (id) =>

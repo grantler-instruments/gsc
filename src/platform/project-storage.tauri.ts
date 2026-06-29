@@ -27,6 +27,7 @@ import {
   saveAllVfsAssetsToDisk,
   virtualPathsFromRelativeFiles,
   writeAssetToDisk,
+  writeBundleFilesToDisk,
 } from "../lib/project-disk";
 import { replaceProjectWithoutHistory } from "../lib/project-history";
 import {
@@ -39,6 +40,8 @@ import {
 } from "../lib/project-paths";
 import { collectSessionAssetPaths } from "../lib/project-session";
 import { snapshotToCueLists } from "../lib/project-snapshot";
+import { isQlab5WorkspacePath } from "../lib/qlab5/import-qlab5-project";
+import { confirmAndImportQlab5Path } from "../lib/qlab5-import-actions";
 import { randomId } from "../lib/random-id";
 import type { RecentProjectEntry } from "../lib/recent-projects";
 import {
@@ -48,6 +51,7 @@ import {
 } from "../lib/recent-projects";
 import { hasMeaningfulProjectContent, snapshotHasMeaningfulContent } from "../lib/unsaved-project";
 import { useProjectStore } from "../stores/project";
+import { useProjectLoadingStore } from "../stores/project-loading";
 import { useProjectLocationStore } from "../stores/project-location";
 import type { PendingDraftProject } from "../stores/startup-projects-prompt";
 import { requestStartupProjectsChoice } from "../stores/startup-projects-prompt";
@@ -162,15 +166,7 @@ export async function promptTauriProjectFolder(
 
 async function writeBundleFilesToFolder(rootDir: string, zipData: Uint8Array): Promise<void> {
   const { files } = projectBundleDiskFiles(zipData);
-  const sep = rootDir.includes("\\") ? "\\" : "/";
-  const base = rootDir.replace(/[/\\]+$/, "");
-
-  for (const { relativePath, data } of files) {
-    const diskPath = `${base}${sep}${relativePath.replace(/\//g, sep)}`;
-    const dir = diskPath.replace(/[/\\][^/\\]+$/, "");
-    await ensureDiskDir(dir);
-    await writeDiskFile(diskPath, data);
-  }
+  await writeBundleFilesToDisk(rootDir, files, writeDiskFile, ensureDiskDir);
 }
 
 async function writeDiskFile(diskPath: string, data: Uint8Array): Promise<void> {
@@ -266,7 +262,16 @@ export async function loadProjectFromFolder(
   );
   const uniquePaths = [...new Set(paths)];
 
-  await registerDiskAssetPaths(rootDir, uniquePaths, async (diskPath) => exists(diskPath));
+  const { initAssetProgress, setAssetStatus } = useProjectLoadingStore.getState();
+  initAssetProgress(uniquePaths.map((path) => ({ path })));
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
+
+  await registerDiskAssetPaths(rootDir, uniquePaths, async (diskPath) => exists(diskPath), {
+    onPathStart: (path) => setAssetStatus(path, "loading"),
+    onPathComplete: (path, loaded) => setAssetStatus(path, loaded ? "loaded" : "missing"),
+  });
 
   useVfsStore.setState({ entries: vfsEntriesFromPaths(uniquePaths) });
   prefetchMediaDurations(
@@ -359,6 +364,27 @@ async function openPickedProjectPath(path: string): Promise<boolean> {
   if (isGscProjectDirPath(path)) {
     return openProjectDirFromPath(path);
   }
+  if (isQlab5WorkspacePath(path)) {
+    return confirmAndImportQlab5Path(path);
+  }
+  notifyWarning(
+    t("notification.chooseProjectType", {
+      projectExt: PROJECT_DIR_EXTENSION,
+      bundleExt: BUNDLE_EXTENSION,
+    }),
+  );
+  return false;
+}
+
+async function openPickedFolderPath(folderPath: string): Promise<boolean> {
+  if (isGscProjectDirPath(folderPath)) {
+    return openProjectDirFromPath(folderPath);
+  }
+  const { findQlab5WorkspaceInDirectory } = await import("./qlab5-import.tauri");
+  const workspacePath = await findQlab5WorkspaceInDirectory(folderPath);
+  if (workspacePath) {
+    return confirmAndImportQlab5Path(folderPath);
+  }
   notifyWarning(
     t("notification.chooseProjectType", {
       projectExt: PROJECT_DIR_EXTENSION,
@@ -379,6 +405,7 @@ export async function pickAndOpenProject(): Promise<boolean> {
       filters: [
         { name: "GSC project", extensions: ["gsc"] },
         { name: "GSC project bundle", extensions: ["gsc.zip", "zip"] },
+        { name: "QLab 5 workspace", extensions: ["qlab5"] },
       ],
     });
     if (typeof selected !== "string") return false;
@@ -396,7 +423,7 @@ export async function pickAndOpenProject(): Promise<boolean> {
     title: t("notification.dialogOpenProjectFolder"),
   });
   if (typeof folderPath === "string") {
-    return openProjectDirFromPath(folderPath);
+    return openPickedFolderPath(folderPath);
   }
 
   const bundlePath = await open({

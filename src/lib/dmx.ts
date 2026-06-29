@@ -4,9 +4,9 @@ import type { DmxCueData, DmxCueMode, DmxFixtureValues } from "../types/cue";
 import type { Fixture } from "../types/fixture";
 import { fixtureChannelAddress } from "./fixtures";
 
+export { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "./dmx-defaults";
+
 export const DMX_VALUE_MAX = 255;
-export const DEFAULT_ART_NET_HOST = "127.0.0.1";
-export const DEFAULT_ART_NET_PORT = 6454;
 
 const universeBuffers = new Map<number, Uint8Array>();
 

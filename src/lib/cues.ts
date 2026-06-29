@@ -57,6 +57,13 @@ export function getFadeTarget(fadeCue: Cue, cues: Cue[]): Cue | undefined {
   return target;
 }
 
+/** Resolved target cue id for stop and fade utility cues. */
+export function getCueTargetId(cue: Cue, cues: Cue[]): string | null {
+  if (isStopCue(cue)) return getStopTarget(cue, cues)?.id ?? null;
+  if (isFadeCue(cue)) return getFadeTarget(cue, cues)?.id ?? null;
+  return null;
+}
+
 export function formatStopTargetLabel(target: Cue): string {
   return `${target.number} ${target.name}`;
 }

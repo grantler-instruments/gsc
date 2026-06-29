@@ -27,6 +27,21 @@ vi.mock("./project-idb", () => ({
     idbState.activeProjectId = record.id;
   }),
   idbGetProject: vi.fn(async (projectId: string) => idbState.projects.get(projectId)),
+  idbListProjects: vi.fn(async () =>
+    [...idbState.projects.entries()].map(([id, record]) => ({
+      id,
+      name: record.snapshot.name,
+      updatedAt: 0,
+      openedAt: 0,
+    })),
+  ),
+  idbTouchProjectOpened: vi.fn(async () => undefined),
+  idbDeleteProject: vi.fn(async (projectId: string) => {
+    idbState.projects.delete(projectId);
+  }),
+  idbClearActiveProjectId: vi.fn(async () => {
+    idbState.activeProjectId = undefined;
+  }),
   resetProjectIdbForTests: vi.fn(),
 }));
 
@@ -52,6 +67,25 @@ describe("project-session", () => {
     idbState.projects.clear();
     useProjectStore.setState(initialProjectData);
     useVfsStore.setState({ entries: [] });
+  });
+
+  it("does not persist a blank show", async () => {
+    await persistProjectSessionAsync();
+
+    expect(idbState.projects.size).toBe(0);
+    expect(idbState.activeProjectId).toBeUndefined();
+  });
+
+  it("removes a stored project when it becomes empty", async () => {
+    useProjectStore.setState({ name: "Saved Show" });
+    await persistProjectSessionAsync();
+    expect(idbState.projects.size).toBe(1);
+
+    useProjectStore.setState(initialProjectData);
+    await persistProjectSessionAsync();
+
+    expect(idbState.projects.size).toBe(0);
+    expect(idbState.activeProjectId).toBeUndefined();
   });
 
   it("persists and restores the active project snapshot", async () => {

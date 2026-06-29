@@ -1,0 +1,123 @@
+{
+  "$classname": "F53Workspace",
+  "name": "GSC Import Fixture",
+  "uniqueID": "ws-fixture-001",
+  "currentCueListID": "list-main-001",
+  "archiveVersion": "5.0-test",
+  "cueLists": [
+    {
+      "$classname": "F53CueList",
+      "uniqueID": "list-main-001",
+      "name": "Main Cue List",
+      "type": "CueList",
+      "cues": [
+        {
+          "$classname": "F53AudioCue",
+          "uniqueID": "cue-audio-001",
+          "number": "1",
+          "name": "Intro Audio",
+          "type": "Audio",
+          "continueMode": "do_not_continue",
+          "fileTarget": "audio/white-noise-short-a.wav",
+          "level": 0.85,
+          "pan": 0,
+          "fadeInTime": 1,
+          "fadeOutTime": 0.5,
+          "startTime": 0,
+          "endTime": 2,
+          "loop": false
+        },
+        {
+          "$classname": "F53VideoCue",
+          "uniqueID": "cue-video-001",
+          "number": "2",
+          "name": "Intro Video",
+          "type": "Video",
+          "continueMode": "auto_continue",
+          "fileTarget": "video/test-video-playback.mp4",
+          "opacity": 1
+        },
+        {
+          "$classname": "F53GroupCue",
+          "uniqueID": "cue-group-001",
+          "number": "3",
+          "name": "Parallel Group",
+          "type": "Group",
+          "groupMode": "start_all",
+          "cues": [
+            {
+              "$classname": "F53AudioCue",
+              "uniqueID": "cue-audio-002",
+              "number": "3.1",
+              "name": "Stinger",
+              "type": "Audio",
+              "fileTarget": "audio/white-noise-short-b.wav"
+            }
+          ]
+        },
+        {
+          "$classname": "F53GroupCue",
+          "uniqueID": "cue-seq-001",
+          "number": "4",
+          "name": "Timeline Group",
+          "type": "Group",
+          "groupMode": "timeline",
+          "cues": [
+            {
+              "$classname": "F53WaitCue",
+              "uniqueID": "cue-wait-001",
+              "number": "4.1",
+              "name": "Hold",
+              "type": "Wait",
+              "duration": 2
+            },
+            {
+              "$classname": "F53StopCue",
+              "uniqueID": "cue-stop-001",
+              "number": "4.2",
+              "name": "Stop Intro",
+              "type": "Stop",
+              "targetUniqueID": "cue-audio-001"
+            }
+          ]
+        },
+        {
+          "$classname": "F53MIDICue",
+          "uniqueID": "cue-midi-001",
+          "number": "5",
+          "name": "MIDI Note",
+          "type": "MIDI",
+          "midiMessageType": "note-on",
+          "channel": 1,
+          "note": 60,
+          "velocity": 100
+        },
+        {
+          "$classname": "F53NetworkCue",
+          "uniqueID": "cue-osc-001",
+          "number": "6",
+          "name": "OSC Cue",
+          "type": "Network",
+          "destinationHost": "127.0.0.1",
+          "destinationPort": 53000,
+          "oscAddress": "/cue/1/start"
+        },
+        {
+          "$classname": "F53MemoCue",
+          "uniqueID": "cue-memo-001",
+          "number": "7",
+          "name": "Operator Note",
+          "type": "Memo",
+          "notes": "Check levels before GO"
+        },
+        {
+          "$classname": "F53ScriptCue",
+          "uniqueID": "cue-script-001",
+          "number": "8",
+          "name": "AppleScript",
+          "type": "Script"
+        }
+      ]
+    }
+  ]
+}

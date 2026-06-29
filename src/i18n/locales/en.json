@@ -7,6 +7,7 @@
       "browse": "Browse…",
       "none": "None",
       "remove": "Remove",
+      "delete": "Delete",
       "edit": "Edit",
       "done": "Done",
       "import": "Import",
@@ -23,10 +24,12 @@
       "stopAll": "Stop all",
       "copy": "Copy",
       "cut": "Cut",
+      "paste": "Paste",
       "duplicate": "Duplicate",
       "rename": "Rename",
       "collapse": "Collapse",
-      "expand": "Expand"
+      "expand": "Expand",
+      "ok": "OK"
     },
     "state": {
       "connected": "Connected",
@@ -49,7 +52,11 @@
     "english": "English",
     "german": "Deutsch",
     "spanish": "Español",
-    "chinese": "中文"
+    "chinese": "中文",
+    "arabic": "العربية",
+    "french": "Français",
+    "portuguese": "Português",
+    "russian": "Русский"
   },
   "project": {
     "defaultName": "Untitled Show",
@@ -61,6 +68,13 @@
     "nameAriaLabel": "Show name",
     "draftHint": " · Draft (save to choose location)",
     "savingToHint": " · Saving to {{folder}}",
+    "restoringProject": "Restoring project…",
+    "loadingAssets": "Loading assets…",
+    "assetLoadProgress": "{{loaded}} / {{total}} loaded",
+    "assetStatusLoaded": "Loaded",
+    "assetStatusMissing": "Missing",
+    "assetStatusLoading": "Loading…",
+    "assetStatusPending": "Pending",
     "metadata": {
       "title": "Show details",
       "name": "Name",
@@ -83,11 +97,29 @@
     "installPwa": "Install PWA…",
     "installPwaHint": "Install the browser app, not the desktop download",
     "open": "Open…",
-    "openWebHint": "Import a {{extension}} file",
+    "openWebHint": "Choose a saved project or import {{extension}}",
+    "storedProjects": "Saved projects",
+    "lastOpened": "Opened {{timestamp}}",
+    "deleteStoredProject": "Delete {{projectName}}",
+    "openWebEmpty": "No saved projects in this browser yet. Import a {{extension}} file to get started.",
     "save": "Save",
     "saveChooseLocation": "Choose location…",
     "export": "Export…",
-    "exportHint": "Download {{extension}} with all assets"
+    "exportHint": "Download {{extension}} with all assets",
+    "openFromDisk": "Open file…",
+    "openQlabFolder": "QLab project folder…"
+  },
+  "qlab5Import": {
+    "confirmTitle": "Import QLab project?",
+    "confirmMessage": "“{{name}}” is a QLab 5 project. Import it as a GSC project?",
+    "confirmImport": "Import",
+    "reportTitle": "QLab import report",
+    "reportIntro": "Imported “{{name}}” with {{cueCount}} cues in {{listCount}} list(s).",
+    "reportClean": "All cues were imported without issues.",
+    "skippedTitle": "Skipped or partial cues",
+    "missingAssetsTitle": "Missing media files",
+    "warningsTitle": "Warnings",
+    "failed": "Could not import the QLab workspace."
   },
   "support": {
     "menuItem": "Support…",
@@ -99,7 +131,12 @@
     "funding": "If you want to go a step further, buying a coffee helps carve out time for development.",
     "thanks": "Thanks for using GSC.",
     "buyMeACoffeeAlt": "Buy Me a Coffee",
-    "buyMeACoffeeAria": "Buy the developer a coffee (opens in a new tab)"
+    "buyMeACoffeeAria": "Buy the developer a coffee (opens in a new tab)",
+    "version": "Version {{version}}"
+  },
+  "update": {
+    "available": "Version {{latest}} is available (you have {{current}}).",
+    "viewRelease": "View release"
   },
   "installPwa": {
     "title": "Install PWA",
@@ -110,6 +147,7 @@
     "title": "Settings",
     "navAria": "Settings categories",
     "categoryGeneral": "General",
+    "version": "Version",
     "categoryAudio": "Audio",
     "categoryVideo": "Video",
     "categoryDmx": "DMX",
@@ -138,6 +176,8 @@
     "noMidiOutputsBrowser": "No MIDI outputs found. Grant access when the browser prompts.",
     "noMidiInputs": "No MIDI inputs found.",
     "noMidiInputsBrowser": "No MIDI inputs found. Grant access when the browser prompts.",
+    "midiDebounceMs": "MIDI debounce (ms)",
+    "midiDebounceMsHint": "Ignore repeat presses on the same control within this window. Set to 0 to disable.",
     "dmxOutput": "DMX output",
     "artNetUdp": "Art-Net (UDP)",
     "enttecDmxUsbPro": "Enttec DMX USB Pro",
@@ -165,6 +205,7 @@
     "pin": "PIN (6 digits)",
     "generatePin": "Generate",
     "autoStart": "Start remote automatically on launch",
+    "autoStartFailed": "Remote server could not start automatically",
     "start": "Start remote",
     "stop": "Stop remote",
     "pinLabel": "PIN",
@@ -207,7 +248,11 @@
     "fireHotCue": "Fire hot cue…",
     "fireHotCueShort": "Hot cue",
     "hotMissingCue": "Fire (missing hot cue)",
-    "hotCueWithName": "Fire {{number}} — {{name}}"
+    "hotCueWithName": "Fire {{number}} — {{name}}",
+    "previousCue": "Previous cue",
+    "nextCue": "Next cue",
+    "previousCueShort": "Prev cue",
+    "nextCueShort": "Next cue"
   },
   "transport": {
     "go": "GO",
@@ -262,7 +307,20 @@
   },
   "unsaved": {
     "title": "Save changes?",
-    "body": "Do you want to save the changes you made to \"{{projectName}}\" before creating a new project?"
+    "body": "Do you want to save the changes you made to \"{{projectName}}\" before creating a new project?",
+    "beforeDeleteBody": "Do you want to save \"{{projectName}}\" before deleting it from this browser?"
+  },
+  "deleteStoredProject": {
+    "title": "Delete saved project?",
+    "body": "Delete \"{{projectName}}\" from this browser? This cannot be undone. Export a {{extension}} file first if you want a backup."
+  },
+  "deleteAssetInUse": {
+    "title": "Asset in use",
+    "body": "\"{{assetName}}\" is used by {{count}} cue(s) and can't be deleted. You can delete the cue(s) that use it, or keep everything as is.",
+    "deleteCues": "Delete cues using this asset",
+    "confirmTitle": "Delete cues using this asset?",
+    "confirmBody": "This permanently deletes {{count}} cue(s) that use \"{{assetName}}\" and then removes the asset. This can't be undone.",
+    "confirmDelete": "Delete cues"
   },
   "dmxPreview": {
     "title": "Keep preview changes?",
@@ -298,6 +356,8 @@
   },
   "cueList": {
     "tabsAria": "Cue lists",
+    "tabContextMenuAria": "Cue list actions",
+    "copySuffix": "copy",
     "tabTitleEditable": "{{name}} ({{count}} cues). Double-click to rename.",
     "tabTitle": "{{name}} ({{count}} cues)",
     "closeTabAria": "Close {{name}}",
@@ -350,6 +410,8 @@
     "name": "Name",
     "notes": "Notes",
     "notesPlaceholder": "Production notes, lines, reminders…",
+    "triggerNote": "Trigger note",
+    "triggerNotePlaceholder": "Shown when this cue is selected…",
     "sequence": "Sequence",
     "parallelGroup": "Parallel group",
     "playback": "Playback",
@@ -360,6 +422,7 @@
     "addWaitStep": "Add wait step",
     "noCuesInContainer": "No cues in this sequence/group yet.",
     "removeFromContainer": "Remove from container",
+    "ungroupContainer": "Ungroup",
     "waitHint": "Waits only run inside a sequence. Duration is in seconds.",
     "durationSeconds": "Duration (s)",
     "stopCue": "Stop cue",
@@ -465,7 +528,20 @@
     "selectAnAsset": "Select an asset",
     "assetNotLoaded": "Asset not loaded",
     "fileNotAvailable": "File not available — re-import in Assets",
-    "assetMissingFromProject": "Asset missing from project"
+    "assetMissingFromProject": "Asset missing from project",
+    "search": "Search assets",
+    "filterType": "Filter by type",
+    "filterTypeCount": "Type ({{count}})",
+    "filterAll": "All types",
+    "sort": "Sort",
+    "sortNameAsc": "Name A–Z",
+    "sortNameDesc": "Name Z–A",
+    "sortTypeAsc": "Type",
+    "sortTypeDesc": "Type (reverse)",
+    "noMatches": "No assets match your search.",
+    "filtersActive": "{{count}} active filter(s)",
+    "showingFiltered": "Showing {{visible}} of {{total}}",
+    "clearFilters": "Clear filters"
   },
   "fixtures": {
     "dropHint": "Add fixtures with + Fixture below, or import a profile.",
@@ -542,6 +618,7 @@
   "playback": {
     "inPointAria": "In point",
     "outPointAria": "Out point",
+    "seekAria": "Seek playback position",
     "progressAria": "Playback {{time}}{{loopPart}}",
     "loopIteration": "Loop iteration {{number}}",
     "loopOfTotal": "Loop {{current}} of {{total}}",
@@ -580,6 +657,7 @@
     "assetReadFailed": "Could not read asset: {{path}}",
     "exportMissingAssets": "Exported, but {{count}} asset(s) were missing from storage.",
     "openProjectFailed": "Could not open the selected project.",
+    "deleteProjectFailed": "Could not delete the selected project.",
     "restoreProjectFailed": "Could not restore the last project.",
     "browserSaveFailed": "Could not save the project to browser storage.",
     "autosaveFailed": "Could not autosave the project.",
@@ -612,6 +690,7 @@
     "useCaseInstallationTitle": "Installations & exhibits",
     "useCaseInstallationDesc": "Loop timed sequences of audio, video, and images. Trigger OSC or MIDI to interactives, lighting, or gallery gear without a full media-server stack.",
     "featuresHeading": "Features",
+    "languageLabel": "Language",
     "contact": "Contact",
     "copyright": "© {{year}} Grantler Instruments.",
     "contributionsBefore": "Contributions are very welcome via the ",
@@ -631,6 +710,8 @@
     "featureMidiDesc": "Send note, control change, and program change messages on GO to your MIDI gear.",
     "featureOscTitle": "OSC",
     "featureOscDesc": "Send Open Sound Control messages on GO — each cue carries its own destination, address, and arguments. Available in the desktop app only; not available in the web.",
+    "featureLightTitle": "Light",
+    "featureLightDesc": "Send DMX lighting cues on GO — set fixture levels or recall snapshots. Desktop app only.",
     "featureWaitTitle": "Wait",
     "featureWaitDesc": "Timed pauses between steps inside a sequence — hold the show without manual timing.",
     "featureStopTitle": "Stop",
@@ -639,6 +720,10 @@
     "featureVolumeFadeDesc": "Automate audio level changes over time with a dedicated fade cue.",
     "featureOpacityFadeTitle": "Opacity fade",
     "featureOpacityFadeDesc": "Automate visual opacity over time for video and image cues.",
+    "featurePanFadeTitle": "Pan fade",
+    "featurePanFadeDesc": "Automate stereo pan over time for audio and video cues.",
+    "featureLightFadeTitle": "Light fade",
+    "featureLightFadeDesc": "Fade DMX fixture levels toward a target over time. Desktop app only.",
     "featureParallelTitle": "Parallel",
     "featureParallelDesc": "A container for parallel cues — one GO fires every child in the group at the same time.",
     "featureSequenceTitle": "Sequence",
@@ -649,6 +734,8 @@
     "featureImportDesc": "Drop WAV, MP3, MP4, PNG, and more into the asset library and wire them to cues.",
     "featureTrimTitle": "Trim with waveforms",
     "featureTrimDesc": "Set precise in and out points on audio and video with a visual editor.",
+    "featureQlabImportTitle": "Import QLab 5 shows",
+    "featureQlabImportDesc": "Bring existing QLab 5 workspaces into GSC through Open… — review imported cues, fades, and media. Experimental.",
     "featureGoTitle": "GO when you're ready",
     "featureGoDesc": "Large GO and panic controls, keyboard shortcuts, and master volume for the booth.",
     "featureActiveTitle": "See what's playing",
@@ -657,8 +744,14 @@
     "featureShowModeDesc": "Hide editing chrome and focus on firing cues during the performance.",
     "featureOutputTitle": "Drive a second screen",
     "featureOutputDesc": "Open a dedicated output window for audience video and images on another display.",
+    "featureLightingTitle": "Patch and program lighting",
+    "featureLightingDesc": "Patch DMX fixtures, program levels and snapshots, and preview them in the fixture plot. Desktop app only.",
+    "featureNdiTitle": "Stream output over NDI",
+    "featureNdiDesc": "Publish the output window as an NDI source for OBS, vMix, and other tools on your network. Desktop app only.",
     "featureRemoteViewTitle": "Remote View",
     "featureRemoteViewDesc": "Open a browser-based remote view to monitor active cues and show state from another device on your network.",
+    "featureRemoteControlTitle": "Remote control",
+    "featureRemoteControlDesc": "Host a session so phones and tablets on your network can fire cues — GO, panic, cue select, and master volume — in show mode. Desktop app only.",
     "featureControlTitle": "Control with MIDI & OSC",
     "featureControlDesc": "Send MIDI and OSC from cues and map hardware to GO, cue select, and panic. OSC requires the desktop app — it is not available in the web.",
     "featurePortableTitle": "Take shows anywhere",

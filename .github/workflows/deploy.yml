@@ -1,7 +1,11 @@
 name: Deploy to GitHub Pages
 
+# Push-to-main deploys are gated by the CI workflow's result (no duplicate test
+# run). Manual runs (workflow_dispatch) still run the full gate themselves.
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -16,25 +20,16 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-
-      - name: Typecheck
-        run: npx tsc --noEmit
-
-      - name: Unit tests
-        run: npm test
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/test.yml
 
   build:
     needs: test
+    if: >-
+      ${{ always() && (
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+        (github.event_name == 'workflow_dispatch' && needs.test.result == 'success')
+      ) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -45,6 +40,13 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - name: Restore Pages site cache
+        uses: actions/cache/restore@v4
+        with:
+          path: site
+          key: pages-site-${{ github.run_id }}
+          restore-keys: pages-site-
 
       - name: Install ImageMagick
         run: sudo apt-get update && sudo apt-get install -y imagemagick
@@ -55,9 +57,20 @@ jobs:
         env:
           VITE_BASE: /gsc/
 
+      - name: Merge stable build into site
+        run: |
+          mkdir -p site
+          rsync -a dist/ site/
+
+      - name: Save Pages site cache
+        uses: actions/cache/save@v4
+        with:
+          path: site
+          key: pages-site-${{ github.run_id }}
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
 
   deploy:
     needs: build

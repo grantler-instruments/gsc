@@ -24,7 +24,7 @@ import { useCueListDrop } from "./useCueListDrop";
 import { useCueListRename } from "./useCueListRename";
 import { useCueListScrollIntoView } from "./useCueListScrollIntoView";
 import { useCueListSelection } from "./useCueListSelection";
-import { useCueListStopHighlights } from "./useCueListStopHighlights";
+import { useCueListTargetHighlights } from "./useCueListTargetHighlights";
 
 interface CueListProps {
   /** Render a specific list instead of the edit-focus list (split panels). */
@@ -58,6 +58,7 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
   const copySelectedCues = useProjectStore((s) => s.copySelectedCues);
   const cutSelectedCues = useProjectStore((s) => s.cutSelectedCues);
   const duplicateSelectedCues = useProjectStore((s) => s.duplicateSelectedCues);
+  const ungroupCue = useProjectStore((s) => s.ungroupCue);
 
   const selection = useCueListSelection(cues, collapsedGroups, listId);
   useCueListScrollIntoView(selection.primarySelectedId);
@@ -68,7 +69,7 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
     selection.selectedCueIds,
     selection.selectedCueIdSet,
   );
-  const stopHighlights = useCueListStopHighlights(cues, selection.primarySelectedId);
+  const targetHighlights = useCueListTargetHighlights(cues, selection.primarySelectedId);
   const listDrop = useCueListDrop(canEdit, list.id);
 
   const tree = useMemo(() => buildCueTree(cues), [cues]);
@@ -87,7 +88,6 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
         minHeight: 0,
         minWidth: 0,
         overflow: "clip",
-        // Inspector border only when the list sits directly beside it (no hot panel in between).
         borderRight:
           !compact &&
           !showMode &&
@@ -104,9 +104,7 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
       <CueListTabs
         kind={tabsKind}
         activeListId={listId}
-        trailing={
-          listId && tabsKind === "sequence" ? <HotCueVisibilityToggle /> : undefined
-        }
+        trailing={listId && tabsKind === "sequence" ? <HotCueVisibilityToggle /> : undefined}
       />
 
       <CueListActionsProvider
@@ -118,7 +116,7 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
       >
         <Box sx={cueListScrollRegionSx}>
           {isHotList && showMode ? (
-            <HotCueGrid />
+            <HotCueGrid listId={list.id} />
           ) : (
             <CueListBody
               listId={list.id}
@@ -134,6 +132,7 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
               <CueListTree
                 nodes={tree}
                 cues={cues}
+                canEdit={canEdit}
                 collapsedGroups={collapsedGroups}
                 activeCueIds={activeCueIds}
                 runningSequences={runningSequences}
@@ -141,14 +140,12 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
                 selectedCueIdSet={selection.selectedCueIdSet}
                 primarySelectedId={selection.primarySelectedId}
                 listHasEditFocus={listHasEditFocus}
-                hoveredStopTargetId={stopHighlights.hoveredStopTargetId}
-                selectedStopTargetId={stopHighlights.selectedStopTargetId}
-                hoveredFadeTargetId={stopHighlights.hoveredFadeTargetId}
-                selectedFadeTargetId={stopHighlights.selectedFadeTargetId}
-                fadeTargetHighlightToken={stopHighlights.fadeTargetHighlightToken}
+                hoveredTargetId={targetHighlights.hoveredTargetId}
+                selectedTargetId={targetHighlights.selectedTargetId}
+                targetHighlightToken={targetHighlights.targetHighlightToken}
                 renamingCueId={rename.renamingCueId}
                 renameValue={rename.renameValue}
-                onHoverChange={stopHighlights.setHoveredCueId}
+                onHoverChange={targetHighlights.setHoveredCueId}
                 onSelect={selection.handleRowSelect}
                 onContextMenu={contextMenu.handleRowContextMenu}
                 onRenameChange={rename.setRenameValue}
@@ -164,6 +161,7 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
         <CueContextMenu
           menu={contextMenu.contextMenu}
           canRename={contextMenu.canRenameFromMenu}
+          canUngroup={contextMenu.canUngroupFromMenu}
           onClose={() => contextMenu.setContextMenu(null)}
           onCopy={copySelectedCues}
           onCut={cutSelectedCues}
@@ -173,10 +171,15 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
               rename.startRename(contextMenu.contextMenu.cueId);
             }
           }}
+          onUngroup={() => {
+            if (contextMenu.contextMenu) {
+              ungroupCue(contextMenu.contextMenu.cueId);
+            }
+          }}
         />
       )}
 
-      {canEdit && (
+      {canEdit && !isHotList && (
         <Box
           component="footer"
           sx={{

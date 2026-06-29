@@ -24,6 +24,12 @@ const SHORT_FIXTURES = [
 const PLAYBACK_WAV = "white-noise-playback.wav";
 const PLAYBACK_DURATION_SEC = 4;
 
+/** Short clips for sequence/parallel structure tests (keep e2e fast). */
+const SHORT_PLAYBACK_FIXTURES = [
+  { filename: "white-noise-short-a.wav", durationSec: 0.5 },
+  { filename: "white-noise-short-b.wav", durationSec: 0.5 },
+];
+
 /** @type {{ filename: string, args: string[] }[]} */
 const TRANSCODED_FIXTURES = [
   { filename: "white-noise-playback.mp3", args: ["-codec:a", "libmp3lame", "-qscale:a", "4"] },
@@ -77,7 +83,9 @@ function runFfmpeg(inputPath, outputPath, extraArgs) {
   );
 
   if (result.status !== 0) {
-    throw new Error(`ffmpeg failed for ${path.basename(outputPath)} (exit ${result.status ?? "unknown"})`);
+    throw new Error(
+      `ffmpeg failed for ${path.basename(outputPath)} (exit ${result.status ?? "unknown"})`,
+    );
   }
 
   console.log(`Wrote ${path.basename(outputPath)}`);
@@ -89,6 +97,10 @@ for (const fixture of SHORT_FIXTURES) {
 
 const playbackWavPath = path.join(__dirname, PLAYBACK_WAV);
 writeWhiteNoiseWav(playbackWavPath, PLAYBACK_DURATION_SEC);
+
+for (const fixture of SHORT_PLAYBACK_FIXTURES) {
+  writeWhiteNoiseWav(path.join(__dirname, fixture.filename), fixture.durationSec);
+}
 
 for (const fixture of TRANSCODED_FIXTURES) {
   runFfmpeg(playbackWavPath, path.join(__dirname, fixture.filename), fixture.args);

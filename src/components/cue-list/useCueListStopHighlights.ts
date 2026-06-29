@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { getFadeTarget, getStopTarget, isFadeCue, isLightFadeCue, isStopCue } from "../../lib/cues";
 import type { Cue } from "../../types/cue";
 
+/** Stop/fade target highlights for hot-cue pads (separate from unified list-row targets). */
 export function useCueListStopHighlights(cues: Cue[], primarySelectedId: string | null) {
   const [hoveredCueId, setHoveredCueId] = useState<string | null>(null);
 

@@ -1,0 +1,42 @@
+name: Desktop E2E
+description: Build debug Tauri app and run WebdriverIO tests via tauri-driver (Linux)
+runs:
+  using: composite
+  steps:
+    - name: Install Tauri Linux dependencies
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          pkg-config \
+          libwebkit2gtk-4.1-dev \
+          libappindicator3-dev \
+          librsvg2-dev \
+          libasound2-dev \
+          libudev-dev \
+          patchelf \
+          webkit2gtk-driver \
+          xvfb
+
+    - name: Install Rust stable
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Setup Rust cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: src-tauri
+
+    - name: Install cargo-binstall
+      uses: cargo-bins/cargo-binstall@main
+
+    - name: Install tauri-driver
+      shell: bash
+      run: cargo binstall -y tauri-driver
+
+    - name: Generate E2E fixtures
+      shell: bash
+      run: npm run test:e2e:fixtures
+
+    - name: Desktop E2E tests
+      shell: bash
+      run: xvfb-run npm run test:e2e:desktop

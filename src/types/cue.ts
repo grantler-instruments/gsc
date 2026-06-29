@@ -109,6 +109,8 @@ export interface Cue {
   volume?: number;
   /** -1 (full left) to 1 (full right) for audio/video cues. */
   pan?: number;
+  /** 1-based device output channels for audio routing; defaults to [1, 2]. */
+  outputChannels?: number[];
   /** 0–1 for image/video cues. */
   opacity?: number;
   /** For volume/opacity fade cues: cue to fade when triggered. */
@@ -121,6 +123,8 @@ export interface Cue {
   fadeTo?: number;
   /** Production / operator notes for this cue. */
   notes?: string;
+  /** Shown in the top-right when this cue is selected. */
+  triggerNote?: string;
   /** For stop cues: id of the cue to stop when this cue is triggered. */
   stopTargetId?: string;
   /** For wait cues: how long to hold before the next sequence step (seconds). */

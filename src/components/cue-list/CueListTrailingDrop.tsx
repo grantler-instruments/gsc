@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import { useGscTokens } from "../../theme/useGscTokens";
+import { cueListTrailingDropZoneSx } from "./cueDropZoneSx";
 import { useCueListActions } from "./cueListActionsContext";
 import { useCueListTrailingDrop } from "./useCueListTrailingDrop";
 
@@ -20,15 +21,7 @@ export function CueListTrailingDrop({ canEdit }: CueListTrailingDropProps) {
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
-      sx={{
-        flex: 1,
-        minHeight: 40,
-        listStyle: "none",
-        ...(dropActive && {
-          boxShadow: `inset 0 2px 0 ${tokens.accent}`,
-          bgcolor: "rgba(201, 162, 39, 0.06)",
-        }),
-      }}
+      sx={cueListTrailingDropZoneSx(tokens, dropActive)}
     />
   );
 }

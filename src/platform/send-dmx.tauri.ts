@@ -1,10 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { DmxUniverseFrame } from "../lib/dmx";
-import {
-  artNetUniverseFromFixtureUniverse,
-  DEFAULT_ART_NET_HOST,
-  DEFAULT_ART_NET_PORT,
-} from "../lib/dmx";
+import { artNetUniverseFromFixtureUniverse } from "../lib/dmx";
+import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx-defaults";
 import { notifyErrorFromUnknown } from "../lib/notifications";
 
 export async function sendDmxUniversesTauri(

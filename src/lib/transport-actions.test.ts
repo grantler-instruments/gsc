@@ -152,33 +152,31 @@ describe("triggerGoSelected", () => {
     expect(activeListSelection()).toEqual([]);
   });
 
-  it.each([false, true])(
-    "GOs focused hot cue and returns focus to the main list (showMode=%s)",
-    (showMode) => {
-      resetTestProject([testCue("a", "A", "audio"), testCue("b", "B", "audio")]);
-      const main = useProjectStore.getState().cueLists[0];
-      const hot = createCueList("Hot", "hot");
-      hot.cues = [testCue("h1", "Sting", "audio")];
-      useProjectStore.setState({
-        cueLists: [main, hot],
-        activeCueListId: hot.id,
-        mainSequenceListId: main.id,
-        activeHotCueListId: hot.id,
-      });
-      useUiStore.setState({ showMode });
-      useProjectStore.getState().selectCue("h1");
-      useProjectStore.getState().selectCueInList(main.id, "a");
+  it.each([
+    false,
+    true,
+  ])("GOs focused hot cue and returns focus to the main list (showMode=%s)", (showMode) => {
+    resetTestProject([testCue("a", "A", "audio"), testCue("b", "B", "audio")]);
+    const main = useProjectStore.getState().cueLists[0];
+    const hot = createCueList("Hot", "hot");
+    hot.cues = [testCue("h1", "Sting", "audio")];
+    useProjectStore.setState({
+      cueLists: [main, hot],
+      activeCueListId: hot.id,
+      mainSequenceListId: main.id,
+      activeHotCueListId: hot.id,
+    });
+    useUiStore.setState({ showMode });
+    useProjectStore.getState().selectCue("h1");
+    useProjectStore.getState().selectCueInList(main.id, "a");
 
-      triggerGoSelected();
+    triggerGoSelected();
 
-      expect(useTransportStore.getState().activeCueIds).toEqual(["h1"]);
-      expect(useProjectStore.getState().activeCueListId).toBe(main.id);
-      expect(activeListSelection()).toEqual(["a"]);
-      expect(getMainSequenceListFromState(useProjectStore.getState())?.selectedCueIds).toEqual([
-        "a",
-      ]);
-    },
-  );
+    expect(useTransportStore.getState().activeCueIds).toEqual(["h1"]);
+    expect(useProjectStore.getState().activeCueListId).toBe(main.id);
+    expect(activeListSelection()).toEqual(["a"]);
+    expect(getMainSequenceListFromState(useProjectStore.getState())?.selectedCueIds).toEqual(["a"]);
+  });
 
   it("targets the first top-level cue, not a nested child, when nothing is selected", () => {
     resetTestProject([
@@ -190,5 +188,62 @@ describe("triggerGoSelected", () => {
     triggerGoSelected();
 
     expect(useTransportStore.getState().activeCueIds).toEqual(["a"]);
+  });
+});
+
+describe("playback across many cue lists", () => {
+  // There is no maximum number of cue lists, so playback must be able to run
+  // through an arbitrary count of them, auto-advancing to each next tab.
+  const LIST_COUNT = 12;
+
+  beforeEach(() => {
+    resetTransport();
+    useUiStore.setState({ collapsedCueGroupIds: [] });
+    useFadeStore.setState({ fadesByTargetId: {}, dmxFadesByFadeCueId: {}, frameMs: 0 });
+
+    const lists = Array.from({ length: LIST_COUNT }, (_, i) => {
+      const list = createCueList(`List ${i + 1}`);
+      list.cues = [testCue(`cue-${i}`, `Cue ${i + 1}`, "audio")];
+      return list;
+    });
+    useProjectStore.setState({ cueLists: lists, activeCueListId: lists[0].id });
+  });
+
+  it("plays GO through every cue list and auto-advances across all tabs", () => {
+    const lists = useProjectStore.getState().cueLists;
+    expect(lists).toHaveLength(LIST_COUNT);
+
+    const triggered: string[] = [];
+
+    for (let i = 0; i < LIST_COUNT; i++) {
+      const { cueLists, activeCueListId } = useProjectStore.getState();
+      expect(activeCueListId).toBe(cueLists[i].id);
+
+      useProjectStore.getState().selectCue(`cue-${i}`);
+      const cue = cueLists[i].cues.find((c) => c.id === `cue-${i}`);
+      if (!cue) throw new Error(`Expected cue-${i}`);
+
+      triggerGoAndAdvance(cue);
+      triggered.push(`cue-${i}`);
+
+      // Leaf audio GO accumulates the active set, so every triggered cue keeps
+      // playing while the most recent one becomes the primary active cue.
+      expect(useTransportStore.getState().activeCueId).toBe(`cue-${i}`);
+      expect(useTransportStore.getState().activeCueIds).toEqual(triggered);
+
+      if (i < LIST_COUNT - 1) {
+        // After the last cue of a list, selection jumps to the next tab.
+        expect(useProjectStore.getState().activeCueListId).toBe(cueLists[i + 1].id);
+        expect(activeListSelection()).toEqual([`cue-${i + 1}`]);
+      } else {
+        // The final list has no next tab to advance to.
+        expect(useProjectStore.getState().activeCueListId).toBe(cueLists[i].id);
+        expect(activeListSelection()).toEqual([`cue-${i}`]);
+      }
+    }
+
+    expect(triggered).toEqual(Array.from({ length: LIST_COUNT }, (_, i) => `cue-${i}`));
+    // All cues from every list are still active after playing through them.
+    expect(useTransportStore.getState().activeCueIds).toEqual(triggered);
   });
 });

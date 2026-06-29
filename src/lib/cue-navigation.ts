@@ -1,7 +1,4 @@
-import {
-  getMainSequenceListFromState,
-  useProjectStore,
-} from "../stores/project";
+import { getMainSequenceListFromState, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import { flattenVisibleCueIds, getPrimarySelectedCueId, isCueDescendantOf } from "./cue-selection";
 import { isContainerCue } from "./cues";
@@ -60,6 +57,64 @@ export function selectNextCueAfterGo(triggeredCueId: string, listId?: string): v
   }
 
   advanceToNextCueListTab(list.id);
+}
+
+/** Select the next cue in the main sequence list (container-aware; mirrors post-GO advance). */
+export function selectNextCue(): void {
+  const list = getMainSequenceListFromState(useProjectStore.getState());
+  if (!list) return;
+  const collapsed = new Set(useUiStore.getState().collapsedCueGroupIds);
+  const order = flattenVisibleCueIds(list.cues, collapsed);
+  if (order.length === 0) return;
+
+  const current = getPrimarySelectedCueId(list.selectedCueIds);
+  if (!current) {
+    useProjectStore.getState().selectCueInList(list.id, order[0]);
+    return;
+  }
+
+  selectNextCueAfterGo(current, list.id);
+}
+
+/**
+ * Select the previous cue in the main sequence list. When approaching a container
+ * from outside, land on the shallowest containing group instead of its last visible child.
+ */
+export function selectPreviousCue(): void {
+  const list = getMainSequenceListFromState(useProjectStore.getState());
+  if (!list) return;
+  const collapsed = new Set(useUiStore.getState().collapsedCueGroupIds);
+  const order = flattenVisibleCueIds(list.cues, collapsed);
+  if (order.length === 0) return;
+
+  const cues = list.cues;
+  const current = getPrimarySelectedCueId(list.selectedCueIds);
+  if (!current) {
+    useProjectStore.getState().selectCueInList(list.id, order[order.length - 1]);
+    return;
+  }
+
+  const index = order.indexOf(current);
+  if (index <= 0) return;
+
+  const prevId = order[index - 1];
+  let shallowest: string | null = null;
+
+  let parentId = cues.find((c) => c.id === prevId)?.parentId;
+  while (parentId) {
+    const parent = cues.find((c) => c.id === parentId);
+    if (
+      parent &&
+      isContainerCue(parent) &&
+      isCueDescendantOf(cues, parent.id, prevId) &&
+      !isCueDescendantOf(cues, parent.id, current)
+    ) {
+      shallowest = parent.id;
+    }
+    parentId = parent?.parentId;
+  }
+
+  useProjectStore.getState().selectCueInList(list.id, shallowest ?? prevId);
 }
 
 /** After the last cue in a list, switch to the next sequence tab and select its first visible cue. */

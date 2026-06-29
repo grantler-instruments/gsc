@@ -54,13 +54,16 @@ function generateTauriIcons(rootDir: string, faviconPath: string): void {
 export function syncFaviconAssets(rootDir: string): void {
   const publicDir = path.join(rootDir, "public");
   const faviconPath = path.join(publicDir, "favicon.svg");
+  const logoPath = path.join(publicDir, "logo.svg");
   const svg = `${renderGscLogoMarkSvg()}\n`;
   const existingSvg = fs.existsSync(faviconPath) ? fs.readFileSync(faviconPath, "utf8") : null;
+  const existingLogoSvg = fs.existsSync(logoPath) ? fs.readFileSync(logoPath, "utf8") : null;
   const svgUnchanged = existingSvg === svg;
+  const logoSvgUnchanged = existingLogoSvg === svg;
   const pwaAssetsExist = committedAssetsExist(rootDir);
   const tauriExist = tauriIconsExist(rootDir);
 
-  if (svgUnchanged && pwaAssetsExist && tauriExist) {
+  if (svgUnchanged && logoSvgUnchanged && pwaAssetsExist && tauriExist) {
     console.log("[sync-favicon] Favicon assets are up to date; skipping regeneration");
     return;
   }
@@ -78,9 +81,15 @@ export function syncFaviconAssets(rootDir: string): void {
 
   const updated: string[] = [];
 
-  if (!svgUnchanged) {
-    fs.writeFileSync(faviconPath, svg);
-    updated.push("favicon.svg");
+  if (!svgUnchanged || !logoSvgUnchanged) {
+    if (!svgUnchanged) {
+      fs.writeFileSync(faviconPath, svg);
+      updated.push("favicon.svg");
+    }
+    if (!logoSvgUnchanged) {
+      fs.writeFileSync(logoPath, svg);
+      updated.push("logo.svg");
+    }
   }
 
   if (!svgUnchanged || !pwaAssetsExist) {

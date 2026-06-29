@@ -20,6 +20,12 @@ export function clearOutputAssetBlob(projectId: string, assetPath: string): void
   blobs.delete(assetKey(projectId, assetPath));
 }
 
+export function clearOutputAssetBlobsForProject(projectId: string, assetPaths: string[]): void {
+  for (const assetPath of assetPaths) {
+    blobs.delete(assetKey(projectId, assetPath));
+  }
+}
+
 export function clearOutputAssetBlobs(): void {
   blobs.clear();
 }

@@ -7,6 +7,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import { APP_VERSION } from "../lib/app-version";
 import {
   BUY_ME_A_COFFEE_BUTTON_URL,
   BUY_ME_A_COFFEE_URL,
@@ -51,6 +52,9 @@ export function SupportDialog({ open, onClose }: SupportDialogProps) {
             />
           </Link>
         </Box>
+        <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center" }}>
+          {t("support.version", { version: APP_VERSION })}
+        </Typography>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t("common.action.close")}</Button>

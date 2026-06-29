@@ -54,7 +54,9 @@ export function MidiMapPanel() {
     if (
       resolvedLearnAction.type !== "go-selected" &&
       resolvedLearnAction.type !== "panic" &&
-      !resolvedLearnAction.cueId
+      resolvedLearnAction.type !== "previous-cue" &&
+      resolvedLearnAction.type !== "next-cue" &&
+      !("cueId" in resolvedLearnAction && resolvedLearnAction.cueId)
     ) {
       return;
     }
@@ -91,6 +93,8 @@ export function MidiMapPanel() {
             <MenuItem value="go-cue">{t("midiMap.goCue")}</MenuItem>
             <MenuItem value="fire-hot-cue">{t("midiMap.fireHotCue")}</MenuItem>
             <MenuItem value="select-cue">{t("midiMap.selectCue")}</MenuItem>
+            <MenuItem value="previous-cue">{t("midiMap.previousCue")}</MenuItem>
+            <MenuItem value="next-cue">{t("midiMap.nextCue")}</MenuItem>
             <MenuItem value="panic">{t("midiMap.panic")}</MenuItem>
           </Select>
         </Box>
@@ -222,6 +226,8 @@ export function MidiMapPanel() {
                 <MenuItem value="go-cue">{t("midiMap.goCueShort")}</MenuItem>
                 <MenuItem value="fire-hot-cue">{t("midiMap.fireHotCueShort")}</MenuItem>
                 <MenuItem value="select-cue">{t("midiMap.selectShort")}</MenuItem>
+                <MenuItem value="previous-cue">{t("midiMap.previousCueShort")}</MenuItem>
+                <MenuItem value="next-cue">{t("midiMap.nextCueShort")}</MenuItem>
                 <MenuItem value="panic">{t("midiMap.panic")}</MenuItem>
               </Select>
               {(m.action.type === "go-cue" || m.action.type === "select-cue") && (

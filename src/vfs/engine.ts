@@ -85,13 +85,22 @@ export function vfsRemove(path: string): void {
 export async function hydrateVfsFromProjectCache(
   projectId: string,
   paths: string[],
+  options?: {
+    onPathStart?: (path: string) => void;
+    onPathComplete?: (path: string, loaded: boolean) => void;
+  },
 ): Promise<void> {
   await Promise.all(
     paths.map(async (path) => {
       const normalized = normalizePath(path);
-      if (blobs.has(normalized)) return;
+      if (blobs.has(normalized)) {
+        options?.onPathComplete?.(path, true);
+        return;
+      }
+      options?.onPathStart?.(path);
       const blob = await getCachedAsset(projectId, normalized);
       if (blob) blobs.set(normalized, blob);
+      options?.onPathComplete?.(path, Boolean(blob));
     }),
   );
 }

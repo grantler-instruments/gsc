@@ -6,6 +6,7 @@ import {
   flattenVisibleCueIds,
   getPrimarySelectedCueId,
   isCueDescendantOf,
+  ungroupContainerCue,
 } from "./cue-selection";
 
 describe("getPrimarySelectedCueId", () => {
@@ -121,5 +122,54 @@ describe("buildParallelGroupFromSelection", () => {
 
     const ids = result.map((c) => c.id);
     expect(ids.indexOf("uuid-1")).toBeLessThan(ids.indexOf("c"));
+  });
+});
+
+describe("ungroupContainerCue", () => {
+  it("returns null for non-container cues", () => {
+    const cues = [testCue("a", "A", "audio")];
+    expect(ungroupContainerCue(cues, "a")).toBeNull();
+  });
+
+  it("promotes children and removes the container", () => {
+    const cues = [
+      testCue("x", "X", "audio"),
+      testCue("g", "Group", "group"),
+      testCue("a", "A", "audio", { parentId: "g" }),
+      testCue("b", "B", "audio", { parentId: "g" }),
+      testCue("y", "Y", "audio"),
+    ];
+
+    const result = ungroupContainerCue(cues, "g");
+    if (!result) throw new Error("Expected ungrouped result");
+
+    expect(result.some((c) => c.id === "g")).toBe(false);
+    expect(result.find((c) => c.id === "a")?.parentId).toBeUndefined();
+    expect(result.find((c) => c.id === "b")?.parentId).toBeUndefined();
+
+    const topLevelIds = result.filter((c) => !c.parentId).map((c) => c.id);
+    expect(topLevelIds).toEqual(["x", "a", "b", "y"]);
+  });
+
+  it("promotes children to the parent container level", () => {
+    const cues = [
+      testCue("s", "Seq", "sequence"),
+      testCue("g", "Group", "group", { parentId: "s" }),
+      testCue("a", "A", "audio", { parentId: "g" }),
+    ];
+
+    const result = ungroupContainerCue(cues, "g");
+    if (!result) throw new Error("Expected ungrouped result");
+
+    expect(result.find((c) => c.id === "a")?.parentId).toBe("s");
+    expect(result.filter((c) => c.parentId === "s").map((c) => c.id)).toEqual(["a"]);
+  });
+
+  it("removes an empty container", () => {
+    const cues = [testCue("a", "A", "audio"), testCue("g", "Group", "group")];
+    const result = ungroupContainerCue(cues, "g");
+    if (!result) throw new Error("Expected ungrouped result");
+
+    expect(result.map((c) => c.id)).toEqual(["a"]);
   });
 });

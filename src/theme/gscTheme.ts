@@ -7,11 +7,13 @@ function buildComponentOverrides(tokens: GscTokenSet) {
       styleOverrides: {
         ":root": tokensToCssVars(tokens),
         html: {
-          height: "100dvh",
+          height: "var(--app-vh, 100dvh)",
+          width: "var(--app-vw, 100%)",
           colorScheme: "dark" as const,
         },
         body: {
           height: "100%",
+          width: "100%",
           margin: 0,
           minWidth: 0,
           backgroundColor: tokens.bg,
@@ -19,6 +21,7 @@ function buildComponentOverrides(tokens: GscTokenSet) {
         },
         "#root": {
           height: "100%",
+          width: "100%",
           display: "flex",
           flexDirection: "column",
           minHeight: 0,

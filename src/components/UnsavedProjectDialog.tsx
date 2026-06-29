@@ -14,6 +14,7 @@ export function UnsavedProjectDialog() {
   const { t } = useTranslation();
   const open = useUnsavedProjectPromptStore((s) => s.open);
   const projectName = useUnsavedProjectPromptStore((s) => s.projectName);
+  const bodyKey = useUnsavedProjectPromptStore((s) => s.bodyKey);
 
   return (
     <Dialog
@@ -25,7 +26,7 @@ export function UnsavedProjectDialog() {
       <DialogTitle>{t("unsaved.title")}</DialogTitle>
       <DialogContent>
         <Typography sx={{ m: 0, fontSize: 14, color: "text.secondary" }}>
-          {t("unsaved.body", { projectName })}
+          {t(bodyKey, { projectName })}
         </Typography>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>

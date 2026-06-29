@@ -1,10 +1,12 @@
 import { getLoopPlayCount } from "../lib/loop";
 import { getMediaDurationSec } from "../lib/media-duration";
+import { videoTargetTime } from "../lib/video-playback";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
 import type { Cue } from "../types/cue";
 import { getCachedAudioBuffer, loadAudioBuffer } from "./buffer-cache";
 import {
+  seekVideoVoice,
   startVideoVoice,
   stopVideoVoice,
   updateVideoVoiceLevels,
@@ -105,6 +107,9 @@ export class AudioEngine {
     const { offsetSec, durationSec } = playbackWindow(cue, buffer.duration);
     const loopPlayCount = getLoopPlayCount(cue);
     const shouldLoop = loopPlayCount !== 1;
+    const startOffset = videoTargetTime(cue, buffer.duration, goAtMs);
+    const inSlice = Math.max(0, startOffset - offsetSec);
+    const remainingInSlice = Math.max(0.01, durationSec - inSlice);
 
     const source = ctx.createBufferSource();
     source.buffer = buffer;
@@ -126,13 +131,16 @@ export class AudioEngine {
       source.loop = true;
       source.loopStart = offsetSec;
       source.loopEnd = offsetSec + durationSec;
-      source.start(when, offsetSec);
+      source.start(when, startOffset);
 
       if (loopPlayCount !== "inf") {
-        source.stop(when + durationSec * loopPlayCount);
+        const elapsed = (Date.now() - goAtMs) / 1000;
+        const totalRun = durationSec * (loopPlayCount as number);
+        const remaining = Math.max(0.01, totalRun - elapsed);
+        source.stop(when + remaining);
       }
     } else {
-      source.start(when, offsetSec, durationSec);
+      source.start(when, startOffset, remainingInSlice);
     }
 
     source.onended = () => {
@@ -216,7 +224,9 @@ export class AudioEngine {
             updateVideoVoiceLevels(existing, cue, masterVolume);
             continue;
           }
-          this.stopVideoVoice(cueId);
+          seekVideoVoice(existing, cue, goAtMs);
+          updateVideoVoiceLevels(existing, cue, masterVolume);
+          continue;
         }
 
         if (cue.assetPath) {

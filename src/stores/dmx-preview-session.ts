@@ -30,7 +30,8 @@ interface DmxPreviewSessionState {
 
 type ProjectGetState = () => ProjectState;
 
-let getProjectState: ProjectGetState | null = null;
+// `var` avoids TDZ when project/store registers during circular module init.
+var getProjectState: ProjectGetState | null = null;
 
 export function registerDmxPreviewProjectAccess(getState: ProjectGetState): void {
   getProjectState = getState;

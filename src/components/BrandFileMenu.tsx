@@ -1,9 +1,10 @@
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import NoteAddOutlinedIcon from "@mui/icons-material/NoteAddOutlined";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import InstallDesktopOutlinedIcon from "@mui/icons-material/InstallDesktopOutlined";
+import NoteAddOutlinedIcon from "@mui/icons-material/NoteAddOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import Box from "@mui/material/Box";
@@ -17,6 +18,7 @@ import Tooltip from "@mui/material/Tooltip";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePwaInstall } from "../hooks/usePwaInstall";
+import { formatProjectTimestamp } from "../lib/format-project-timestamp";
 import { formatShortcut } from "../lib/keyboard";
 import { startNewProject } from "../lib/new-project";
 import { notify, notifyWarning } from "../lib/notifications";
@@ -24,12 +26,18 @@ import { openSettings } from "../lib/open-settings";
 import {
   openProjectFile,
   openRecentProjectPath,
+  openStoredProjectFile,
   saveProjectFile,
 } from "../lib/project-file-actions";
+import type { IdbProjectSummary } from "../lib/project-idb";
 import { BUNDLE_EXTENSION } from "../lib/project-paths";
 import type { RecentProjectEntry } from "../lib/recent-projects";
 import { getPlatform } from "../platform";
-import { exportProjectBundle, listRecentProjects } from "../platform/project-storage";
+import {
+  exportProjectBundle,
+  listRecentProjects,
+  listStoredWebProjects,
+} from "../platform/project-storage";
 import { usePreferencesStore } from "../stores/preferences";
 import { projectDisplayName, useProjectLocationStore } from "../stores/project-location";
 import { useUiStore } from "../stores/ui";
@@ -46,7 +54,7 @@ function truncatePath(path: string, maxLength = 48): string {
 }
 
 export function BrandFileMenu() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const rootDir = useProjectLocationStore((s) => s.rootDir);
   const isTemporaryRoot = useProjectLocationStore((s) => s.isTemporaryRoot);
   const showMode = useUiStore((s) => s.showMode);
@@ -56,12 +64,19 @@ export function BrandFileMenu() {
   const [supportOpen, setSupportOpen] = useState(false);
   const [installPwaOpen, setInstallPwaOpen] = useState(false);
   const [recents, setRecents] = useState<RecentProjectEntry[]>([]);
+  const [storedProjects, setStoredProjects] = useState<IdbProjectSummary[]>([]);
+  const [storedSubmenuAnchor, setStoredSubmenuAnchor] = useState<null | HTMLElement>(null);
   const { showInstallMenuItem, install: installPwa } = usePwaInstall();
   const open = Boolean(anchorEl);
+  const storedSubmenuOpen = Boolean(storedSubmenuAnchor);
 
   useEffect(() => {
-    if (!open || !isTauri) return;
-    void listRecentProjects().then(setRecents);
+    if (!open) return;
+    if (isTauri) {
+      void listRecentProjects().then(setRecents);
+      return;
+    }
+    void listStoredWebProjects().then(setStoredProjects);
   }, [open]);
 
   useEffect(() => {
@@ -78,7 +93,12 @@ export function BrandFileMenu() {
     setAnchorEl(target);
   };
 
-  const close = () => setAnchorEl(null);
+  const closeStoredSubmenu = () => setStoredSubmenuAnchor(null);
+
+  const close = () => {
+    setAnchorEl(null);
+    closeStoredSubmenu();
+  };
 
   const handleExport = async () => {
     close();
@@ -211,6 +231,22 @@ export function BrandFileMenu() {
             ))
           : null}
 
+        {!isTauri && storedProjects.length > 0 ? (
+          <MenuItem
+            disabled={showMode}
+            aria-haspopup="menu"
+            aria-expanded={storedSubmenuOpen}
+            onMouseEnter={(e) => setStoredSubmenuAnchor(e.currentTarget)}
+            onClick={(e) => setStoredSubmenuAnchor(e.currentTarget)}
+          >
+            <ListItemIcon>
+              <HistoryOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary={t("fileMenu.storedProjects")} />
+            <ChevronRightIcon fontSize="small" sx={{ ml: 1, opacity: 0.7 }} />
+          </MenuItem>
+        ) : null}
+
         {isTauri ? (
           <MenuItem
             disabled={showMode}
@@ -283,6 +319,37 @@ export function BrandFileMenu() {
           </ListItemIcon>
           <ListItemText primary={t("support.menuItem")} />
         </MenuItem>
+      </Menu>
+
+      <Menu
+        anchorEl={storedSubmenuAnchor}
+        open={storedSubmenuOpen}
+        onClose={closeStoredSubmenu}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{
+          list: {
+            onMouseLeave: closeStoredSubmenu,
+          },
+        }}
+      >
+        {storedProjects.map((project) => (
+          <MenuItem
+            key={project.id}
+            disabled={showMode}
+            onClick={() => {
+              close();
+              void openStoredProjectFile(project.id);
+            }}
+          >
+            <ListItemText
+              primary={project.name}
+              secondary={t("fileMenu.lastOpened", {
+                timestamp: formatProjectTimestamp(project.openedAt, i18n.language),
+              })}
+            />
+          </MenuItem>
+        ))}
       </Menu>
 
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />

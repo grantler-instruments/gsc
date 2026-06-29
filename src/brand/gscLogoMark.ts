@@ -1,7 +1,10 @@
 import { editTokens } from "../theme/tokens";
 
-/** Dark mark on white — chosen brand treatment. */
+/** Dark mark color — used on light or accent backgrounds. */
 export const GSC_LOGO_COLOR = "#1a1a1a";
+
+/** Muted mark fill on accent backgrounds (square and third stripe). */
+export const GSC_LOGO_MUTED_COLOR = `${GSC_LOGO_COLOR}73`;
 
 export const GSC_LOGO_MARK = {
   viewBox: 48,
@@ -20,7 +23,7 @@ export function gscLogoRowYs(y: number, rowH: number, rowGap: number): number[] 
   return [0, 1, 2, 3].map((i) => y + i * (rowH + rowGap));
 }
 
-/** Second-to-last cue stripe and square use muted gray; last cue is full white. */
+/** Second-to-last cue stripe and square use the muted fill. */
 export function gscLogoStripeFill(
   index: number,
   stripeColor: string,
@@ -35,11 +38,11 @@ type GscLogoMarkSvgOptions = {
   mutedStripeColor?: string;
 };
 
-/** Static SVG for favicon / PWA icons — matches `GscLogo` geometry and default colors. */
+/** Static SVG for favicon / PWA icons — primary accent field with dark mark. */
 export function renderGscLogoMarkSvg({
-  background = editTokens.bgElevated,
-  stripeColor = editTokens.text,
-  mutedStripeColor = editTokens.textMuted,
+  background = editTokens.accent,
+  stripeColor = GSC_LOGO_COLOR,
+  mutedStripeColor = GSC_LOGO_MUTED_COLOR,
 }: GscLogoMarkSvgOptions = {}): string {
   const { block, gap, rowGap, xSquare, y, viewBox } = GSC_LOGO_MARK;
   const rowH = gscLogoRowHeight(block, rowGap);

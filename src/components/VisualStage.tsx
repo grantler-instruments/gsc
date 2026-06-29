@@ -149,6 +149,18 @@ function VideoLayer({ layer, onEnded }: VideoLayerProps) {
 
   useEffect(() => {
     const video = ref.current;
+    if (!video || video.readyState < 1 || !Number.isFinite(video.duration)) return;
+
+    loopIterationRef.current = 0;
+    try {
+      video.currentTime = outputLayerTargetTime(layer);
+    } catch {
+      /* seek not ready */
+    }
+  }, [layer.goAtMs, layer.inTime, layer.sliceSec, layer.loopCount]);
+
+  useEffect(() => {
+    const video = ref.current;
     if (!video) return;
     video.style.opacity = String(clamp01(layer.opacity));
   }, [layer.opacity]);

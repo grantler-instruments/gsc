@@ -18,6 +18,7 @@ import { useRemoteHost } from "./useRemoteHost";
 import { useShowModeKeepAwake } from "./useShowModeKeepAwake";
 import { useTauriAppMenu } from "./useTauriAppMenu";
 import { useTauriOpenProject } from "./useTauriOpenProject";
+import { useUpdateCheck } from "./useUpdateCheck";
 
 /** Side-effect hooks for session restore, engines, and platform integration. */
 export function useAppRuntime(): boolean {
@@ -42,6 +43,7 @@ export function useAppRuntime(): boolean {
   useTauriOpenProject(sessionReady);
   useEnttecProConnection();
   useRemoteHost(sessionReady);
+  useUpdateCheck(sessionReady);
 
   return sessionReady;
 }

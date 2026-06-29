@@ -1,5 +1,5 @@
-import type { CueList } from "../../lib/cue-lists";
 import type { CueListInsertPlace } from "../../lib/cue-list-move";
+import type { CueList } from "../../lib/cue-lists";
 import type {
   Cue,
   CueListKind,
@@ -59,8 +59,12 @@ export interface ProjectState {
   updateCue: (id: string, patch: Partial<Cue>) => void;
   removeCue: (id: string) => void;
   removeCueFromList: (listId: string, id: string) => void;
+  /** Remove every cue across all lists that references the given asset path. */
+  removeCuesUsingAsset: (assetPath: string) => void;
   moveCueToGroup: (cueId: string, groupId: string | null) => void;
   moveCueToList: (cueId: string, targetListId: string, place: CueListInsertPlace) => void;
+  reparentCueRelative: (draggedId: string, targetId: string, place: "before" | "after") => void;
+  reparentCueToListEnd: (draggedId: string) => void;
   addSelectedCueToGroup: (groupId: string) => void;
   reorderCueRelative: (draggedId: string, targetId: string, place: "before" | "after") => void;
   selectCue: (id: string | null) => void;
@@ -69,6 +73,7 @@ export interface ProjectState {
   toggleSelectCue: (id: string) => void;
   selectCueRange: (id: string, visibleOrder: string[]) => void;
   groupSelectedCues: () => Cue | null;
+  ungroupCue: (cueId: string) => string[] | null;
   copySelectedCues: () => boolean;
   cutSelectedCues: () => boolean;
   pasteSelectedCues: () => boolean;
@@ -76,6 +81,11 @@ export interface ProjectState {
   addCueList: (name?: string, kind?: CueListKind) => CueList;
   removeCueList: (listId: string) => void;
   renameCueList: (listId: string, name: string) => void;
+  reorderCueListRelative: (draggedId: string, targetId: string, place: "before" | "after") => void;
+  copyCueList: (listId: string) => void;
+  cutCueList: (listId: string) => void;
+  pasteCueList: (afterListId?: string) => void;
+  duplicateCueList: (listId: string) => void;
   setActiveCueList: (listId: string) => void;
   setShowMetadata: (metadata: {
     name: string;

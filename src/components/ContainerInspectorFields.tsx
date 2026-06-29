@@ -43,6 +43,7 @@ export function ContainerInspectorFields({ container }: ContainerInspectorFields
   const updateCue = useProjectStore((s) => s.updateCue);
   const moveCueToGroup = useProjectStore((s) => s.moveCueToGroup);
   const addSelectedCueToGroup = useProjectStore((s) => s.addSelectedCueToGroup);
+  const ungroupCue = useProjectStore((s) => s.ungroupCue);
   const addCue = useProjectStore((s) => s.addCue);
 
   const children = getChildCues(cues, container.id);
@@ -85,6 +86,12 @@ export function ContainerInspectorFields({ container }: ContainerInspectorFields
       {canEdit && canAddSelected && (
         <Button variant="text" size="small" onClick={() => addSelectedCueToGroup(container.id)}>
           {t("inspector.addSelectedToContainer")}
+        </Button>
+      )}
+
+      {canEdit && (
+        <Button variant="text" size="small" onClick={() => ungroupCue(container.id)}>
+          {t("inspector.ungroupContainer")}
         </Button>
       )}
 
