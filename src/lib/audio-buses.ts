@@ -111,7 +111,7 @@ export function busRouteWouldCycle(
     if (current === busId) return true;
     if (visited.has(current)) return true;
     visited.add(current);
-    const next = byId.get(current)?.outputBusId;
+    const next: string | undefined = byId.get(current)?.outputBusId;
     current = next && findAudioBus(buses, next) ? next : undefined;
   }
 
