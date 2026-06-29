@@ -1,8 +1,5 @@
 import { expect, test } from "@playwright/test";
-import {
-  dropAudioOnHotCuePanel,
-  WHITE_NOISE_ALT_NAME,
-} from "./helpers/drop-audio";
+import { dropAudioOnHotCuePanel, WHITE_NOISE_ALT_NAME } from "./helpers/drop-audio";
 
 test("dropping audio onto the hot cue panel creates a hot cue and asset", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });

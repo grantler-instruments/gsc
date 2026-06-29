@@ -3,10 +3,10 @@
  * Usage: npx vite-node scripts/import-qlab5-to-disk.ts <qlab-folder> <output-dir>
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 import { assetRelativePath } from "../src/lib/project-paths";
 import { convertQlabWorkspaceToSnapshot } from "../src/lib/qlab5/convert-to-snapshot";
-import type { createImportReport } from "../src/lib/qlab5/import-report";
+import type { ImportReport } from "../src/lib/qlab5/import-report";
 import { parseQlab5Workspace } from "../src/lib/qlab5/parse-workspace";
 import { resolveAndImportAssets } from "../src/lib/qlab5/resolve-assets";
 import { QLAB5_WORKSPACE_EXTENSION } from "../src/lib/qlab5/types";
@@ -69,11 +69,7 @@ async function main() {
   printReport(snapshot, report, rootDir);
 }
 
-function printReport(
-  snapshot: ProjectSnapshot,
-  report: ReturnType<typeof createImportReport>,
-  rootDir: string,
-) {
+function printReport(snapshot: ProjectSnapshot, report: ImportReport, rootDir: string) {
   console.log("\nSaved to:", rootDir);
   console.log("Cues:", report.importedCueCount, "| Lists:", report.importedListCount);
   if (report.skippedCues.length) {
