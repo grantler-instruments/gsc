@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createCueList } from "./cue-lists";
-import { moveCueBetweenLists } from "./cue-list-move";
 import { testCue } from "../test/fixtures/cues";
+import { moveCueBetweenLists } from "./cue-list-move";
+import { createCueList } from "./cue-lists";
 
 describe("moveCueBetweenLists", () => {
   it("moves a top-level cue from sequence to hot list", () => {

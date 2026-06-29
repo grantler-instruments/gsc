@@ -12,6 +12,7 @@ import {
   canStopTarget,
   getChildCues,
   isContainerCue,
+  isStopCue,
   reorderSiblingCues,
 } from "../../lib/cues";
 import { defaultDmxCueData, normalizeDmxCueData } from "../../lib/dmx";

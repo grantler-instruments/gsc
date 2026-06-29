@@ -19,6 +19,9 @@ export function useVisualOutputLayers(): OutputLayer[] {
 
   useEffect(() => {
     let cancelled = false;
+    void activeCueIds;
+    void cues;
+    void cueStartedAtMs;
     void buildOutputState(0).then((state) => {
       if (!cancelled) setBaseLayers(state.layers);
     });

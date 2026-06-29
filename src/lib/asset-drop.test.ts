@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createCueList } from "./cue-lists";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import { activeCues, resetTestProject, testCue } from "../test/fixtures/cues";
 import { applyAssetPayloads, diskPathsMayHaveMedia } from "./asset-drop";
+import { createCueList } from "./cue-lists";
 
 describe("diskPathsMayHaveMedia", () => {
   it("accepts media file extensions", () => {

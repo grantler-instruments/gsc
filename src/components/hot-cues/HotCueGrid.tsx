@@ -2,8 +2,6 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { type MouseEvent, useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getPrimarySelectedCueId } from "../../lib/cue-selection";
-import { pointerLeftElement } from "../../lib/dom";
 import {
   applyAssetPayloads,
   isAssetDropDrag,
@@ -11,6 +9,7 @@ import {
   resolveAssetDropPayloads,
 } from "../../lib/asset-drop";
 import { findCueInLists } from "../../lib/cue-lists";
+import { getPrimarySelectedCueId } from "../../lib/cue-selection";
 import {
   getChildCues,
   getCueDisplayName,
@@ -18,6 +17,7 @@ import {
   isContainerCue,
   isCueActive,
 } from "../../lib/cues";
+import { pointerLeftElement } from "../../lib/dom";
 import {
   isAssetDrag,
   readCueDragId,
@@ -253,45 +253,45 @@ export function HotCueGrid({ listId }: { listId?: string }) {
         {topLevel.map((cue) => {
           const isCueSelected = selectedCueIds.includes(cue.id);
           return (
-          <HotCueButton
-            key={cue.id}
-            cue={cue}
-            cues={cues}
-            canEdit={canEdit}
-            active={isCueActive(cue, cues, activeCueIds, runningSequences, dmxFadesByFadeCueId)}
-            selected={hotListFocused && isCueSelected}
-            childCount={isContainerCue(cue) ? getChildCues(cues, cue.id).length : 0}
-            accent={tokens.accent}
-            pulseAsStopTarget={cue.id === stopHighlights.hoveredStopTargetId}
-            staticAsStopTarget={cue.id === stopHighlights.selectedStopTargetId}
-            highlightAsFadeTarget={
-              cue.id === stopHighlights.hoveredFadeTargetId ||
-              cue.id === stopHighlights.selectedFadeTargetId
-            }
-            fadeTargetHighlightToken={stopHighlights.fadeTargetHighlightToken}
-            onHoverChange={stopHighlights.setHoveredCueId}
-            onSelect={() => handleSelect(cue)}
-            onFire={() => triggerHotCueAndFocusMain(cue)}
-            onContextMenu={(e) => handlePadContextMenu(cue, e)}
-            onCreateStop={() => addStopCueForTarget(cue.id)}
-            onCreateVolumeFade={() => addFadeCueForTarget(cue.id, "volumeFade")}
-            onCreateOpacityFade={() => addFadeCueForTarget(cue.id, "opacityFade")}
-            onCreatePanFade={() => addFadeCueForTarget(cue.id, "panFade")}
-            onCreateLightFade={() => addFadeCueForTarget(cue.id, "lightFade")}
-            onDrop={canEdit ? (e) => handleRowDrop(cue.id, e) : undefined}
-            onDragOver={canEdit ? onPadDragOver : undefined}
-            draggable={canEdit}
-            onDragStart={
-              canEdit
-                ? (e) => {
-                    e.stopPropagation();
-                    setCueDragData(e.dataTransfer, { cueId: cue.id });
-                    setActiveCueDrag(cue.id);
-                  }
-                : undefined
-            }
-            onDragEnd={canEdit ? () => setActiveCueDrag(null) : undefined}
-          />
+            <HotCueButton
+              key={cue.id}
+              cue={cue}
+              cues={cues}
+              canEdit={canEdit}
+              active={isCueActive(cue, cues, activeCueIds, runningSequences, dmxFadesByFadeCueId)}
+              selected={hotListFocused && isCueSelected}
+              childCount={isContainerCue(cue) ? getChildCues(cues, cue.id).length : 0}
+              accent={tokens.accent}
+              pulseAsStopTarget={cue.id === stopHighlights.hoveredStopTargetId}
+              staticAsStopTarget={cue.id === stopHighlights.selectedStopTargetId}
+              highlightAsFadeTarget={
+                cue.id === stopHighlights.hoveredFadeTargetId ||
+                cue.id === stopHighlights.selectedFadeTargetId
+              }
+              fadeTargetHighlightToken={stopHighlights.fadeTargetHighlightToken}
+              onHoverChange={stopHighlights.setHoveredCueId}
+              onSelect={() => handleSelect(cue)}
+              onFire={() => triggerHotCueAndFocusMain(cue)}
+              onContextMenu={(e) => handlePadContextMenu(cue, e)}
+              onCreateStop={() => addStopCueForTarget(cue.id)}
+              onCreateVolumeFade={() => addFadeCueForTarget(cue.id, "volumeFade")}
+              onCreateOpacityFade={() => addFadeCueForTarget(cue.id, "opacityFade")}
+              onCreatePanFade={() => addFadeCueForTarget(cue.id, "panFade")}
+              onCreateLightFade={() => addFadeCueForTarget(cue.id, "lightFade")}
+              onDrop={canEdit ? (e) => handleRowDrop(cue.id, e) : undefined}
+              onDragOver={canEdit ? onPadDragOver : undefined}
+              draggable={canEdit}
+              onDragStart={
+                canEdit
+                  ? (e) => {
+                      e.stopPropagation();
+                      setCueDragData(e.dataTransfer, { cueId: cue.id });
+                      setActiveCueDrag(cue.id);
+                    }
+                  : undefined
+              }
+              onDragEnd={canEdit ? () => setActiveCueDrag(null) : undefined}
+            />
           );
         })}
       </Box>

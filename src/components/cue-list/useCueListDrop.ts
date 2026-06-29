@@ -5,6 +5,7 @@ import {
   isExternalFileDrag,
   resolveAssetDropPayloads,
 } from "../../lib/asset-drop";
+import { findCueInLists } from "../../lib/cue-lists";
 import { pointerLeftElement } from "../../lib/dom";
 import {
   isAssetDrag,
@@ -13,7 +14,6 @@ import {
   setActiveAssetDrag,
   setActiveCueDrag,
 } from "../../lib/drag";
-import { findCueInLists } from "../../lib/cue-lists";
 import { useProjectStore } from "../../stores/project";
 import { useClearOnDragEnd } from "./useClearOnDragEnd";
 

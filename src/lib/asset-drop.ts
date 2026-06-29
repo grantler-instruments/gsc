@@ -4,8 +4,8 @@ import {
   openDroppedProjectBundle,
   openDroppedProjectBundleFile,
 } from "../platform/project-storage";
-import { applyRenumber, patchListById } from "../stores/project/helpers";
 import { useProjectStore } from "../stores/project";
+import { applyRenumber, patchListById } from "../stores/project/helpers";
 import { useVfsStore } from "../stores/vfs";
 import { assetKindFromFilename } from "../vfs/import";
 import { isContainerCue } from "./cues";

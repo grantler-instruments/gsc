@@ -1,13 +1,7 @@
+import type { Cue } from "../types/cue";
 import type { CueList } from "./cue-lists";
 import { findCueInLists } from "./cue-lists";
-import type { Cue } from "../types/cue";
-import {
-  getChildCues,
-  isContainerCue,
-  isFadeCue,
-  isStopCue,
-  renumberCueList,
-} from "./cues";
+import { getChildCues, isContainerCue, isFadeCue, isStopCue, renumberCueList } from "./cues";
 
 export type CueListInsertPlace =
   | { kind: "append" }
@@ -65,9 +59,7 @@ function prepareMovedSubtree(subtree: Cue[], rootParentId: string | undefined): 
   const rootIds = new Set(
     subtree.filter((c) => !c.parentId || !subtreeIds.has(c.parentId)).map((c) => c.id),
   );
-  return subtree.map((c) =>
-    rootIds.has(c.id) ? { ...c, parentId: rootParentId } : { ...c },
-  );
+  return subtree.map((c) => (rootIds.has(c.id) ? { ...c, parentId: rootParentId } : { ...c }));
 }
 
 function insertIndexForPlace(cues: Cue[], place: CueListInsertPlace): number {
@@ -84,10 +76,7 @@ function insertIndexForPlace(cues: Cue[], place: CueListInsertPlace): number {
   return indexAfterCueSubtree(cues, place.cueId);
 }
 
-function rootParentIdForPlace(
-  targetList: CueList,
-  place: CueListInsertPlace,
-): string | undefined {
+function rootParentIdForPlace(targetList: CueList, place: CueListInsertPlace): string | undefined {
   if (targetList.kind === "hot") return undefined;
   if (place.kind === "into-group") return place.groupId;
   if (place.kind === "append") return undefined;

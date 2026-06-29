@@ -157,7 +157,7 @@ function VideoLayer({ layer, onEnded }: VideoLayerProps) {
     } catch {
       /* seek not ready */
     }
-  }, [layer.goAtMs, layer.inTime, layer.sliceSec, layer.loopCount]);
+  }, [layer]);
 
   useEffect(() => {
     const video = ref.current;
