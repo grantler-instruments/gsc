@@ -15,10 +15,35 @@ describe("normalizeAudioBuses", () => {
     expect(normalizeAudioBuses(undefined)).toEqual([]);
   });
 
+  it("returns empty array for empty input", () => {
+    expect(normalizeAudioBuses([])).toEqual([]);
+  });
+
   it("clamps volume and trims name", () => {
     expect(
       normalizeAudioBuses([{ id: "b1", name: "  Music  ", volume: 1.5, muted: true }]),
     ).toEqual([{ id: "b1", name: "Music", volume: 1, muted: true }]);
+  });
+
+  it("omits centered pan and keeps non-zero pan", () => {
+    expect(normalizeAudioBuses([{ id: "b1", name: "A", volume: 1, pan: 0 }])).toEqual([
+      { id: "b1", name: "A", volume: 1 },
+    ]);
+    expect(normalizeAudioBuses([{ id: "b1", name: "A", volume: 1, pan: 0.5 }])).toEqual([
+      { id: "b1", name: "A", volume: 1, pan: 0.5 },
+    ]);
+  });
+
+  it("clears invalid output routes", () => {
+    expect(
+      normalizeAudioBuses([
+        { id: "b1", name: "A", volume: 1, outputBusId: "missing" },
+        { id: "b2", name: "B", volume: 1, outputBusId: "b1" },
+      ]),
+    ).toEqual([
+      { id: "b1", name: "A", volume: 1 },
+      { id: "b2", name: "B", volume: 1, outputBusId: "b1" },
+    ]);
   });
 });
 
@@ -38,6 +63,10 @@ describe("resolveCueAudioBusId", () => {
 
   it("returns undefined when no buses exist", () => {
     expect(resolveCueAudioBusId({ audioBusId: "b1" }, [])).toBeUndefined();
+  });
+
+  it("returns undefined when no buses exist even if cue still has a bus id", () => {
+    expect(resolveCueAudioBusId({ audioBusId: "legacy-bus-from-old-project" }, [])).toBeUndefined();
   });
 
   it("returns undefined when cue has no bus", () => {
@@ -108,11 +137,32 @@ describe("normalizeCueAudioBus", () => {
       type: "image",
     });
   });
+
+  it("clears stale bus assignments when the project has no buses", () => {
+    const cue = {
+      id: "c1",
+      number: "1",
+      name: "Hit",
+      type: "audio" as const,
+      audioBusId: "legacy-bus",
+    };
+    expect(normalizeCueAudioBus(cue, [])).toEqual({
+      id: "c1",
+      number: "1",
+      name: "Hit",
+      type: "audio",
+    });
+  });
 });
 
 describe("busEffectiveVolume", () => {
   it("returns zero when muted", () => {
     expect(busEffectiveVolume({ id: "b1", name: "A", volume: 0.8, muted: true })).toBe(0);
+  });
+
+  it("returns clamped volume when not muted", () => {
+    expect(busEffectiveVolume({ id: "b1", name: "A", volume: 0.75 })).toBe(0.75);
+    expect(busEffectiveVolume({ id: "b1", name: "A", volume: 1.5 })).toBe(1);
   });
 });
 
@@ -149,19 +199,9 @@ describe("resolveBusOutputBusId", () => {
     ];
     expect(resolveBusOutputBusId({ id: "b1", outputBusId: "b2" }, cyclic)).toBeUndefined();
   });
-});
 
-describe("normalizeAudioBuses", () => {
-  it("clears invalid output routes", () => {
-    expect(
-      normalizeAudioBuses([
-        { id: "b1", name: "A", volume: 1, outputBusId: "missing" },
-        { id: "b2", name: "B", volume: 1, outputBusId: "b1" },
-      ]),
-    ).toEqual([
-      { id: "b1", name: "A", volume: 1 },
-      { id: "b2", name: "B", volume: 1, outputBusId: "b1" },
-    ]);
+  it("returns undefined when the project has no buses", () => {
+    expect(resolveBusOutputBusId({ id: "b1", outputBusId: "b2" }, [])).toBeUndefined();
   });
 });
 

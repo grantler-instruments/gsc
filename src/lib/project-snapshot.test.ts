@@ -113,4 +113,108 @@ describe("project snapshot round-trip", () => {
     const loaded = snapshotToCueLists(snap);
     expect(loaded.audioBuses).toEqual([{ id: "b1", name: "Music", volume: 0.8 }]);
   });
+
+  it("loads legacy snapshots without audioBuses as empty buses", () => {
+    const list = createCueList("Main");
+    list.cues = [
+      testCue("a", "Intro", "audio", { assetPath: "/assets/intro.wav" }),
+      testCue("v", "Clip", "video", { assetPath: "/assets/clip.mp4" }),
+    ];
+
+    const snap = cueListsToSnapshot("legacy-1", "Legacy Show", [list], list.id);
+    const { audioBuses: _removed, ...legacySnap } = snap;
+
+    const loaded = snapshotToCueLists(legacySnap as typeof snap);
+    expect(loaded.audioBuses).toEqual([]);
+    expect(loaded.cueLists[0].cues).toEqual(list.cues);
+  });
+
+  it("does not write audioBuses into snapshots when the project has none", () => {
+    const list = createCueList("Main");
+    list.cues = [testCue("a", "Intro", "audio", { assetPath: "/assets/intro.wav" })];
+
+    const snap = cueListsToSnapshot("legacy-1", "Legacy Show", [list], list.id);
+
+    expect(snap).not.toHaveProperty("audioBuses");
+  });
+
+  it("strips stale cue bus assignments when loading legacy projects without buses", () => {
+    const list = createCueList("Main");
+    list.cues = [
+      testCue("a", "Intro", "audio", { assetPath: "/assets/intro.wav", audioBusId: "removed-bus" }),
+      testCue("v", "Clip", "video", { assetPath: "/assets/clip.mp4", audioBusId: "removed-bus" }),
+      testCue("g", "Look", "image", { assetPath: "/assets/look.png", audioBusId: "removed-bus" }),
+    ];
+
+    const snap = cueListsToSnapshot("legacy-1", "Legacy Show", [list], list.id);
+    const { audioBuses: _removed, ...legacySnap } = snap;
+
+    const loaded = snapshotToCueLists(legacySnap as typeof snap);
+    expect(loaded.audioBuses).toEqual([]);
+    expect(loaded.cueLists[0].cues[0]).not.toHaveProperty("audioBusId");
+    expect(loaded.cueLists[0].cues[1]).not.toHaveProperty("audioBusId");
+    expect(loaded.cueLists[0].cues[2]).not.toHaveProperty("audioBusId");
+  });
+
+  it("preserves bus pan and output routing through snapshot", () => {
+    const list = createCueList("Main");
+    const buses = [
+      { id: "b1", name: "Music", volume: 0.8, pan: -0.5 },
+      { id: "b2", name: "SFX", volume: 1, outputBusId: "b1" },
+    ];
+    const snap = cueListsToSnapshot(
+      "project-1",
+      "My Show",
+      [list],
+      list.id,
+      [],
+      [],
+      undefined,
+      buses,
+    );
+
+    const loaded = snapshotToCueLists(snap);
+    expect(loaded.audioBuses).toEqual([
+      { id: "b1", name: "Music", volume: 0.8, pan: -0.5 },
+      { id: "b2", name: "SFX", volume: 1, outputBusId: "b1" },
+    ]);
+  });
+
+  it("preserves cue bus assignments when the assigned bus exists", () => {
+    const list = createCueList("Main");
+    list.cues = [
+      testCue("a", "Intro", "audio", { assetPath: "/assets/intro.wav", audioBusId: "b1" }),
+      testCue("v", "Clip", "video", { assetPath: "/assets/clip.mp4", audioBusId: "b1" }),
+    ];
+    const snap = cueListsToSnapshot("project-1", "My Show", [list], list.id, [], [], undefined, [
+      { id: "b1", name: "Music", volume: 1 },
+    ]);
+
+    const loaded = snapshotToCueLists(snap);
+    expect(loaded.cueLists[0].cues[0].audioBusId).toBe("b1");
+    expect(loaded.cueLists[0].cues[1].audioBusId).toBe("b1");
+  });
+
+  it("re-saving a legacy project without buses still omits audioBuses", () => {
+    const list = createCueList("Main");
+    list.cues = [testCue("a", "Intro", "audio", { assetPath: "/assets/intro.wav" })];
+    const snap = cueListsToSnapshot("legacy-1", "Legacy Show", [list], list.id);
+    const { audioBuses: _removed, ...legacySnap } = snap;
+
+    const loaded = snapshotToCueLists(legacySnap as typeof snap);
+    const resaved = cueListsToSnapshot(
+      loaded.id,
+      loaded.name,
+      loaded.cueLists,
+      loaded.activeCueListId,
+      loaded.midiMappings,
+      loaded.fixtures,
+      loaded.fixturePlot,
+      loaded.audioBuses,
+    );
+
+    expect(loaded.audioBuses).toEqual([]);
+    expect(resaved).not.toHaveProperty("audioBuses");
+    expect(resaved.cueLists[0].cues).toEqual(list.cues);
+  });
 });

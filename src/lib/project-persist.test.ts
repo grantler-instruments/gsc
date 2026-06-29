@@ -84,6 +84,15 @@ describe("projectPersistStateChanged", () => {
 
     expect(projectPersistStateChanged(prev, next)).toBe(true);
   });
+
+  it("returns true when audio buses change", () => {
+    const prev = projectState();
+    const next = projectState({
+      audioBuses: [{ id: "b1", name: "Music", volume: 1 }],
+    });
+
+    expect(projectPersistStateChanged(prev, next)).toBe(true);
+  });
 });
 
 describe("vfsPersistStateChanged", () => {
