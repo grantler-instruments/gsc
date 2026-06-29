@@ -593,7 +593,10 @@
     "mix": "Mix",
     "eqLow": "Graves",
     "eqMid": "Médiums",
-    "eqHigh": "Aigus"
+    "eqHigh": "Aigus",
+    "pan": "Pan",
+    "outputBus": "Sortie",
+    "outputBusDirect": "Master out"
   },
   "ofl": {
     "title": "Open Fixture Library",

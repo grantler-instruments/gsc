@@ -593,7 +593,10 @@
     "mix": "混合",
     "eqLow": "低",
     "eqMid": "中",
-    "eqHigh": "高"
+    "eqHigh": "高",
+    "pan": "声像",
+    "outputBus": "输出",
+    "outputBusDirect": "Master out"
   },
   "ofl": {
     "title": "Open Fixture Library",

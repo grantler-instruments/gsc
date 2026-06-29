@@ -11,6 +11,7 @@ import {
   normalizeDelayParams,
   normalizeEqParams,
   normalizeReverbParams,
+  reorderAudioEffects,
 } from "./audio-effects";
 
 describe("normalizeEqParams", () => {
@@ -120,6 +121,31 @@ describe("createDefaultBusEffect", () => {
     expect(createDefaultBusEffect("eq").type).toBe("eq");
     expect(createDefaultBusEffect("delay").type).toBe("delay");
     expect(createDefaultBusEffect("reverb").type).toBe("reverb");
+  });
+});
+
+describe("reorderAudioEffects", () => {
+  function effects(...ids: string[]) {
+    return ids.map((id) => ({ ...defaultEqEffect(), id }));
+  }
+
+  it("moves an effect before another", () => {
+    const result = reorderAudioEffects(effects("a", "b", "c"), "c", "a", "before");
+    expect(result?.map((effect) => effect.id)).toEqual(["c", "a", "b"]);
+  });
+
+  it("moves an effect after another", () => {
+    const result = reorderAudioEffects(effects("a", "b", "c"), "a", "c", "after");
+    expect(result?.map((effect) => effect.id)).toEqual(["b", "c", "a"]);
+  });
+
+  it("returns null when dragging onto itself", () => {
+    expect(reorderAudioEffects(effects("a", "b"), "a", "a", "before")).toBeNull();
+  });
+
+  it("returns null when the move would not change order", () => {
+    expect(reorderAudioEffects(effects("a", "b", "c"), "a", "b", "before")).toBeNull();
+    expect(reorderAudioEffects(effects("a", "b", "c"), "b", "a", "after")).toBeNull();
   });
 });
 

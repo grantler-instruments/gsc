@@ -59,32 +59,30 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
             onChange={(pan) => onChange({ pan })}
             inputWidth={48}
           />
-          {audioBuses.length > 0 && (
-            <Box sx={inspectorFieldSx}>
-              <Typography component="label" sx={inspectorFieldLabelSx}>
-                {t("inspector.audioBus")}
-              </Typography>
-              <Select
-                size="small"
-                fullWidth
-                value={cue.audioBusId ?? ""}
-                readOnly={readOnly}
-                disabled={readOnly}
-                displayEmpty
-                onChange={(event) => {
-                  const value = event.target.value;
-                  onChange({ audioBusId: value || undefined });
-                }}
-              >
-                <MenuItem value="">{t("inspector.audioBusDirect")}</MenuItem>
-                {audioBuses.map((bus) => (
-                  <MenuItem key={bus.id} value={bus.id}>
-                    {bus.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </Box>
-          )}
+          <Box sx={inspectorFieldSx}>
+            <Typography component="label" sx={inspectorFieldLabelSx}>
+              {t("inspector.audioBus")}
+            </Typography>
+            <Select
+              size="small"
+              fullWidth
+              value={cue.audioBusId ?? ""}
+              readOnly={readOnly}
+              disabled={readOnly}
+              displayEmpty
+              onChange={(event) => {
+                const value = event.target.value;
+                onChange({ audioBusId: value || undefined });
+              }}
+            >
+              <MenuItem value="">{t("inspector.audioBusDirect")}</MenuItem>
+              {audioBuses.map((bus) => (
+                <MenuItem key={bus.id} value={bus.id}>
+                  {bus.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
         </>
       )}
 

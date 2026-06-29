@@ -593,7 +593,10 @@
     "mix": "Mix",
     "eqLow": "Graves",
     "eqMid": "Médios",
-    "eqHigh": "Agudos"
+    "eqHigh": "Agudos",
+    "pan": "Pan",
+    "outputBus": "Saída",
+    "outputBusDirect": "Master out"
   },
   "ofl": {
     "title": "Open Fixture Library",

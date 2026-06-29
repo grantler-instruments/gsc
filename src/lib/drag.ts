@@ -141,3 +141,42 @@ export function readCueListTabDragId(dataTransfer: DataTransfer): string | null 
 export function isCueListTabDrag(dataTransfer: DataTransfer): boolean {
   return dataTransfer.types.includes(GSC_CUE_LIST_TAB_DRAG_TYPE) || activeCueListTabDragId !== null;
 }
+
+export const GSC_BUS_EFFECT_DRAG_TYPE = "application/x-gsc-bus-effect";
+
+export interface BusEffectDragPayload {
+  effectId: string;
+}
+
+/** Effect id for the in-flight premixer reorder drag (getData is empty until drop). */
+let activeBusEffectDragId: string | null = null;
+
+export function setBusEffectDragData(
+  dataTransfer: DataTransfer,
+  payload: BusEffectDragPayload,
+): void {
+  activeBusEffectDragId = payload.effectId;
+  dataTransfer.setData(GSC_BUS_EFFECT_DRAG_TYPE, JSON.stringify(payload));
+  dataTransfer.effectAllowed = "move";
+}
+
+export function setActiveBusEffectDrag(effectId: string | null): void {
+  activeBusEffectDragId = effectId;
+}
+
+function readBusEffectDragData(dataTransfer: DataTransfer): BusEffectDragPayload | null {
+  const raw = dataTransfer.getData(GSC_BUS_EFFECT_DRAG_TYPE);
+  if (!raw) return null;
+  try {
+    const data = JSON.parse(raw) as BusEffectDragPayload;
+    if (typeof data.effectId === "string") return data;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+/** Resolve bus-effect id during a premixer drag or on drop. */
+export function readBusEffectDragId(dataTransfer: DataTransfer): string | null {
+  return readBusEffectDragData(dataTransfer)?.effectId ?? activeBusEffectDragId;
+}

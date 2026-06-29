@@ -5,11 +5,13 @@ import GraphicEqOutlinedIcon from "@mui/icons-material/GraphicEqOutlined";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 import Slider from "@mui/material/Slider";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_AUDIO_MIXER_HEIGHT, MIN_AUDIO_MIXER_HEIGHT } from "../../lib/audio-mixer-layout";
 import { useProjectStore } from "../../stores/project";
@@ -19,7 +21,19 @@ import type { AudioEffectType } from "../../types/audio-effect";
 import { BusPremixer, FX_SLIDER_HEIGHT, premixerContentWidth } from "./BusPremixer";
 
 const MIXER_RESIZE_HANDLE_HEIGHT = 6;
-const FADER_COLUMN_WIDTH = 72;
+const FADER_COLUMN_WIDTH = 96;
+const FADER_PAN_WIDTH = 72;
+const FADER_VOLUME_WIDTH = 48;
+const FADER_OUTPUT_WIDTH = 108;
+const FADER_ROW_WIDTH = FADER_PAN_WIDTH + FADER_VOLUME_WIDTH + FADER_OUTPUT_WIDTH + 16;
+/** Minimum body height for pan → volume → destination in one column. */
+const FADER_STACKED_HEIGHT_THRESHOLD = 280;
+
+const horizontalSliderSx = {
+  width: "100%",
+  color: "primary.main",
+  "& .MuiSlider-rail": { opacity: 0.35 },
+} as const;
 
 const verticalSliderSx = {
   height: FX_SLIDER_HEIGHT,
@@ -34,6 +48,7 @@ const verticalSliderSx = {
 
 interface BusStripProps {
   bus: AudioBus;
+  audioBuses: AudioBus[];
   canEdit: boolean;
   onUpdate: (patch: Partial<Omit<AudioBus, "id">>) => void;
   onRemove: () => void;
@@ -43,20 +58,209 @@ interface BusStripProps {
     patch: { params?: Record<string, number>; enabled?: boolean },
   ) => void;
   onRemoveEffect: (effectId: string) => void;
+  onReorderEffect: (draggedId: string, targetId: string, place: "before" | "after") => void;
+}
+
+interface BusFaderControlsProps {
+  bus: AudioBus;
+  audioBuses: AudioBus[];
+  canEdit: boolean;
+  stacked: boolean;
+  onUpdate: (patch: Partial<Omit<AudioBus, "id">>) => void;
+}
+
+function BusFaderControls({ bus, audioBuses, canEdit, stacked, onUpdate }: BusFaderControlsProps) {
+  const { t } = useTranslation();
+
+  const panControl = (
+    <Stack spacing={0.5} sx={{ width: stacked ? "100%" : FADER_PAN_WIDTH, flexShrink: 0 }}>
+      <Typography
+        variant="caption"
+        sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", color: "text.secondary" }}
+      >
+        {t("audioMixer.pan")}
+      </Typography>
+      {stacked ? (
+        <Slider
+          size="small"
+          orientation="horizontal"
+          min={-1}
+          max={1}
+          step={0.01}
+          value={bus.pan ?? 0}
+          disabled={!canEdit}
+          onChange={(_, value) => onUpdate({ pan: value as number })}
+          sx={horizontalSliderSx}
+        />
+      ) : (
+        <Box sx={{ height: FX_SLIDER_HEIGHT, display: "flex", alignItems: "center" }}>
+          <Slider
+            size="small"
+            orientation="horizontal"
+            min={-1}
+            max={1}
+            step={0.01}
+            value={bus.pan ?? 0}
+            disabled={!canEdit}
+            onChange={(_, value) => onUpdate({ pan: value as number })}
+            sx={horizontalSliderSx}
+          />
+        </Box>
+      )}
+    </Stack>
+  );
+
+  const volumeControl = (
+    <Stack
+      spacing={0.5}
+      sx={{
+        width: stacked ? "100%" : FADER_VOLUME_WIDTH,
+        flexShrink: 0,
+        alignItems: stacked ? "stretch" : "center",
+      }}
+    >
+      <Typography
+        variant="caption"
+        sx={{
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: "0.04em",
+          color: "text.secondary",
+          alignSelf: stacked ? undefined : "center",
+        }}
+      >
+        {t("audioMixer.volume")}
+      </Typography>
+      <Box
+        sx={{
+          width: stacked ? "100%" : FADER_VOLUME_WIDTH,
+          height: FX_SLIDER_HEIGHT,
+          flexShrink: 0,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <Slider
+          size="small"
+          orientation="vertical"
+          min={0}
+          max={1}
+          step={0.01}
+          value={bus.muted ? 0 : bus.volume}
+          disabled={!canEdit}
+          onChange={(_, value) => onUpdate({ volume: value as number, muted: false })}
+          sx={verticalSliderSx}
+        />
+      </Box>
+      <Button
+        size="small"
+        fullWidth
+        variant={bus.muted ? "contained" : "outlined"}
+        disabled={!canEdit}
+        onClick={() => onUpdate({ muted: !bus.muted })}
+        sx={{ fontSize: 10, py: 0.25, flexShrink: 0 }}
+      >
+        {bus.muted ? t("audioMixer.unmute") : t("audioMixer.mute")}
+      </Button>
+    </Stack>
+  );
+
+  const outputControl = (
+    <Stack
+      spacing={0.5}
+      sx={{
+        width: stacked ? "100%" : FADER_OUTPUT_WIDTH,
+        flexShrink: 0,
+        alignSelf: stacked ? undefined : "stretch",
+        justifyContent: stacked ? undefined : "space-between",
+      }}
+    >
+      <Typography
+        variant="caption"
+        sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", color: "text.secondary" }}
+      >
+        {t("audioMixer.outputBus")}
+      </Typography>
+      <Select
+        size="small"
+        fullWidth
+        value={bus.outputBusId ?? ""}
+        disabled={!canEdit}
+        displayEmpty
+        onChange={(event) => {
+          const value = event.target.value;
+          onUpdate({ outputBusId: value || undefined });
+        }}
+        sx={{ fontSize: 11, flexShrink: 0, ...(stacked ? {} : { mt: "auto" }) }}
+      >
+        <MenuItem value="">{t("audioMixer.outputBusDirect")}</MenuItem>
+        {audioBuses
+          .filter((entry) => entry.id !== bus.id)
+          .map((entry) => (
+            <MenuItem key={entry.id} value={entry.id}>
+              {entry.name}
+            </MenuItem>
+          ))}
+      </Select>
+    </Stack>
+  );
+
+  return (
+    <Box
+      sx={{
+        width: stacked ? FADER_COLUMN_WIDTH : FADER_ROW_WIDTH,
+        minWidth: stacked ? FADER_COLUMN_WIDTH : FADER_ROW_WIDTH,
+        flexShrink: 0,
+        minHeight: 0,
+        alignSelf: "stretch",
+        display: "flex",
+        flexDirection: stacked ? "column" : "row",
+        alignItems: stacked ? "stretch" : "flex-start",
+        gap: 0.75,
+        px: 0.75,
+        py: 1,
+        overflow: "auto",
+      }}
+    >
+      {panControl}
+      {volumeControl}
+      {outputControl}
+    </Box>
+  );
 }
 
 function BusStrip({
   bus,
+  audioBuses,
   canEdit,
   onUpdate,
   onRemove,
   onAddEffect,
   onUpdateEffect,
   onRemoveEffect,
+  onReorderEffect,
 }: BusStripProps) {
   const { t } = useTranslation();
   const [premixerOpen, setPremixerOpen] = useState((bus.effects?.length ?? 0) > 0);
-  const premixerWidth = premixerContentWidth(bus.effects);
+  const premixerWidth = premixerContentWidth(bus);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [stackedFader, setStackedFader] = useState(true);
+
+  useEffect(() => {
+    const element = bodyRef.current;
+    if (!element) return;
+
+    const updateLayout = () => {
+      setStackedFader(element.clientHeight >= FADER_STACKED_HEIGHT_THRESHOLD);
+    };
+
+    updateLayout();
+    const observer = new ResizeObserver(updateLayout);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  const faderWidth = stackedFader ? FADER_COLUMN_WIDTH : FADER_ROW_WIDTH;
 
   return (
     <Box
@@ -66,13 +270,12 @@ function BusStrip({
         display: "flex",
         flexDirection: "column",
         mr: 1,
-        width: premixerOpen ? premixerWidth + FADER_COLUMN_WIDTH + 8 : FADER_COLUMN_WIDTH + 16,
-        minWidth: premixerOpen ? premixerWidth + FADER_COLUMN_WIDTH + 8 : FADER_COLUMN_WIDTH + 16,
+        width: premixerOpen ? premixerWidth + faderWidth + 8 : faderWidth + 16,
+        minWidth: premixerOpen ? premixerWidth + faderWidth + 8 : faderWidth + 16,
         border: 1,
         borderColor: "divider",
         borderRadius: 1,
         bgcolor: "background.default",
-        overflow: "hidden",
       }}
     >
       <Stack
@@ -126,7 +329,17 @@ function BusStrip({
         )}
       </Stack>
 
-      <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "row" }}>
+      <Box
+        ref={bodyRef}
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "row",
+          overflow: "auto",
+        }}
+      >
         {premixerOpen && (
           <Box
             sx={{
@@ -137,7 +350,7 @@ function BusStrip({
               flexDirection: "column",
               borderRight: 1,
               borderColor: "divider",
-              overflow: "hidden",
+              overflow: "auto",
             }}
           >
             <BusPremixer
@@ -149,60 +362,18 @@ function BusStrip({
               }}
               onUpdateEffect={onUpdateEffect}
               onRemoveEffect={onRemoveEffect}
+              onReorderEffect={onReorderEffect}
             />
           </Box>
         )}
 
-        <Box
-          sx={{
-            width: FADER_COLUMN_WIDTH,
-            flexShrink: 0,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 0.75,
-            px: 0.75,
-            py: 1,
-          }}
-        >
-          <Typography
-            variant="caption"
-            sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", color: "text.secondary" }}
-          >
-            {t("audioMixer.volume")}
-          </Typography>
-          <Box
-            sx={{
-              flex: 1,
-              width: FADER_COLUMN_WIDTH - 8,
-              minHeight: FX_SLIDER_HEIGHT,
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
-            <Slider
-              size="small"
-              orientation="vertical"
-              min={0}
-              max={1}
-              step={0.01}
-              value={bus.muted ? 0 : bus.volume}
-              disabled={!canEdit}
-              onChange={(_, value) => onUpdate({ volume: value as number, muted: false })}
-              sx={verticalSliderSx}
-            />
-          </Box>
-          <Button
-            size="small"
-            fullWidth
-            variant={bus.muted ? "contained" : "outlined"}
-            disabled={!canEdit}
-            onClick={() => onUpdate({ muted: !bus.muted })}
-            sx={{ fontSize: 10, py: 0.25 }}
-          >
-            {bus.muted ? t("audioMixer.unmute") : t("audioMixer.mute")}
-          </Button>
-        </Box>
+        <BusFaderControls
+          bus={bus}
+          audioBuses={audioBuses}
+          canEdit={canEdit}
+          stacked={stackedFader}
+          onUpdate={onUpdate}
+        />
       </Box>
     </Box>
   );
@@ -288,6 +459,7 @@ export function AudioMixerDock() {
   const addBusEffect = useProjectStore((s) => s.addBusEffect);
   const updateBusEffect = useProjectStore((s) => s.updateBusEffect);
   const removeBusEffect = useProjectStore((s) => s.removeBusEffect);
+  const reorderBusEffectRelative = useProjectStore((s) => s.reorderBusEffectRelative);
 
   const handleAddBus = useCallback(() => {
     addAudioBus();
@@ -355,8 +527,7 @@ export function AudioMixerDock() {
               display: "flex",
               alignItems: audioBuses.length === 0 ? "center" : "stretch",
               justifyContent: audioBuses.length === 0 ? "center" : "flex-start",
-              overflowX: "auto",
-              overflowY: "hidden",
+              overflow: "auto",
               px: 1,
               py: 1,
             }}
@@ -377,12 +548,16 @@ export function AudioMixerDock() {
                 <BusStrip
                   key={bus.id}
                   bus={bus}
+                  audioBuses={audioBuses}
                   canEdit={canEdit}
                   onUpdate={(patch) => updateAudioBus(bus.id, patch)}
                   onRemove={() => removeAudioBus(bus.id)}
                   onAddEffect={(type) => addBusEffect(bus.id, type)}
                   onUpdateEffect={(effectId, patch) => updateBusEffect(bus.id, effectId, patch)}
                   onRemoveEffect={(effectId) => removeBusEffect(bus.id, effectId)}
+                  onReorderEffect={(draggedId, targetId, place) =>
+                    reorderBusEffectRelative(bus.id, draggedId, targetId, place)
+                  }
                 />
               ))
             )}

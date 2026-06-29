@@ -137,6 +137,30 @@ export function busHasEffectType(bus: { effects?: AudioEffect[] }, type: AudioEf
   return bus.effects?.some((effect) => effect.type === type) ?? false;
 }
 
+/**
+ * Reorder `effects` by moving `draggedId` before/after `targetId`.
+ * Returns a new array, or null when the move is a no-op or ids are missing.
+ */
+export function reorderAudioEffects(
+  effects: AudioEffect[],
+  draggedId: string,
+  targetId: string,
+  place: "before" | "after",
+): AudioEffect[] | null {
+  if (draggedId === targetId) return null;
+  const fromIndex = effects.findIndex((effect) => effect.id === draggedId);
+  if (fromIndex === -1 || !effects.some((effect) => effect.id === targetId)) return null;
+
+  const next = [...effects];
+  const [moved] = next.splice(fromIndex, 1);
+  const targetIndex = next.findIndex((effect) => effect.id === targetId);
+  const insertAt = place === "after" ? targetIndex + 1 : targetIndex;
+  next.splice(insertAt, 0, moved);
+
+  const unchanged = next.every((effect, index) => effect.id === effects[index].id);
+  return unchanged ? null : next;
+}
+
 export function mergeEffectParams(
   effect: EqAudioEffect,
   patch: Partial<EqEffectParams & DelayEffectParams & ReverbEffectParams> | undefined,

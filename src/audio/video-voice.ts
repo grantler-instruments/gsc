@@ -1,4 +1,3 @@
-import { resolveCueAudioBusId } from "../lib/audio-buses";
 import { getLoopPlayCount } from "../lib/loop";
 import {
   isVideoLooping,
@@ -8,7 +7,6 @@ import {
   videoTargetTime,
 } from "../lib/video-playback";
 import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
-import type { AudioBus } from "../types/audio-bus";
 import type { Cue } from "../types/cue";
 import { vfsGetObjectUrl } from "../vfs/engine";
 
@@ -38,8 +36,7 @@ export function startVideoVoice(
   ctx: AudioContext,
   goAtMs: number,
   onEnded: VideoVoiceEndedHandler,
-  destination: AudioNode,
-  audioBuses: AudioBus[] = [],
+  connectPanner: (panner: StereoPannerNode) => string | undefined,
 ): VideoVoice | null {
   const objectUrl = cue.assetPath ? vfsGetObjectUrl(cue.assetPath) : undefined;
   if (!objectUrl) return null;
@@ -60,7 +57,7 @@ export function startVideoVoice(
 
   source.connect(gain);
   gain.connect(panner);
-  panner.connect(destination);
+  const audioBusId = connectPanner(panner);
 
   const voice: VideoVoice = {
     cueId: cue.id,
@@ -70,7 +67,7 @@ export function startVideoVoice(
     panner,
     goAtMs,
     loopIteration: 0,
-    audioBusId: resolveCueAudioBusId(cue, audioBuses),
+    audioBusId,
   };
 
   const loopPlayCount = getLoopPlayCount(cue);

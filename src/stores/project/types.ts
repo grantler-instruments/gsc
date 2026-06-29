@@ -111,6 +111,12 @@ export interface ProjectState {
     },
   ) => void;
   removeBusEffect: (busId: string, effectId: string) => void;
+  reorderBusEffectRelative: (
+    busId: string,
+    draggedId: string,
+    targetId: string,
+    place: "before" | "after",
+  ) => void;
   syncFixturePlot: () => void;
   setFixturePlot: (plot: FixturePlot) => void;
   updateFixturePlotEntry: (

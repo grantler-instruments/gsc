@@ -593,7 +593,10 @@
     "mix": "مزج",
     "eqLow": "منخفض",
     "eqMid": "متوسط",
-    "eqHigh": "مرتفع"
+    "eqHigh": "مرتفع",
+    "pan": "توازن",
+    "outputBus": "الخرج",
+    "outputBusDirect": "Master out"
   },
   "ofl": {
     "title": "مكتبة الوحدات المفتوحة",

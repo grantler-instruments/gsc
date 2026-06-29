@@ -1,11 +1,13 @@
 import type { StoreApi } from "zustand";
-import { createAudioBus, normalizeAudioBus } from "../../lib/audio-buses";
+import { createAudioBus, normalizeAudioBus, normalizeAudioBuses } from "../../lib/audio-buses";
 import {
   busHasEffectType,
   createDefaultBusEffect,
   mergeEffectParams,
   normalizeAudioEffect,
+  reorderAudioEffects,
 } from "../../lib/audio-effects";
+import { canEditProject } from "../../lib/show-mode";
 import type { AudioEffect } from "../../types/audio-effect";
 import type { ProjectState } from "./types";
 
@@ -37,6 +39,7 @@ export function createAudioBusActions(
   | "addBusEffect"
   | "updateBusEffect"
   | "removeBusEffect"
+  | "reorderBusEffectRelative"
 > {
   return {
     addAudioBus: (overrides = {}) => {
@@ -47,7 +50,7 @@ export function createAudioBusActions(
 
     removeAudioBus: (id) =>
       set((state) => ({
-        audioBuses: state.audioBuses.filter((bus) => bus.id !== id),
+        audioBuses: normalizeAudioBuses(state.audioBuses.filter((bus) => bus.id !== id)),
         cueLists: state.cueLists.map((list) => ({
           ...list,
           cues: list.cues.map((cue) =>
@@ -58,8 +61,8 @@ export function createAudioBusActions(
 
     updateAudioBus: (id, patch) =>
       set((state) => ({
-        audioBuses: state.audioBuses.map((bus) =>
-          bus.id === id ? normalizeAudioBus({ ...bus, ...patch, id: bus.id }) : bus,
+        audioBuses: normalizeAudioBuses(
+          state.audioBuses.map((bus) => (bus.id === id ? { ...bus, ...patch, id: bus.id } : bus)),
         ),
       })),
 
@@ -114,5 +117,16 @@ export function createAudioBusActions(
           effects.filter((effect) => effect.id !== effectId),
         ),
       })),
+
+    reorderBusEffectRelative: (busId, draggedId, targetId, place) => {
+      if (!canEditProject()) return;
+      const bus = get().audioBuses.find((entry) => entry.id === busId);
+      if (!bus) return;
+      const next = reorderAudioEffects(bus.effects ?? [], draggedId, targetId, place);
+      if (!next) return;
+      set((state) => ({
+        audioBuses: updateBusEffects(state.audioBuses, busId, () => next),
+      }));
+    },
   };
 }

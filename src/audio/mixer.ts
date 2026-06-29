@@ -1,17 +1,14 @@
-import { busEffectiveVolume } from "../lib/audio-buses";
+import { busEffectiveVolume, clampBusPan, resolveBusOutputBusId } from "../lib/audio-buses";
 import { effectChainKey } from "../lib/audio-effects";
 import type { AudioBus } from "../types/audio-bus";
 import type { AudioEffect } from "../types/audio-effect";
 import { buildBusEffectChain } from "./effects/chain";
 import type { BusEffectRuntime } from "./effects/types";
 
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
 interface BusRuntime {
   input: GainNode;
   fader: GainNode;
+  panner: StereoPannerNode;
   effectChainKey: string;
   effectRuntimes: BusEffectRuntime[];
 }
@@ -35,15 +32,26 @@ export class MixerGraph {
   }
 
   setMasterVolume(volume: number): void {
-    this.master.gain.value = clamp01(volume);
+    this.master.gain.value = Math.max(0, Math.min(1, volume));
   }
 
   private disposeBusRuntime(runtime: BusRuntime): void {
     runtime.input.disconnect();
     runtime.fader.disconnect();
+    runtime.panner.disconnect();
     for (const effect of runtime.effectRuntimes) {
       effect.dispose();
     }
+  }
+
+  private resolveBusOutputDestination(outputBusId: string | undefined): AudioNode {
+    if (!outputBusId) return this.master;
+    return this.buses.get(outputBusId)?.input ?? this.master;
+  }
+
+  private reconnectBusOutput(runtime: BusRuntime, outputBusId: string | undefined): void {
+    runtime.panner.disconnect();
+    runtime.panner.connect(this.resolveBusOutputDestination(outputBusId));
   }
 
   private reconnectBusEffects(runtime: BusRuntime, effects: AudioEffect[]): void {
@@ -55,9 +63,7 @@ export class MixerGraph {
     runtime.effectRuntimes = buildBusEffectChain(this.ctx, effects);
     runtime.effectChainKey = effectChainKey(effects);
 
-    // Re-wire fader → master and clear stale effect connections into the fader.
     runtime.fader.disconnect();
-    runtime.fader.connect(this.master);
 
     let tail: AudioNode = runtime.input;
     for (let index = 0; index < runtime.effectRuntimes.length; index++) {
@@ -67,6 +73,7 @@ export class MixerGraph {
       effectRuntime.apply(effects[index]);
     }
     tail.connect(runtime.fader);
+    runtime.fader.connect(runtime.panner);
   }
 
   private applyBusEffectParams(runtime: BusRuntime, effects: AudioEffect[]): void {
@@ -95,9 +102,11 @@ export class MixerGraph {
         const input = this.ctx.createGain();
         input.gain.value = 1;
         const fader = this.ctx.createGain();
+        const panner = this.ctx.createStereoPanner();
         runtime = {
           input,
           fader,
+          panner,
           effectChainKey: "",
           effectRuntimes: [],
         };
@@ -110,6 +119,14 @@ export class MixerGraph {
       }
 
       runtime.fader.gain.value = busEffectiveVolume(bus);
+      runtime.panner.pan.value = clampBusPan(bus.pan ?? 0);
+    }
+
+    for (const bus of buses) {
+      const runtime = this.buses.get(bus.id);
+      if (!runtime) continue;
+      const outputBusId = resolveBusOutputBusId(bus, buses);
+      this.reconnectBusOutput(runtime, outputBusId);
     }
   }
 

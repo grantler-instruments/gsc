@@ -7,9 +7,10 @@ import MenuItem from "@mui/material/MenuItem";
 import Slider from "@mui/material/Slider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { busHasEffectType } from "../../lib/audio-effects";
+import { readBusEffectDragId, setActiveBusEffectDrag, setBusEffectDragData } from "../../lib/drag";
 import type { AudioBus } from "../../types/audio-bus";
 import type {
   AudioEffect,
@@ -27,11 +28,16 @@ import {
   REVERB_DECAY_MAX_SEC,
   REVERB_DECAY_MIN_SEC,
 } from "../../types/audio-effect";
+import { useClearOnDragEnd } from "../cue-list/useClearOnDragEnd";
 
 export const EQ_BAND_WIDTH = 36;
 export const EQ_BLOCK_WIDTH = EQ_BAND_WIDTH * 3;
 export const FX_BLOCK_WIDTH = 108;
 export const FX_SLIDER_HEIGHT = 140;
+export const ADD_EFFECT_COLUMN_WIDTH = 72;
+export const PREMIXER_EMPTY_WIDTH = 120;
+export const PREMIXER_EFFECTS_PADDING_X = 8;
+export const PREMIXER_EFFECTS_GAP = 8;
 
 const horizontalSliderSx = {
   color: "primary.main",
@@ -84,6 +90,16 @@ function ParamRow({ label, value, min, max, step, disabled, onChange }: ParamRow
   );
 }
 
+interface EffectReorderProps {
+  canReorder: boolean;
+  dropTarget: "before" | "after" | null;
+  onDragStart: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent) => void;
+  onDragEnd: () => void;
+}
+
 interface EffectBlockShellProps {
   title: string;
   enabled: boolean;
@@ -92,6 +108,7 @@ interface EffectBlockShellProps {
   onRemove: () => void;
   width: number;
   children: React.ReactNode;
+  reorder?: EffectReorderProps;
 }
 
 function EffectBlockShell({
@@ -102,11 +119,15 @@ function EffectBlockShell({
   onRemove,
   width,
   children,
+  reorder,
 }: EffectBlockShellProps) {
   const { t } = useTranslation();
 
   return (
     <Box
+      onDragOver={reorder?.onDragOver}
+      onDragLeave={reorder?.onDragLeave}
+      onDrop={reorder?.onDrop}
       sx={{
         width,
         flexShrink: 0,
@@ -117,12 +138,30 @@ function EffectBlockShell({
         py: 0.75,
         borderRight: 1,
         borderColor: "divider",
+        boxShadow:
+          reorder?.dropTarget === "before"
+            ? (theme) => `inset 2px 0 0 ${theme.palette.primary.main}`
+            : reorder?.dropTarget === "after"
+              ? (theme) => `inset -2px 0 0 ${theme.palette.primary.main}`
+              : undefined,
       }}
     >
       <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
         <Typography
           variant="caption"
-          sx={{ fontSize: 10, fontWeight: 700, color: "text.secondary" }}
+          draggable={reorder?.canReorder}
+          onDragStart={reorder?.onDragStart}
+          onDragEnd={reorder?.onDragEnd}
+          sx={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: "text.secondary",
+            ...(reorder?.canReorder && {
+              cursor: "grab",
+              userSelect: "none",
+              "&:active": { cursor: "grabbing" },
+            }),
+          }}
         >
           {title}
         </Typography>
@@ -158,9 +197,17 @@ interface EqEffectBlockProps {
   onUpdate: (params: Partial<EqEffectParams>) => void;
   onToggle: (enabled: boolean) => void;
   onRemove: () => void;
+  reorder?: EffectReorderProps;
 }
 
-function EqEffectBlock({ effect, canEdit, onUpdate, onToggle, onRemove }: EqEffectBlockProps) {
+function EqEffectBlock({
+  effect,
+  canEdit,
+  onUpdate,
+  onToggle,
+  onRemove,
+  reorder,
+}: EqEffectBlockProps) {
   const { t } = useTranslation();
   const disabled = !canEdit || !effect.enabled;
 
@@ -172,6 +219,7 @@ function EqEffectBlock({ effect, canEdit, onUpdate, onToggle, onRemove }: EqEffe
       onToggle={() => onToggle(!effect.enabled)}
       onRemove={onRemove}
       width={EQ_BLOCK_WIDTH}
+      reorder={reorder}
     >
       <Box
         sx={{ display: "flex", flexDirection: "row", justifyContent: "space-between", mx: "auto" }}
@@ -229,6 +277,7 @@ interface DelayEffectBlockProps {
   onUpdate: (params: Partial<DelayEffectParams>) => void;
   onToggle: (enabled: boolean) => void;
   onRemove: () => void;
+  reorder?: EffectReorderProps;
 }
 
 function DelayEffectBlock({
@@ -237,6 +286,7 @@ function DelayEffectBlock({
   onUpdate,
   onToggle,
   onRemove,
+  reorder,
 }: DelayEffectBlockProps) {
   const { t } = useTranslation();
   const disabled = !canEdit || !effect.enabled;
@@ -249,6 +299,7 @@ function DelayEffectBlock({
       onToggle={() => onToggle(!effect.enabled)}
       onRemove={onRemove}
       width={FX_BLOCK_WIDTH}
+      reorder={reorder}
     >
       <Stack spacing={0.75} sx={{ flex: 1, justifyContent: "center" }}>
         <ParamRow
@@ -289,6 +340,7 @@ interface ReverbEffectBlockProps {
   onUpdate: (params: Partial<ReverbEffectParams>) => void;
   onToggle: (enabled: boolean) => void;
   onRemove: () => void;
+  reorder?: EffectReorderProps;
 }
 
 function ReverbEffectBlock({
@@ -297,6 +349,7 @@ function ReverbEffectBlock({
   onUpdate,
   onToggle,
   onRemove,
+  reorder,
 }: ReverbEffectBlockProps) {
   const { t } = useTranslation();
   const disabled = !canEdit || !effect.enabled;
@@ -309,6 +362,7 @@ function ReverbEffectBlock({
       onToggle={() => onToggle(!effect.enabled)}
       onRemove={onRemove}
       width={FX_BLOCK_WIDTH}
+      reorder={reorder}
     >
       <Stack spacing={0.75} sx={{ flex: 1, justifyContent: "center" }}>
         <ParamRow
@@ -334,13 +388,24 @@ function ReverbEffectBlock({
   );
 }
 
-export function premixerContentWidth(effects: AudioEffect[] | undefined): number {
-  const list = effects ?? [];
-  if (list.length === 0) return 120;
-  return list.reduce((width, effect) => {
-    if (effect.type === "eq") return width + EQ_BLOCK_WIDTH;
-    return width + FX_BLOCK_WIDTH;
-  }, 0);
+export function premixerContentWidth(bus: AudioBus): number {
+  const list = bus.effects ?? [];
+  const availableTypes = (["eq", "delay", "reverb"] as const).filter(
+    (type) => !busHasEffectType(bus, type),
+  );
+  const addColumnWidth = availableTypes.length > 0 ? ADD_EFFECT_COLUMN_WIDTH : 0;
+
+  if (list.length === 0) return PREMIXER_EMPTY_WIDTH + addColumnWidth;
+
+  return (
+    list.reduce((width, effect) => {
+      if (effect.type === "eq") return width + EQ_BLOCK_WIDTH;
+      return width + FX_BLOCK_WIDTH;
+    }, 0) +
+    Math.max(0, list.length - 1) * PREMIXER_EFFECTS_GAP +
+    addColumnWidth +
+    PREMIXER_EFFECTS_PADDING_X * 2
+  );
 }
 
 interface BusPremixerProps {
@@ -355,7 +420,10 @@ interface BusPremixerProps {
     },
   ) => void;
   onRemoveEffect: (effectId: string) => void;
+  onReorderEffect: (draggedId: string, targetId: string, place: "before" | "after") => void;
 }
+
+type EffectDropTarget = { id: string; place: "before" | "after" };
 
 export function BusPremixer({
   bus,
@@ -363,13 +431,115 @@ export function BusPremixer({
   onAddEffect,
   onUpdateEffect,
   onRemoveEffect,
+  onReorderEffect,
 }: BusPremixerProps) {
   const { t } = useTranslation();
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [dropTarget, setDropTarget] = useState<EffectDropTarget | null>(null);
   const effects = bus.effects ?? [];
+  const canReorder = canEdit && effects.length > 1;
+
+  const clearDropTarget = useCallback(() => {
+    setDropTarget(null);
+    setActiveBusEffectDrag(null);
+  }, []);
+  useClearOnDragEnd(clearDropTarget);
+
+  const handleEffectDragOver = useCallback(
+    (e: React.DragEvent, effectId: string) => {
+      if (!canReorder) return;
+      const draggedId = readBusEffectDragId(e.dataTransfer);
+      if (draggedId === null || draggedId === effectId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const rect = e.currentTarget.getBoundingClientRect();
+      const place = e.clientX < rect.left + rect.width / 2 ? "before" : "after";
+      setDropTarget({ id: effectId, place });
+    },
+    [canReorder],
+  );
+
+  const handleEffectDrop = useCallback(
+    (e: React.DragEvent, effectId: string) => {
+      if (!canReorder) return;
+      const draggedId = readBusEffectDragId(e.dataTransfer);
+      if (draggedId === null) return;
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const place = e.clientX < rect.left + rect.width / 2 ? "before" : "after";
+      if (draggedId !== effectId) {
+        onReorderEffect(draggedId, effectId, place);
+      }
+      clearDropTarget();
+    },
+    [canReorder, clearDropTarget, onReorderEffect],
+  );
+
+  const getEffectReorderProps = useCallback(
+    (effectId: string): EffectReorderProps | undefined => {
+      if (!canReorder) return undefined;
+      return {
+        canReorder: true,
+        dropTarget: dropTarget?.id === effectId ? dropTarget.place : null,
+        onDragStart: (e) => {
+          setBusEffectDragData(e.dataTransfer, { effectId });
+        },
+        onDragOver: (e) => handleEffectDragOver(e, effectId),
+        onDragLeave: () => setDropTarget((prev) => (prev?.id === effectId ? null : prev)),
+        onDrop: (e) => handleEffectDrop(e, effectId),
+        onDragEnd: clearDropTarget,
+      };
+    },
+    [canReorder, clearDropTarget, dropTarget, handleEffectDragOver, handleEffectDrop],
+  );
 
   const availableTypes: AudioEffectType[] = (["eq", "delay", "reverb"] as const).filter(
     (type) => !busHasEffectType(bus, type),
+  );
+
+  const addEffectMenu = canEdit && availableTypes.length > 0 && (
+    <>
+      <Button
+        size="small"
+        variant="text"
+        sx={{ fontSize: 10, py: 0 }}
+        onClick={(e) => setMenuAnchor(e.currentTarget)}
+      >
+        {t("audioMixer.addEffect")}
+      </Button>
+      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
+        {availableTypes.includes("eq") && (
+          <MenuItem
+            onClick={() => {
+              onAddEffect("eq");
+              setMenuAnchor(null);
+            }}
+          >
+            {t("audioMixer.eq")}
+          </MenuItem>
+        )}
+        {availableTypes.includes("delay") && (
+          <MenuItem
+            onClick={() => {
+              onAddEffect("delay");
+              setMenuAnchor(null);
+            }}
+          >
+            {t("audioMixer.delay")}
+          </MenuItem>
+        )}
+        {availableTypes.includes("reverb") && (
+          <MenuItem
+            onClick={() => {
+              onAddEffect("reverb");
+              setMenuAnchor(null);
+            }}
+          >
+            {t("audioMixer.reverb")}
+          </MenuItem>
+        )}
+      </Menu>
+    </>
   );
 
   return (
@@ -387,7 +557,6 @@ export function BusPremixer({
         direction="row"
         sx={{
           alignItems: "center",
-          justifyContent: "space-between",
           px: 1,
           py: 0.5,
           borderBottom: 1,
@@ -401,109 +570,94 @@ export function BusPremixer({
         >
           {t("audioMixer.premixer")}
         </Typography>
-        {canEdit && availableTypes.length > 0 && (
-          <>
-            <Button
-              size="small"
-              variant="text"
-              sx={{ fontSize: 10, py: 0 }}
-              onClick={(e) => setMenuAnchor(e.currentTarget)}
-            >
-              {t("audioMixer.addEffect")}
-            </Button>
-            <Menu
-              anchorEl={menuAnchor}
-              open={Boolean(menuAnchor)}
-              onClose={() => setMenuAnchor(null)}
-            >
-              {availableTypes.includes("eq") && (
-                <MenuItem
-                  onClick={() => {
-                    onAddEffect("eq");
-                    setMenuAnchor(null);
-                  }}
-                >
-                  {t("audioMixer.eq")}
-                </MenuItem>
-              )}
-              {availableTypes.includes("delay") && (
-                <MenuItem
-                  onClick={() => {
-                    onAddEffect("delay");
-                    setMenuAnchor(null);
-                  }}
-                >
-                  {t("audioMixer.delay")}
-                </MenuItem>
-              )}
-              {availableTypes.includes("reverb") && (
-                <MenuItem
-                  onClick={() => {
-                    onAddEffect("reverb");
-                    setMenuAnchor(null);
-                  }}
-                >
-                  {t("audioMixer.reverb")}
-                </MenuItem>
-              )}
-            </Menu>
-          </>
-        )}
       </Stack>
 
-      {effects.length === 0 ? (
-        <Box
-          sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", px: 1 }}
-        >
-          <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center" }}>
-            {t("audioMixer.noEffects")}
-          </Typography>
-        </Box>
-      ) : (
-        <Box
-          sx={{ flex: 1, minHeight: 0, overflowX: "auto", overflowY: "hidden", display: "flex" }}
-        >
-          {effects.map((effect) => {
-            const common = {
-              canEdit,
-              onUpdate: (
-                params: Partial<EqEffectParams & DelayEffectParams & ReverbEffectParams>,
-              ) => onUpdateEffect(effect.id, { params }),
-              onToggle: (enabled: boolean) => onUpdateEffect(effect.id, { enabled }),
-              onRemove: () => onRemoveEffect(effect.id),
-            };
+      <Box sx={{ flex: 1, minHeight: 0, display: "flex", minWidth: 0 }}>
+        {effects.length === 0 ? (
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              px: 1,
+            }}
+          >
+            <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center" }}>
+              {t("audioMixer.noEffects")}
+            </Typography>
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              minHeight: 0,
+              overflow: "auto",
+              display: "flex",
+              gap: 1,
+              px: 1,
+            }}
+          >
+            {effects.map((effect) => {
+              const common = {
+                canEdit,
+                reorder: getEffectReorderProps(effect.id),
+                onUpdate: (
+                  params: Partial<EqEffectParams & DelayEffectParams & ReverbEffectParams>,
+                ) => onUpdateEffect(effect.id, { params }),
+                onToggle: (enabled: boolean) => onUpdateEffect(effect.id, { enabled }),
+                onRemove: () => onRemoveEffect(effect.id),
+              };
 
-            if (effect.type === "eq") {
+              if (effect.type === "eq") {
+                return (
+                  <EqEffectBlock
+                    key={effect.id}
+                    effect={effect}
+                    {...common}
+                    onUpdate={common.onUpdate}
+                  />
+                );
+              }
+              if (effect.type === "delay") {
+                return (
+                  <DelayEffectBlock
+                    key={effect.id}
+                    effect={effect}
+                    {...common}
+                    onUpdate={common.onUpdate}
+                  />
+                );
+              }
               return (
-                <EqEffectBlock
+                <ReverbEffectBlock
                   key={effect.id}
                   effect={effect}
                   {...common}
                   onUpdate={common.onUpdate}
                 />
               );
-            }
-            if (effect.type === "delay") {
-              return (
-                <DelayEffectBlock
-                  key={effect.id}
-                  effect={effect}
-                  {...common}
-                  onUpdate={common.onUpdate}
-                />
-              );
-            }
-            return (
-              <ReverbEffectBlock
-                key={effect.id}
-                effect={effect}
-                {...common}
-                onUpdate={common.onUpdate}
-              />
-            );
-          })}
-        </Box>
-      )}
+            })}
+          </Box>
+        )}
+
+        {addEffectMenu && (
+          <Box
+            sx={{
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              px: 1,
+              borderLeft: 1,
+              borderColor: "divider",
+            }}
+          >
+            {addEffectMenu}
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 }

@@ -191,17 +191,29 @@ export class AudioEngine {
     voice.audioBusId = this.connectVoicePanner(voice.panner, cue);
   }
 
+  private rerouteVideoVoiceIfNeeded(voice: VideoVoice, cue: Cue): void {
+    const nextBusId = resolveCueAudioBusId(cue, this.audioBuses);
+    if (voice.audioBusId === nextBusId) return;
+    voice.panner.disconnect();
+    voice.audioBusId = this.connectVoicePanner(voice.panner, cue);
+  }
+
   /** Refresh gain and pan for all active voices (e.g. during a fade). */
   updateActiveVoiceLevels(cues: Cue[]): void {
     for (const cueId of this.voices.keys()) {
       const cue = cues.find((c) => c.id === cueId);
       if (cue) {
+        const voice = this.voices.get(cueId);
+        if (voice) {
+          this.rerouteVoiceIfNeeded(voice, cue);
+        }
         this.updateVoiceLevels(cueId, cue);
       }
     }
     for (const voice of this.videoVoices.values()) {
       const cue = cues.find((c) => c.id === voice.cueId);
       if (cue) {
+        this.rerouteVideoVoiceIfNeeded(voice, cue);
         updateVideoVoiceLevels(voice, cue);
       }
     }
@@ -253,16 +265,12 @@ export class AudioEngine {
           const existing = this.videoVoices.get(cueId);
           if (!existing) continue;
           if (existing.goAtMs === goAtMs) {
-            rerouteVideoVoiceIfNeeded(existing, cue, this.audioBuses, () =>
-              this.voiceDestination(cue),
-            );
+            this.rerouteVideoVoiceIfNeeded(existing, cue);
             updateVideoVoiceLevels(existing, cue);
             continue;
           }
           seekVideoVoice(existing, cue, goAtMs);
-          rerouteVideoVoiceIfNeeded(existing, cue, this.audioBuses, () =>
-            this.voiceDestination(cue),
-          );
+          this.rerouteVideoVoiceIfNeeded(existing, cue);
           updateVideoVoiceLevels(existing, cue);
           continue;
         }
@@ -282,8 +290,7 @@ export class AudioEngine {
               this.handleVoiceEnded(id);
             }
           },
-          this.voiceDestination(cue),
-          this.audioBuses,
+          (panner) => this.connectVoicePanner(panner, cue),
         );
 
         if (!voice) {
@@ -370,16 +377,3 @@ export class AudioEngine {
 }
 
 export const audioEngine = new AudioEngine();
-
-function rerouteVideoVoiceIfNeeded(
-  voice: VideoVoice,
-  cue: Cue,
-  audioBuses: AudioBus[],
-  destination: () => AudioNode,
-): void {
-  const nextBusId = resolveCueAudioBusId(cue, audioBuses);
-  if (voice.audioBusId === nextBusId) return;
-  voice.panner.disconnect();
-  voice.panner.connect(destination());
-  voice.audioBusId = nextBusId;
-}
