@@ -1,5 +1,5 @@
 import Box from "@mui/material/Box";
-import { getCueAssetWarning } from "../../lib/cue-asset";
+import { cueNeedsAsset } from "../../lib/cue-asset";
 import { isContainerCue, isFadeCue, isStopCue, isWaitCue } from "../../lib/cues";
 import type { Cue, MidiCueData, OscCueData } from "../../types/cue";
 import { ContainerInspectorFields } from "../ContainerInspectorFields";
@@ -34,8 +34,6 @@ export function CueInspectorBody({
   dmxDisabled,
   onUpdate,
 }: CueInspectorBodyProps) {
-  const assetWarning = getCueAssetWarning(cue);
-
   const patchMidi = (midiPatch: Partial<MidiCueData>) => {
     if (readOnly || cue.type !== "midi" || !cue.midi) return;
     onUpdate({ midi: { ...cue.midi, ...midiPatch } });
@@ -100,7 +98,7 @@ export function CueInspectorBody({
         onTriggerNoteChange={(triggerNote) => onUpdate({ triggerNote })}
       />
 
-      {assetWarning && <CueAssetAssign cue={cue} readOnly={readOnly} />}
+      {cueNeedsAsset(cue) && <CueAssetAssign cue={cue} readOnly={readOnly} />}
 
       {isContainerCue(cue) && <ContainerInspectorFields container={cue} />}
 
