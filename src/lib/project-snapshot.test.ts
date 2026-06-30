@@ -217,4 +217,130 @@ describe("project snapshot round-trip", () => {
     expect(resaved).not.toHaveProperty("audioBuses");
     expect(resaved.cueLists[0].cues).toEqual(list.cues);
   });
+
+  it("preserves video buses through snapshot", () => {
+    const list = createCueList("Main");
+    const snap = cueListsToSnapshot(
+      "project-1",
+      "My Show",
+      [list],
+      list.id,
+      [],
+      [],
+      undefined,
+      [],
+      undefined,
+      undefined,
+      undefined,
+      [{ id: "v1", name: "Lobby", opacity: 0.8 }],
+    );
+
+    const loaded = snapshotToCueLists(snap);
+    expect(loaded.videoBuses).toEqual([{ id: "v1", name: "Lobby", opacity: 0.8 }]);
+  });
+
+  it("loads legacy snapshots without videoBuses as empty buses", () => {
+    const list = createCueList("Main");
+    list.cues = [
+      testCue("v", "Clip", "video", { assetPath: "/assets/clip.mp4", videoBusId: "removed-bus" }),
+      testCue("g", "Look", "image", { assetPath: "/assets/look.png", videoBusId: "removed-bus" }),
+    ];
+
+    const snap = cueListsToSnapshot("legacy-1", "Legacy Show", [list], list.id);
+    const { videoBuses: _removed, ...legacySnap } = snap;
+
+    const loaded = snapshotToCueLists(legacySnap as typeof snap);
+    expect(loaded.videoBuses).toEqual([]);
+    expect(loaded.cueLists[0].cues[0]).not.toHaveProperty("videoBusId");
+    expect(loaded.cueLists[0].cues[1]).not.toHaveProperty("videoBusId");
+  });
+
+  it("does not write videoBuses into snapshots when the project has none", () => {
+    const list = createCueList("Main");
+    list.cues = [testCue("v", "Clip", "video", { assetPath: "/assets/clip.mp4" })];
+
+    const snap = cueListsToSnapshot("legacy-1", "Legacy Show", [list], list.id);
+
+    expect(snap).not.toHaveProperty("videoBuses");
+  });
+
+  it("preserves cue video bus assignments when the assigned bus exists", () => {
+    const list = createCueList("Main");
+    list.cues = [
+      testCue("v", "Clip", "video", { assetPath: "/assets/clip.mp4", videoBusId: "v1" }),
+      testCue("g", "Look", "image", { assetPath: "/assets/look.png", videoBusId: "v1" }),
+    ];
+    const snap = cueListsToSnapshot(
+      "project-1",
+      "My Show",
+      [list],
+      list.id,
+      [],
+      [],
+      undefined,
+      [],
+      undefined,
+      undefined,
+      undefined,
+      [{ id: "v1", name: "Lobby", opacity: 1 }],
+    );
+
+    const loaded = snapshotToCueLists(snap);
+    expect(loaded.cueLists[0].cues[0].videoBusId).toBe("v1");
+    expect(loaded.cueLists[0].cues[1].videoBusId).toBe("v1");
+  });
+
+  it("removes video bus assignments from non-visual cues", () => {
+    const list = createCueList("Main");
+    list.cues = [
+      testCue("a", "Intro", "audio", { assetPath: "/assets/intro.wav", videoBusId: "v1" }),
+    ];
+    const snap = cueListsToSnapshot(
+      "project-1",
+      "My Show",
+      [list],
+      list.id,
+      [],
+      [],
+      undefined,
+      [],
+      undefined,
+      undefined,
+      undefined,
+      [{ id: "v1", name: "Lobby", opacity: 1 }],
+    );
+
+    const loaded = snapshotToCueLists(snap);
+    expect(loaded.cueLists[0].cues[0]).not.toHaveProperty("videoBusId");
+  });
+
+  it("preserves custom main output name through snapshot", () => {
+    const list = createCueList("Main");
+    const snap = cueListsToSnapshot(
+      "project-1",
+      "My Show",
+      [list],
+      list.id,
+      [],
+      [],
+      undefined,
+      [],
+      undefined,
+      undefined,
+      undefined,
+      [],
+      "House",
+    );
+
+    const loaded = snapshotToCueLists(snap);
+    expect(loaded.masterVideoOutputName).toBe("House");
+  });
+
+  it("loads legacy snapshots without masterVideoOutputName as Main", () => {
+    const list = createCueList("Main");
+    const snap = cueListsToSnapshot("legacy-1", "Legacy Show", [list], list.id);
+
+    const loaded = snapshotToCueLists(snap);
+    expect(loaded.masterVideoOutputName).toBe("Main");
+  });
 });

@@ -21,12 +21,42 @@ export interface OutputLayer {
 export interface OutputState {
   revision: number;
   projectId: string;
+  /** Undefined = master output window; otherwise the assigned video bus id. */
+  busId?: string;
+  /** Display name for bus output windows. */
+  busName?: string;
   layers: OutputLayer[];
+}
+
+/** One destination in the in-app multiview preview. */
+export interface OutputPreviewDestination {
+  /** Undefined = master output. */
+  busId?: string;
+  busName: string;
+  layers: OutputLayer[];
+}
+
+export interface MultiviewPreviewState {
+  revision: number;
+  projectId: string;
+  destinations: OutputPreviewDestination[];
 }
 
 export type OutputMessage =
   | { type: "state"; payload: OutputState }
-  | { type: "request-state" }
+  | { type: "request-state"; busId?: string }
   | { type: "asset"; payload: { projectId: string; assetPath: string; blob: Blob } };
 
 export const OUTPUT_CHANNEL_NAME = "gsc-output";
+
+/** BroadcastChannel name for a visual output destination. */
+export function outputChannelName(busId?: string): string {
+  return busId ? `${OUTPUT_CHANNEL_NAME}-bus-${busId}` : OUTPUT_CHANNEL_NAME;
+}
+
+/** Read the optional video bus id from an output window URL. */
+export function getOutputBusIdFromUrl(search?: string): string | undefined {
+  const query = search ?? (typeof window !== "undefined" ? window.location.search : "");
+  const busId = new URLSearchParams(query).get("bus");
+  return busId || undefined;
+}

@@ -20,6 +20,8 @@ interface MediaInspectorFieldsProps {
 export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspectorFieldsProps) {
   const { t } = useTranslation();
   const audioBuses = useProjectStore((s) => s.audioBuses);
+  const videoBuses = useProjectStore((s) => s.videoBuses);
+  const masterVideoOutputName = useProjectStore((s) => s.masterVideoOutputName);
   const isMedia = cue.type === "audio" || cue.type === "video" || cue.type === "image";
   if (!isMedia) return null;
 
@@ -87,16 +89,42 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
       )}
 
       {(cue.type === "video" || cue.type === "image") && (
-        <SliderNumberField
-          label={t("inspector.opacity")}
-          value={cue.opacity ?? 1}
-          min={0}
-          max={1}
-          step={0.01}
-          readOnly={readOnly}
-          onChange={(opacity) => onChange({ opacity })}
-          inputWidth={48}
-        />
+        <>
+          <Box sx={inspectorFieldSx}>
+            <Typography component="label" sx={inspectorFieldLabelSx}>
+              {t("inspector.videoBus")}
+            </Typography>
+            <Select
+              size="small"
+              fullWidth
+              value={cue.videoBusId ?? ""}
+              readOnly={readOnly}
+              disabled={readOnly}
+              displayEmpty
+              onChange={(event) => {
+                const value = event.target.value;
+                onChange({ videoBusId: value || undefined });
+              }}
+            >
+              <MenuItem value="">{masterVideoOutputName}</MenuItem>
+              {videoBuses.map((bus) => (
+                <MenuItem key={bus.id} value={bus.id}>
+                  {bus.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+          <SliderNumberField
+            label={t("inspector.opacity")}
+            value={cue.opacity ?? 1}
+            min={0}
+            max={1}
+            step={0.01}
+            readOnly={readOnly}
+            onChange={(opacity) => onChange({ opacity })}
+            inputWidth={48}
+          />
+        </>
       )}
     </>
   );

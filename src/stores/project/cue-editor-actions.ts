@@ -21,6 +21,7 @@ import { defaultOscCueData } from "../../lib/osc";
 import { runWithoutHistory } from "../../lib/project-history";
 import { randomId } from "../../lib/random-id";
 import { canEditProject } from "../../lib/show-mode";
+import { normalizeCueVideoBus } from "../../lib/video-buses";
 import type { Cue } from "../../types/cue";
 import {
   applyRenumber,
@@ -288,7 +289,12 @@ export function createCueEditorActions(
           ...patchActiveList(s, (list) => ({
             cues: applyRenumber(
               list.cues.map((c) =>
-                c.id === id ? normalizeCueAudioBus({ ...c, ...patch }, s.audioBuses) : c,
+                c.id === id
+                  ? normalizeCueVideoBus(
+                      normalizeCueAudioBus({ ...c, ...patch }, s.audioBuses),
+                      s.videoBuses,
+                    )
+                  : c,
               ),
             ),
           })),

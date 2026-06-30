@@ -3,9 +3,9 @@ import { storeOutputAssetBlob } from "../lib/output-asset-bridge";
 import { createOutputChannel, isOutputMessage } from "../lib/output-channel";
 
 /** Receives asset blobs pushed from the control window over BroadcastChannel. */
-export function useOutputAssetReceiver(): void {
+export function useOutputAssetReceiver(busId?: string): void {
   useEffect(() => {
-    const channel = createOutputChannel();
+    const channel = createOutputChannel(busId);
 
     channel.onmessage = (event: MessageEvent) => {
       if (!isOutputMessage(event.data)) return;
@@ -17,5 +17,5 @@ export function useOutputAssetReceiver(): void {
     return () => {
       channel.close();
     };
-  }, []);
+  }, [busId]);
 }

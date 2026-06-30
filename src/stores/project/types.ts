@@ -19,6 +19,7 @@ import type {
 import type { Fixture } from "../../types/fixture";
 import type { FixturePlot, FixturePlotEntry } from "../../types/fixture-plot";
 import type { MidiMapping } from "../../types/midi-mapping";
+import type { VideoBus } from "../../types/video-bus";
 
 export interface ProjectState {
   id: string;
@@ -32,6 +33,8 @@ export interface ProjectState {
   fixtures: Fixture[];
   fixturePlot: FixturePlot;
   audioBuses: AudioBus[];
+  videoBuses: VideoBus[];
+  masterVideoOutputName: string;
   addCue: (opts: {
     name: string;
     type: CueType;
@@ -117,6 +120,10 @@ export interface ProjectState {
     targetId: string,
     place: "before" | "after",
   ) => void;
+  addVideoBus: (opts?: Partial<Omit<VideoBus, "id">>) => VideoBus;
+  removeVideoBus: (id: string) => void;
+  updateVideoBus: (id: string, patch: Partial<Omit<VideoBus, "id">>) => void;
+  updateMasterVideoOutputName: (name: string) => void;
   syncFixturePlot: () => void;
   setFixturePlot: (plot: FixturePlot) => void;
   updateFixturePlotEntry: (

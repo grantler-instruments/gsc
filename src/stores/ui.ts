@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { clampAudioMixerHeight, DEFAULT_AUDIO_MIXER_HEIGHT } from "../lib/audio-mixer-layout";
+import {
+  clampVideoOutputDockHeight,
+  DEFAULT_VIDEO_OUTPUT_DOCK_HEIGHT,
+} from "../lib/video-output-layout";
 import type { MidiAction } from "../types/midi-mapping";
 import type { RightSidebarTabId } from "../types/right-sidebar";
 import type { SidebarTabId } from "../types/sidebar";
@@ -32,6 +36,10 @@ interface UiState {
   audioMixerOpen: boolean;
   /** Height of the audio mixer dock in pixels. */
   audioMixerHeight: number;
+  /** Video output dock above the transport bar. */
+  videoOutputOpen: boolean;
+  /** Height of the video output dock in pixels. */
+  videoOutputHeight: number;
   setSidebarTab: (tab: SidebarTabId) => void;
   setRightSidebarTab: (tab: RightSidebarTabId) => void;
   setDarkMode: (dark: boolean) => void;
@@ -49,6 +57,9 @@ interface UiState {
   setAudioMixerOpen: (open: boolean) => void;
   setAudioMixerHeight: (height: number) => void;
   toggleAudioMixer: () => void;
+  setVideoOutputOpen: (open: boolean) => void;
+  setVideoOutputHeight: (height: number) => void;
+  toggleVideoOutput: () => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -70,6 +81,8 @@ export const useUiStore = create<UiState>()(
         hoveredAssetPath: null,
         audioMixerOpen: false,
         audioMixerHeight: DEFAULT_AUDIO_MIXER_HEIGHT,
+        videoOutputOpen: false,
+        videoOutputHeight: DEFAULT_VIDEO_OUTPUT_DOCK_HEIGHT,
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
         setRightSidebarTab: (rightSidebarTab) => set({ rightSidebarTab }),
         setDarkMode: (darkMode) => set({ darkMode }),
@@ -112,6 +125,10 @@ export const useUiStore = create<UiState>()(
         setAudioMixerHeight: (audioMixerHeight) =>
           set({ audioMixerHeight: clampAudioMixerHeight(audioMixerHeight) }),
         toggleAudioMixer: () => set((s) => ({ audioMixerOpen: !s.audioMixerOpen })),
+        setVideoOutputOpen: (videoOutputOpen) => set({ videoOutputOpen }),
+        setVideoOutputHeight: (videoOutputHeight) =>
+          set({ videoOutputHeight: clampVideoOutputDockHeight(videoOutputHeight) }),
+        toggleVideoOutput: () => set((s) => ({ videoOutputOpen: !s.videoOutputOpen })),
       }),
       {
         name: "gsc-ui",
@@ -120,6 +137,7 @@ export const useUiStore = create<UiState>()(
           rightSidebarTab: s.rightSidebarTab,
           darkMode: s.darkMode,
           audioMixerHeight: s.audioMixerHeight,
+          videoOutputHeight: s.videoOutputHeight,
         }),
         merge: (persisted, current) => {
           const saved = persisted as Partial<UiState> | undefined;
@@ -128,6 +146,9 @@ export const useUiStore = create<UiState>()(
             ...saved,
             audioMixerHeight: clampAudioMixerHeight(
               saved?.audioMixerHeight ?? current.audioMixerHeight,
+            ),
+            videoOutputHeight: clampVideoOutputDockHeight(
+              saved?.videoOutputHeight ?? current.videoOutputHeight,
             ),
           };
         },

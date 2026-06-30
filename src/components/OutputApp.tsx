@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
 import GlobalStyles from "@mui/material/GlobalStyles";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppViewport } from "../hooks/useAppViewport";
 import { useNdiFramePublisher } from "../hooks/useNdiFramePublisher";
@@ -9,15 +9,18 @@ import { useOutputWindowKeyboard } from "../hooks/useOutputWindowKeyboard";
 import { useOutputWindowLifecycle } from "../hooks/useOutputWindowLifecycle";
 import { useResolvedOutputLayers } from "../hooks/useResolvedOutputLayers";
 import { createOutputChannel, isOutputMessage, postRequestState } from "../lib/output-channel";
+import { getCurrentOutputBusId } from "../platform/output-window";
 import type { OutputState } from "../types/output";
 import { VisualStage } from "./VisualStage";
 
 /** Full-screen output window — subscribes to cross-window state. */
 export function OutputApp() {
   const { t } = useTranslation();
+  const busId = useMemo(() => getCurrentOutputBusId(), []);
   const [state, setState] = useState<OutputState>({
     revision: 0,
     projectId: "",
+    ...(busId ? { busId } : {}),
     layers: [],
   });
   const layers = useResolvedOutputLayers(state);
@@ -25,12 +28,14 @@ export function OutputApp() {
 
   useAppViewport();
   useNdiFramePublisher();
-  useOutputAssetReceiver();
+  useOutputAssetReceiver(busId);
   useOutputWindowLifecycle();
   useOutputWindowKeyboard();
 
   useEffect(() => {
-    document.title = t("common.brand.outputWindowTitle");
+    document.title = state.busName
+      ? t("videoOutput.windowTitleNamed", { name: state.busName })
+      : t("common.brand.outputWindowTitle");
     const html = document.documentElement;
     const { body } = document;
     html.style.background = "#000";
@@ -46,26 +51,27 @@ export function OutputApp() {
       body.style.margin = "";
       body.style.overflow = "";
     };
-  }, [t]);
+  }, [state.busName, t]);
 
   useEffect(() => {
-    const channel = createOutputChannel();
+    const channel = createOutputChannel(busId);
     channelRef.current = channel;
 
     channel.onmessage = (event: MessageEvent) => {
       if (!isOutputMessage(event.data)) return;
-      if (event.data.type === "state") {
-        setState(event.data.payload);
-      }
+      if (event.data.type !== "state") return;
+      const payload = event.data.payload;
+      if ((payload.busId ?? undefined) !== busId) return;
+      setState(payload);
     };
 
-    postRequestState(channel);
+    postRequestState(channel, busId);
 
     return () => {
       channel.close();
       channelRef.current = null;
     };
-  }, []);
+  }, [busId]);
 
   return (
     <>

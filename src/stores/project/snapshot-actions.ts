@@ -31,6 +31,8 @@ export function createSnapshotActions(
         fixtures,
         fixturePlot,
         audioBuses,
+        videoBuses,
+        masterVideoOutputName,
       } = get();
       return cueListsToSnapshot(
         id,
@@ -44,6 +46,8 @@ export function createSnapshotActions(
         startDate,
         endDate,
         description,
+        videoBuses,
+        masterVideoOutputName,
       );
     },
   };

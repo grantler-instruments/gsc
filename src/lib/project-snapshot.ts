@@ -3,6 +3,7 @@ import type { Cue, ProjectSnapshot } from "../types/cue";
 import type { Fixture } from "../types/fixture";
 import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
+import type { VideoBus } from "../types/video-bus";
 import { normalizeAudioBuses, normalizeCueAudioBus } from "./audio-buses";
 import type { CueList } from "./cue-lists";
 import { defaultDmxCueData, normalizeDmxCueData } from "./dmx";
@@ -10,8 +11,19 @@ import { normalizeFixturePlot } from "./fixture-plot";
 import { normalizeFixtures } from "./fixtures";
 import { defaultMidiCueData } from "./midi";
 import { defaultOscCueData, normalizeOscArgs } from "./osc";
+import {
+  normalizeCueVideoBus,
+  normalizeMasterVideoOutputName,
+  normalizeVideoBuses,
+  serializeMasterVideoOutputName,
+} from "./video-buses";
 
-function normalizeCues(cues: Cue[], fixtures: Fixture[] = [], audioBuses: AudioBus[] = []): Cue[] {
+function normalizeCues(
+  cues: Cue[],
+  fixtures: Fixture[] = [],
+  audioBuses: AudioBus[] = [],
+  videoBuses: VideoBus[] = [],
+): Cue[] {
   return cues.map((c) => {
     let next = c;
     if (c.type === "midi" && !c.midi) {
@@ -35,7 +47,7 @@ function normalizeCues(cues: Cue[], fixtures: Fixture[] = [], audioBuses: AudioB
     if (next.type === "lightFade" && next.dmx) {
       next = { ...next, dmx: normalizeDmxCueData(next.dmx, fixtures) };
     }
-    return normalizeCueAudioBus(next, audioBuses);
+    return normalizeCueVideoBus(normalizeCueAudioBus(next, audioBuses), videoBuses);
   });
 }
 
@@ -51,14 +63,17 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   fixtures: Fixture[];
   fixturePlot: FixturePlot;
   audioBuses: AudioBus[];
+  videoBuses: VideoBus[];
+  masterVideoOutputName: string;
 } {
   const fixtures = normalizeFixtures(snap.fixtures);
   const fixturePlot = normalizeFixturePlot(snap.fixturePlot, fixtures);
   const audioBuses = normalizeAudioBuses(snap.audioBuses);
+  const videoBuses = normalizeVideoBuses(snap.videoBuses);
   const cueLists: CueList[] = snap.cueLists.map((list) => ({
     id: list.id,
     name: list.name,
-    cues: normalizeCues(list.cues, fixtures, audioBuses),
+    cues: normalizeCues(list.cues, fixtures, audioBuses, videoBuses),
     selectedCueIds: [],
     selectionAnchorId: null,
   }));
@@ -75,6 +90,8 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
     fixtures,
     fixturePlot,
     audioBuses,
+    videoBuses,
+    masterVideoOutputName: normalizeMasterVideoOutputName(snap.masterVideoOutputName),
   };
 }
 
@@ -90,8 +107,12 @@ export function cueListsToSnapshot(
   startDate?: string,
   endDate?: string,
   description?: string,
+  videoBuses: VideoBus[] = [],
+  masterVideoOutputName?: string,
 ): ProjectSnapshot {
   const normalizedFixtures = normalizeFixtures(fixtures);
+  const normalizedMasterName = normalizeMasterVideoOutputName(masterVideoOutputName);
+  const serializedMasterName = serializeMasterVideoOutputName(normalizedMasterName);
   return {
     version: 2,
     id,
@@ -109,5 +130,7 @@ export function cueListsToSnapshot(
     fixtures: normalizedFixtures,
     fixturePlot: normalizeFixturePlot(fixturePlot, normalizedFixtures),
     ...(audioBuses.length > 0 ? { audioBuses: normalizeAudioBuses(audioBuses) } : {}),
+    ...(videoBuses.length > 0 ? { videoBuses: normalizeVideoBuses(videoBuses) } : {}),
+    ...(serializedMasterName ? { masterVideoOutputName: serializedMasterName } : {}),
   };
 }

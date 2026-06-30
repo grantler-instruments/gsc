@@ -1,4 +1,5 @@
 import GraphicEqOutlinedIcon from "@mui/icons-material/GraphicEqOutlined";
+import OndemandVideoOutlinedIcon from "@mui/icons-material/OndemandVideoOutlined";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
@@ -106,6 +107,8 @@ export function TransportBar() {
   const setMasterVolume = useTransportStore((s) => s.setMasterVolume);
   const audioMixerOpen = useUiStore((s) => s.audioMixerOpen);
   const toggleAudioMixer = useUiStore((s) => s.toggleAudioMixer);
+  const videoOutputOpen = useUiStore((s) => s.videoOutputOpen);
+  const toggleVideoOutput = useUiStore((s) => s.toggleVideoOutput);
   const selectedCue = cues.find((c) => c.id === selectedCueId);
   const activeCue = activeCueId ? findProjectCue(cueLists, activeCueId) : undefined;
   const activeCount = useTransportStore((s) => s.activeCueIds.length);
@@ -227,6 +230,16 @@ export function TransportBar() {
           px: { xs: 1, sm: 2 },
         }}
       >
+        <IconButton
+          size="small"
+          color={videoOutputOpen ? "primary" : "default"}
+          aria-pressed={videoOutputOpen}
+          title={videoOutputOpen ? t("videoOutput.close") : t("videoOutput.open")}
+          aria-label={videoOutputOpen ? t("videoOutput.close") : t("videoOutput.open")}
+          onClick={toggleVideoOutput}
+        >
+          <OndemandVideoOutlinedIcon fontSize="small" />
+        </IconButton>
         <IconButton
           size="small"
           color={audioMixerOpen ? "primary" : "default"}

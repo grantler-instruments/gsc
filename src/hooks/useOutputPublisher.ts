@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { cacheAsset } from "../lib/asset-cache";
 import {
-  createOutputChannel,
+  closeOutputChannels,
   isOutputMessage,
+  listOutputPublishChannels,
   postOutputAsset,
   postOutputState,
 } from "../lib/output-channel";
@@ -10,7 +11,7 @@ import { buildOutputState } from "../lib/output-state";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { useFadeStore } from "../stores/fade";
 import { usePlaybackStore } from "../stores/playback";
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import { useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 
 const selectOutputTransportState = (s: {
@@ -28,14 +29,38 @@ function outputTransportChanged(
   return prev.activeCueIds !== next.activeCueIds || prev.cueStartedAtMs !== next.cueStartedAtMs;
 }
 
-/** Publishes visual output state to the output window via BroadcastChannel. */
+async function publishAssets(
+  channels: BroadcastChannel[],
+  projectId: string,
+  assetPaths: string[],
+): Promise<void> {
+  await Promise.all(
+    assetPaths.map(async (assetPath) => {
+      const blob = await resolveAssetBlob(assetPath);
+      if (!blob) return;
+      await cacheAsset(projectId, assetPath, blob);
+      for (const channel of channels) {
+        postOutputAsset(channel, projectId, assetPath, blob);
+      }
+    }),
+  );
+}
+
+/** Publishes visual output state to output windows via BroadcastChannel. */
 export function useOutputPublisher(): void {
-  const channelRef = useRef<BroadcastChannel | null>(null);
+  const channelsRef = useRef<BroadcastChannel[]>([]);
   const revisionRef = useRef(0);
 
   useEffect(() => {
-    const channel = createOutputChannel();
-    channelRef.current = channel;
+    const syncChannels = () => {
+      closeOutputChannels(channelsRef.current);
+      channelsRef.current = listOutputPublishChannels(
+        useProjectStore.getState().videoBuses.map((bus) => bus.id),
+      );
+      return channelsRef.current;
+    };
+
+    let channels = syncChannels();
 
     let rafId = 0;
     let inFlight = false;
@@ -51,19 +76,31 @@ export function useOutputPublisher(): void {
       void (async () => {
         try {
           revisionRef.current += 1;
-          const state = await buildOutputState(revisionRef.current);
+          const revision = revisionRef.current;
+          const videoBuses = useProjectStore.getState().videoBuses;
+          const targets: Array<string | undefined> = [
+            undefined,
+            ...videoBuses.map((bus) => bus.id),
+          ];
 
-          await Promise.all(
-            state.layers.map(async (layer) => {
-              const blob = await resolveAssetBlob(layer.assetPath);
-              if (blob) {
-                await cacheAsset(state.projectId, layer.assetPath, blob);
-                postOutputAsset(channel, state.projectId, layer.assetPath, blob);
-              }
-            }),
+          const states = await Promise.all(
+            targets.map((busId) => buildOutputState(revision, busId)),
           );
 
-          postOutputState(channel, state);
+          const assetPaths = [
+            ...new Set(states.flatMap((state) => state.layers.map((l) => l.assetPath))),
+          ];
+          if (assetPaths.length > 0) {
+            await publishAssets(channels, states[0]?.projectId ?? "", assetPaths);
+          }
+
+          for (let index = 0; index < states.length; index++) {
+            const channel = channels[index];
+            const state = states[index];
+            if (channel && state) {
+              postOutputState(channel, state);
+            }
+          }
         } finally {
           inFlight = false;
           if (pending) {
@@ -82,13 +119,18 @@ export function useOutputPublisher(): void {
       });
     };
 
-    channel.onmessage = (event: MessageEvent) => {
-      if (!isOutputMessage(event.data)) return;
-      if (event.data.type === "request-state") {
-        schedulePublish();
+    const attachChannelHandlers = () => {
+      for (const channel of channels) {
+        channel.onmessage = (event: MessageEvent) => {
+          if (!isOutputMessage(event.data)) return;
+          if (event.data.type === "request-state") {
+            schedulePublish();
+          }
+        };
       }
     };
 
+    attachChannelHandlers();
     schedulePublish();
 
     const unsubTransport = useTransportStore.subscribe((state, prev) => {
@@ -120,9 +162,16 @@ export function useOutputPublisher(): void {
     });
 
     const unsubProject = useProjectStore.subscribe((s, prev) => {
-      const list = getActiveCueListFromState(s);
-      const prevList = getActiveCueListFromState(prev);
-      if (list?.cues !== prevList?.cues) {
+      if (
+        s.cueLists !== prev.cueLists ||
+        s.activeCueListId !== prev.activeCueListId ||
+        s.masterVideoOutputName !== prev.masterVideoOutputName ||
+        s.videoBuses !== prev.videoBuses
+      ) {
+        if (s.videoBuses !== prev.videoBuses) {
+          channels = syncChannels();
+          attachChannelHandlers();
+        }
         schedulePublish();
       }
     });
@@ -133,8 +182,8 @@ export function useOutputPublisher(): void {
       unsubPlayback();
       unsubFade();
       unsubProject();
-      channel.close();
-      channelRef.current = null;
+      closeOutputChannels(channelsRef.current);
+      channelsRef.current = [];
     };
   }, []);
 }

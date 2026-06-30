@@ -85,6 +85,7 @@ import type { AudioBus } from "./audio-bus";
 import type { Fixture } from "./fixture";
 import type { FixturePlot } from "./fixture-plot";
 import type { MidiMapping } from "./midi-mapping";
+import type { VideoBus } from "./video-bus";
 
 export interface Cue {
   id: string;
@@ -112,6 +113,8 @@ export interface Cue {
   pan?: number;
   /** Internal mix bus; unset routes direct to master. */
   audioBusId?: string;
+  /** Visual output bus; unset routes to the master output window. */
+  videoBusId?: string;
   /** 1-based device output channels for audio routing; defaults to [1, 2]. */
   outputChannels?: number[];
   /** 0–1 for image/video cues. */
@@ -163,4 +166,8 @@ export interface ProjectSnapshot {
   fixturePlot?: FixturePlot;
   /** Internal audio mix buses; empty means flat routing to master. */
   audioBuses?: AudioBus[];
+  /** Visual output buses; empty means all visuals go to the master output window. */
+  videoBuses?: VideoBus[];
+  /** Display name for the main output window; defaults to "Main". */
+  masterVideoOutputName?: string;
 }
