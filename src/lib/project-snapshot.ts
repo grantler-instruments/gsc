@@ -58,6 +58,7 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   const cueLists: CueList[] = snap.cueLists.map((list) => ({
     id: list.id,
     name: list.name,
+    kind: list.kind ?? "sequence",
     cues: normalizeCues(list.cues, fixtures, audioBuses),
     selectedCueIds: [],
     selectionAnchorId: null,
@@ -103,6 +104,7 @@ export function cueListsToSnapshot(
     cueLists: cueLists.map((list) => ({
       id: list.id,
       name: list.name,
+      kind: list.kind,
       cues: list.cues,
     })),
     midiMappings,

@@ -1,3 +1,4 @@
+import type { CueListInsertPlace } from "../../lib/cue-list-move";
 import type { CueList } from "../../lib/cue-lists";
 import type { AudioBus } from "../../types/audio-bus";
 import type {
@@ -9,6 +10,7 @@ import type {
 } from "../../types/audio-effect";
 import type {
   Cue,
+  CueListKind,
   CueType,
   DmxCueData,
   FadeCueType,
@@ -27,7 +29,12 @@ export interface ProjectState {
   endDate?: string;
   description?: string;
   cueLists: CueList[];
+  /** The list with the current edit focus (selection, inspector, keyboard). */
   activeCueListId: string;
+  /** Sequence list shown in the main cue panel (independent of edit focus). */
+  mainSequenceListId: string;
+  /** Hot list shown in the hot-cue panel, or null when none exist. */
+  activeHotCueListId: string | null;
   midiMappings: MidiMapping[];
   fixtures: Fixture[];
   fixturePlot: FixturePlot;
@@ -51,6 +58,7 @@ export interface ProjectState {
       dmx?: DmxCueData;
       parentId?: string;
     }>,
+    listId?: string,
   ) => Cue[];
   addGroupCue: (opts?: { name?: string; parentId?: string }) => Cue;
   addSequenceCue: (opts?: { name?: string; parentId?: string }) => Cue;
@@ -59,14 +67,18 @@ export interface ProjectState {
   addFadeCueForTarget: (targetId: string, fadeType: FadeCueType) => Cue | null;
   updateCue: (id: string, patch: Partial<Cue>) => void;
   removeCue: (id: string) => void;
+  removeCueFromList: (listId: string, id: string) => void;
   /** Remove every cue across all lists that references the given asset path. */
   removeCuesUsingAsset: (assetPath: string) => void;
   moveCueToGroup: (cueId: string, groupId: string | null) => void;
+  moveCueToList: (cueId: string, targetListId: string, place: CueListInsertPlace) => void;
   reparentCueRelative: (draggedId: string, targetId: string, place: "before" | "after") => void;
   reparentCueToListEnd: (draggedId: string) => void;
   addSelectedCueToGroup: (groupId: string) => void;
   reorderCueRelative: (draggedId: string, targetId: string, place: "before" | "after") => void;
   selectCue: (id: string | null) => void;
+  /** Select a cue in a specific list without changing edit focus. */
+  selectCueInList: (listId: string, id: string | null) => void;
   toggleSelectCue: (id: string) => void;
   selectCueRange: (id: string, visibleOrder: string[]) => void;
   groupSelectedCues: () => Cue | null;
@@ -75,7 +87,7 @@ export interface ProjectState {
   cutSelectedCues: () => boolean;
   pasteSelectedCues: () => boolean;
   duplicateSelectedCues: () => boolean;
-  addCueList: (name?: string) => CueList;
+  addCueList: (name?: string, kind?: CueListKind) => CueList;
   removeCueList: (listId: string) => void;
   renameCueList: (listId: string, name: string) => void;
   reorderCueListRelative: (draggedId: string, targetId: string, place: "before" | "after") => void;

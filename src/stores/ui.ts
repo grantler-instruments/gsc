@@ -5,6 +5,9 @@ import type { MidiAction } from "../types/midi-mapping";
 import type { RightSidebarTabId } from "../types/right-sidebar";
 import type { SidebarTabId } from "../types/sidebar";
 
+/** Where the hot-cue panel sits relative to the main cue list. */
+export type HotCuePanelOrientation = "right" | "bottom";
+
 interface UiState {
   sidebarTab: SidebarTabId;
   rightSidebarTab: RightSidebarTabId;
@@ -26,6 +29,10 @@ interface UiState {
   compactInspectorDrawerOpen: boolean;
   /** Compact inspector drawer stays closed until the user selects a cue. */
   compactInspectorDrawerDismissed: boolean;
+  /** Where the hot-cue panel sits relative to the main cue list (desktop). */
+  hotCuePanelOrientation: HotCuePanelOrientation;
+  /** When false, the hot-cue panel is hidden in the cue workspace. */
+  hotCuePanelVisible: boolean;
   /** Asset row under the pointer in the assets panel (session only). */
   hoveredAssetPath: string | null;
   /** Audio mixer dock above the transport bar. */
@@ -45,6 +52,10 @@ interface UiState {
   toggleFixturePlotExpanded: () => void;
   setCompactInspectorDrawerOpen: (open: boolean) => void;
   setCompactInspectorDrawerDismissed: (dismissed: boolean) => void;
+  setHotCuePanelOrientation: (orientation: HotCuePanelOrientation) => void;
+  toggleHotCuePanelOrientation: () => void;
+  setHotCuePanelVisible: (visible: boolean) => void;
+  toggleHotCuePanelVisible: () => void;
   setHoveredAssetPath: (path: string | null) => void;
   setAudioMixerOpen: (open: boolean) => void;
   setAudioMixerHeight: (height: number) => void;
@@ -67,6 +78,8 @@ export const useUiStore = create<UiState>()(
         fixturePlotExpanded: false,
         compactInspectorDrawerOpen: false,
         compactInspectorDrawerDismissed: true,
+        hotCuePanelOrientation: "right",
+        hotCuePanelVisible: true,
         hoveredAssetPath: null,
         audioMixerOpen: false,
         audioMixerHeight: DEFAULT_AUDIO_MIXER_HEIGHT,
@@ -107,6 +120,13 @@ export const useUiStore = create<UiState>()(
           set({ compactInspectorDrawerOpen }),
         setCompactInspectorDrawerDismissed: (compactInspectorDrawerDismissed) =>
           set({ compactInspectorDrawerDismissed }),
+        setHotCuePanelOrientation: (hotCuePanelOrientation) => set({ hotCuePanelOrientation }),
+        toggleHotCuePanelOrientation: () =>
+          set((s) => ({
+            hotCuePanelOrientation: s.hotCuePanelOrientation === "right" ? "bottom" : "right",
+          })),
+        setHotCuePanelVisible: (hotCuePanelVisible) => set({ hotCuePanelVisible }),
+        toggleHotCuePanelVisible: () => set((s) => ({ hotCuePanelVisible: !s.hotCuePanelVisible })),
         setHoveredAssetPath: (hoveredAssetPath) => set({ hoveredAssetPath }),
         setAudioMixerOpen: (audioMixerOpen) => set({ audioMixerOpen }),
         setAudioMixerHeight: (audioMixerHeight) =>
@@ -119,6 +139,8 @@ export const useUiStore = create<UiState>()(
           sidebarTab: s.sidebarTab,
           rightSidebarTab: s.rightSidebarTab,
           darkMode: s.darkMode,
+          hotCuePanelOrientation: s.hotCuePanelOrientation,
+          hotCuePanelVisible: s.hotCuePanelVisible,
           audioMixerHeight: s.audioMixerHeight,
         }),
         merge: (persisted, current) => {

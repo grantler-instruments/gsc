@@ -9,7 +9,7 @@ function resetTransport() {
     activeCueId: null,
     activeCueIds: [],
     cueStartedAtMs: {},
-    runningSequence: null,
+    runningSequences: {},
     masterVolume: 1,
   });
 }
@@ -36,12 +36,48 @@ describe("runSequence", () => {
 
     const result = runSequence(cues[0], cues);
     expect(result).toEqual({ started: true, stepCount: 2 });
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       rootId: "seq",
       currentStep: 0,
       stepCount: 2,
       stepCueIds: ["a"],
+      scope: "main",
     });
+  });
+
+  it("runs an overlay sequence without cancelling a main sequence", () => {
+    const mainCues = [
+      testCue("main", "Main", "sequence"),
+      testCue("m1", "M1", "audio", { parentId: "main" }),
+      testCue("m2", "M2", "audio", { parentId: "main" }),
+    ];
+    const hotCues = [
+      testCue("hot", "Hot", "sequence"),
+      testCue("h1", "H1", "audio", { parentId: "hot" }),
+      testCue("h2", "H2", "audio", { parentId: "hot" }),
+    ];
+
+    runSequence(mainCues[0], mainCues, { scope: "main" });
+    runSequence(hotCues[0], hotCues, { scope: "overlay" });
+
+    const running = useTransportStore.getState().runningSequences;
+    expect(running.main).toMatchObject({ rootId: "main", scope: "main" });
+    expect(running.hot).toMatchObject({ rootId: "hot", scope: "overlay" });
+  });
+
+  it("main GO cancels another main sequence but leaves overlay sequences", () => {
+    const seqA = [testCue("a", "A", "sequence"), testCue("a1", "A1", "audio", { parentId: "a" })];
+    const seqB = [testCue("b", "B", "sequence"), testCue("b1", "B1", "audio", { parentId: "b" })];
+    const hot = [testCue("h", "H", "sequence"), testCue("h1", "H1", "audio", { parentId: "h" })];
+
+    runSequence(hot[0], hot, { scope: "overlay" });
+    runSequence(seqA[0], seqA, { scope: "main" });
+    runSequence(seqB[0], seqB, { scope: "main" });
+
+    const running = useTransportStore.getState().runningSequences;
+    expect(running.a).toBeUndefined();
+    expect(running.b).toMatchObject({ rootId: "b", scope: "main" });
+    expect(running.h).toMatchObject({ rootId: "h", scope: "overlay" });
   });
 });
 
@@ -62,18 +98,21 @@ describe("notifyFadeCueComplete", () => {
     ];
 
     useTransportStore.setState({
-      runningSequence: {
-        rootId: "seq",
-        currentStep: 0,
-        stepCount: 2,
-        stepCueIds: ["fade"],
-        stepStartedAtMs: 0,
+      runningSequences: {
+        seq: {
+          rootId: "seq",
+          currentStep: 0,
+          stepCount: 2,
+          stepCueIds: ["fade"],
+          stepStartedAtMs: 0,
+          scope: "main",
+        },
       },
     });
 
     notifyFadeCueComplete("fade", cues);
 
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       rootId: "seq",
       currentStep: 1,
       stepCueIds: ["a"],
@@ -91,18 +130,21 @@ describe("notifyFadeCueComplete", () => {
     ];
 
     useTransportStore.setState({
-      runningSequence: {
-        rootId: "seq",
-        currentStep: 0,
-        stepCount: 1,
-        stepCueIds: ["fade", "a"],
-        stepStartedAtMs: 0,
+      runningSequences: {
+        seq: {
+          rootId: "seq",
+          currentStep: 0,
+          stepCount: 1,
+          stepCueIds: ["fade", "a"],
+          stepStartedAtMs: 0,
+          scope: "main",
+        },
       },
     });
 
     notifyFadeCueComplete("fade", cues);
 
-    expect(useTransportStore.getState().runningSequence?.currentStep).toBe(0);
+    expect(useTransportStore.getState().runningSequences.seq?.currentStep).toBe(0);
   });
 });
 
@@ -118,16 +160,19 @@ describe("advanceRunningSequence", () => {
     ];
 
     useTransportStore.setState({
-      runningSequence: {
-        rootId: "seq",
-        currentStep: 0,
-        stepCount: 1,
-        stepCueIds: ["a"],
-        stepStartedAtMs: 0,
+      runningSequences: {
+        seq: {
+          rootId: "seq",
+          currentStep: 0,
+          stepCount: 1,
+          stepCueIds: ["a"],
+          stepStartedAtMs: 0,
+          scope: "main",
+        },
       },
     });
 
-    advanceRunningSequence(cues);
-    expect(useTransportStore.getState().runningSequence).toBeNull();
+    advanceRunningSequence("seq", cues);
+    expect(useTransportStore.getState().runningSequences).toEqual({});
   });
 });

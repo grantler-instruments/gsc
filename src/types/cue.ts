@@ -134,9 +134,17 @@ export interface Cue {
   waitDurationSec?: number;
 }
 
+/**
+ * "sequence" = ordered, linear cue list (the default).
+ * "hot" = non-linear bank of hot cues fired on demand as an overlay.
+ */
+export type CueListKind = "sequence" | "hot";
+
 export interface CueListSnapshot {
   id: string;
   name: string;
+  /** Defaults to "sequence" when absent (older projects). */
+  kind?: CueListKind;
   cues: Cue[];
 }
 

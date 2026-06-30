@@ -16,10 +16,11 @@ export interface CueListTreeProps {
   canEdit: boolean;
   collapsedGroups: Set<string>;
   activeCueIds: string[];
-  runningSequence: RunningSequence | null;
+  runningSequences: Record<string, RunningSequence>;
   dmxFadesByFadeCueId: Readonly<Record<string, unknown>>;
   selectedCueIdSet: Set<string>;
   primarySelectedId: string | null;
+  listHasEditFocus: boolean;
   hoveredTargetId: string | null;
   selectedTargetId: string | null;
   targetHighlightToken: string;
@@ -39,10 +40,11 @@ export function CueListTree({
   canEdit,
   collapsedGroups,
   activeCueIds,
-  runningSequence,
+  runningSequences,
   dmxFadesByFadeCueId,
   selectedCueIdSet,
   primarySelectedId,
+  listHasEditFocus,
   hoveredTargetId,
   selectedTargetId,
   targetHighlightToken,
@@ -68,6 +70,8 @@ export function CueListTree({
       node.cue.id === selectedTargetId ||
       cueUsesAsset(node.cue, hoveredAssetPath);
 
+    const isPrimary = node.cue.id === primarySelectedId;
+    const isRowSelected = selectedCueIdSet.has(node.cue.id);
     const row = (
       <CueRow
         key={node.cue.id}
@@ -75,9 +79,10 @@ export function CueListTree({
         depth={node.depth}
         childCount={childCount}
         expanded={expanded}
-        selected={selectedCueIdSet.has(node.cue.id)}
-        primarySelected={node.cue.id === primarySelectedId}
-        active={isCueActive(node.cue, cues, activeCueIds, runningSequence, dmxFadesByFadeCueId)}
+        selected={listHasEditFocus && isRowSelected}
+        primarySelected={listHasEditFocus && isPrimary}
+        selectionRemembered={!listHasEditFocus && isPrimary}
+        active={isCueActive(node.cue, cues, activeCueIds, runningSequences, dmxFadesByFadeCueId)}
         missingAsset={cueMissingAsset(node.cue, assetEntries)}
         highlightAsTarget={highlightAsTarget}
         targetHighlightToken={targetHighlightToken}
@@ -115,10 +120,11 @@ export function CueListTree({
                 canEdit={canEdit}
                 collapsedGroups={collapsedGroups}
                 activeCueIds={activeCueIds}
-                runningSequence={runningSequence}
+                runningSequences={runningSequences}
                 dmxFadesByFadeCueId={dmxFadesByFadeCueId}
                 selectedCueIdSet={selectedCueIdSet}
                 primarySelectedId={primarySelectedId}
+                listHasEditFocus={listHasEditFocus}
                 hoveredTargetId={hoveredTargetId}
                 selectedTargetId={selectedTargetId}
                 targetHighlightToken={targetHighlightToken}

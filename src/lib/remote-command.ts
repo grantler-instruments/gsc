@@ -7,6 +7,8 @@ export function remoteCommandToWirePayload(action: RemoteCommandAction): RemoteH
       return { action: "go-selected" };
     case "go":
       return { action: "go", cue_id: action.cueId };
+    case "hot-go":
+      return { action: "hot-go", cue_id: action.cueId };
     case "select-cue":
       return { action: "select-cue", cue_id: action.cueId };
     case "panic":

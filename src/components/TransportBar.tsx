@@ -9,7 +9,7 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCompactLayout } from "../hooks/useCompactLayout";
-import { compactLayoutBreakpoint } from "../layout/responsiveLayout";
+import { compactLayoutBreakpoint, panelEdgeBorder } from "../layout/responsiveLayout";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
 import { getCueDisplayName } from "../lib/cues";
 import {
@@ -20,7 +20,7 @@ import {
 } from "../lib/remote-client";
 import { triggerGoSelected } from "../lib/transport-actions";
 import { isRemoteClient } from "../platform/remote-mode";
-import { findProjectCue, useActiveCueList, useProjectStore } from "../stores/project";
+import { findProjectCue, useMainSequenceList, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
 import type { Cue } from "../types/cue";
@@ -95,10 +95,10 @@ export function TransportBar() {
     });
   }, [isRemote]);
   const cueLists = useProjectStore((s) => s.cueLists);
-  const activeList = useActiveCueList();
-  const selectedCueIds = activeList.selectedCueIds;
+  const mainList = useMainSequenceList();
+  const selectedCueIds = mainList?.selectedCueIds ?? [];
   const selectedCueId = getPrimarySelectedCueId(selectedCueIds);
-  const cues = activeList.cues;
+  const cues = mainList?.cues ?? [];
   const isPlaying = useTransportStore((s) => s.isPlaying);
   const activeCueId = useTransportStore((s) => s.activeCueId);
   const masterVolume = useTransportStore((s) => s.masterVolume);
@@ -135,8 +135,7 @@ export function TransportBar() {
           px: { xs: 1, [compactLayoutBreakpoint]: 1.5 },
           gap: 1,
           alignItems: "center",
-          borderRight: 1,
-          borderColor: "divider",
+          borderRight: panelEdgeBorder,
           "& .MuiButton-root": { flex: 1, minWidth: 0 },
         }}
       >

@@ -40,6 +40,8 @@ export function useOutputPublisher(): void {
     let rafId = 0;
     let inFlight = false;
     let pending = false;
+    const publishedAssetKeys = new Set<string>();
+    let lastProjectId = "";
 
     const runPublish = () => {
       if (inFlight) {
@@ -53,12 +55,20 @@ export function useOutputPublisher(): void {
           revisionRef.current += 1;
           const state = await buildOutputState(revisionRef.current);
 
+          if (state.projectId !== lastProjectId) {
+            publishedAssetKeys.clear();
+            lastProjectId = state.projectId;
+          }
+
           await Promise.all(
             state.layers.map(async (layer) => {
               const blob = await resolveAssetBlob(layer.assetPath);
-              if (blob) {
-                await cacheAsset(state.projectId, layer.assetPath, blob);
+              if (!blob) return;
+              await cacheAsset(state.projectId, layer.assetPath, blob);
+              const key = `${state.projectId}\0${layer.assetPath}`;
+              if (!publishedAssetKeys.has(key)) {
                 postOutputAsset(channel, state.projectId, layer.assetPath, blob);
+                publishedAssetKeys.add(key);
               }
             }),
           );

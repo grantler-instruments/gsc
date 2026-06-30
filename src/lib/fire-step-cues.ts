@@ -27,12 +27,16 @@ export interface FireStepOptions {
   runSequence?: (cue: Cue, cues: Cue[]) => void;
 }
 
+function cancelSequenceById(rootId: string): void {
+  clearSequenceTimers(rootId);
+  useTransportStore.getState().clearRunningSequence(rootId);
+}
+
 function fireStopCue(cue: Cue, cues: Cue[], stopMany: (ids: string[]) => void): void {
   const target = getStopTarget(cue, cues);
   if (!target) return;
   if (isSequenceGroup(target)) {
-    clearSequenceTimers();
-    useTransportStore.getState().setRunningSequence(null);
+    cancelSequenceById(target.id);
   }
   stopMany(resolveStopCueIds(target, cues));
 }
@@ -65,10 +69,7 @@ export function fireStepCues(
       playbackIds.push(
         ...walkParallelGroupChildren(cue, cues, resolved, actions, {
           runSequence: options.runSequence,
-          onSequenceStop: () => {
-            clearSequenceTimers();
-            useTransportStore.getState().setRunningSequence(null);
-          },
+          onSequenceStop: (rootId) => cancelSequenceById(rootId),
         }),
       );
     } else {

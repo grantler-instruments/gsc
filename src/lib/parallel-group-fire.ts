@@ -23,7 +23,8 @@ export interface ParallelGroupFireActions {
 
 export interface ParallelGroupFireOptions {
   runSequence?: (cue: Cue, cues: Cue[]) => void;
-  onSequenceStop?: () => void;
+  /** Called with the root id of a sequence stopped by a nested stop cue. */
+  onSequenceStop?: (rootId: string) => void;
 }
 
 function tryGoLeaf(cueId: string, resolved: Map<string, CueOutcome>, leafIds: string[]): void {
@@ -37,7 +38,7 @@ function applyStopFirstWins(
   cues: Cue[],
   resolved: Map<string, CueOutcome>,
   stopMany: (ids: string[]) => void,
-  onSequenceStop?: () => void,
+  onSequenceStop?: (rootId: string) => void,
 ): void {
   const target = getStopTarget(stopCue, cues);
   if (!target) return;
@@ -50,7 +51,7 @@ function applyStopFirstWins(
   }
   if (idsToStop.length === 0) return;
 
-  if (isSequenceGroup(target)) onSequenceStop?.();
+  if (isSequenceGroup(target)) onSequenceStop?.(target.id);
   stopMany(idsToStop);
 }
 

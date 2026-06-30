@@ -1,6 +1,8 @@
 import type { StoreApi } from "zustand";
 import { normalizeCueAudioBus } from "../../lib/audio-buses";
 import { cueUsesAsset } from "../../lib/cue-asset";
+import { moveCueBetweenLists } from "../../lib/cue-list-move";
+import { findCueInLists } from "../../lib/cue-lists";
 import {
   reparentCueRelative as reparentCueRelativeList,
   reparentCueToListEnd as reparentCueToListEndList,
@@ -29,6 +31,7 @@ import {
   getActiveCueListFromState,
   isMediaCueType,
   patchActiveList,
+  patchListById,
 } from "./helpers";
 import type { ProjectState } from "./types";
 
@@ -89,8 +92,10 @@ export function createCueEditorActions(
   | "addFadeCueForTarget"
   | "updateCue"
   | "removeCue"
+  | "removeCueFromList"
   | "removeCuesUsingAsset"
   | "moveCueToGroup"
+  | "moveCueToList"
   | "reparentCueRelative"
   | "reparentCueToListEnd"
   | "addSelectedCueToGroup"
@@ -102,10 +107,12 @@ export function createCueEditorActions(
       return cue ?? firstCueOrStub(getActiveCueListFromState(get()), opts.name, opts.type);
     },
 
-    addCues: (items) => {
+    addCues: (items, listId) => {
       if (!canEditProject() || items.length === 0) return [];
-      const active = getActiveCueListFromState(get());
-      let cues = active.cues;
+      const targetListId = listId ?? getActiveCueListFromState(get()).id;
+      const targetList = get().cueLists.find((l) => l.id === targetListId);
+      if (!targetList) return [];
+      let cues = targetList.cues;
       const created: Cue[] = [];
 
       for (const opts of items) {
@@ -117,7 +124,7 @@ export function createCueEditorActions(
 
       const last = created[created.length - 1];
       set({
-        ...patchActiveList(get(), () => ({
+        ...patchListById(get(), targetListId, () => ({
           cues,
           selectedCueIds: [last.id],
           selectionAnchorId: last.id,
@@ -303,17 +310,26 @@ export function createCueEditorActions(
 
     removeCue: (id) => {
       if (!canEditProject()) return;
-      const active = getActiveCueListFromState(get());
-      const toRemove = expandCueRemovalSet(active.cues, [id]);
+      get().removeCueFromList(getActiveCueListFromState(get()).id, id);
+    },
+
+    removeCueFromList: (listId, id) => {
+      if (!canEditProject()) return;
+      const list = get().cueLists.find((l) => l.id === listId);
+      if (!list) return;
+      const toRemove = expandCueRemovalSet(list.cues, [id]);
 
       set((s) =>
-        patchActiveList(s, (list) => {
-          const selectedCueIds = list.selectedCueIds.filter((cid) => !toRemove.has(cid));
-          const anchorRemoved = list.selectionAnchorId && toRemove.has(list.selectionAnchorId);
+        patchListById(s, listId, (current) => {
+          const selectedCueIds = current.selectedCueIds.filter((cid) => !toRemove.has(cid));
+          const anchorRemoved =
+            current.selectionAnchorId && toRemove.has(current.selectionAnchorId);
           return {
-            cues: applyRenumber(list.cues.filter((c) => !toRemove.has(c.id))),
+            cues: applyRenumber(current.cues.filter((c) => !toRemove.has(c.id))),
             selectedCueIds,
-            selectionAnchorId: anchorRemoved ? (selectedCueIds[0] ?? null) : list.selectionAnchorId,
+            selectionAnchorId: anchorRemoved
+              ? (selectedCueIds[0] ?? null)
+              : current.selectionAnchorId,
           };
         }),
       );
@@ -340,10 +356,11 @@ export function createCueEditorActions(
 
     moveCueToGroup: (cueId, groupId) => {
       if (!canEditProject()) return;
-      const active = getActiveCueListFromState(get());
-      const { cues } = active;
-      const cue = cues.find((c) => c.id === cueId);
-      if (!cue) return;
+      const state = get();
+      const found = findCueInLists(state.cueLists, cueId);
+      if (!found) return;
+      const { list, cue } = found;
+      const { cues } = list;
 
       if (groupId) {
         const group = cues.find((c) => c.id === groupId);
@@ -357,8 +374,8 @@ export function createCueEditorActions(
       }
 
       set((s) => ({
-        ...patchActiveList(s, (list) => {
-          const withParent = list.cues.map((c) =>
+        ...patchListById(s, list.id, (current) => {
+          const withParent = current.cues.map((c) =>
             c.id === cueId ? { ...c, parentId: groupId ?? undefined } : c,
           );
           const updated = withParent.find((c) => c.id === cueId);
@@ -367,6 +384,13 @@ export function createCueEditorActions(
           return { cues: applyRenumber(appendCueInList(without, updated)) };
         }),
       }));
+    },
+
+    moveCueToList: (cueId, targetListId, place) => {
+      if (!canEditProject()) return;
+      const result = moveCueBetweenLists(get().cueLists, cueId, targetListId, place);
+      if (!result) return;
+      set({ cueLists: result.cueLists });
     },
 
     reparentCueRelative: (draggedId, targetId, place) => {
@@ -402,11 +426,14 @@ export function createCueEditorActions(
 
     reorderCueRelative: (draggedId, targetId, place) => {
       if (!canEditProject()) return;
-      const active = getActiveCueListFromState(get());
-      const next = reorderSiblingCues(active.cues, draggedId, targetId, place);
+      const state = get();
+      const draggedFound = findCueInLists(state.cueLists, draggedId);
+      const targetFound = findCueInLists(state.cueLists, targetId);
+      if (!draggedFound || !targetFound || draggedFound.list.id !== targetFound.list.id) return;
+      const next = reorderSiblingCues(draggedFound.list.cues, draggedId, targetId, place);
       if (!next) return;
       set({
-        ...patchActiveList(get(), () => ({
+        ...patchListById(state, draggedFound.list.id, () => ({
           cues: applyRenumber(next),
         })),
       });
