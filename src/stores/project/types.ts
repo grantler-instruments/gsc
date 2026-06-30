@@ -1,5 +1,13 @@
 import type { CueListInsertPlace } from "../../lib/cue-list-move";
 import type { CueList } from "../../lib/cue-lists";
+import type { AudioBus } from "../../types/audio-bus";
+import type {
+  AudioEffect,
+  AudioEffectType,
+  DelayEffectParams,
+  EqEffectParams,
+  ReverbEffectParams,
+} from "../../types/audio-effect";
 import type {
   Cue,
   CueListKind,
@@ -30,6 +38,7 @@ export interface ProjectState {
   midiMappings: MidiMapping[];
   fixtures: Fixture[];
   fixturePlot: FixturePlot;
+  audioBuses: AudioBus[];
   addCue: (opts: {
     name: string;
     type: CueType;
@@ -102,6 +111,24 @@ export interface ProjectState {
   removeFixture: (id: string) => void;
   updateFixture: (id: string, patch: Partial<Omit<Fixture, "id">>) => void;
   appendFixtures: (fixtures: Fixture[]) => void;
+  addAudioBus: (opts?: Partial<Omit<AudioBus, "id">>) => AudioBus;
+  removeAudioBus: (id: string) => void;
+  updateAudioBus: (id: string, patch: Partial<Omit<AudioBus, "id">>) => void;
+  addBusEffect: (busId: string, type: AudioEffectType) => AudioEffect | null;
+  updateBusEffect: (
+    busId: string,
+    effectId: string,
+    patch: Partial<Omit<AudioEffect, "id" | "params" | "type">> & {
+      params?: Partial<EqEffectParams & DelayEffectParams & ReverbEffectParams>;
+    },
+  ) => void;
+  removeBusEffect: (busId: string, effectId: string) => void;
+  reorderBusEffectRelative: (
+    busId: string,
+    draggedId: string,
+    targetId: string,
+    place: "before" | "after",
+  ) => void;
   syncFixturePlot: () => void;
   setFixturePlot: (plot: FixturePlot) => void;
   updateFixturePlotEntry: (

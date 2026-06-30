@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
+import { clampAudioMixerHeight, DEFAULT_AUDIO_MIXER_HEIGHT } from "../lib/audio-mixer-layout";
 import type { MidiAction } from "../types/midi-mapping";
 import type { RightSidebarTabId } from "../types/right-sidebar";
 import type { SidebarTabId } from "../types/sidebar";
@@ -34,6 +35,10 @@ interface UiState {
   hotCuePanelVisible: boolean;
   /** Asset row under the pointer in the assets panel (session only). */
   hoveredAssetPath: string | null;
+  /** Audio mixer dock above the transport bar. */
+  audioMixerOpen: boolean;
+  /** Height of the audio mixer dock in pixels. */
+  audioMixerHeight: number;
   setSidebarTab: (tab: SidebarTabId) => void;
   setRightSidebarTab: (tab: RightSidebarTabId) => void;
   setDarkMode: (dark: boolean) => void;
@@ -52,6 +57,9 @@ interface UiState {
   setHotCuePanelVisible: (visible: boolean) => void;
   toggleHotCuePanelVisible: () => void;
   setHoveredAssetPath: (path: string | null) => void;
+  setAudioMixerOpen: (open: boolean) => void;
+  setAudioMixerHeight: (height: number) => void;
+  toggleAudioMixer: () => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -73,6 +81,8 @@ export const useUiStore = create<UiState>()(
         hotCuePanelOrientation: "right",
         hotCuePanelVisible: true,
         hoveredAssetPath: null,
+        audioMixerOpen: false,
+        audioMixerHeight: DEFAULT_AUDIO_MIXER_HEIGHT,
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
         setRightSidebarTab: (rightSidebarTab) => set({ rightSidebarTab }),
         setDarkMode: (darkMode) => set({ darkMode }),
@@ -118,6 +128,10 @@ export const useUiStore = create<UiState>()(
         setHotCuePanelVisible: (hotCuePanelVisible) => set({ hotCuePanelVisible }),
         toggleHotCuePanelVisible: () => set((s) => ({ hotCuePanelVisible: !s.hotCuePanelVisible })),
         setHoveredAssetPath: (hoveredAssetPath) => set({ hoveredAssetPath }),
+        setAudioMixerOpen: (audioMixerOpen) => set({ audioMixerOpen }),
+        setAudioMixerHeight: (audioMixerHeight) =>
+          set({ audioMixerHeight: clampAudioMixerHeight(audioMixerHeight) }),
+        toggleAudioMixer: () => set((s) => ({ audioMixerOpen: !s.audioMixerOpen })),
       }),
       {
         name: "gsc-ui",
@@ -127,7 +141,18 @@ export const useUiStore = create<UiState>()(
           darkMode: s.darkMode,
           hotCuePanelOrientation: s.hotCuePanelOrientation,
           hotCuePanelVisible: s.hotCuePanelVisible,
+          audioMixerHeight: s.audioMixerHeight,
         }),
+        merge: (persisted, current) => {
+          const saved = persisted as Partial<UiState> | undefined;
+          return {
+            ...current,
+            ...saved,
+            audioMixerHeight: clampAudioMixerHeight(
+              saved?.audioMixerHeight ?? current.audioMixerHeight,
+            ),
+          };
+        },
       },
     ),
     { name: "UiStore" },

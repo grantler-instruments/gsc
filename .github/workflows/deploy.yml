@@ -74,6 +74,9 @@ jobs:
 
   deploy:
     needs: build
+    # `test` is skipped on workflow_run; without always(), that skip propagates
+    # here even when build succeeded.
+    if: always() && needs.build.result == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

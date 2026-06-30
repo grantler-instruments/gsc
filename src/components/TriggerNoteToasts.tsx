@@ -1,18 +1,26 @@
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
 import { getCueDisplayName } from "../lib/cues";
 import { useActiveCueList } from "../stores/project";
 
 /** Top-right preview of the selected cue's trigger note for the operator. */
 export function TriggerNoteToasts() {
+  const { t } = useTranslation();
   const activeList = useActiveCueList();
   const selectedCueId = getPrimarySelectedCueId(activeList.selectedCueIds);
   const cue = selectedCueId ? activeList.cues.find((c) => c.id === selectedCueId) : undefined;
   const message = cue?.triggerNote?.trim();
+  const [dismissedCueId, setDismissedCueId] = useState<string | null>(null);
 
-  if (!cue || !message) return null;
+  useEffect(() => {
+    setDismissedCueId(null);
+  }, [selectedCueId]);
+
+  if (!cue || !message || dismissedCueId === selectedCueId) return null;
 
   const cueName = getCueDisplayName(cue, activeList.cues);
 
@@ -26,10 +34,19 @@ export function TriggerNoteToasts() {
         zIndex: (theme) => theme.zIndex.snackbar + 1,
         maxWidth: 360,
         width: "min(360px, calc(100vw - 32px))",
-        pointerEvents: "none",
       }}
     >
-      <Alert severity="info" variant="filled" sx={{ width: "100%" }}>
+      <Alert
+        severity="info"
+        variant="filled"
+        sx={{ width: "100%" }}
+        onClose={() => selectedCueId && setDismissedCueId(selectedCueId)}
+        slotProps={{
+          closeButton: {
+            "aria-label": t("common.action.close"),
+          },
+        }}
+      >
         <Typography
           component="p"
           variant="caption"

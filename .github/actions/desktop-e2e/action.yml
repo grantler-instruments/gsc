@@ -26,12 +26,9 @@ runs:
       with:
         workspaces: src-tauri
 
-    - name: Install cargo-binstall
-      uses: cargo-bins/cargo-binstall@main
-
     - name: Install tauri-driver
       shell: bash
-      run: cargo binstall -y tauri-driver
+      run: cargo install tauri-driver --locked
 
     - name: Generate E2E fixtures
       shell: bash

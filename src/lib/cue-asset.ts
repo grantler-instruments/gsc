@@ -129,6 +129,17 @@ export function cueNeedsAsset(cue: Cue): boolean {
   return cue.type === "audio" || cue.type === "video" || cue.type === "image";
 }
 
+export function getCueAssetDisplayName(
+  cue: Cue,
+  entries: VfsEntry[] = useVfsStore.getState().entries,
+): string {
+  if (!cue.assetPath) return "";
+  const entry = findAssetEntry(entries, cue.assetPath);
+  if (entry?.name) return entry.name;
+  const parts = cue.assetPath.split("/");
+  return parts[parts.length - 1] ?? cue.assetPath;
+}
+
 function findAssetEntry(entries: VfsEntry[], assetPath: string): VfsEntry | undefined {
   const normalized = normalizePath(assetPath);
   return entries.find((entry) => normalizePath(entry.path) === normalized);

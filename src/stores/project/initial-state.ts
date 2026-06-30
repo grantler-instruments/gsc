@@ -21,4 +21,5 @@ export const initialProjectData = {
   midiMappings: [] as MidiMapping[],
   fixtures: [],
   fixturePlot: emptyFixturePlot(),
+  audioBuses: [],
 };

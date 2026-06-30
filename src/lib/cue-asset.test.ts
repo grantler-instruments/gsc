@@ -8,6 +8,7 @@ import {
   cueUsesAsset,
   filterAndSortAssets,
   findAssetCueUsages,
+  getCueAssetDisplayName,
   getCueAssetWarning,
 } from "./cue-asset";
 import { createCueList } from "./cue-lists";
@@ -133,6 +134,18 @@ describe("filterAndSortAssets", () => {
       sort: "type-asc",
     });
     expect(sorted.map((entry) => entry.kind)).toEqual(["audio", "video", "image"]);
+  });
+});
+
+describe("getCueAssetDisplayName", () => {
+  it("uses vfs entry name when available", () => {
+    const cue = testCue("a", "Intro", "audio", { assetPath: "/assets/intro.wav" });
+    expect(getCueAssetDisplayName(cue, [audioEntry])).toBe("intro.wav");
+  });
+
+  it("falls back to path basename", () => {
+    const cue = testCue("a", "Intro", "audio", { assetPath: "/assets/custom.wav" });
+    expect(getCueAssetDisplayName(cue, [])).toBe("custom.wav");
   });
 });
 
