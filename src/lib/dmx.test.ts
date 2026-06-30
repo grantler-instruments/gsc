@@ -5,6 +5,7 @@ import {
   addAllDmxFixturesToCue,
   addDmxFixtureToCue,
   applyDmxCueToBuffers,
+  artNetUniverseFromFixtureUniverse,
   clampDmxValue,
   defaultDmxCueData,
   formatDmxCue,
@@ -160,6 +161,13 @@ describe("dmx", () => {
   it("clamps values", () => {
     expect(clampDmxValue(-5)).toBe(0);
     expect(clampDmxValue(999)).toBe(255);
+  });
+
+  it("maps fixture universe to Art-Net universe", () => {
+    expect(artNetUniverseFromFixtureUniverse(1)).toBe(0);
+    expect(artNetUniverseFromFixtureUniverse(2)).toBe(1);
+    expect(artNetUniverseFromFixtureUniverse(0)).toBe(0);
+    expect(artNetUniverseFromFixtureUniverse(2.7)).toBe(1);
   });
 
   it("resolves referenced light fade fixtures with editable overrides", () => {

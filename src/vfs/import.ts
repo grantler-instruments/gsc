@@ -1,4 +1,5 @@
-import { prefetchMediaDurations } from "../lib/media-duration";
+import { clearCachedAudioBuffer } from "../audio/buffer-cache";
+import { clearMediaDuration, prefetchMediaDurations } from "../lib/media-duration";
 import { VFS_ASSETS_ROOT } from "../lib/project-paths";
 import type { AssetKind } from "../types/cue";
 import { joinPath, normalizePath, vfsHas, vfsPut } from "./engine";
@@ -47,7 +48,7 @@ export interface ImportedAsset {
 /** Import files into the VFS under /assets/… preserving relative paths when possible. */
 export async function importFiles(
   files: File[],
-  options?: { baseRelativePath?: string },
+  options?: { baseRelativePath?: string; replaceExisting?: boolean },
 ): Promise<ImportedAsset[]> {
   const imported: ImportedAsset[] = [];
   const base = options?.baseRelativePath ?? "";
@@ -61,7 +62,11 @@ export async function importFiles(
       : joinPath(VFS_ASSETS_ROOT, file.webkitRelativePath || file.name);
 
     const path = normalizePath(relative);
-    if (!vfsHas(path)) {
+    if (!vfsHas(path) || options?.replaceExisting) {
+      if (options?.replaceExisting && vfsHas(path)) {
+        clearCachedAudioBuffer(path);
+        clearMediaDuration(path);
+      }
       vfsPut(path, file);
     }
 

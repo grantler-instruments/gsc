@@ -98,13 +98,6 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
           inputWidth={48}
         />
       )}
-
-      {cue.assetPath && (
-        <Box component="label" sx={inspectorFieldSx}>
-          {t("inspector.asset")}
-          <input type="text" value={cue.assetPath} readOnly />
-        </Box>
-      )}
     </>
   );
 }
