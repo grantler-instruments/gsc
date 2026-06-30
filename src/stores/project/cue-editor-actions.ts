@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand";
+import { normalizeCueAudioBus } from "../../lib/audio-buses";
 import { cueUsesAsset } from "../../lib/cue-asset";
 import {
   reparentCueRelative as reparentCueRelativeList,
@@ -285,7 +286,11 @@ export function createCueEditorActions(
       const apply = () => {
         set((s) => ({
           ...patchActiveList(s, (list) => ({
-            cues: applyRenumber(list.cues.map((c) => (c.id === id ? { ...c, ...patch } : c))),
+            cues: applyRenumber(
+              list.cues.map((c) =>
+                c.id === id ? normalizeCueAudioBus({ ...c, ...patch }, s.audioBuses) : c,
+              ),
+            ),
           })),
         }));
       };

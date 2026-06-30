@@ -30,6 +30,7 @@ export function createSnapshotActions(
         midiMappings,
         fixtures,
         fixturePlot,
+        audioBuses,
       } = get();
       return cueListsToSnapshot(
         id,
@@ -39,6 +40,7 @@ export function createSnapshotActions(
         midiMappings,
         fixtures,
         fixturePlot,
+        audioBuses,
         startDate,
         endDate,
         description,

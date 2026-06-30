@@ -45,31 +45,42 @@ export function useAudioEngine(): void {
 
     const runSync = () => {
       const { activeCueIds, masterVolume, cueStartedAtMs } = useTransportStore.getState();
+      const { cueLists, audioBuses } = useProjectStore.getState();
       if (activeCueIds.length === 0) {
+        audioEngine.syncMixer(audioBuses, masterVolume);
         void audioEngine.stopAll();
         return;
       }
-      const cues = allProjectCues(useProjectStore.getState());
-      void audioEngine.sync(activeCueIds, cues, masterVolume, cueStartedAtMs);
+      const cues = allProjectCues({ cueLists });
+      void audioEngine.sync(activeCueIds, cues, masterVolume, cueStartedAtMs, audioBuses);
+    };
+
+    const syncMixerOnly = () => {
+      const { masterVolume } = useTransportStore.getState();
+      const { audioBuses } = useProjectStore.getState();
+      audioEngine.syncMixer(audioBuses, masterVolume);
     };
 
     const updateLevels = () => {
-      const { activeCueIds, masterVolume } = useTransportStore.getState();
+      const { activeCueIds } = useTransportStore.getState();
       if (activeCueIds.length === 0) return;
       const cues = allProjectCues(useProjectStore.getState());
-      audioEngine.updateActiveVoiceLevels(cues, masterVolume);
+      audioEngine.updateActiveVoiceLevels(cues);
     };
 
     runSync();
     const unsubTransport = useTransportStore.subscribe((state, prev) => {
       if (audioSyncStateChanged(selectAudioSyncState(prev), selectAudioSyncState(state))) {
         runSync();
+      } else if (prev.masterVolume !== state.masterVolume) {
+        syncMixerOnly();
       }
     });
 
     const unsubProject = useProjectStore.subscribe((s, prev) => {
-      if (s.cueLists === prev.cueLists) return;
-      runSync();
+      if (s.cueLists !== prev.cueLists || s.audioBuses !== prev.audioBuses) {
+        runSync();
+      }
     });
 
     let prevFadeFrame = 0;

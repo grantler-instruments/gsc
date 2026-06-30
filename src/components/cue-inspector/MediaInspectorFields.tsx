@@ -1,6 +1,9 @@
 import Box from "@mui/material/Box";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import { useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
 import { CueAssetPreview } from "../CueAssetPreview";
 import { inspectorFieldLabelSx, inspectorFieldSx } from "../inspectorSx";
@@ -16,6 +19,7 @@ interface MediaInspectorFieldsProps {
 
 export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspectorFieldsProps) {
   const { t } = useTranslation();
+  const audioBuses = useProjectStore((s) => s.audioBuses);
   const isMedia = cue.type === "audio" || cue.type === "video" || cue.type === "image";
   if (!isMedia) return null;
 
@@ -55,6 +59,30 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
             onChange={(pan) => onChange({ pan })}
             inputWidth={48}
           />
+          <Box sx={inspectorFieldSx}>
+            <Typography component="label" sx={inspectorFieldLabelSx}>
+              {t("inspector.audioBus")}
+            </Typography>
+            <Select
+              size="small"
+              fullWidth
+              value={cue.audioBusId ?? ""}
+              readOnly={readOnly}
+              disabled={readOnly}
+              displayEmpty
+              onChange={(event) => {
+                const value = event.target.value;
+                onChange({ audioBusId: value || undefined });
+              }}
+            >
+              <MenuItem value="">{t("inspector.audioBusDirect")}</MenuItem>
+              {audioBuses.map((bus) => (
+                <MenuItem key={bus.id} value={bus.id}>
+                  {bus.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
         </>
       )}
 

@@ -22,6 +22,7 @@ function projectState(overrides: Partial<ProjectPersistSlice> = {}): ProjectPers
     midiMappings: [],
     fixtures: [],
     fixturePlot: emptyFixturePlot(),
+    audioBuses: [],
     ...overrides,
   };
 }
@@ -79,6 +80,15 @@ describe("projectPersistStateChanged", () => {
           channelCount: 6,
         },
       ],
+    });
+
+    expect(projectPersistStateChanged(prev, next)).toBe(true);
+  });
+
+  it("returns true when audio buses change", () => {
+    const prev = projectState();
+    const next = projectState({
+      audioBuses: [{ id: "b1", name: "Music", volume: 1 }],
     });
 
     expect(projectPersistStateChanged(prev, next)).toBe(true);
