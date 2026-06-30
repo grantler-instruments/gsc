@@ -47,6 +47,7 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [dropActive, setDropActive] = useState(false);
   const [recordOpen, setRecordOpen] = useState(false);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,6 +57,13 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
   const matchingAssets = filterAssetsForCue(entries, cue);
   const menuOpen = Boolean(menuAnchor);
   const kindLabel = getAssetKindLabel(cue.type as AssetKind);
+
+  const resetFileInput = useCallback(() => {
+    setFileInputKey((key) => key + 1);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
 
   const assignPayload = useCallback(
     (payload: AssetDragPayload) => {
@@ -74,8 +82,9 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
   const clearAsset = useCallback(() => {
     if (readOnly) return;
     setError(null);
+    resetFileInput();
     updateCue(cue.id, { assetPath: undefined });
-  }, [cue.id, readOnly, updateCue]);
+  }, [cue.id, readOnly, resetFileInput, updateCue]);
 
   const onSelectAsset = (payload: AssetDragPayload) => {
     assignPayload(payload);
@@ -132,9 +141,12 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
   const onBrowseFiles = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
+      if (!files?.length || readOnly) {
+        e.target.value = "";
+        return;
+      }
+      const imported = await importFromFileList(files, { replaceExisting: true });
       e.target.value = "";
-      if (!files?.length || readOnly) return;
-      const imported = await importFromFileList(files);
       const match = imported.find((a) => assetPayloadMatchesCue(cue, a));
       if (!match) {
         setError(t("assets.noFilesInSelection", { kind: kindLabel }));
@@ -147,7 +159,7 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
 
   const onSaveRecording = useCallback(
     async (file: File) => {
-      const imported = await importFromFileList([file]);
+      const imported = await importFromFileList([file], { replaceExisting: true });
       const match = imported.find((a) => assetPayloadMatchesCue(cue, a));
       if (!match) {
         setError(t("assets.recordSaveFailed"));
@@ -158,6 +170,10 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
     },
     [assignPayload, cue, importFromFileList, t],
   );
+
+  const openFilePicker = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
 
   const assetMenu = (
     <Menu
@@ -273,25 +289,19 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
                   {t("assets.fromAssetsOrComputer")}
                 </Typography>
                 <Button
+                  type="button"
                   variant="text"
                   size="small"
                   sx={{ mt: 1 }}
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={openFilePicker}
                 >
                   {t("assets.browseFiles")}
                 </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  hidden
-                  multiple
-                  accept={ASSET_FILE_ACCEPT[cue.type as AssetKind]}
-                  onChange={onBrowseFiles}
-                />
               </Box>
 
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                 <Button
+                  type="button"
                   variant="outlined"
                   size="small"
                   onClick={(e) => setMenuAnchor(e.currentTarget)}
@@ -299,7 +309,12 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
                   {t("assets.selectAsset")}
                 </Button>
                 {cue.type === "audio" && isAudioInputSupported() && (
-                  <Button variant="outlined" size="small" onClick={() => setRecordOpen(true)}>
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    size="small"
+                    onClick={() => setRecordOpen(true)}
+                  >
                     {t("assets.record")}
                   </Button>
                 )}
@@ -308,6 +323,16 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
           )}
         </>
       )}
+
+      <input
+        key={fileInputKey}
+        ref={fileInputRef}
+        type="file"
+        hidden
+        multiple
+        accept={ASSET_FILE_ACCEPT[cue.type as AssetKind]}
+        onChange={onBrowseFiles}
+      />
 
       <AudioRecorderDialog
         open={recordOpen}

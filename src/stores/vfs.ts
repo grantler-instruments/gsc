@@ -19,7 +19,10 @@ export interface VfsEntry {
 
 interface VfsState {
   entries: VfsEntry[];
-  importFromFileList: (files: FileList | File[]) => Promise<ImportedAsset[]>;
+  importFromFileList: (
+    files: FileList | File[],
+    options?: { replaceExisting?: boolean },
+  ) => Promise<ImportedAsset[]>;
   importFromDrop: (dataTransfer: DataTransfer) => Promise<ImportedAsset[]>;
   removeEntry: (path: string) => void;
   syncFromEngine: () => void;
@@ -48,9 +51,9 @@ export const useVfsStore = create<VfsState>()(
     (set, get) => ({
       entries: [],
 
-      importFromFileList: async (files) => {
-        const list = files instanceof FileList ? Array.from(files) : files;
-        const imported = await importFiles(list);
+      importFromFileList: async (files, options) => {
+        const list = Array.isArray(files) ? files : [...files];
+        const imported = await importFiles(list, { replaceExisting: options?.replaceExisting });
         const byPath = new Map(get().entries.map((e) => [e.path, e]));
         for (const asset of imported) {
           byPath.set(asset.path, { ...asset, loaded: true });
