@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 import type { AppDriver, WaitUntilOptions } from "../shared/driver";
+import type { DesktopScratchOutputVideoDriver } from "../shared/scenarios/desktop-scratch-output-video";
 
 type WdioBrowser = WebdriverIO.Browser;
 
 function roleSelector(role: string): string {
   switch (role) {
     case "button":
-      // Native <button> has implicit button role; Playwright getByRole matches both.
       return 'button,[role="button"]';
     default:
       return `[role="${role}"]`;
@@ -78,6 +78,18 @@ async function waitUntil(
   throw new Error(options?.timeoutMsg ?? "waitUntil timed out");
 }
 
+async function dismissStartupDialogIfPresent(browser: WdioBrowser): Promise<void> {
+  try {
+    const newShow = await findByRole(browser, "button", "New Show");
+    if (await newShow.isDisplayed()) {
+      await newShow.click();
+      await browser.pause(500);
+    }
+  } catch {
+    /* no startup dialog */
+  }
+}
+
 async function waitForAppReady(browser: WdioBrowser): Promise<void> {
   await waitUntil(
     browser,
@@ -93,23 +105,87 @@ async function waitForAppReady(browser: WdioBrowser): Promise<void> {
   );
 }
 
+async function waitForStartupOrAppReady(browser: WdioBrowser): Promise<void> {
+  await waitUntil(
+    browser,
+    async () => {
+      try {
+        const newShow = await findByRole(browser, "button", "New Show");
+        if (await newShow.isDisplayed()) return true;
+      } catch {
+        /* not on startup dialog */
+      }
+
+      try {
+        const go = await findByRole(browser, "button", "GO");
+        return await go.isDisplayed();
+      } catch {
+        return false;
+      }
+    },
+    { timeout: 30_000, timeoutMsg: "Timed out waiting for startup dialog or transport GO button" },
+  );
+}
+
+async function findMainWindowHandle(browser: WdioBrowser): Promise<string> {
+  for (const handle of await browser.getWindowHandles()) {
+    await browser.switchToWindow(handle);
+    if (await browser.$('[data-gsc-drop-zone="cue-list"]').isExisting()) {
+      return handle;
+    }
+  }
+
+  const [first] = await browser.getWindowHandles();
+  if (!first) throw new Error("No WebDriver window handles available");
+  return first;
+}
+
+async function findOutputWindowHandle(browser: WdioBrowser): Promise<string | null> {
+  for (const handle of await browser.getWindowHandles()) {
+    await browser.switchToWindow(handle);
+    if (await browser.$("[data-gsc-output-stage]").isExisting()) {
+      return handle;
+    }
+  }
+  return null;
+}
+
 export function createWdioDriver(browser: WdioBrowser): AppDriver {
-  return {
+  return createWdioDesktopDriver(browser);
+}
+
+export function createWdioDesktopDriver(browser: WdioBrowser): DesktopScratchOutputVideoDriver {
+  let mainWindowHandle: string | undefined;
+  let outputWindowHandle: string | undefined;
+
+  const driver: DesktopScratchOutputVideoDriver = {
     async gotoApp() {
+      await waitForStartupOrAppReady(browser);
+      await dismissStartupDialogIfPresent(browser);
       await waitForAppReady(browser);
+      mainWindowHandle = await findMainWindowHandle(browser);
+      await browser.switchToWindow(mainWindowHandle);
+    },
+
+    async dismissStartupDialogIfPresent() {
+      await browser.switchToWindow(mainWindowHandle ?? (await findMainWindowHandle(browser)));
+      await dismissStartupDialogIfPresent(browser);
     },
 
     async clickByRole(role, name) {
+      await browser.switchToWindow(mainWindowHandle ?? (await findMainWindowHandle(browser)));
       const element = await findByRole(browser, role, name);
       await element.waitForDisplayed({ timeout: 10_000 });
       await element.click();
     },
 
     async pressKey(key) {
+      await browser.switchToWindow(mainWindowHandle ?? (await findMainWindowHandle(browser)));
       await browser.keys(key);
     },
 
     async dispatchAudioDropOnCueList(filePath, fileName, mimeType) {
+      await browser.switchToWindow(mainWindowHandle ?? (await findMainWindowHandle(browser)));
       const bytes = [...readFileSync(filePath)];
       await browser.execute(
         (data) => {
@@ -126,10 +202,11 @@ export function createWdioDriver(browser: WdioBrowser): AppDriver {
 
     async expectCueInSequenceList(fileName) {
       const { expectCueInSequenceList: expectCue } = await import("../shared/actions");
-      await expectCue(this, fileName);
+      await expectCue(driver, fileName);
     },
 
     async waitForRole(role, name, options) {
+      await browser.switchToWindow(mainWindowHandle ?? (await findMainWindowHandle(browser)));
       const timeout = options?.timeout ?? 10_000;
       const start = Date.now();
       while (Date.now() - start < timeout) {
@@ -151,5 +228,45 @@ export function createWdioDriver(browser: WdioBrowser): AppDriver {
     async waitUntil(predicate, options) {
       await waitUntil(browser, predicate, options);
     },
+
+    async openOutputWindow() {
+      mainWindowHandle ??= await findMainWindowHandle(browser);
+      await browser.switchToWindow(mainWindowHandle);
+      const outputButton = await findByRole(browser, "button", "Output");
+      await outputButton.waitForDisplayed({ timeout: 10_000 });
+      await outputButton.click();
+
+      await waitUntil(
+        browser,
+        async () => {
+          const handle = await findOutputWindowHandle(browser);
+          if (!handle) return false;
+          outputWindowHandle = handle;
+          return true;
+        },
+        { timeout: 30_000, timeoutMsg: "Timed out waiting for Tauri output window" },
+      );
+
+      await browser.switchToWindow(outputWindowHandle!);
+    },
+
+    async switchToMainWindow() {
+      mainWindowHandle ??= await findMainWindowHandle(browser);
+      await browser.switchToWindow(mainWindowHandle);
+    },
+
+    async switchToOutputWindow() {
+      outputWindowHandle ??= (await findOutputWindowHandle(browser)) ?? undefined;
+      if (!outputWindowHandle) {
+        throw new Error("Output window handle not found");
+      }
+      await browser.switchToWindow(outputWindowHandle);
+    },
+
+    async wait(ms) {
+      await browser.pause(ms);
+    },
   };
+
+  return driver;
 }

@@ -1,8 +1,11 @@
+import { getPlatform } from "../platform";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { resolveEffectiveOpacity, resolveEffectiveVolume } from "../stores/fade";
 import { usePlaybackStore } from "../stores/playback";
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import { useProjectLocationStore } from "../stores/project-location";
 import { useTransportStore } from "../stores/transport";
+import { useVfsStore } from "../stores/vfs";
 import type { Cue } from "../types/cue";
 import type { OutputLayer, OutputState } from "../types/output";
 import { vfsGetObjectUrl } from "../vfs/engine";
@@ -19,8 +22,15 @@ async function buildLayer(cue: Cue, goAtMs: number): Promise<OutputLayer | undef
     return undefined;
   }
 
-  await resolveAssetBlob(cue.assetPath);
-  const objectUrl = vfsGetObjectUrl(cue.assetPath);
+  let objectUrl: string | undefined;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await resolveAssetBlob(cue.assetPath);
+    objectUrl = vfsGetObjectUrl(cue.assetPath);
+    if (objectUrl) break;
+    if (attempt < 4) {
+      await new Promise((resolve) => setTimeout(resolve, 40));
+    }
+  }
   if (!objectUrl) return undefined;
 
   const sourceDurationSec = cue.type === "video" ? getMediaDurationSec(cue.assetPath) : undefined;
@@ -66,6 +76,37 @@ export async function buildOutputState(revision: number): Promise<OutputState> {
   }
 
   const { id: projectId } = useProjectStore.getState();
+  const projectRootDir =
+    getPlatform() === "tauri" ? useProjectLocationStore.getState().rootDir : null;
 
-  return { revision, projectId, layers };
+  if (layers.length > 0) {
+    useVfsStore.getState().refreshEntriesLoaded();
+  }
+
+  return { revision, projectId, projectRootDir, activeCueIds, layers };
+}
+
+/** True when transport is active but visual layers are not ready to publish yet. */
+export function hasUnresolvedVisualOutput(activeCueIds: string[], layers: OutputLayer[]): boolean {
+  if (activeCueIds.length === 0 || layers.length > 0) return false;
+
+  const list = getActiveCueListFromState(useProjectStore.getState());
+  const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
+
+  for (const cueId of activeCueIds) {
+    const cue = cueById.get(cueId);
+    if (cue && (cue.type === "video" || cue.type === "image") && cue.assetPath) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/** True when transport expects output content but the snapshot has no layers yet. */
+export function shouldDeferEmptyOutputPublish(
+  activeCueIds: string[],
+  layers: OutputLayer[],
+): boolean {
+  return activeCueIds.length > 0 && layers.length === 0;
 }

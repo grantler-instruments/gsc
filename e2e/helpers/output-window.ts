@@ -1,13 +1,17 @@
 import { expect, type Page } from "@playwright/test";
+import {
+  expectOutputPlaybackStableOnPage,
+  OUTPUT_VIDEO_LOAD_MAX_MS,
+  readOutputVideoState,
+} from "../shared/output-window";
 import { getWaveformPositionSec } from "./active-cues";
 
-export const OUTPUT_VIDEO_LOAD_MAX_MS = 5_000;
+export { OUTPUT_VIDEO_LOAD_MAX_MS } from "../shared/output-window";
 /** test-video-playback.mp4 slice length (see generate-video-fixtures.mjs). */
 export const PLAYBACK_VIDEO_SLICE_SEC = 4;
 /** Observed steady-state headless Chromium: ~70–85ms; allow more on loaded CI runners. */
 export const MAX_PLAYBACK_DRIFT_SEC = 0.35;
 export const MAX_DRIFT_GROWTH_SEC = 0.09;
-/** Loop-wrap samples can briefly read high; exclude from steady-state assertions. */
 const STEADY_DRIFT_CAP_SEC = 0.4;
 
 export function outputButton(page: Page) {
@@ -40,15 +44,7 @@ export interface OutputVideoState {
 }
 
 export async function getOutputVideoState(outputPage: Page): Promise<OutputVideoState | null> {
-  return outputPage.evaluate(() => {
-    const video = document.querySelector<HTMLVideoElement>("[data-gsc-output-stage] video");
-    if (!video) return null;
-    return {
-      currentTimeSec: video.currentTime,
-      readyState: video.readyState,
-      paused: video.paused,
-    };
-  });
+  return outputPage.evaluate(readOutputVideoState, undefined);
 }
 
 function isOutputVideoPlaying(state: OutputVideoState | null): boolean {
@@ -264,4 +260,12 @@ export async function expectOutputVideoPlaybackToAdvance(outputPage: Page): Prom
       timeout: 15_000,
     })
     .toBeGreaterThan(firstSample);
+}
+
+/** Assert the output popup keeps one video element mounted and does not reload during playback. */
+export async function expectOutputPlaybackStable(
+  outputPage: Page,
+  options: { stableMs?: number; advanceMs?: number } = {},
+): Promise<void> {
+  await expectOutputPlaybackStableOnPage(outputPage, options);
 }

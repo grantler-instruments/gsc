@@ -53,10 +53,25 @@ export function useProjectSession(): boolean {
 
     void (async () => {
       try {
-        await restorePlatformProject();
+        if (getPlatform() === "tauri") {
+          const { applyTauriStartupChoice, prepareTauriStartupRestore } = await import(
+            "../platform/project-storage.tauri"
+          );
+          const choice = await prepareTauriStartupRestore();
+          if (cancelled) return;
+          setReady(true);
+          if (choice) {
+            await applyTauriStartupChoice(choice);
+          }
+        } else {
+          await restorePlatformProject();
+          if (cancelled) return;
+          setReady(true);
+        }
       } catch (err) {
         console.error("[session] restore failed", err);
         notifyWarning(t("notification.restoreProjectFailed"));
+        if (!cancelled) setReady(true);
       }
       if (cancelled) return;
       unsubs.push(
@@ -77,7 +92,6 @@ export function useProjectSession(): boolean {
         }),
       );
       useProjectLoadingStore.getState().clearAssetProgress();
-      setReady(true);
     })();
 
     return () => {

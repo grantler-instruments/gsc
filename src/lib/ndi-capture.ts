@@ -1,5 +1,8 @@
 const STAGE_ROOT_SELECTOR = "[data-gsc-output-stage]";
 
+/** Hidden mirrors for NDI capture — drawImage on a visible playing video flickers in WKWebView. */
+const ndiMirrorVideos = new WeakMap<HTMLVideoElement, HTMLVideoElement>();
+
 function rgbaToBgra(rgba: Uint8ClampedArray): Uint8Array {
   const bgra = new Uint8Array(rgba.length);
   for (let i = 0; i < rgba.length; i += 4) {
@@ -9,6 +12,42 @@ function rgbaToBgra(rgba: Uint8ClampedArray): Uint8Array {
     bgra[i + 3] = rgba[i + 3] ?? 255;
   }
   return bgra;
+}
+
+function syncNdiMirrorVideo(source: HTMLVideoElement): HTMLVideoElement | null {
+  if (source.readyState < 2) return null;
+
+  let mirror = ndiMirrorVideos.get(source);
+  if (!mirror) {
+    mirror = document.createElement("video");
+    mirror.muted = true;
+    mirror.playsInline = true;
+    mirror.preload = "auto";
+    mirror.style.cssText =
+      "position:fixed;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none";
+    document.body.appendChild(mirror);
+    ndiMirrorVideos.set(source, mirror);
+  }
+
+  if (mirror.src !== source.src) {
+    mirror.src = source.src;
+  }
+
+  if (Math.abs(mirror.currentTime - source.currentTime) > 0.05) {
+    try {
+      mirror.currentTime = source.currentTime;
+    } catch {
+      return null;
+    }
+  }
+
+  if (source.paused) {
+    if (!mirror.paused) mirror.pause();
+  } else if (mirror.paused) {
+    void mirror.play().catch(() => {});
+  }
+
+  return mirror.readyState >= 2 ? mirror : null;
 }
 
 /** Draw the output stage DOM into a canvas and return BGRA pixels. */
@@ -45,7 +84,10 @@ export function captureOutputStageFrame(width: number, height: number): Uint8Arr
 
     ctx.globalAlpha = opacity;
     try {
-      ctx.drawImage(element, x, y, w, h);
+      const captureTarget =
+        element instanceof HTMLVideoElement ? syncNdiMirrorVideo(element) : element;
+      if (!captureTarget) continue;
+      ctx.drawImage(captureTarget, x, y, w, h);
     } catch {
       /* CORS/taint or frame not ready */
     }
