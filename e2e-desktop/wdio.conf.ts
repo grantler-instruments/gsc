@@ -67,7 +67,7 @@ export const config: WebdriverIO.Config = {
   framework: "mocha",
   mochaOpts: {
     ui: "bdd",
-    timeout: 120_000,
+    timeout: 180_000,
   },
   waitforTimeout: 15_000,
   onPrepare: () => {

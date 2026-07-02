@@ -2,7 +2,6 @@ import { expect, type Page } from "@playwright/test";
 import {
   expectOutputPlaybackStableOnPage,
   OUTPUT_VIDEO_LOAD_MAX_MS,
-  readOutputVideoState,
 } from "../shared/output-window";
 import { getWaveformPositionSec } from "./active-cues";
 
@@ -44,7 +43,15 @@ export interface OutputVideoState {
 }
 
 export async function getOutputVideoState(outputPage: Page): Promise<OutputVideoState | null> {
-  return outputPage.evaluate(readOutputVideoState);
+  return outputPage.evaluate(() => {
+    const video = document.querySelector<HTMLVideoElement>("[data-gsc-output-stage] video");
+    if (!video) return null;
+    return {
+      currentTimeSec: video.currentTime,
+      readyState: video.readyState,
+      paused: video.paused,
+    };
+  });
 }
 
 function isOutputVideoPlaying(state: OutputVideoState | null): boolean {

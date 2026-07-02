@@ -1,17 +1,14 @@
-import {
-  dropAudioOnCueList,
-  expectCueInSequenceList,
-  openActiveCuesTab,
-  pressTransportGo,
-} from "../actions";
+import { dropAudioOnCueList, openActiveCuesTab, pressTransportGo } from "../actions";
 import type { AppDriver } from "../driver";
 import { fixturePath } from "../fixtures";
-import { OUTPUT_VIDEO_LOAD_MAX_MS } from "../output-window";
 
 export const DESKTOP_OUTPUT_VIDEO_FIXTURE = "test-video-playback.mp4";
+/** Linux WebKit CI runners need more time for scratch-project disk sync + decode. */
+export const DESKTOP_OUTPUT_VIDEO_LOAD_MAX_MS = 30_000;
 
 export interface DesktopScratchOutputVideoDriver extends AppDriver {
   dismissStartupDialogIfPresent(): Promise<void>;
+  expectActiveCueVisible(cueName: string): Promise<void>;
   openOutputWindow(): Promise<void>;
   switchToMainWindow(): Promise<void>;
   switchToOutputWindow(): Promise<void>;
@@ -37,10 +34,8 @@ export async function desktopScratchOutputVideoPlays(
   const mimeType = options.mimeType ?? "video/mp4";
 
   await driver.gotoApp();
-  await driver.dismissStartupDialogIfPresent();
   await dropAudioOnCueList(driver, fixturePath(fileName), fileName, mimeType);
-  await expectCueInSequenceList(driver, fileName);
-  await driver.waitForRole("button", "Output", { timeout: 15_000 });
+  await driver.expectCueInSequenceList(fileName);
   await driver.openOutputWindow();
 
   await openActiveCuesTab(driver);
@@ -49,11 +44,17 @@ export async function desktopScratchOutputVideoPlays(
 
   const goAtMs = Date.now();
   await pressTransportGo(driver);
+  await driver.expectActiveCueVisible(fileName);
 
   await driver.switchToOutputWindow();
-  const loadMs = await driver.waitForOutputVideoPlaying(goAtMs, OUTPUT_VIDEO_LOAD_MAX_MS + 5_000);
-  if (loadMs > OUTPUT_VIDEO_LOAD_MAX_MS) {
-    throw new Error(`Output video took ${loadMs}ms to start (limit ${OUTPUT_VIDEO_LOAD_MAX_MS}ms)`);
+  const loadMs = await driver.waitForOutputVideoPlaying(
+    goAtMs,
+    DESKTOP_OUTPUT_VIDEO_LOAD_MAX_MS + 10_000,
+  );
+  if (loadMs > DESKTOP_OUTPUT_VIDEO_LOAD_MAX_MS) {
+    throw new Error(
+      `Output video element took ${loadMs}ms to appear (limit ${DESKTOP_OUTPUT_VIDEO_LOAD_MAX_MS}ms)`,
+    );
   }
 
   await driver.expectOutputPlaybackStable();

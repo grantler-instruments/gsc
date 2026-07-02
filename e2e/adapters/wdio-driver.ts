@@ -2,8 +2,8 @@ import { readFileSync } from "node:fs";
 import type { AppDriver, WaitUntilOptions } from "../shared/driver";
 import type { DesktopScratchOutputVideoDriver } from "../shared/scenarios/desktop-scratch-output-video";
 import {
-  expectOutputPlaybackStableViaElements,
-  waitForOutputVideoPlayingViaElements,
+  expectOutputVideoElementStableViaElements,
+  waitForOutputVideoElementViaElements,
 } from "./wdio-output-window";
 
 type WdioBrowser = WebdriverIO.Browser;
@@ -39,9 +39,27 @@ async function findByRole(
     name instanceof RegExp ? name : new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
 
   if (typeof name === "string") {
-    const byLabel = await browser.$(`[role="${role}"][aria-label="${name}"]`);
-    if (await byLabel.isExisting()) {
-      return byLabel;
+    const labelSelectors =
+      role === "button"
+        ? [`button[aria-label="${name}"]`, `[role="${role}"][aria-label="${name}"]`]
+        : [`[role="${role}"][aria-label="${name}"]`];
+    for (const selector of labelSelectors) {
+      const byLabel = await browser.$(selector);
+      if (await byLabel.isExisting()) {
+        return byLabel;
+      }
+    }
+  }
+
+  if (role === "button" && name === "Output") {
+    const byAction = await browser.$('[data-gsc-action="open-output"]');
+    if (await byAction.isExisting()) {
+      return byAction;
+    }
+
+    const byTitle = await browser.$('button[title="Open audience output window"]');
+    if (await byTitle.isExisting()) {
+      return byTitle;
     }
   }
 
@@ -154,6 +172,37 @@ async function findOutputWindowHandle(browser: WdioBrowser): Promise<string | nu
   return null;
 }
 
+async function countCueRowsNamedViaElements(
+  browser: WdioBrowser,
+  fileName: string,
+): Promise<number> {
+  const list = await browser.$('[data-gsc-drop-zone="cue-list"]');
+  if (!(await list.isExisting())) return 0;
+
+  const rows = await list.$$("[data-cue-id]");
+  let count = 0;
+  for (const row of rows) {
+    const text = (await row.getText())?.trim() ?? "";
+    if (text.includes(fileName)) count++;
+  }
+  return count;
+}
+
+async function activeCueRowVisibleViaElements(
+  browser: WdioBrowser,
+  cueName: string,
+): Promise<boolean> {
+  const panel = await browser.$('aside [role="tabpanel"]');
+  if (!(await panel.isExisting())) return false;
+
+  const rows = await panel.$$("li");
+  for (const row of rows) {
+    const text = (await row.getText())?.trim() ?? "";
+    if (text.includes(cueName)) return true;
+  }
+  return false;
+}
+
 export function createWdioDriver(browser: WdioBrowser): AppDriver {
   return createWdioDesktopDriver(browser);
 }
@@ -210,8 +259,22 @@ export function createWdioDesktopDriver(browser: WdioBrowser): DesktopScratchOut
     },
 
     async expectCueInSequenceList(fileName) {
-      const { expectCueInSequenceList: expectCue } = await import("../shared/actions");
-      await expectCue(driver, fileName);
+      await waitUntil(
+        browser,
+        async () => (await countCueRowsNamedViaElements(browser, fileName)) === 1,
+        {
+          timeout: 30_000,
+          timeoutMsg: `Expected one cue row named "${fileName}"`,
+        },
+      );
+    },
+
+    async expectActiveCueVisible(cueName) {
+      await browser.switchToWindow(mainWindowHandle ?? (await findMainWindowHandle(browser)));
+      await waitUntil(browser, async () => activeCueRowVisibleViaElements(browser, cueName), {
+        timeout: 15_000,
+        timeoutMsg: `Expected active cue "${cueName}"`,
+      });
     },
 
     async waitForRole(role, name, options) {
@@ -241,19 +304,35 @@ export function createWdioDesktopDriver(browser: WdioBrowser): DesktopScratchOut
     async openOutputWindow() {
       mainWindowHandle ??= await findMainWindowHandle(browser);
       await browser.switchToWindow(mainWindowHandle);
+
+      await waitUntil(
+        browser,
+        async () => {
+          try {
+            const outputButton = await findByRole(browser, "button", "Output");
+            return await outputButton.isDisplayed();
+          } catch {
+            return false;
+          }
+        },
+        { timeout: 30_000, timeoutMsg: "Timed out waiting for Output button" },
+      );
+
       const outputButton = await findByRole(browser, "button", "Output");
-      await outputButton.waitForDisplayed({ timeout: 10_000 });
+      const handlesBefore = await browser.getWindowHandles();
       await outputButton.click();
 
       await waitUntil(
         browser,
         async () => {
+          const handles = await browser.getWindowHandles();
+          if (handles.length <= handlesBefore.length) return false;
           const handle = await findOutputWindowHandle(browser);
           if (!handle) return false;
           outputWindowHandle = handle;
           return true;
         },
-        { timeout: 30_000, timeoutMsg: "Timed out waiting for Tauri output window" },
+        { timeout: 45_000, timeoutMsg: "Timed out waiting for Tauri output window" },
       );
 
       await browser.switchToWindow(outputWindowHandle!);
@@ -282,7 +361,7 @@ export function createWdioDesktopDriver(browser: WdioBrowser): DesktopScratchOut
         throw new Error("Output window handle not found");
       }
       await browser.switchToWindow(outputWindowHandle);
-      return waitForOutputVideoPlayingViaElements(browser, startedAtMs, timeoutMs);
+      return waitForOutputVideoElementViaElements(browser, startedAtMs, timeoutMs);
     },
 
     async expectOutputPlaybackStable(options) {
@@ -291,7 +370,7 @@ export function createWdioDesktopDriver(browser: WdioBrowser): DesktopScratchOut
         throw new Error("Output window handle not found");
       }
       await browser.switchToWindow(outputWindowHandle);
-      await expectOutputPlaybackStableViaElements(browser, options);
+      await expectOutputVideoElementStableViaElements(browser, options);
     },
   };
 

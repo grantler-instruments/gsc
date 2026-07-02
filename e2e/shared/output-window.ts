@@ -93,11 +93,54 @@ export async function expectOutputPlaybackStableOnPage(
   outputPage: Page,
   options?: { stableMs?: number; advanceMs?: number },
 ): Promise<void> {
-  await expectOutputPlaybackStable(
-    (fn) => outputPage.evaluate(fn),
-    (ms) => outputPage.waitForTimeout(ms),
-    options,
+  const stableMs = options.stableMs ?? OUTPUT_STABLE_MS;
+  const advanceMs = options.advanceMs ?? 500;
+  const navigationCount = await outputPage.evaluate(
+    () => performance.getEntriesByType("navigation").length,
   );
+
+  const waitForVideoCount = async (count: number) => {
+    const deadline = Date.now() + 10_000;
+    while (Date.now() < deadline) {
+      const videoCount = await outputPage.evaluate(
+        () => document.querySelectorAll("[data-gsc-output-stage] video").length,
+      );
+      if (videoCount === count) return;
+      await outputPage.waitForTimeout(200);
+    }
+    throw new Error(`Expected ${count} output video element(s)`);
+  };
+
+  const readVideoTime = () =>
+    outputPage.evaluate(() => {
+      const video = document.querySelector<HTMLVideoElement>("[data-gsc-output-stage] video");
+      return video?.currentTime ?? 0;
+    });
+
+  await waitForVideoCount(1);
+
+  const beforeStable = await readVideoTime();
+  await outputPage.waitForTimeout(stableMs);
+
+  if (
+    (await outputPage.evaluate(() => performance.getEntriesByType("navigation").length)) !==
+    navigationCount
+  ) {
+    throw new Error("Output page reloaded during stable playback window");
+  }
+  await waitForVideoCount(1);
+
+  const midStable = await readVideoTime();
+  if (midStable <= beforeStable) {
+    throw new Error("Output video did not advance during stable window");
+  }
+
+  await outputPage.waitForTimeout(advanceMs);
+
+  const afterStable = await readVideoTime();
+  if (afterStable <= midStable) {
+    throw new Error("Output video stopped advancing after stable window");
+  }
 }
 
 export async function expectOutputVideoLoadsWithinOnPage(
@@ -105,9 +148,25 @@ export async function expectOutputVideoLoadsWithinOnPage(
   startedAtMs: number,
   maxMs = OUTPUT_VIDEO_LOAD_MAX_MS,
 ): Promise<number> {
-  const loadMs = await waitForOutputVideoPlaying((fn) => outputPage.evaluate(fn), startedAtMs);
-  if (loadMs > maxMs) {
-    throw new Error(`Output video took ${loadMs}ms to start (limit ${maxMs}ms)`);
+  const deadline = Date.now() + 20_000;
+  while (Date.now() < deadline) {
+    const state = await outputPage.evaluate(() => {
+      const video = document.querySelector<HTMLVideoElement>("[data-gsc-output-stage] video");
+      if (!video) return null;
+      return {
+        currentTimeSec: video.currentTime,
+        readyState: video.readyState,
+        paused: video.paused,
+      };
+    });
+    if (state !== null && state.readyState >= 2 && !state.paused && state.currentTimeSec > 0) {
+      const loadMs = Date.now() - startedAtMs;
+      if (loadMs > maxMs) {
+        throw new Error(`Output video took ${loadMs}ms to start (limit ${maxMs}ms)`);
+      }
+      return loadMs;
+    }
+    await outputPage.waitForTimeout(200);
   }
-  return loadMs;
+  throw new Error("Timed out waiting for output video to start playing");
 }
