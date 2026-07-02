@@ -38,7 +38,7 @@ export async function waitForOutputVideoPlaying(
 ): Promise<number> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const state = await evaluate(() => readOutputVideoState());
+    const state = await evaluate(readOutputVideoState);
     if (isOutputVideoPlaying(state)) {
       return Date.now() - startedAtMs;
     }
@@ -54,12 +54,12 @@ export async function expectOutputPlaybackStable(
 ): Promise<void> {
   const stableMs = options.stableMs ?? OUTPUT_STABLE_MS;
   const advanceMs = options.advanceMs ?? 500;
-  const navigationCount = await evaluate(() => readOutputPageNavigationCount());
+  const navigationCount = await evaluate(readOutputPageNavigationCount);
 
   const waitForVideoCount = async (count: number) => {
     const deadline = Date.now() + 10_000;
     while (Date.now() < deadline) {
-      if ((await evaluate(() => readOutputVideoElementCount())) === count) return;
+      if ((await evaluate(readOutputVideoElementCount)) === count) return;
       await wait(200);
     }
     throw new Error(`Expected ${count} output video element(s)`);
@@ -67,22 +67,22 @@ export async function expectOutputPlaybackStable(
 
   await waitForVideoCount(1);
 
-  const beforeStable = (await evaluate(() => readOutputVideoState()))?.currentTimeSec ?? 0;
+  const beforeStable = (await evaluate(readOutputVideoState))?.currentTimeSec ?? 0;
   await wait(stableMs);
 
-  if ((await evaluate(() => readOutputPageNavigationCount())) !== navigationCount) {
+  if ((await evaluate(readOutputPageNavigationCount)) !== navigationCount) {
     throw new Error("Output page reloaded during stable playback window");
   }
   await waitForVideoCount(1);
 
-  const midStable = (await evaluate(() => readOutputVideoState()))?.currentTimeSec ?? 0;
+  const midStable = (await evaluate(readOutputVideoState))?.currentTimeSec ?? 0;
   if (midStable <= beforeStable) {
     throw new Error("Output video did not advance during stable window");
   }
 
   await wait(advanceMs);
 
-  const afterStable = (await evaluate(() => readOutputVideoState()))?.currentTimeSec ?? 0;
+  const afterStable = (await evaluate(readOutputVideoState))?.currentTimeSec ?? 0;
   if (afterStable <= midStable) {
     throw new Error("Output video stopped advancing after stable window");
   }
