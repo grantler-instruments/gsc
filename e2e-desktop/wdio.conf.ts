@@ -69,6 +69,7 @@ export const config: WebdriverIO.Config = {
     ui: "bdd",
     timeout: 120_000,
   },
+  waitforTimeout: 15_000,
   onPrepare: () => {
     if (process.platform === "darwin") {
       console.warn(

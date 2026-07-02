@@ -6,11 +6,7 @@ import {
 } from "../actions";
 import type { AppDriver } from "../driver";
 import { fixturePath } from "../fixtures";
-import {
-  expectOutputPlaybackStable,
-  OUTPUT_VIDEO_LOAD_MAX_MS,
-  waitForOutputVideoPlaying,
-} from "../output-window";
+import { OUTPUT_VIDEO_LOAD_MAX_MS } from "../output-window";
 
 export const DESKTOP_OUTPUT_VIDEO_FIXTURE = "test-video-playback.mp4";
 
@@ -20,6 +16,8 @@ export interface DesktopScratchOutputVideoDriver extends AppDriver {
   switchToMainWindow(): Promise<void>;
   switchToOutputWindow(): Promise<void>;
   wait(ms: number): Promise<void>;
+  waitForOutputVideoPlaying(startedAtMs: number, timeoutMs?: number): Promise<number>;
+  expectOutputPlaybackStable(options?: { stableMs?: number; advanceMs?: number }): Promise<void>;
 }
 
 export interface DesktopScratchOutputVideoOptions {
@@ -42,6 +40,7 @@ export async function desktopScratchOutputVideoPlays(
   await driver.dismissStartupDialogIfPresent();
   await dropAudioOnCueList(driver, fixturePath(fileName), fileName, mimeType);
   await expectCueInSequenceList(driver, fileName);
+  await driver.waitForRole("button", "Output", { timeout: 15_000 });
   await driver.openOutputWindow();
 
   await openActiveCuesTab(driver);
@@ -52,17 +51,10 @@ export async function desktopScratchOutputVideoPlays(
   await pressTransportGo(driver);
 
   await driver.switchToOutputWindow();
-  const loadMs = await waitForOutputVideoPlaying(
-    (fn, arg) => driver.evaluate(fn, arg),
-    goAtMs,
-    OUTPUT_VIDEO_LOAD_MAX_MS + 5_000,
-  );
+  const loadMs = await driver.waitForOutputVideoPlaying(goAtMs, OUTPUT_VIDEO_LOAD_MAX_MS + 5_000);
   if (loadMs > OUTPUT_VIDEO_LOAD_MAX_MS) {
     throw new Error(`Output video took ${loadMs}ms to start (limit ${OUTPUT_VIDEO_LOAD_MAX_MS}ms)`);
   }
 
-  await expectOutputPlaybackStable(
-    (fn, arg) => driver.evaluate(fn, arg),
-    (ms) => driver.wait(ms),
-  );
+  await driver.expectOutputPlaybackStable();
 }

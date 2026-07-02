@@ -44,7 +44,7 @@ export interface OutputVideoState {
 }
 
 export async function getOutputVideoState(outputPage: Page): Promise<OutputVideoState | null> {
-  return outputPage.evaluate(readOutputVideoState, undefined);
+  return outputPage.evaluate(() => readOutputVideoState());
 }
 
 function isOutputVideoPlaying(state: OutputVideoState | null): boolean {

@@ -9,7 +9,7 @@ export interface OutputVideoState {
   paused: boolean;
 }
 
-export function readOutputVideoState(_unused?: void): OutputVideoState | null {
+export function readOutputVideoState(): OutputVideoState | null {
   const video = document.querySelector<HTMLVideoElement>("[data-gsc-output-stage] video");
   if (!video) return null;
   return {
@@ -19,11 +19,11 @@ export function readOutputVideoState(_unused?: void): OutputVideoState | null {
   };
 }
 
-export function readOutputVideoElementCount(_unused?: void): number {
+export function readOutputVideoElementCount(): number {
   return document.querySelectorAll("[data-gsc-output-stage] video").length;
 }
 
-export function readOutputPageNavigationCount(_unused?: void): number {
+export function readOutputPageNavigationCount(): number {
   return performance.getEntriesByType("navigation").length;
 }
 
@@ -32,13 +32,13 @@ export function isOutputVideoPlaying(state: OutputVideoState | null): boolean {
 }
 
 export async function waitForOutputVideoPlaying(
-  evaluate: <T, A>(fn: (arg: A) => T, arg: A) => Promise<T>,
+  evaluate: <T>(fn: () => T) => Promise<T>,
   startedAtMs: number,
   timeoutMs = 20_000,
 ): Promise<number> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const state = await evaluate(readOutputVideoState, undefined);
+    const state = await evaluate(() => readOutputVideoState());
     if (isOutputVideoPlaying(state)) {
       return Date.now() - startedAtMs;
     }
@@ -48,18 +48,18 @@ export async function waitForOutputVideoPlaying(
 }
 
 export async function expectOutputPlaybackStable(
-  evaluate: <T, A>(fn: (arg: A) => T, arg: A) => Promise<T>,
+  evaluate: <T>(fn: () => T) => Promise<T>,
   wait: (ms: number) => Promise<void>,
   options: { stableMs?: number; advanceMs?: number } = {},
 ): Promise<void> {
   const stableMs = options.stableMs ?? OUTPUT_STABLE_MS;
   const advanceMs = options.advanceMs ?? 500;
-  const navigationCount = await evaluate(readOutputPageNavigationCount, undefined);
+  const navigationCount = await evaluate(() => readOutputPageNavigationCount());
 
   const waitForVideoCount = async (count: number) => {
     const deadline = Date.now() + 10_000;
     while (Date.now() < deadline) {
-      if ((await evaluate(readOutputVideoElementCount, undefined)) === count) return;
+      if ((await evaluate(() => readOutputVideoElementCount())) === count) return;
       await wait(200);
     }
     throw new Error(`Expected ${count} output video element(s)`);
@@ -67,22 +67,22 @@ export async function expectOutputPlaybackStable(
 
   await waitForVideoCount(1);
 
-  const beforeStable = (await evaluate(readOutputVideoState, undefined))?.currentTimeSec ?? 0;
+  const beforeStable = (await evaluate(() => readOutputVideoState()))?.currentTimeSec ?? 0;
   await wait(stableMs);
 
-  if ((await evaluate(readOutputPageNavigationCount, undefined)) !== navigationCount) {
+  if ((await evaluate(() => readOutputPageNavigationCount())) !== navigationCount) {
     throw new Error("Output page reloaded during stable playback window");
   }
   await waitForVideoCount(1);
 
-  const midStable = (await evaluate(readOutputVideoState, undefined))?.currentTimeSec ?? 0;
+  const midStable = (await evaluate(() => readOutputVideoState()))?.currentTimeSec ?? 0;
   if (midStable <= beforeStable) {
     throw new Error("Output video did not advance during stable window");
   }
 
   await wait(advanceMs);
 
-  const afterStable = (await evaluate(readOutputVideoState, undefined))?.currentTimeSec ?? 0;
+  const afterStable = (await evaluate(() => readOutputVideoState()))?.currentTimeSec ?? 0;
   if (afterStable <= midStable) {
     throw new Error("Output video stopped advancing after stable window");
   }
@@ -94,7 +94,7 @@ export async function expectOutputPlaybackStableOnPage(
   options?: { stableMs?: number; advanceMs?: number },
 ): Promise<void> {
   await expectOutputPlaybackStable(
-    (fn, arg) => outputPage.evaluate(fn, arg),
+    (fn) => outputPage.evaluate(fn),
     (ms) => outputPage.waitForTimeout(ms),
     options,
   );
@@ -105,10 +105,7 @@ export async function expectOutputVideoLoadsWithinOnPage(
   startedAtMs: number,
   maxMs = OUTPUT_VIDEO_LOAD_MAX_MS,
 ): Promise<number> {
-  const loadMs = await waitForOutputVideoPlaying(
-    (fn, arg) => outputPage.evaluate(fn, arg),
-    startedAtMs,
-  );
+  const loadMs = await waitForOutputVideoPlaying((fn) => outputPage.evaluate(fn), startedAtMs);
   if (loadMs > maxMs) {
     throw new Error(`Output video took ${loadMs}ms to start (limit ${maxMs}ms)`);
   }

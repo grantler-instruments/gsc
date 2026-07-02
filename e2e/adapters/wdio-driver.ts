@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import type { AppDriver, WaitUntilOptions } from "../shared/driver";
 import type { DesktopScratchOutputVideoDriver } from "../shared/scenarios/desktop-scratch-output-video";
+import {
+  expectOutputPlaybackStableViaElements,
+  waitForOutputVideoPlayingViaElements,
+} from "./wdio-output-window";
 
 type WdioBrowser = WebdriverIO.Browser;
 
@@ -186,17 +190,22 @@ export function createWdioDesktopDriver(browser: WdioBrowser): DesktopScratchOut
 
     async dispatchAudioDropOnCueList(filePath, fileName, mimeType) {
       await browser.switchToWindow(mainWindowHandle ?? (await findMainWindowHandle(browser)));
-      const bytes = [...readFileSync(filePath)];
+      const base64 = readFileSync(filePath).toString("base64");
       await browser.execute(
         (data) => {
+          const binary = atob(data.base64);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+          }
           const dt = new DataTransfer();
-          dt.items.add(new File([new Uint8Array(data.bytes)], data.name, { type: data.mimeType }));
+          dt.items.add(new File([bytes], data.name, { type: data.mimeType }));
           const dropZone = document.querySelector('[data-gsc-drop-zone="cue-list"]');
           if (!dropZone) throw new Error("Cue list drop zone not found");
           dropZone.dispatchEvent(new DragEvent("dragover", { bubbles: true, dataTransfer: dt }));
           dropZone.dispatchEvent(new DragEvent("drop", { bubbles: true, dataTransfer: dt }));
         },
-        { bytes, name: fileName, mimeType },
+        { base64, name: fileName, mimeType },
       );
     },
 
@@ -265,6 +274,24 @@ export function createWdioDesktopDriver(browser: WdioBrowser): DesktopScratchOut
 
     async wait(ms) {
       await browser.pause(ms);
+    },
+
+    async waitForOutputVideoPlaying(startedAtMs, timeoutMs) {
+      outputWindowHandle ??= (await findOutputWindowHandle(browser)) ?? undefined;
+      if (!outputWindowHandle) {
+        throw new Error("Output window handle not found");
+      }
+      await browser.switchToWindow(outputWindowHandle);
+      return waitForOutputVideoPlayingViaElements(browser, startedAtMs, timeoutMs);
+    },
+
+    async expectOutputPlaybackStable(options) {
+      outputWindowHandle ??= (await findOutputWindowHandle(browser)) ?? undefined;
+      if (!outputWindowHandle) {
+        throw new Error("Output window handle not found");
+      }
+      await browser.switchToWindow(outputWindowHandle);
+      await expectOutputPlaybackStableViaElements(browser, options);
     },
   };
 
