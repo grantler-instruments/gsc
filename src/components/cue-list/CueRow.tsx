@@ -211,6 +211,7 @@ export const CueRow = memo(function CueRow({
       component="li"
       data-gsc-drop-zone="cue-row"
       data-cue-id={cue.id}
+      data-cue-name={cue.name}
       sx={{
         ...cueRowSx(rowStyleState),
         pl: `${12 + depth * 16}px`,

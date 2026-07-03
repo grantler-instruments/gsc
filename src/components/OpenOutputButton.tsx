@@ -37,7 +37,9 @@ export function OpenOutputButton() {
         size="small"
         startIcon={<OpenInNewIcon fontSize="small" />}
         onClick={handleOpen}
+        aria-label={t("output.button")}
         title={t("output.openWindowTitle")}
+        data-gsc-action="open-output"
         sx={{ minWidth: 148 }}
       >
         {t("output.button")}

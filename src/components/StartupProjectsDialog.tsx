@@ -12,8 +12,10 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import ListSubheader from "@mui/material/ListSubheader";
 import Typography from "@mui/material/Typography";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  ensureStartupProjectsDialogVisible,
   resolveStartupProjectsChoice,
   useStartupProjectsPromptStore,
 } from "../stores/startup-projects-prompt";
@@ -30,6 +32,10 @@ export function StartupProjectsDialog() {
   const open = useStartupProjectsPromptStore((s) => s.open);
   const draft = useStartupProjectsPromptStore((s) => s.draft);
   const recents = useStartupProjectsPromptStore((s) => s.recents);
+
+  useEffect(() => {
+    ensureStartupProjectsDialogVisible();
+  }, []);
 
   return (
     <Dialog
