@@ -1,85 +1,165 @@
 import { useEffect, useRef, useState } from "react";
-import { getCachedAsset } from "../lib/asset-cache";
-import { getOutputAssetBlob } from "../lib/output-asset-bridge";
+import { subscribeOutputAssets } from "../lib/output-asset-bridge";
+import { resolveOutputAssetObjectUrl } from "../lib/output-asset-resolver";
+import { outputLayersMediaEqual } from "../lib/output-layer-sync";
 import type { OutputLayer, OutputState } from "../types/output";
 
-const CACHE_RETRY_MS = 50;
-const CACHE_RETRIES = 40;
+interface CueAssetBinding {
+  assetPath: string;
+  objectUrl: string;
+}
+
+function mergeLayersFromBindings(
+  layers: OutputLayer[],
+  bindings: Map<string, CueAssetBinding>,
+): OutputLayer[] {
+  const merged: OutputLayer[] = [];
+  for (const layer of layers) {
+    const binding = bindings.get(layer.cueId);
+    if (binding?.assetPath === layer.assetPath) {
+      merged.push({ ...layer, objectUrl: binding.objectUrl });
+    }
+  }
+  return merged;
+}
+
+function setBinding(
+  bindings: Map<string, CueAssetBinding>,
+  cueId: string,
+  assetPath: string,
+  objectUrl: string,
+): boolean {
+  const existing = bindings.get(cueId);
+  if (existing?.assetPath === assetPath) {
+    return false;
+  }
+
+  bindings.set(cueId, { assetPath, objectUrl });
+  return true;
+}
 
 /**
- * Output webviews resolve assets from BroadcastChannel pushes first,
- * then fall back to the origin-wide Cache API populated by the control window.
+ * Output webviews resolve assets from disk (Tauri) or BroadcastChannel/cache (web).
  */
 export function useResolvedOutputLayers(state: OutputState): OutputLayer[] {
   const [layers, setLayers] = useState<OutputLayer[]>([]);
-  const urlsRef = useRef(new Map<string, string>());
+  const [bindingsVersion, setBindingsVersion] = useState(0);
+  const bindingsRef = useRef(new Map<string, CueAssetBinding>());
+  const layersRef = useRef<OutputLayer[]>([]);
+  const resolveRequestRef = useRef(0);
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
+  const assetSignature = [
+    state.projectId,
+    state.projectRootDir ?? "",
+    ...state.layers.map((layer) => `${layer.cueId}:${layer.assetPath}`),
+  ].join("|");
+
+  const applyResolved = (resolved: OutputLayer[]) => {
+    if (outputLayersMediaEqual(resolved, layersRef.current)) return;
+    layersRef.current = resolved;
+    setLayers(resolved);
+  };
+
+  // Sync media mount props whenever state or bindings change.
   useEffect(() => {
-    let cancelled = false;
-
-    const activeIds = new Set(state.layers.map((l) => l.cueId));
-    for (const [cueId, url] of [...urlsRef.current.entries()]) {
-      if (!activeIds.has(cueId)) {
-        URL.revokeObjectURL(url);
-        urlsRef.current.delete(cueId);
-      }
-    }
-
     if (state.layers.length === 0) {
-      setLayers([]);
+      if (state.activeCueIds.length === 0) {
+        applyResolved([]);
+      }
       return;
     }
 
+    const merged = mergeLayersFromBindings(state.layers, bindingsRef.current);
+    if (merged.length === 0) return;
+
+    applyResolved(merged);
+  }, [state.layers, state.activeCueIds, bindingsVersion]);
+
+  // Load missing asset bindings without cancelling on opacity/transport updates.
+  useEffect(() => {
+    const activeIds = new Set(state.layers.map((layer) => layer.cueId));
+    for (const cueId of [...bindingsRef.current.keys()]) {
+      if (!activeIds.has(cueId)) {
+        bindingsRef.current.delete(cueId);
+      }
+    }
+
+    const missing = state.layers.filter((layer) => {
+      const binding = bindingsRef.current.get(layer.cueId);
+      return !binding || binding.assetPath !== layer.assetPath;
+    });
+
+    if (missing.length === 0) {
+      return;
+    }
+
+    const requestId = ++resolveRequestRef.current;
+
     void (async () => {
-      const resolved: OutputLayer[] = [];
+      let changed = false;
 
-      for (const layer of state.layers) {
-        let blob =
-          getOutputAssetBlob(state.projectId, layer.assetPath) ??
-          (await getCachedAsset(state.projectId, layer.assetPath));
+      for (const layer of missing) {
+        const objectUrl = await resolveOutputAssetObjectUrl(
+          state.projectId,
+          state.projectRootDir,
+          layer.assetPath,
+        );
+        if (resolveRequestRef.current !== requestId) return;
 
-        for (let attempt = 0; !blob && attempt < CACHE_RETRIES; attempt += 1) {
-          if (cancelled) return;
-          await new Promise((r) => setTimeout(r, CACHE_RETRY_MS));
-          blob =
-            getOutputAssetBlob(state.projectId, layer.assetPath) ??
-            (await getCachedAsset(state.projectId, layer.assetPath));
-        }
-
-        if (cancelled) return;
-
-        if (!blob) {
+        if (!objectUrl) {
           console.warn(`[output] Asset not available: ${layer.assetPath}`);
           continue;
         }
 
-        let localUrl = urlsRef.current.get(layer.cueId);
-        if (!localUrl) {
-          localUrl = URL.createObjectURL(blob);
-          urlsRef.current.set(layer.cueId, localUrl);
+        if (setBinding(bindingsRef.current, layer.cueId, layer.assetPath, objectUrl)) {
+          changed = true;
         }
-
-        resolved.push({ ...layer, objectUrl: localUrl });
       }
 
-      if (!cancelled) {
-        setLayers(resolved);
+      if (changed && resolveRequestRef.current === requestId) {
+        setBindingsVersion((version) => version + 1);
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [state.layers, state.projectId]);
+  }, [assetSignature, state.projectId, state.projectRootDir]);
 
   useEffect(() => {
-    const urls = urlsRef.current;
-    return () => {
-      for (const url of urls.values()) {
-        URL.revokeObjectURL(url);
-      }
-      urls.clear();
-    };
+    return subscribeOutputAssets(() => {
+      const current = stateRef.current;
+      const waitingForAsset = current.layers.some((layer) => {
+        const existing = bindingsRef.current.get(layer.cueId);
+        return !existing || existing.assetPath !== layer.assetPath;
+      });
+      if (!waitingForAsset) return;
+
+      const requestId = ++resolveRequestRef.current;
+
+      void (async () => {
+        let changed = false;
+
+        for (const layer of current.layers) {
+          const existing = bindingsRef.current.get(layer.cueId);
+          if (existing?.assetPath === layer.assetPath) continue;
+
+          const objectUrl = await resolveOutputAssetObjectUrl(
+            current.projectId,
+            current.projectRootDir,
+            layer.assetPath,
+          );
+          if (resolveRequestRef.current !== requestId) return;
+          if (!objectUrl) continue;
+
+          if (setBinding(bindingsRef.current, layer.cueId, layer.assetPath, objectUrl)) {
+            changed = true;
+          }
+        }
+
+        if (changed && resolveRequestRef.current === requestId) {
+          setBindingsVersion((version) => version + 1);
+        }
+      })();
+    });
   }, []);
 
   return layers;

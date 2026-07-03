@@ -7,6 +7,7 @@ import {
   DEFAULT_NDI_OUTPUT_FPS,
   DEFAULT_NDI_OUTPUT_HEIGHT,
   DEFAULT_NDI_OUTPUT_WIDTH,
+  NDI_ENABLED,
   type NdiOutputConfig,
 } from "../types/ndi";
 
@@ -38,7 +39,7 @@ export function useNdiOutputEngine(): void {
   const ndiOutputFps = usePreferencesStore((s) => s.ndiOutputFps);
 
   useEffect(() => {
-    if (isOutputMode()) return;
+    if (!NDI_ENABLED || isOutputMode()) return;
 
     let cancelled = false;
 

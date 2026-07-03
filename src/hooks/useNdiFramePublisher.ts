@@ -5,6 +5,7 @@ import {
   DEFAULT_NDI_OUTPUT_FPS,
   DEFAULT_NDI_OUTPUT_HEIGHT,
   DEFAULT_NDI_OUTPUT_WIDTH,
+  NDI_ENABLED,
 } from "../types/ndi";
 
 /** Pushes composited output-window frames to the Rust NDI sender. */
@@ -16,6 +17,8 @@ export function useNdiFramePublisher(): void {
   const inFlightRef = useRef(false);
 
   useEffect(() => {
+    if (!NDI_ENABLED) return;
+
     let cancelled = false;
     let rafId = 0;
     let lastPushMs = 0;

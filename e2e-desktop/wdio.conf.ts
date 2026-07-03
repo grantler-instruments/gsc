@@ -6,6 +6,10 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
+const TAURI_DRIVER_HOST = "127.0.0.1";
+const TAURI_DRIVER_PORT = 4444;
+const TAURI_DRIVER_STATUS_URL = `http://${TAURI_DRIVER_HOST}:${TAURI_DRIVER_PORT}/status`;
+
 let tauriDriver: ReturnType<typeof spawn> | undefined;
 let exit = false;
 
@@ -50,10 +54,51 @@ onShutdown(() => {
   closeTauriDriver();
 });
 
+function killStaleNativeWebDrivers(): void {
+  if (process.platform === "linux") {
+    spawnSync("pkill", ["-f", "WebKitWebDriver"], { stdio: "ignore" });
+  }
+}
+
+function startTauriDriver(): void {
+  if (tauriDriver) return;
+
+  tauriDriver = spawn(tauriDriverPath(), [], {
+    stdio: [null, process.stdout, process.stderr],
+  });
+
+  tauriDriver.on("error", (error) => {
+    console.error("tauri-driver error:", error);
+    process.exit(1);
+  });
+
+  tauriDriver.on("exit", (code) => {
+    if (!exit) {
+      console.error("tauri-driver exited with code:", code);
+      process.exit(1);
+    }
+  });
+}
+
+async function waitForTauriDriverReady(timeoutMs = 60_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(TAURI_DRIVER_STATUS_URL);
+      if (response.ok) return;
+    } catch {
+      /* not ready yet */
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error(`tauri-driver did not become ready at ${TAURI_DRIVER_STATUS_URL}`);
+}
+
 export const config: WebdriverIO.Config = {
-  hostname: "127.0.0.1",
-  port: 4444,
-  specs: ["./specs/**/*.ts"],
+  hostname: TAURI_DRIVER_HOST,
+  port: TAURI_DRIVER_PORT,
+  // Smoke first — warms WebKitWebDriver before the heavier output-window spec.
+  specs: ["./specs/smoke-go.e2e.ts", "./specs/output-scratch-video.e2e.ts"],
   maxInstances: 1,
   capabilities: [
     {
@@ -67,9 +112,15 @@ export const config: WebdriverIO.Config = {
   framework: "mocha",
   mochaOpts: {
     ui: "bdd",
-    timeout: 120_000,
+    timeout: 180_000,
   },
-  onPrepare: () => {
+  waitforTimeout: 15_000,
+  connectionRetryTimeout: 120_000,
+  connectionRetryCount: 3,
+  logLevels: {
+    webdriver: "warn",
+  },
+  onPrepare: async () => {
     if (process.platform === "darwin") {
       console.warn(
         "Skipping desktop e2e: official Tauri WebDriver does not support macOS (no WKWebView driver). Run on Linux or Windows.",
@@ -93,27 +144,12 @@ export const config: WebdriverIO.Config = {
     ) {
       throw new Error("WebKitWebDriver not found. Install webkit2gtk-driver (Linux CI).");
     }
+
+    killStaleNativeWebDrivers();
+    startTauriDriver();
+    await waitForTauriDriverReady();
   },
-  beforeSession: () => {
-    if (process.platform === "darwin") return;
-
-    tauriDriver = spawn(tauriDriverPath(), [], {
-      stdio: [null, process.stdout, process.stderr],
-    });
-
-    tauriDriver.on("error", (error) => {
-      console.error("tauri-driver error:", error);
-      process.exit(1);
-    });
-
-    tauriDriver.on("exit", (code) => {
-      if (!exit) {
-        console.error("tauri-driver exited with code:", code);
-        process.exit(1);
-      }
-    });
-  },
-  afterSession: () => {
+  onComplete: () => {
     closeTauriDriver();
   },
 };
