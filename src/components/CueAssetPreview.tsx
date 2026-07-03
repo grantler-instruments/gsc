@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useAssetObjectUrl } from "../hooks/useAssetObjectUrl";
 import { resolveEffectiveOpacity, useFadeStore } from "../stores/fade";
 import type { Cue } from "../types/cue";
@@ -16,6 +17,7 @@ interface CueAssetPreviewProps {
 
 /** Static preview of a video/image cue asset in the inspector. */
 export function CueAssetPreview({ cue, className }: CueAssetPreviewProps) {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const frameMs = useFadeStore((s) => s.frameMs);
   const objectUrl = useAssetObjectUrl(cue.assetPath);
@@ -27,7 +29,7 @@ export function CueAssetPreview({ cue, className }: CueAssetPreviewProps) {
   if (!objectUrl) {
     return (
       <Box className={className} sx={{ ...cueAssetPreviewSx, ...cueAssetPreviewMissingSx }}>
-        Asset not loaded — re-import after opening a project.
+        {t("playback.assetNotLoadedImport")}
       </Box>
     );
   }

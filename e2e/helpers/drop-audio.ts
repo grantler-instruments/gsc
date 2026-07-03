@@ -28,11 +28,16 @@ async function createAudioDataTransfer(
 ) {
   return page.evaluateHandle(
     (data) => {
+      const binary = atob(data.base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
       const dt = new DataTransfer();
-      dt.items.add(new File([new Uint8Array(data.bytes)], data.name, { type: data.mimeType }));
+      dt.items.add(new File([bytes], data.name, { type: data.mimeType }));
       return dt;
     },
-    { bytes: [...bytes], name: fileName, mimeType },
+    { base64: bytes.toString("base64"), name: fileName, mimeType },
   );
 }
 

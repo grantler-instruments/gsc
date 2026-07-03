@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { deletePrimarySelectedCue, selectAdjacentVisibleCue } from "../lib/cue-navigation";
-import { isEditableKeyboardTarget } from "../lib/keyboard";
+import { hasTextSelection, isEditableKeyboardTarget } from "../lib/keyboard";
 import { startNewProject } from "../lib/new-project";
 import { openSettings } from "../lib/open-settings";
 import { openProjectFile, saveProjectFile } from "../lib/project-file-actions";
@@ -110,6 +110,7 @@ export function useAppKeyboard(): void {
       }
 
       if (
+        !hasTextSelection() &&
         canEditProject() &&
         (e.metaKey || e.ctrlKey) &&
         e.key.toLowerCase() === "c" &&
@@ -122,6 +123,7 @@ export function useAppKeyboard(): void {
       }
 
       if (
+        !hasTextSelection() &&
         canEditProject() &&
         (e.metaKey || e.ctrlKey) &&
         e.key.toLowerCase() === "x" &&
@@ -134,6 +136,7 @@ export function useAppKeyboard(): void {
       }
 
       if (
+        !hasTextSelection() &&
         canEditProject() &&
         (e.metaKey || e.ctrlKey) &&
         e.key.toLowerCase() === "v" &&

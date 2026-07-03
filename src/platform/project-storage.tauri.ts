@@ -53,7 +53,7 @@ import { hasMeaningfulProjectContent, snapshotHasMeaningfulContent } from "../li
 import { useProjectStore } from "../stores/project";
 import { useProjectLoadingStore } from "../stores/project-loading";
 import { useProjectLocationStore } from "../stores/project-location";
-import type { PendingDraftProject } from "../stores/startup-projects-prompt";
+import type { PendingDraftProject, StartupProjectsChoice } from "../stores/startup-projects-prompt";
 import { requestStartupProjectsChoice } from "../stores/startup-projects-prompt";
 import type { VfsEntry } from "../stores/vfs";
 import { useVfsStore } from "../stores/vfs";
@@ -562,59 +562,89 @@ export async function listValidRecentProjects(): Promise<RecentProjectEntry[]> {
   return valid;
 }
 
-async function doRestoreLastTauriProject(): Promise<boolean> {
+async function doPrepareTauriStartupRestore(): Promise<StartupProjectsChoice | null> {
   const draft = await getPendingDraftInfo();
 
   if (!draft) {
     setActiveProjectId(useProjectStore.getState().id);
     await bindTemporaryProjectRoot();
-    return false;
+    return null;
   }
 
   const recents = await listValidRecentProjects();
-  const choice = await requestStartupProjectsChoice({ draft, recents });
+  return requestStartupProjectsChoice({ draft, recents });
+}
+
+let prepareStartupRestorePromise: Promise<StartupProjectsChoice | null> | undefined;
+
+/** Prompt for draft/recents on launch; returns a choice only when the user must pick. */
+export function prepareTauriStartupRestore(): Promise<StartupProjectsChoice | null> {
+  if (!prepareStartupRestorePromise) {
+    prepareStartupRestorePromise = doPrepareTauriStartupRestore().finally(() => {
+      prepareStartupRestorePromise = undefined;
+    });
+  }
+  return prepareStartupRestorePromise;
+}
+
+export async function applyTauriStartupChoice(choice: StartupProjectsChoice): Promise<boolean> {
+  const draft = await getPendingDraftInfo();
 
   if (draft && choice.type !== "restore-draft") {
     await discardPendingDraft(draft.path);
   }
 
-  switch (choice.type) {
-    case "restore-draft":
-      if (!draft) {
-        await bindTemporaryProjectRoot();
-        return false;
-      }
-      await loadProjectFromFolder(draft.path, { temporary: true });
-      return true;
-    case "open-recent":
-      try {
-        await loadProjectFromFolder(choice.path);
+  useProjectLoadingStore.getState().setActive(true);
+  try {
+    switch (choice.type) {
+      case "restore-draft":
+        if (!draft) {
+          await bindTemporaryProjectRoot();
+          return false;
+        }
+        await loadProjectFromFolder(draft.path, { temporary: true });
         return true;
-      } catch (err) {
-        showError(err);
-        removeRecentProject(choice.path);
+      case "open-recent":
+        try {
+          await loadProjectFromFolder(choice.path);
+          return true;
+        } catch (err) {
+          showError(err);
+          removeRecentProject(choice.path);
+          setActiveProjectId(useProjectStore.getState().id);
+          await bindTemporaryProjectRoot();
+          return false;
+        }
+      case "browse": {
+        const opened = await pickAndOpenProject();
+        if (!opened) {
+          setActiveProjectId(useProjectStore.getState().id);
+          await bindTemporaryProjectRoot();
+        }
+        return opened;
+      }
+      case "new-show":
         setActiveProjectId(useProjectStore.getState().id);
         await bindTemporaryProjectRoot();
         return false;
-      }
-    case "browse": {
-      const opened = await pickAndOpenProject();
-      if (!opened) {
-        setActiveProjectId(useProjectStore.getState().id);
-        await bindTemporaryProjectRoot();
-      }
-      return opened;
     }
-    case "new-show":
-      setActiveProjectId(useProjectStore.getState().id);
-      await bindTemporaryProjectRoot();
-      return false;
+  } finally {
+    useProjectLoadingStore.getState().setActive(false);
+    useProjectLoadingStore.getState().clearAssetProgress();
   }
+}
+
+async function doRestoreLastTauriProject(): Promise<boolean> {
+  const choice = await prepareTauriStartupRestore();
+  if (!choice) return false;
+  return applyTauriStartupChoice(choice);
 }
 
 export async function restoreLastTauriProject(): Promise<boolean> {
   if (!restorePromise) {
-    restorePromise = doRestoreLastTauriProject();
+    restorePromise = doRestoreLastTauriProject().finally(() => {
+      restorePromise = undefined;
+    });
   }
   return restorePromise;
 }
