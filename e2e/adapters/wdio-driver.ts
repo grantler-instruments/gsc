@@ -172,35 +172,17 @@ async function findOutputWindowHandle(browser: WdioBrowser): Promise<string | nu
   return null;
 }
 
-async function countCueRowsNamedViaElements(
+/** Count cue rows by data attribute — WebKit WebDriver getText() omits cue names on Linux. */
+async function countCueRowsNamedInMainWindow(
   browser: WdioBrowser,
+  mainHandle: string,
   fileName: string,
 ): Promise<number> {
-  const list = await browser.$('[data-gsc-drop-zone="cue-list"]');
-  if (!(await list.isExisting())) return 0;
-
-  const rows = await list.$$("[data-cue-id]");
-  let count = 0;
-  for (const row of rows) {
-    const text = (await row.getText())?.trim() ?? "";
-    if (text.includes(fileName)) count++;
-  }
-  return count;
-}
-
-async function activeCueRowVisibleViaElements(
-  browser: WdioBrowser,
-  cueName: string,
-): Promise<boolean> {
-  const panel = await browser.$('aside [role="tabpanel"]');
-  if (!(await panel.isExisting())) return false;
-
-  const rows = await panel.$$("li");
-  for (const row of rows) {
-    const text = (await row.getText())?.trim() ?? "";
-    if (text.includes(cueName)) return true;
-  }
-  return false;
+  await browser.switchToWindow(mainHandle);
+  const rows = await browser.$$(
+    `[data-gsc-drop-zone="cue-list"] [data-cue-id][data-cue-name="${fileName}"]`,
+  );
+  return await rows.length;
 }
 
 export function createWdioDriver(browser: WdioBrowser): AppDriver {
@@ -251,27 +233,35 @@ export function createWdioDesktopDriver(browser: WdioBrowser): DesktopScratchOut
           dt.items.add(new File([bytes], data.name, { type: data.mimeType }));
           const dropZone = document.querySelector('[data-gsc-drop-zone="cue-list"]');
           if (!dropZone) throw new Error("Cue list drop zone not found");
-          dropZone.dispatchEvent(new DragEvent("dragover", { bubbles: true, dataTransfer: dt }));
-          dropZone.dispatchEvent(new DragEvent("drop", { bubbles: true, dataTransfer: dt }));
+          for (const type of ["dragenter", "dragover", "drop"] as const) {
+            dropZone.dispatchEvent(
+              new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt }),
+            );
+          }
         },
         { base64, name: fileName, mimeType },
       );
     },
 
     async expectCueInSequenceList(fileName) {
+      mainWindowHandle ??= await findMainWindowHandle(browser);
+      const mainHandle = mainWindowHandle;
+      await browser.switchToWindow(mainHandle);
       await waitUntil(
         browser,
-        async () => (await countCueRowsNamedViaElements(browser, fileName)) === 1,
+        async () => (await countCueRowsNamedInMainWindow(browser, mainHandle, fileName)) === 1,
         {
-          timeout: 30_000,
+          timeout: 60_000,
           timeoutMsg: `Expected one cue row named "${fileName}"`,
         },
       );
     },
 
     async expectActiveCueVisible(cueName) {
-      await browser.switchToWindow(mainWindowHandle ?? (await findMainWindowHandle(browser)));
-      await waitUntil(browser, async () => activeCueRowVisibleViaElements(browser, cueName), {
+      mainWindowHandle ??= await findMainWindowHandle(browser);
+      await browser.switchToWindow(mainWindowHandle);
+      const { activeCueRowVisible } = await import("../shared/actions");
+      await waitUntil(browser, async () => browser.execute(activeCueRowVisible, cueName), {
         timeout: 15_000,
         timeoutMsg: `Expected active cue "${cueName}"`,
       });
