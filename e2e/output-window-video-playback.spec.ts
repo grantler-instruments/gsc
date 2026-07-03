@@ -11,6 +11,7 @@ import { expectCueInSequenceList } from "./helpers/cue-list-panel";
 import { dropAudioOnCueList, fixturePath } from "./helpers/drop-audio";
 import { prepareLoopCue, startSelectedLoopCue } from "./helpers/loop-playback";
 import {
+  expectOutputPlaybackStable,
   expectOutputVideoLoadsWithin,
   expectOutputVideoPlaybackToAdvance,
   expectPlaybackSyncStable,
@@ -61,6 +62,25 @@ test("output window video loads quickly after GO", async ({ page }) => {
     type: "output-video-load-ms",
     description: String(loadMs),
   });
+
+  await outputPage.close();
+});
+
+test("output window keeps a single video element without reloading during playback", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+
+  await setupVideoCue(page);
+  const outputPage = await openOutputWindow(page);
+
+  await openActiveCuesTab(page);
+  await expect(transportGoButton(page)).toBeEnabled();
+
+  const goAtMs = Date.now();
+  await pressTransportGo(page);
+  await expectOutputVideoLoadsWithin(outputPage, goAtMs);
+  await expectOutputPlaybackStable(outputPage);
 
   await outputPage.close();
 });

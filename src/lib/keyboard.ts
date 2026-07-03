@@ -6,6 +6,12 @@ export function isEditableKeyboardTarget(target: EventTarget | null): boolean {
   return !!target.closest("input, textarea, select, [contenteditable='true']");
 }
 
+export function hasTextSelection(): boolean {
+  if (typeof window === "undefined") return false;
+  const selection = window.getSelection();
+  return selection != null && selection.toString().length > 0;
+}
+
 export function isMacPlatform(): boolean {
   if (typeof navigator === "undefined") return false;
   const platform =

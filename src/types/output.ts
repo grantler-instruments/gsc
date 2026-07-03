@@ -25,6 +25,10 @@ export interface OutputState {
   busId?: string;
   /** Display name for bus output windows. */
   busName?: string;
+  /** Tauri: lets the output webview read assets from disk instead of BroadcastChannel blobs. */
+  projectRootDir: string | null;
+  /** Active transport cue ids — output keeps showing while non-empty even if layers are still loading. */
+  activeCueIds: string[];
   layers: OutputLayer[];
 }
 

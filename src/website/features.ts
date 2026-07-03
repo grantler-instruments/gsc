@@ -1,4 +1,5 @@
 import type { CueType } from "../types/cue";
+import { NDI_ENABLED } from "../types/ndi";
 
 export type FeatureKey = {
   key: string;
@@ -54,7 +55,9 @@ export const featureCategoryKeys: FeatureCategoryKey[] = [
     features: [
       { key: "featureOutputTitle", descKey: "featureOutputDesc" },
       { key: "featureLightingTitle", descKey: "featureLightingDesc" },
-      { key: "featureNdiTitle", descKey: "featureNdiDesc" },
+      ...(NDI_ENABLED
+        ? [{ key: "featureNdiTitle", descKey: "featureNdiDesc" } satisfies FeatureKey]
+        : []),
       { key: "featureRemoteViewTitle", descKey: "featureRemoteViewDesc" },
       { key: "featureRemoteControlTitle", descKey: "featureRemoteControlDesc" },
       { key: "featureControlTitle", descKey: "featureControlDesc" },

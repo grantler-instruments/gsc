@@ -1,8 +1,11 @@
+import { getPlatform } from "../platform";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { resolveEffectiveOpacity, resolveEffectiveVolume } from "../stores/fade";
 import { usePlaybackStore } from "../stores/playback";
-import { useProjectStore } from "../stores/project";
+import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import { useProjectLocationStore } from "../stores/project-location";
 import { useTransportStore } from "../stores/transport";
+import { useVfsStore } from "../stores/vfs";
 import type { Cue } from "../types/cue";
 import type { MultiviewPreviewState, OutputLayer, OutputState } from "../types/output";
 import type { VideoBus } from "../types/video-bus";
@@ -31,8 +34,15 @@ async function buildLayer(
     return undefined;
   }
 
-  await resolveAssetBlob(cue.assetPath);
-  const objectUrl = vfsGetObjectUrl(cue.assetPath);
+  let objectUrl: string | undefined;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await resolveAssetBlob(cue.assetPath);
+    objectUrl = vfsGetObjectUrl(cue.assetPath);
+    if (objectUrl) break;
+    if (attempt < 4) {
+      await new Promise((resolve) => setTimeout(resolve, 40));
+    }
+  }
   if (!objectUrl) return undefined;
 
   const sourceDurationSec = cue.type === "video" ? getMediaDurationSec(cue.assetPath) : undefined;
@@ -67,6 +77,19 @@ function cueMatchesOutputBus(
   return cueBusId === filterBusId;
 }
 
+function activeCueIdsForBus(
+  activeCueIds: string[],
+  filterBusId: string | undefined,
+  videoBuses: VideoBus[],
+  cueLists: ReturnType<typeof useProjectStore.getState>["cueLists"],
+): string[] {
+  return activeCueIds.filter((cueId) => {
+    const cue = findCueInLists(cueLists, cueId)?.cue;
+    if (!cue) return false;
+    return cueMatchesOutputBus(cue, filterBusId, videoBuses);
+  });
+}
+
 async function buildLayersForActiveCues(
   filterBusId: string | undefined,
 ): Promise<{ projectId: string; layers: OutputLayer[] }> {
@@ -99,16 +122,24 @@ export async function buildOutputState(
   filterBusId?: string,
 ): Promise<OutputState> {
   const { projectId, layers } = await buildLayersForActiveCues(filterBusId);
-  const outputBus = filterBusId
-    ? findVideoBus(useProjectStore.getState().videoBuses, filterBusId)
-    : undefined;
+  const { cueLists, videoBuses } = useProjectStore.getState();
+  const { activeCueIds } = useTransportStore.getState();
+  const outputBus = filterBusId ? findVideoBus(videoBuses, filterBusId) : undefined;
   const masterName = normalizeMasterVideoOutputName(
     useProjectStore.getState().masterVideoOutputName,
   );
+  const projectRootDir =
+    getPlatform() === "tauri" ? useProjectLocationStore.getState().rootDir : null;
+
+  if (layers.length > 0) {
+    useVfsStore.getState().refreshEntriesLoaded();
+  }
 
   return {
     revision,
     projectId,
+    projectRootDir,
+    activeCueIds: activeCueIdsForBus(activeCueIds, filterBusId, videoBuses, cueLists),
     ...(filterBusId
       ? { busId: filterBusId, ...(outputBus ? { busName: outputBus.name } : {}) }
       : { busName: masterName }),
@@ -149,4 +180,29 @@ export async function buildMultiviewPreviewState(revision: number): Promise<Mult
 /** Bus ids that should receive dedicated output publishers. */
 export function listVideoOutputBusIds(videoBuses: VideoBus[]): string[] {
   return videoBuses.map((bus) => bus.id);
+}
+
+/** True when transport is active but visual layers are not ready to publish yet. */
+export function hasUnresolvedVisualOutput(activeCueIds: string[], layers: OutputLayer[]): boolean {
+  if (activeCueIds.length === 0 || layers.length > 0) return false;
+
+  const list = getActiveCueListFromState(useProjectStore.getState());
+  const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
+
+  for (const cueId of activeCueIds) {
+    const cue = cueById.get(cueId);
+    if (cue && (cue.type === "video" || cue.type === "image") && cue.assetPath) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/** True when transport expects output content but the snapshot has no layers yet. */
+export function shouldDeferEmptyOutputPublish(
+  activeCueIds: string[],
+  layers: OutputLayer[],
+): boolean {
+  return activeCueIds.length > 0 && layers.length === 0;
 }

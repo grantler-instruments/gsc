@@ -18,17 +18,19 @@ if (getPlatform() === "web" && !isOutput && !isRemote) {
 }
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    {isOutput ? (
-      <OutputApp />
-    ) : isRemote ? (
-      <GscThemeProvider>
-        <RemoteApp />
-      </GscThemeProvider>
-    ) : (
-      <GscThemeProvider>
-        <App />
-      </GscThemeProvider>
-    )}
-  </React.StrictMode>,
+  isOutput ? (
+    <OutputApp />
+  ) : (
+    <React.StrictMode>
+      {isRemote ? (
+        <GscThemeProvider>
+          <RemoteApp />
+        </GscThemeProvider>
+      ) : (
+        <GscThemeProvider>
+          <App />
+        </GscThemeProvider>
+      )}
+    </React.StrictMode>
+  ),
 );

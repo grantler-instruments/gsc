@@ -1,5 +1,7 @@
 import { t } from "../i18n/t";
+import { getPlatform } from "../platform";
 import { isRemoteClient } from "../platform/remote-mode";
+import { useProjectLocationStore } from "../stores/project-location";
 import type { VfsEntry } from "../stores/vfs";
 import { useVfsStore } from "../stores/vfs";
 import type { AssetKind, Cue } from "../types/cue";
@@ -161,6 +163,9 @@ export function getCueAssetWarning(
   if (!vfsHas(cue.assetPath)) {
     const entry = findAssetEntry(entries, cue.assetPath);
     if (entry) {
+      if (getPlatform() === "tauri" && useProjectLocationStore.getState().rootDir) {
+        return null;
+      }
       return {
         title: t("assets.assetNotLoaded"),
         detail: t("assets.fileNotAvailable"),

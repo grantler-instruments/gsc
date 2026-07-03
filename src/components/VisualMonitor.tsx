@@ -77,7 +77,6 @@ export function VisualMonitor({ variant = "default" }: VisualMonitorProps) {
             </Typography>
             <VisualStage
               layers={destination.layers}
-              stageRole="control"
               sx={{
                 aspectRatio: "16 / 9",
                 height: sidebar ? "auto" : 120,

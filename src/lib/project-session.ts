@@ -175,10 +175,13 @@ async function restoreFromSession(session: ProjectSession): Promise<void> {
 /** Restore the last autosaved project and hydrate assets from IndexedDB. */
 export function restoreProjectSessionOnce(): Promise<void> {
   if (!restorePromise) {
-    restorePromise = restoreProjectSession().catch((err) => {
-      restorePromise = null;
-      throw err;
-    });
+    restorePromise = restoreProjectSession()
+      .catch((err) => {
+        throw err;
+      })
+      .finally(() => {
+        restorePromise = null;
+      });
   }
   return restorePromise;
 }
