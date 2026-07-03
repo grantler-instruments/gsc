@@ -52,7 +52,7 @@ export async function openActiveCuesTab(driver: AppDriver): Promise<void> {
 }
 
 export async function pressTransportGo(driver: AppDriver): Promise<void> {
-  await driver.pressKey("Space");
+  await driver.clickByRole("button", "GO");
 }
 
 export async function expectActiveCueVisible(driver: AppDriver, cueName: string): Promise<void> {
