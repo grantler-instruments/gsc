@@ -185,6 +185,16 @@ async function countCueRowsNamedInMainWindow(
   return await rows.length;
 }
 
+async function activeCueRowVisibleViaAttribute(
+  browser: WdioBrowser,
+  mainHandle: string,
+  cueName: string,
+): Promise<boolean> {
+  await browser.switchToWindow(mainHandle);
+  const rows = await browser.$$(`aside [role="tabpanel"] li[data-cue-name="${cueName}"]`);
+  return (await rows.length) > 0;
+}
+
 export function createWdioDriver(browser: WdioBrowser): AppDriver {
   return createWdioDesktopDriver(browser);
 }
@@ -259,12 +269,16 @@ export function createWdioDesktopDriver(browser: WdioBrowser): DesktopScratchOut
 
     async expectActiveCueVisible(cueName) {
       mainWindowHandle ??= await findMainWindowHandle(browser);
-      await browser.switchToWindow(mainWindowHandle);
-      const { activeCueRowVisible } = await import("../shared/actions");
-      await waitUntil(browser, async () => browser.execute(activeCueRowVisible, cueName), {
-        timeout: 15_000,
-        timeoutMsg: `Expected active cue "${cueName}"`,
-      });
+      const mainHandle = mainWindowHandle;
+      await browser.switchToWindow(mainHandle);
+      await waitUntil(
+        browser,
+        async () => activeCueRowVisibleViaAttribute(browser, mainHandle, cueName),
+        {
+          timeout: 15_000,
+          timeoutMsg: `Expected active cue "${cueName}"`,
+        },
+      );
     },
 
     async waitForRole(role, name, options) {

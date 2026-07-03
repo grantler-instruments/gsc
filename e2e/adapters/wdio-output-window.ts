@@ -41,20 +41,14 @@ export async function waitForOutputVideoElementViaElements(
   throw new Error("Timed out waiting for output video element");
 }
 
-/** Guard against output reload loops and duplicate video mounts without reading playback state. */
+/** Guard against duplicate video mounts without getUrl() (can crash Linux WebKitWebDriver). */
 export async function expectOutputVideoElementStableViaElements(
   browser: WdioBrowser,
   options: { stableMs?: number } = {},
 ): Promise<void> {
   const stableMs = options.stableMs ?? OUTPUT_STABLE_MS;
-  const outputUrl = await browser.getUrl();
 
   await waitForOutputVideoCount(browser, 1, 10_000);
   await browser.pause(stableMs);
-
-  if ((await browser.getUrl()) !== outputUrl) {
-    throw new Error("Output page reloaded during stable window");
-  }
-
   await waitForOutputVideoCount(browser, 1, 10_000);
 }
