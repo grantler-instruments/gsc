@@ -14,7 +14,7 @@ export const MAX_DRIFT_GROWTH_SEC = 0.09;
 const STEADY_DRIFT_CAP_SEC = 0.4;
 
 export function outputButton(page: Page) {
-  return page.getByRole("button", { name: "Output" });
+  return page.locator('[data-gsc-action="open-output"]');
 }
 
 export function outputStage(page: Page) {
