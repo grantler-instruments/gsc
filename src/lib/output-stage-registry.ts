@@ -1,9 +1,11 @@
 import type { OutputLayer } from "../types/output";
 import type { VideoEffect } from "../types/video-effect";
+import type { VideoOutputFrame } from "../types/video-output-frame";
 
 export interface OutputBusConfig {
   effects: VideoEffect[];
   opacity: number;
+  outputFrame: VideoOutputFrame;
 }
 
 export interface OutputStageHandle {

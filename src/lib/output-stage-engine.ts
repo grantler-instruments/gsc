@@ -11,6 +11,8 @@ import { isOutputLayerLooping, outputLayerTargetTime, sliceEndSec } from "./vide
 export interface OutputStageEngineOptions {
   /** Control preview — notify when a non-looping clip finishes. */
   onVideoEnded?: (cueId: string) => void;
+  /** When false, stack visible DOM layers instead of the WebGL compositor. */
+  useCompositor?: boolean;
 }
 
 interface LayerEntry {
@@ -84,7 +86,7 @@ export class OutputStageEngine implements OutputStageHandle {
     this.root.style.background = "#000";
     this.root.style.overflow = "hidden";
 
-    this.compositor = tryCreateVideoCompositor(this.root);
+    this.compositor = options.useCompositor === false ? null : tryCreateVideoCompositor(this.root);
     if (this.compositor) {
       this.compositor.start();
       this.syncCompositorSize();
@@ -127,6 +129,7 @@ export class OutputStageEngine implements OutputStageHandle {
     if (!this.compositor) return;
     this.compositor.setBusEffects(config.effects);
     this.compositor.setBusOpacity(config.opacity);
+    this.compositor.setOutputFrame(config.outputFrame);
   }
 
   destroy(): void {
@@ -240,11 +243,12 @@ export class OutputStageEngine implements OutputStageHandle {
       video.muted = true;
       video.playsInline = true;
       video.preload = "auto";
-      if (!this.compositor) {
-        Object.assign(video.style, {
-          ...(visualLayerSx as Record<string, string>),
-          backgroundColor: "#000",
-        });
+      Object.assign(video.style, {
+        ...(visualLayerSx as Record<string, string>),
+        backgroundColor: "#000",
+      });
+      if (this.compositor) {
+        video.style.opacity = "0";
       }
 
       const startPlayback = () => {
@@ -271,8 +275,9 @@ export class OutputStageEngine implements OutputStageHandle {
     } else {
       const img = document.createElement("img");
       img.alt = "";
-      if (!this.compositor) {
-        Object.assign(img.style, visualLayerSx as Record<string, string>);
+      Object.assign(img.style, visualLayerSx as Record<string, string>);
+      if (this.compositor) {
+        img.style.opacity = "0";
       }
       img.addEventListener("load", () => this.syncCompositorLayers());
       img.addEventListener("error", () => {

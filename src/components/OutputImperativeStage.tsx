@@ -3,15 +3,20 @@ import { outputLayersEqual, outputLayersMediaEqual } from "../lib/output-layer-s
 import { OutputStageEngine } from "../lib/output-stage-engine";
 import { registerOutputStage } from "../lib/output-stage-registry";
 import { videoEffectsEqual } from "../lib/video-effects";
+import { normalizeVideoOutputFrame, videoOutputFramesEqual } from "../lib/video-output-frame";
 import type { OutputLayer } from "../types/output";
 import type { VideoEffect } from "../types/video-effect";
+import type { VideoOutputFrame } from "../types/video-output-frame";
 
 interface OutputImperativeStageProps {
   layers: OutputLayer[];
   busEffects?: VideoEffect[];
   busOpacity?: number;
+  outputFrame?: VideoOutputFrame;
   /** When true, receives imperative fade/effect updates from the output publisher. */
   registerStage?: boolean;
+  /** When false, render visible DOM layers (for small embedded previews). */
+  useCompositor?: boolean;
   onVideoEnded?: (cueId: string) => void;
 }
 
@@ -20,7 +25,9 @@ export function OutputImperativeStage({
   layers,
   busEffects,
   busOpacity = 1,
+  outputFrame,
   registerStage = true,
+  useCompositor = true,
   onVideoEnded,
 }: OutputImperativeStageProps) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -28,13 +35,14 @@ export function OutputImperativeStage({
   const layersRef = useRef<OutputLayer[]>([]);
   const busEffectsRef = useRef<VideoEffect[] | undefined>(undefined);
   const busOpacityRef = useRef(1);
+  const outputFrameRef = useRef<VideoOutputFrame | undefined>(undefined);
 
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
 
     if (!engineRef.current) {
-      engineRef.current = new OutputStageEngine(host, { onVideoEnded });
+      engineRef.current = new OutputStageEngine(host, { onVideoEnded, useCompositor });
       if (registerStage) {
         registerOutputStage(engineRef.current);
       }
@@ -47,7 +55,7 @@ export function OutputImperativeStage({
       engineRef.current?.destroy();
       engineRef.current = null;
     };
-  }, [onVideoEnded, registerStage]);
+  }, [onVideoEnded, registerStage, useCompositor]);
 
   useEffect(() => {
     const prev = layersRef.current;
@@ -65,13 +73,19 @@ export function OutputImperativeStage({
   useEffect(() => {
     const effects = busEffects ?? [];
     const opacity = busOpacity ?? 1;
-    if (videoEffectsEqual(effects, busEffectsRef.current) && opacity === busOpacityRef.current) {
+    const frame = normalizeVideoOutputFrame(outputFrame);
+    if (
+      videoEffectsEqual(effects, busEffectsRef.current) &&
+      opacity === busOpacityRef.current &&
+      videoOutputFramesEqual(frame, outputFrameRef.current)
+    ) {
       return;
     }
     busEffectsRef.current = effects;
     busOpacityRef.current = opacity;
-    engineRef.current?.syncBusConfig({ effects, opacity });
-  }, [busEffects, busOpacity]);
+    outputFrameRef.current = frame;
+    engineRef.current?.syncBusConfig({ effects, opacity, outputFrame: frame });
+  }, [busEffects, busOpacity, outputFrame]);
 
   return (
     <div

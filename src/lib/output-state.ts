@@ -21,6 +21,7 @@ import {
   normalizeMasterVideoOutputName,
   resolveCueVideoBusId,
 } from "./video-buses";
+import { normalizeVideoOutputFrame, serializeVideoOutputFrame } from "./video-output-frame";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
@@ -117,8 +118,13 @@ export async function buildOutputState(
   filterBusId?: string,
 ): Promise<OutputState> {
   const { projectId, layers } = await buildLayersForActiveCues(filterBusId);
-  const { cueLists, videoBuses, masterVideoOutputEffects, masterVideoOutputOpacity } =
-    useProjectStore.getState();
+  const {
+    cueLists,
+    videoBuses,
+    masterVideoOutputEffects,
+    masterVideoOutputOpacity,
+    masterVideoOutputFrame,
+  } = useProjectStore.getState();
   const { activeCueIds } = useTransportStore.getState();
   const outputBus = filterBusId ? findVideoBus(videoBuses, filterBusId) : undefined;
   const masterName = normalizeMasterVideoOutputName(
@@ -148,14 +154,25 @@ export async function buildOutputState(
       : masterVideoOutputEffects?.length
         ? { busEffects: masterVideoOutputEffects }
         : {}),
+    ...(filterBusId
+      ? outputBus?.outputFrame
+        ? { outputFrame: outputBus.outputFrame }
+        : {}
+      : serializeVideoOutputFrame(normalizeVideoOutputFrame(masterVideoOutputFrame))
+        ? { outputFrame: normalizeVideoOutputFrame(masterVideoOutputFrame) }
+        : {}),
   };
 }
 
 /** One preview tile per output window (master + each video bus). */
 export async function buildMultiviewPreviewState(revision: number): Promise<MultiviewPreviewState> {
   const videoBuses = useProjectStore.getState().videoBuses;
-  const { masterVideoOutputName, masterVideoOutputEffects, masterVideoOutputOpacity } =
-    useProjectStore.getState();
+  const {
+    masterVideoOutputName,
+    masterVideoOutputEffects,
+    masterVideoOutputOpacity,
+    masterVideoOutputFrame,
+  } = useProjectStore.getState();
   const masterName = normalizeMasterVideoOutputName(masterVideoOutputName);
   const master = await buildLayersForActiveCues(undefined);
   const destinations: MultiviewPreviewState["destinations"] = [
@@ -164,6 +181,9 @@ export async function buildMultiviewPreviewState(revision: number): Promise<Mult
       layers: master.layers,
       busOpacity: masterVideoOutputEffectiveOpacity(masterVideoOutputOpacity),
       ...(masterVideoOutputEffects?.length ? { busEffects: masterVideoOutputEffects } : {}),
+      ...(serializeVideoOutputFrame(normalizeVideoOutputFrame(masterVideoOutputFrame))
+        ? { outputFrame: normalizeVideoOutputFrame(masterVideoOutputFrame) }
+        : {}),
     },
   ];
 
@@ -175,6 +195,7 @@ export async function buildMultiviewPreviewState(revision: number): Promise<Mult
       layers,
       busOpacity: busEffectiveOpacity(bus),
       ...(bus.effects?.length ? { busEffects: bus.effects } : {}),
+      ...(bus.outputFrame ? { outputFrame: bus.outputFrame } : {}),
     });
   }
 

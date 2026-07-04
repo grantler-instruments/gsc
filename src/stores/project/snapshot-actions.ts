@@ -35,6 +35,7 @@ export function createSnapshotActions(
         masterVideoOutputName,
         masterVideoOutputOpacity,
         masterVideoOutputEffects,
+        masterVideoOutputFrame,
       } = get();
       return cueListsToSnapshot(
         id,
@@ -52,6 +53,7 @@ export function createSnapshotActions(
         masterVideoOutputName,
         masterVideoOutputOpacity,
         masterVideoOutputEffects,
+        masterVideoOutputFrame,
       );
     },
   };

@@ -299,6 +299,7 @@ export function useOutputPublisher(): void {
         s.masterVideoOutputName !== prev.masterVideoOutputName ||
         s.masterVideoOutputOpacity !== prev.masterVideoOutputOpacity ||
         s.masterVideoOutputEffects !== prev.masterVideoOutputEffects ||
+        s.masterVideoOutputFrame !== prev.masterVideoOutputFrame ||
         s.videoBuses !== prev.videoBuses;
 
       if (routingChanged || cuesChanged) {

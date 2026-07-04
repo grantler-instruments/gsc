@@ -5,6 +5,7 @@ import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
 import type { VideoBus } from "../types/video-bus";
 import type { VideoEffect } from "../types/video-effect";
+import type { VideoOutputFrame } from "../types/video-output-frame";
 import { normalizeAudioBuses, normalizeCueAudioBus } from "./audio-buses";
 import type { CueList } from "./cue-lists";
 import { defaultDmxCueData, normalizeDmxCueData } from "./dmx";
@@ -20,6 +21,7 @@ import {
   serializeMasterVideoOutputName,
 } from "./video-buses";
 import { normalizeVideoEffects } from "./video-effects";
+import { normalizeVideoOutputFrame, serializeVideoOutputFrame } from "./video-output-frame";
 
 function normalizeCues(
   cues: Cue[],
@@ -70,12 +72,16 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   masterVideoOutputName: string;
   masterVideoOutputOpacity: number;
   masterVideoOutputEffects?: VideoEffect[];
+  masterVideoOutputFrame?: VideoOutputFrame;
 } {
   const fixtures = normalizeFixtures(snap.fixtures);
   const fixturePlot = normalizeFixturePlot(snap.fixturePlot, fixtures);
   const audioBuses = normalizeAudioBuses(snap.audioBuses);
   const videoBuses = normalizeVideoBuses(snap.videoBuses);
   const masterVideoOutputEffects = normalizeVideoEffects(snap.masterVideoOutputEffects);
+  const masterVideoOutputFrame = serializeVideoOutputFrame(
+    normalizeVideoOutputFrame(snap.masterVideoOutputFrame),
+  );
   const cueLists: CueList[] = snap.cueLists.map((list) => ({
     id: list.id,
     name: list.name,
@@ -100,6 +106,7 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
     masterVideoOutputName: normalizeMasterVideoOutputName(snap.masterVideoOutputName),
     masterVideoOutputOpacity: masterVideoOutputEffectiveOpacity(snap.masterVideoOutputOpacity),
     ...(masterVideoOutputEffects.length > 0 ? { masterVideoOutputEffects } : {}),
+    ...(masterVideoOutputFrame ? { masterVideoOutputFrame } : {}),
   };
 }
 
@@ -119,12 +126,16 @@ export function cueListsToSnapshot(
   masterVideoOutputName?: string,
   masterVideoOutputOpacity?: number,
   masterVideoOutputEffects?: VideoEffect[],
+  masterVideoOutputFrame?: VideoOutputFrame,
 ): ProjectSnapshot {
   const normalizedFixtures = normalizeFixtures(fixtures);
   const normalizedMasterName = normalizeMasterVideoOutputName(masterVideoOutputName);
   const serializedMasterName = serializeMasterVideoOutputName(normalizedMasterName);
   const normalizedMasterOpacity = masterVideoOutputEffectiveOpacity(masterVideoOutputOpacity);
   const normalizedMasterEffects = normalizeVideoEffects(masterVideoOutputEffects);
+  const serializedMasterFrame = serializeVideoOutputFrame(
+    normalizeVideoOutputFrame(masterVideoOutputFrame),
+  );
   return {
     version: 2,
     id,
@@ -148,5 +159,6 @@ export function cueListsToSnapshot(
     ...(normalizedMasterEffects.length > 0
       ? { masterVideoOutputEffects: normalizedMasterEffects }
       : {}),
+    ...(serializedMasterFrame ? { masterVideoOutputFrame: serializedMasterFrame } : {}),
   };
 }

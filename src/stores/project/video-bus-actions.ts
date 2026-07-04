@@ -13,6 +13,7 @@ import {
   patchVideoBusEffect,
   reorderVideoEffects,
 } from "../../lib/video-effects";
+import { normalizeVideoOutputFrame, serializeVideoOutputFrame } from "../../lib/video-output-frame";
 import type { VideoEffect } from "../../types/video-effect";
 import type { ProjectState } from "./types";
 
@@ -59,6 +60,7 @@ export function createVideoBusActions(
   | "updateVideoBus"
   | "updateMasterVideoOutputName"
   | "updateMasterVideoOutputOpacity"
+  | "updateMasterVideoOutputFrame"
   | "addVideoBusEffect"
   | "updateVideoBusEffect"
   | "removeVideoBusEffect"
@@ -89,7 +91,16 @@ export function createVideoBusActions(
     updateVideoBus: (id, patch) =>
       set((state) => ({
         videoBuses: normalizeVideoBuses(
-          state.videoBuses.map((bus) => (bus.id === id ? { ...bus, ...patch, id: bus.id } : bus)),
+          state.videoBuses.map((bus) => {
+            if (bus.id !== id) return bus;
+            const next = { ...bus, ...patch, id: bus.id };
+            if (patch.outputFrame !== undefined) {
+              next.outputFrame = serializeVideoOutputFrame(
+                normalizeVideoOutputFrame(patch.outputFrame),
+              );
+            }
+            return normalizeVideoBus(next);
+          }),
         ),
       })),
 
@@ -98,6 +109,11 @@ export function createVideoBusActions(
 
     updateMasterVideoOutputOpacity: (opacity) =>
       set({ masterVideoOutputOpacity: clamp01(opacity) }),
+
+    updateMasterVideoOutputFrame: (frame) =>
+      set({
+        masterVideoOutputFrame: serializeVideoOutputFrame(normalizeVideoOutputFrame(frame)),
+      }),
 
     addVideoBusEffect: (busId, type) => {
       const bus = get().videoBuses.find((entry) => entry.id === busId);

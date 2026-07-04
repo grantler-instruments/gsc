@@ -1,4 +1,5 @@
 import type { VideoEffect } from "./video-effect";
+import type { VideoOutputFrame } from "./video-output-frame";
 
 /** Visual output destination — routes video/image cues to a dedicated output window. */
 export interface VideoBus {
@@ -9,4 +10,6 @@ export interface VideoBus {
   muted?: boolean;
   /** Insert effects applied after layer composite, before the master dimmer. */
   effects?: VideoEffect[];
+  /** Crop and placement on the output canvas (before future warp). */
+  outputFrame?: VideoOutputFrame;
 }

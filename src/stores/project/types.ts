@@ -21,6 +21,7 @@ import type { FixturePlot, FixturePlotEntry } from "../../types/fixture-plot";
 import type { MidiMapping } from "../../types/midi-mapping";
 import type { VideoBus } from "../../types/video-bus";
 import type { VideoEffect, VideoEffectParams, VideoEffectType } from "../../types/video-effect";
+import type { VideoOutputFrame } from "../../types/video-output-frame";
 
 export interface ProjectState {
   id: string;
@@ -38,6 +39,7 @@ export interface ProjectState {
   masterVideoOutputName: string;
   masterVideoOutputOpacity: number;
   masterVideoOutputEffects?: VideoEffect[];
+  masterVideoOutputFrame?: VideoOutputFrame;
   addCue: (opts: {
     name: string;
     type: CueType;
@@ -143,6 +145,7 @@ export interface ProjectState {
   ) => void;
   updateMasterVideoOutputName: (name: string) => void;
   updateMasterVideoOutputOpacity: (opacity: number) => void;
+  updateMasterVideoOutputFrame: (frame: VideoOutputFrame) => void;
   addMasterVideoOutputEffect: (type: VideoEffectType) => VideoEffect | null;
   updateMasterVideoOutputEffect: (
     effectId: string,

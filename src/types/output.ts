@@ -1,4 +1,5 @@
 import type { VideoEffect } from "./video-effect";
+import type { VideoOutputFrame } from "./video-output-frame";
 
 /** Visual layer snapshot sent to the output window. */
 export interface OutputLayer {
@@ -36,6 +37,8 @@ export interface OutputState {
   busEffects?: VideoEffect[];
   /** 0–1 master dimmer applied after bus effects. */
   busOpacity?: number;
+  /** Crop and placement on the output canvas. */
+  outputFrame?: VideoOutputFrame;
 }
 
 /** One destination in the in-app multiview preview. */
@@ -48,6 +51,7 @@ export interface OutputPreviewDestination {
   busEffects?: VideoEffect[];
   /** 0–1 master dimmer applied after bus effects. */
   busOpacity?: number;
+  outputFrame?: VideoOutputFrame;
 }
 
 export interface MultiviewPreviewState {

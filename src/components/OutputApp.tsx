@@ -11,6 +11,7 @@ import { storeOutputAssetBlob } from "../lib/output-asset-bridge";
 import { createOutputChannel, isOutputMessage, postRequestState } from "../lib/output-channel";
 import { isOutputStateVisualMixOnly, outputStatesEqual } from "../lib/output-layer-sync";
 import { applyOutputBusConfig, applyOutputLayerOpacities } from "../lib/output-opacity";
+import { normalizeVideoOutputFrame } from "../lib/video-output-frame";
 import { getCurrentOutputBusId } from "../platform/output-window";
 import type { OutputState } from "../types/output";
 import { OutputImperativeStage } from "./OutputImperativeStage";
@@ -83,6 +84,7 @@ export function OutputApp() {
         applyOutputBusConfig({
           effects: next.busEffects ?? [],
           opacity: next.busOpacity ?? 1,
+          outputFrame: normalizeVideoOutputFrame(next.outputFrame),
         });
         return;
       }
@@ -120,6 +122,7 @@ export function OutputApp() {
           layers={layers}
           busEffects={state.busEffects}
           busOpacity={state.busOpacity}
+          outputFrame={state.outputFrame}
         />
       </Box>
     </>

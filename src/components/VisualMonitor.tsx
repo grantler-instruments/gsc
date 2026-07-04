@@ -105,6 +105,7 @@ export function VisualMonitor({ variant = "default" }: VisualMonitorProps) {
                 layers={destination.layers}
                 busEffects={destination.busEffects}
                 busOpacity={destination.busOpacity}
+                outputFrame={destination.outputFrame}
                 registerStage={false}
                 onVideoEnded={handleVideoEnded}
               />

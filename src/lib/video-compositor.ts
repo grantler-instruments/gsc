@@ -3,6 +3,7 @@
 import { EffectComposer, EffectPass, RenderPass } from "postprocessing";
 import { SRGBColorSpace, WebGLRenderer } from "three";
 import type { VideoEffect } from "../types/video-effect";
+import type { VideoOutputFrame } from "../types/video-output-frame";
 import {
   applyBusEffectParams,
   type BusEffectRuntime,
@@ -10,7 +11,9 @@ import {
   resizeBusEffectRuntimes,
 } from "../video/three/effects/build-bus-effects";
 import { BusOpacityEffect } from "../video/three/effects/bus-opacity-effect";
+import { OutputFrameEffect } from "../video/three/effects/output-frame-effect";
 import { LayerScene } from "../video/three/layer-scene";
+import { defaultVideoOutputFrame, isIdentityVideoOutputFrame } from "./video-output-frame";
 
 export interface CompositorLayer {
   id: string;
@@ -23,8 +26,9 @@ export interface CompositorLayer {
   ready: boolean;
 }
 
+/** Full-size but invisible — off-screen 1×1 media is often not decoded by the browser. */
 const HIDDEN_MEDIA_STYLE =
-  "position:fixed;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none";
+  "position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none;overflow:hidden";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
@@ -80,6 +84,7 @@ export class VideoCompositor {
   private readonly mediaHost: HTMLDivElement;
   private effectPass: EffectPass | null = null;
   private busOpacityEffect: BusOpacityEffect | null = null;
+  private outputFrameEffect: OutputFrameEffect | null = null;
   private effectRuntimes: BusEffectRuntime[] = [];
   private effectChainKey = "";
   private width = 0;
@@ -88,6 +93,7 @@ export class VideoCompositor {
   private layers: CompositorLayer[] = [];
   private busEffects: VideoEffect[] = [];
   private busOpacity = 1;
+  private outputFrame: VideoOutputFrame = defaultVideoOutputFrame();
   private running = false;
 
   constructor(root: HTMLElement) {
@@ -141,6 +147,12 @@ export class VideoCompositor {
     if (this.busOpacityEffect) {
       this.busOpacityEffect.opacity = this.busOpacity;
     }
+    this.syncEffectPass();
+  }
+
+  setOutputFrame(frame: VideoOutputFrame): void {
+    this.outputFrame = frame;
+    this.outputFrameEffect?.apply(frame);
     this.syncEffectPass();
   }
 
@@ -201,7 +213,8 @@ export class VideoCompositor {
 
   private syncEffectPass(): void {
     const enabledEffects = this.busEffects.filter((effect) => effect.enabled);
-    const needsPass = enabledEffects.length > 0 || this.busOpacity < 1;
+    const needsFrame = !isIdentityVideoOutputFrame(this.outputFrame);
+    const needsPass = enabledEffects.length > 0 || this.busOpacity < 1 || needsFrame;
 
     if (!needsPass) {
       this.removeEffectPass();
@@ -210,13 +223,17 @@ export class VideoCompositor {
     }
 
     const chainKey = buildBusEffectChain(enabledEffects, this.width, this.height).key;
-    if (chainKey !== this.effectChainKey || !this.effectPass) {
+    const needsRebuild =
+      !this.effectPass || chainKey !== this.effectChainKey || !this.outputFrameEffect;
+    if (needsRebuild) {
       this.removeEffectPass();
       const chain = buildBusEffectChain(enabledEffects, this.width, this.height);
       this.effectChainKey = chain.key;
       this.effectRuntimes = chain.runtimes;
 
       const passEffects = [...chain.effects];
+      this.outputFrameEffect = new OutputFrameEffect(this.outputFrame);
+      passEffects.push(this.outputFrameEffect);
       this.busOpacityEffect = new BusOpacityEffect(this.busOpacity);
       passEffects.push(this.busOpacityEffect);
 
@@ -229,6 +246,7 @@ export class VideoCompositor {
     }
 
     applyBusEffectParams(enabledEffects, this.effectRuntimes);
+    this.outputFrameEffect?.apply(this.outputFrame);
     if (this.busOpacityEffect) {
       this.busOpacityEffect.opacity = this.busOpacity;
     }
@@ -240,6 +258,7 @@ export class VideoCompositor {
     this.effectPass.dispose();
     this.effectPass = null;
     this.busOpacityEffect = null;
+    this.outputFrameEffect = null;
     this.effectRuntimes = [];
     this.effectChainKey = "";
   }

@@ -87,6 +87,7 @@ import type { FixturePlot } from "./fixture-plot";
 import type { MidiMapping } from "./midi-mapping";
 import type { VideoBus } from "./video-bus";
 import type { VideoEffect } from "./video-effect";
+import type { VideoOutputFrame } from "./video-output-frame";
 
 export interface Cue {
   id: string;
@@ -175,4 +176,6 @@ export interface ProjectSnapshot {
   masterVideoOutputOpacity?: number;
   /** Insert effects on the main output window. */
   masterVideoOutputEffects?: VideoEffect[];
+  /** Crop and placement on the main output window. */
+  masterVideoOutputFrame?: VideoOutputFrame;
 }

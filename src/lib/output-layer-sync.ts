@@ -1,5 +1,6 @@
 import type { OutputLayer, OutputState } from "../types/output";
 import { videoEffectsEqual } from "./video-effects";
+import { videoOutputFramesEqual } from "./video-output-frame";
 
 /** Compare layers for visual/output sync — ignores publisher-only objectUrl differences. */
 export function outputLayersEqual(a: OutputLayer[], b: OutputLayer[]): boolean {
@@ -69,7 +70,8 @@ export function outputStatesEqual(a: OutputState, b: OutputState): boolean {
     activeCueIdsEqual(a.activeCueIds, b.activeCueIds) &&
     outputLayersEqual(a.layers, b.layers) &&
     (a.busOpacity ?? 1) === (b.busOpacity ?? 1) &&
-    videoEffectsEqual(a.busEffects, b.busEffects)
+    videoEffectsEqual(a.busEffects, b.busEffects) &&
+    videoOutputFramesEqual(a.outputFrame, b.outputFrame)
   );
 }
 
