@@ -10,7 +10,8 @@ export { OUTPUT_VIDEO_LOAD_MAX_MS } from "../shared/output-window";
 export const PLAYBACK_VIDEO_SLICE_SEC = 4;
 /** Observed steady-state headless Chromium: ~70–85ms; allow more on loaded CI runners. */
 export const MAX_PLAYBACK_DRIFT_SEC = 0.35;
-export const MAX_DRIFT_GROWTH_SEC = 0.09;
+/** Loop-wrap sampling on CI can swing ~100ms without sustained desync. */
+export const MAX_DRIFT_GROWTH_SEC = 0.12;
 const STEADY_DRIFT_CAP_SEC = 0.4;
 
 export function outputButton(page: Page) {
