@@ -50,9 +50,21 @@ export function useAudioEngine(): void {
       const { cueLists, audioBuses } = useProjectStore.getState();
       if (activeCueIds.length === 0) {
         audioEngine.syncMixer(audioBuses, masterVolume);
-        // Keep voices alive between sequence steps (brief gap after stopCue, before goMany).
-        if (!useTransportStore.getState().runningSequence) {
+        const runningSequence = useTransportStore.getState().runningSequence;
+        if (!runningSequence) {
           void audioEngine.stopAll();
+          return;
+        }
+        // Between sequence steps: abort stale syncs. Stop audio voices unless the
+        // running step includes video (keep element-based voices for fade→stop chains).
+        audioEngine.cancelPendingSync();
+        const cues = allProjectCues({ cueLists });
+        const stepHasVideo = runningSequence.stepCueIds.some((id) => {
+          const cue = cues.find((c) => c.id === id);
+          return cue?.type === "video";
+        });
+        if (!stepHasVideo) {
+          void audioEngine.sync([], cues, masterVolume, {}, audioBuses);
         }
         return;
       }

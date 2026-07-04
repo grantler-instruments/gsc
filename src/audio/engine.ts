@@ -46,6 +46,11 @@ export class AudioEngine {
     this.onVoiceEndedHandler = handler;
   }
 
+  /** Drop in-flight sync work without stopping active voices (e.g. between sequence steps). */
+  cancelPendingSync(): void {
+    this.syncGeneration++;
+  }
+
   async unlock(): Promise<AudioContext> {
     if (!this.ctx) {
       this.ctx = new AudioContext();
