@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { driftSecWithinSlice as driftSecWithinPlaybackSlice } from "../../src/lib/video-playback";
 import {
   expectOutputPlaybackStableOnPage,
   OUTPUT_VIDEO_LOAD_MAX_MS,
@@ -6,6 +7,7 @@ import {
 import { getWaveformPositionSec } from "./active-cues";
 
 export { OUTPUT_VIDEO_LOAD_MAX_MS } from "../shared/output-window";
+
 /** test-video-playback.mp4 slice length (see generate-video-fixtures.mjs). */
 export const PLAYBACK_VIDEO_SLICE_SEC = 4;
 /** Observed steady-state headless Chromium: ~70–85ms; allow more on loaded CI runners. */
@@ -116,11 +118,7 @@ export function driftSecWithinSlice(
   outputSec: number,
   sliceSec: number,
 ): number {
-  const wrap = (value: number) => ((value % sliceSec) + sliceSec) % sliceSec;
-  const a = wrap(controlSec);
-  const b = wrap(outputSec);
-  const diff = Math.abs(a - b);
-  return Math.min(diff, sliceSec - diff);
+  return driftSecWithinPlaybackSlice(controlSec, outputSec, sliceSec, 0);
 }
 
 function summarizeDriftSamples(samples: PlaybackDriftSample[]): PlaybackDriftMeasurement {

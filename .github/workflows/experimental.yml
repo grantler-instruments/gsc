@@ -133,6 +133,7 @@ jobs:
 
       - name: Set experimental version
         id: version
+        shell: bash
         run: |
           BASE=$(node -p "require('./package.json').version")
           VERSION="${BASE}-experimental.${{ github.run_number }}"
