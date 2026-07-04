@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { useFadeStore } from "../stores/fade";
 import { useTransportStore } from "../stores/transport";
 import { resetTestProject, testCue } from "../test/fixtures/cues";
+import { expandSequenceSteps } from "./cues";
 import {
   advanceRunningSequence,
   notifyFadeCueComplete,
@@ -164,6 +166,66 @@ describe("notifyStepPlaybackEnded", () => {
     notifyStepPlaybackEnded(["a"]);
 
     expect(useTransportStore.getState().runningSequence?.currentStep).toBe(0);
+  });
+});
+
+describe("fade-then-stop sequence", () => {
+  beforeEach(() => {
+    resetTransport();
+    useFadeStore.setState({
+      fadesByTargetId: {},
+      dmxFadesByFadeCueId: {},
+      runtimeLevelsByTargetId: {},
+      frameMs: 0,
+    });
+  });
+
+  it("fades audio out on step 1 then stops it on step 2", () => {
+    const cues = [
+      testCue("seq", "Fade Out And Stop", "sequence"),
+      testCue("a", "Loop", "audio", { assetPath: "audio/test.wav" }),
+      testCue("fade", "Fade", "volumeFade", {
+        parentId: "seq",
+        fadeTargetId: "a",
+        fadeDuration: 1,
+        fadeFrom: 1,
+        fadeTo: 0,
+      }),
+      testCue("stop", "Stop", "stop", {
+        parentId: "seq",
+        stopTargetId: "a",
+      }),
+    ];
+    resetTestProject(cues);
+    useTransportStore.setState({
+      activeCueIds: ["a"],
+      isPlaying: true,
+      cueStartedAtMs: { a: 0 },
+    });
+
+    expect(expandSequenceSteps("seq", cues)).toEqual([["fade"], ["stop"]]);
+
+    const result = runSequence(cues[0], cues);
+    expect(result).toEqual({ started: true, stepCount: 2 });
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      rootId: "seq",
+      currentStep: 0,
+      stepCueIds: ["fade"],
+    });
+    expect(useFadeStore.getState().fadesByTargetId.a).toMatchObject({
+      property: "volume",
+      to: 0,
+    });
+    expect(useTransportStore.getState().activeCueIds).toContain("a");
+
+    notifyFadeCueComplete("fade", cues);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      rootId: "seq",
+      currentStep: 1,
+      stepCueIds: ["stop"],
+    });
+    expect(useTransportStore.getState().activeCueIds).not.toContain("a");
   });
 });
 
