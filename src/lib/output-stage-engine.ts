@@ -1,6 +1,7 @@
 import { visualLayerSx } from "../components/visualStageSx";
 import type { OutputLayer } from "../types/output";
 import { vfsGetObjectUrl } from "../vfs/engine";
+import { clamp01 } from "./clamp";
 import type { OutputBusConfig, OutputStageHandle } from "./output-stage-registry";
 import {
   attachTransportSyncedVideo,
@@ -32,10 +33,6 @@ interface LayerEntry {
   media: HTMLVideoElement | HTMLImageElement;
   objectUrl: string;
   sync?: TransportVideoSyncAttachment;
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
 }
 
 function mediaSourceSize(media: HTMLVideoElement | HTMLImageElement): {

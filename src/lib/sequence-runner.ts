@@ -5,6 +5,7 @@ import { estimateStepDurationMs } from "./cue-duration";
 import { expandSequenceSteps, isFadeCue } from "./cues";
 import { fireStepCues, playbackCueIdsInStep } from "./fire-step-cues";
 import { clearSequenceTimers, scheduleSequenceStep } from "./sequence-timers";
+import { transportNowMs } from "./transport-clock";
 
 export function cancelAllSequences(): void {
   clearSequenceTimers();
@@ -82,7 +83,7 @@ function runSequenceStep(rootCue: Cue, cues: Cue[], steps: string[][], index: nu
     currentStep: index,
     stepCount: steps.length,
     stepCueIds,
-    stepStartedAtMs: performance.now(),
+    stepStartedAtMs: transportNowMs(),
   });
 
   fireStepCues(

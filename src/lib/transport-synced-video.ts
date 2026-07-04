@@ -1,6 +1,7 @@
 import type { Cue } from "../types/cue";
 import type { OutputLayer } from "../types/output";
 import { getLoopPlayCount } from "./loop";
+import { transportNowMs } from "./transport-clock";
 import {
   driftSecWithinSlice,
   isOutputLayerLooping,
@@ -124,7 +125,7 @@ function syncVideoDriftToTransportClock(
   if (!Number.isFinite(video.duration)) return;
   if (!timing.isLooping() && timing.isPlaybackComplete()) return;
 
-  const nowMs = Date.now();
+  const nowMs = transportNowMs();
   if (nowMs - state.lastClockSyncMs < TRANSPORT_CLOCK_SYNC_MIN_INTERVAL_MS) return;
 
   const targetSec = timing.targetTime(nowMs);

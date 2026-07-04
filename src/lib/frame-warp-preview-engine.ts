@@ -18,6 +18,7 @@ import type { VideoOutputFrame } from "../types/video-output-frame";
 import { vfsGetObjectUrl } from "../vfs/engine";
 import { configureTextureSampling } from "../video/three/layer-material";
 import { LayerScene } from "../video/three/layer-scene";
+import { clamp01 } from "./clamp";
 import {
   attachTransportSyncedVideo,
   seekVideoElement,
@@ -78,10 +79,6 @@ void main() {
 
 function layerObjectUrl(layer: OutputLayer): string {
   return layer.objectUrl || vfsGetObjectUrl(layer.assetPath) || "";
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
 }
 
 function seekVideo(video: HTMLVideoElement, timeSec: number): void {

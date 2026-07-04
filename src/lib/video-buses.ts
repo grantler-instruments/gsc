@@ -1,13 +1,10 @@
 import { t } from "../i18n/t";
 import type { Cue } from "../types/cue";
 import type { VideoBus } from "../types/video-bus";
+import { clamp01 } from "./clamp";
 import { randomId } from "./random-id";
 import { normalizeVideoEffects } from "./video-effects";
 import { normalizeVideoOutputFrame, serializeVideoOutputFrame } from "./video-output-frame";
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
 
 export function defaultMasterVideoOutputName(): string {
   return t("videoOutput.defaultMainName");

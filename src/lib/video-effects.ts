@@ -58,11 +58,8 @@ import {
   VIGNETTE_OFFSET_MAX,
   VIGNETTE_OFFSET_MIN,
 } from "../types/video-effect";
+import { clamp01 } from "./clamp";
 import { randomId } from "./random-id";
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
 
 export { VIDEO_EFFECT_TYPES };
 

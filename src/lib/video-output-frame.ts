@@ -6,6 +6,7 @@ import type {
   VideoOutputFrame,
 } from "../types/video-output-frame";
 import { OUTPUT_FRAME_MIN_SIZE } from "../types/video-output-frame";
+import { clamp01 } from "./clamp";
 import type { Point2 } from "./output-frame-homography";
 import {
   computeOutputFrameHomography,
@@ -13,10 +14,6 @@ import {
   invertHomography3,
   UNIT_SQUARE_GL,
 } from "./output-frame-homography";
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
 
 export function defaultNormalizedPoint(): NormalizedPoint {
   return { x: 0, y: 0 };

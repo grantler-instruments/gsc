@@ -13,6 +13,7 @@ import {
 import { BusOpacityEffect } from "../video/three/effects/bus-opacity-effect";
 import { OutputFrameEffect } from "../video/three/effects/output-frame-effect";
 import { LayerScene } from "../video/three/layer-scene";
+import { clamp01 } from "./clamp";
 import { defaultVideoOutputFrame, isIdentityVideoOutputFrame } from "./video-output-frame";
 
 export interface CompositorLayer {
@@ -29,10 +30,6 @@ export interface CompositorLayer {
 /** Full-size but invisible — off-screen 1×1 media is often not decoded by the browser. */
 const HIDDEN_MEDIA_STYLE =
   "position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none;overflow:hidden";
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
 
 /** Maps normalized view UV through CSS object-fit: contain. */
 export function objectFitContainUv(

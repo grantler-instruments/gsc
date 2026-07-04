@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand";
+import { clamp01 } from "../../lib/clamp";
 import { canEditProject } from "../../lib/show-mode";
 import {
   createVideoBus,
@@ -18,10 +19,6 @@ import type { VideoEffect } from "../../types/video-effect";
 import type { ProjectState } from "./types";
 
 type ProjectStore = StoreApi<ProjectState>;
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
 
 function serializeMasterEffects(effects: VideoEffect[]): VideoEffect[] | undefined {
   const normalized = normalizeVideoEffects(effects);

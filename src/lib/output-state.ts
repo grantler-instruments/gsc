@@ -10,10 +10,12 @@ import type { Cue } from "../types/cue";
 import type { MultiviewPreviewState, OutputLayer, OutputState } from "../types/output";
 import type { VideoBus } from "../types/video-bus";
 import { vfsGetObjectUrl } from "../vfs/engine";
+import { clamp01 } from "./clamp";
 import { findCueInLists } from "./cue-lists";
 import { getLoopPlayCount } from "./loop";
 import { getMediaDurationSec } from "./media-duration";
 import { getPlaybackSliceSec } from "./playback-slice";
+import { transportNowMs } from "./transport-clock";
 import {
   busEffectiveOpacity,
   findVideoBus,
@@ -22,10 +24,6 @@ import {
   resolveCueVideoBusId,
 } from "./video-buses";
 import { normalizeVideoOutputFrame, serializeVideoOutputFrame } from "./video-output-frame";
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
 
 async function buildLayer(cue: Cue, goAtMs: number): Promise<OutputLayer | undefined> {
   if ((cue.type !== "video" && cue.type !== "image") || !cue.assetPath) {
@@ -94,7 +92,7 @@ async function buildLayersForActiveCues(
   const progressByCueId = usePlaybackStore.getState().byCueId;
   const { cueLists, videoBuses, id: projectId } = useProjectStore.getState();
 
-  const now = Date.now();
+  const now = transportNowMs();
 
   const layers: OutputLayer[] = [];
   for (const cueId of activeCueIds) {

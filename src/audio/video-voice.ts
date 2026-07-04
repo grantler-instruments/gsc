@@ -1,3 +1,4 @@
+import { clamp01, clampPan } from "../lib/clamp";
 import {
   attachTransportSyncedVideo,
   type TransportVideoSyncAttachment,
@@ -6,14 +7,6 @@ import {
 import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
 import type { Cue } from "../types/cue";
 import { vfsGetObjectUrl } from "../vfs/engine";
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
-function clampPan(value: number): number {
-  return Math.max(-1, Math.min(1, value));
-}
 
 export interface VideoVoice {
   cueId: string;
