@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { driftSecWithinSlice as driftSecWithinPlaybackSlice } from "../../src/lib/video-playback";
+import { driftSecWithinSlice as driftSecWithinPlaybackSlice } from "../../src/lib/playback-drift";
 import {
   expectOutputPlaybackStableOnPage,
   OUTPUT_VIDEO_LOAD_MAX_MS,
