@@ -135,6 +135,7 @@ export class VideoCompositor {
 
   setLayers(layers: CompositorLayer[]): void {
     this.layers = [...layers].sort((a, b) => a.zIndex - b.zIndex);
+    this.syncAnimationLoop();
   }
 
   setBusEffects(effects: VideoEffect[]): void {
@@ -172,17 +173,12 @@ export class VideoCompositor {
   start(): void {
     if (this.running) return;
     this.running = true;
-    const tick = () => {
-      this.rafId = requestAnimationFrame(tick);
-      this.render();
-    };
-    this.rafId = requestAnimationFrame(tick);
+    this.syncAnimationLoop();
   }
 
   stop(): void {
     this.running = false;
-    cancelAnimationFrame(this.rafId);
-    this.rafId = 0;
+    this.stopAnimationLoop();
   }
 
   destroy(): void {
@@ -193,6 +189,39 @@ export class VideoCompositor {
     this.renderer.dispose();
     this.canvas.remove();
     this.mediaHost.remove();
+  }
+
+  private hasDrawableLayers(): boolean {
+    return this.layers.some((layer) => layer.ready && layer.opacity > 0);
+  }
+
+  private syncAnimationLoop(): void {
+    if (!this.running || !this.hasDrawableLayers()) {
+      this.stopAnimationLoop();
+      if (this.running && this.width > 0 && this.height > 0) {
+        this.renderer.setRenderTarget(null);
+        this.renderer.setClearColor(0x000000, 1);
+        this.renderer.clear(true, true, true);
+      }
+      return;
+    }
+
+    if (this.rafId !== 0) return;
+
+    const tick = () => {
+      if (!this.running || !this.hasDrawableLayers()) {
+        this.stopAnimationLoop();
+        return;
+      }
+      this.rafId = requestAnimationFrame(tick);
+      this.render();
+    };
+    this.rafId = requestAnimationFrame(tick);
+  }
+
+  private stopAnimationLoop(): void {
+    cancelAnimationFrame(this.rafId);
+    this.rafId = 0;
   }
 
   private render(): void {

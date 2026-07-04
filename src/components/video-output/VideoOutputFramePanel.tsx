@@ -9,6 +9,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAssetObjectUrl } from "../../hooks/useAssetObjectUrl";
 import {
+  attachTransportSyncedVideo,
+  type TransportVideoSyncAttachment,
+  transportTimingFromOutputLayer,
+} from "../../lib/transport-synced-video";
+import {
   applyLinkedDestQuadSize,
   defaultVideoOutputFrame,
   isIdentityVideoOutputFrame,
@@ -20,7 +25,6 @@ import {
   rectToQuad,
   translateNormalizedQuad,
 } from "../../lib/video-output-frame";
-import { outputLayerTargetTime } from "../../lib/video-playback";
 import { resolveEffectiveOpacity, useFadeStore } from "../../stores/fade";
 import { useVfsStore } from "../../stores/vfs";
 import type { OutputLayer } from "../../types/output";
@@ -272,8 +276,11 @@ function compositorPreviewLayers(
 
 function FramePreviewLayer({ layer, zIndex }: { layer: OutputLayer; zIndex: number }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const layerRef = useRef(layer);
+  const syncRef = useRef<TransportVideoSyncAttachment | null>(null);
   const fallbackUrl = useAssetObjectUrl(layer.assetPath);
   const objectUrl = layer.objectUrl || fallbackUrl || "";
+  layerRef.current = layer;
 
   useEffect(() => {
     if (layer.type !== "video" || !objectUrl) return;
@@ -285,13 +292,13 @@ function FramePreviewLayer({ layer, zIndex }: { layer: OutputLayer; zIndex: numb
     video.preload = "auto";
     video.src = objectUrl;
 
+    const sync = attachTransportSyncedVideo(video, () =>
+      transportTimingFromOutputLayer(layerRef.current),
+    );
+    syncRef.current = sync;
+
     const startPlayback = () => {
-      try {
-        video.currentTime = outputLayerTargetTime(layer);
-      } catch {
-        /* metadata not ready */
-      }
-      void video.play().catch(() => {});
+      sync.seekAndPlay();
     };
 
     video.addEventListener("loadedmetadata", startPlayback);
@@ -299,6 +306,8 @@ function FramePreviewLayer({ layer, zIndex }: { layer: OutputLayer; zIndex: numb
     if (video.readyState >= HTMLMediaElement.HAVE_METADATA) startPlayback();
 
     return () => {
+      sync.detach();
+      syncRef.current = null;
       video.removeEventListener("loadedmetadata", startPlayback);
       video.removeEventListener("canplay", startPlayback);
       video.removeAttribute("src");
@@ -307,13 +316,19 @@ function FramePreviewLayer({ layer, zIndex }: { layer: OutputLayer; zIndex: numb
   }, [
     layer.assetPath,
     layer.cueId,
-    layer.goAtMs,
     layer.inTime,
     layer.loopCount,
     layer.sliceSec,
     layer.type,
     objectUrl,
   ]);
+
+  useEffect(() => {
+    const sync = syncRef.current;
+    if (!sync) return;
+    sync.resetState();
+    sync.seekToClock();
+  }, [layer.goAtMs, layer.inTime, layer.sliceSec, layer.loopCount]);
 
   if (!objectUrl) return null;
 

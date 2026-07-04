@@ -18,13 +18,18 @@ import type { VideoOutputFrame } from "../types/video-output-frame";
 import { vfsGetObjectUrl } from "../vfs/engine";
 import { configureTextureSampling } from "../video/three/layer-material";
 import { LayerScene } from "../video/three/layer-scene";
+import {
+  attachTransportSyncedVideo,
+  seekVideoElement,
+  type TransportVideoSyncAttachment,
+  transportTimingFromOutputLayer,
+} from "./transport-synced-video";
 import type { CompositorLayer } from "./video-compositor";
 import {
   computeVideoOutputFrameWarpMatrices,
   isIdentityVideoOutputFrame,
   normalizeVideoOutputFrame,
 } from "./video-output-frame";
-import { outputLayerTargetTime } from "./video-playback";
 
 const WARP_VERTEX_SHADER = /* glsl */ `
 varying vec2 vUv;
@@ -80,20 +85,7 @@ function clamp01(value: number): number {
 }
 
 function seekVideo(video: HTMLVideoElement, timeSec: number): void {
-  const target = Math.max(0, timeSec);
-  if (typeof video.fastSeek === "function") {
-    try {
-      video.fastSeek(target);
-      return;
-    } catch {
-      /* fall through */
-    }
-  }
-  try {
-    video.currentTime = target;
-  } catch {
-    /* seek not ready */
-  }
+  seekVideoElement(video, timeSec);
 }
 
 function mediaSourceSize(media: HTMLVideoElement | HTMLImageElement): {
@@ -124,6 +116,7 @@ interface MediaEntry {
   wrap: HTMLDivElement;
   media: HTMLVideoElement | HTMLImageElement;
   objectUrl: string;
+  sync?: TransportVideoSyncAttachment;
 }
 
 function rowsFromHomography(matrix: Float32Array): [Vector3, Vector3, Vector3] {
@@ -327,6 +320,7 @@ export class FrameWarpPreviewEngine {
   private removeEntry(cueId: string): void {
     const entry = this.entries.get(cueId);
     if (!entry) return;
+    entry.sync?.detach();
     entry.wrap.remove();
     this.entries.delete(cueId);
   }
@@ -349,7 +343,8 @@ export class FrameWarpPreviewEngine {
 
     if (existing.media instanceof HTMLVideoElement && existing.layer.goAtMs !== layer.goAtMs) {
       existing.layer = { ...existing.layer, goAtMs: layer.goAtMs };
-      seekVideo(existing.media, outputLayerTargetTime(layer));
+      existing.sync?.resetState();
+      seekVideo(existing.media, transportTimingFromOutputLayer(layer).targetTime());
       void existing.media.play().catch(() => {});
     } else {
       existing.layer = { ...existing.layer, ...layer };
@@ -369,6 +364,14 @@ export class FrameWarpPreviewEngine {
 
     const objectUrl = layerObjectUrl(layer);
     let media: HTMLVideoElement | HTMLImageElement;
+    let sync: TransportVideoSyncAttachment | undefined;
+
+    const entry: MediaEntry = {
+      layer,
+      wrap,
+      media: null as unknown as HTMLVideoElement,
+      objectUrl,
+    };
 
     if (layer.type === "video") {
       const video = document.createElement("video");
@@ -381,9 +384,10 @@ export class FrameWarpPreviewEngine {
         opacity: "0",
       });
 
+      sync = attachTransportSyncedVideo(video, () => transportTimingFromOutputLayer(entry.layer));
+
       const startPlayback = () => {
-        seekVideo(video, outputLayerTargetTime(layer));
-        void video.play().catch(() => {});
+        sync?.seekAndPlay();
         this.syncCompositorLayers();
       };
 
@@ -404,12 +408,9 @@ export class FrameWarpPreviewEngine {
     wrap.appendChild(media);
     this.mediaHost.appendChild(wrap);
 
-    return {
-      layer,
-      wrap,
-      media,
-      objectUrl,
-    };
+    entry.media = media;
+    entry.sync = sync;
+    return entry;
   }
 }
 

@@ -3,11 +3,17 @@ import type { OutputLayer } from "../types/output";
 import { vfsGetObjectUrl } from "../vfs/engine";
 import type { OutputBusConfig, OutputStageHandle } from "./output-stage-registry";
 import {
+  attachTransportSyncedVideo,
+  seekVideoElement,
+  type TransportVideoSyncAttachment,
+  transportTimingFromOutputLayer,
+} from "./transport-synced-video";
+import {
   type CompositorLayer,
   tryCreateVideoCompositor,
   type VideoCompositor,
 } from "./video-compositor";
-import { isOutputLayerLooping, outputLayerTargetTime, sliceEndSec } from "./video-playback";
+import { outputLayerTargetTime } from "./video-playback";
 
 function layerObjectUrl(layer: OutputLayer): string {
   return layer.objectUrl || vfsGetObjectUrl(layer.assetPath) || "";
@@ -25,30 +31,11 @@ interface LayerEntry {
   wrap: HTMLDivElement;
   media: HTMLVideoElement | HTMLImageElement;
   objectUrl: string;
-  loopTimerId: number;
-  loopIterations: number;
-  goAtMs: number;
+  sync?: TransportVideoSyncAttachment;
 }
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
-}
-
-function seekVideo(video: HTMLVideoElement, timeSec: number): void {
-  const target = Math.max(0, timeSec);
-  if (typeof video.fastSeek === "function") {
-    try {
-      video.fastSeek(target);
-      return;
-    } catch {
-      /* fall through */
-    }
-  }
-  try {
-    video.currentTime = target;
-  } catch {
-    /* seek not ready */
-  }
 }
 
 function mediaSourceSize(media: HTMLVideoElement | HTMLImageElement): {
@@ -190,7 +177,7 @@ export class OutputStageEngine implements OutputStageHandle {
   private removeEntry(cueId: string): void {
     const entry = this.entries.get(cueId);
     if (!entry) return;
-    window.clearTimeout(entry.loopTimerId);
+    entry.sync?.detach();
     entry.wrap.remove();
     this.entries.delete(cueId);
     this.syncCompositorLayers();
@@ -214,9 +201,7 @@ export class OutputStageEngine implements OutputStageHandle {
 
     if (existing.layer.inTime !== layer.inTime || existing.layer.sliceSec !== layer.sliceSec) {
       existing.layer = { ...existing.layer, ...layer };
-      if (existing.media instanceof HTMLVideoElement) {
-        this.scheduleLoopWrap(existing);
-      }
+      existing.sync?.resetState();
     } else {
       existing.layer = { ...existing.layer, ...layer };
     }
@@ -224,19 +209,14 @@ export class OutputStageEngine implements OutputStageHandle {
     const nextObjectUrl = layerObjectUrl(layer);
     if (existing.objectUrl !== nextObjectUrl) {
       existing.objectUrl = nextObjectUrl;
-      if (existing.media instanceof HTMLVideoElement) {
-        existing.media.src = existing.objectUrl;
-      } else {
-        existing.media.src = existing.objectUrl;
-      }
+      existing.media.src = existing.objectUrl;
     }
 
-    if (existing.media instanceof HTMLVideoElement && existing.goAtMs !== layer.goAtMs) {
-      existing.goAtMs = layer.goAtMs;
-      existing.loopIterations = 0;
-      seekVideo(existing.media, outputLayerTargetTime(layer));
+    if (existing.media instanceof HTMLVideoElement && existing.layer.goAtMs !== layer.goAtMs) {
+      existing.layer = { ...existing.layer, goAtMs: layer.goAtMs };
+      existing.sync?.resetState();
+      seekVideoElement(existing.media, outputLayerTargetTime(layer));
       void existing.media.play().catch(() => {});
-      this.scheduleLoopWrap(existing);
     }
 
     this.syncCompositorLayers();
@@ -254,6 +234,15 @@ export class OutputStageEngine implements OutputStageHandle {
     });
 
     let media: HTMLVideoElement | HTMLImageElement;
+    let sync: TransportVideoSyncAttachment | undefined;
+
+    const entry: LayerEntry = {
+      layer,
+      wrap,
+      media: null as unknown as HTMLVideoElement,
+      objectUrl: layerObjectUrl(layer),
+    };
+
     if (layer.type === "video") {
       const video = document.createElement("video");
       video.muted = true;
@@ -267,11 +256,12 @@ export class OutputStageEngine implements OutputStageHandle {
         video.style.opacity = "0";
       }
 
+      sync = attachTransportSyncedVideo(video, () => transportTimingFromOutputLayer(entry.layer), {
+        onEnded: this.onVideoEnded ? () => this.onVideoEnded?.(entry.layer.cueId) : undefined,
+      });
+
       const startPlayback = () => {
-        seekVideo(video, outputLayerTargetTime(layer));
-        void video.play().catch(() => {});
-        const entry = this.entries.get(layer.cueId);
-        if (entry) this.scheduleLoopWrap(entry);
+        sync?.seekAndPlay();
         this.syncCompositorLayers();
       };
 
@@ -280,12 +270,7 @@ export class OutputStageEngine implements OutputStageHandle {
       video.addEventListener("error", () => {
         console.warn("[output] Could not load", layer.objectUrl);
       });
-      if (this.onVideoEnded) {
-        video.addEventListener("ended", () => {
-          this.handleVideoEnded(layer.cueId);
-        });
-      }
-      video.src = layerObjectUrl(layer);
+      video.src = entry.objectUrl;
       if (video.readyState >= 1) startPlayback();
       media = video;
     } else {
@@ -299,81 +284,16 @@ export class OutputStageEngine implements OutputStageHandle {
       img.addEventListener("error", () => {
         console.warn("[output] Could not load", layer.objectUrl);
       });
-      img.src = layerObjectUrl(layer);
+      img.src = entry.objectUrl;
       media = img;
     }
+
+    entry.media = media;
+    entry.sync = sync;
 
     wrap.appendChild(media);
     this.layerHost().appendChild(wrap);
 
-    return {
-      layer,
-      wrap,
-      media,
-      objectUrl: layerObjectUrl(layer),
-      loopTimerId: 0,
-      loopIterations: 0,
-      goAtMs: layer.goAtMs,
-    };
-  }
-
-  private handleVideoEnded(cueId: string): void {
-    const entry = this.entries.get(cueId);
-    if (!entry || !(entry.media instanceof HTMLVideoElement)) return;
-
-    const current = entry.layer;
-    if (current.loopCount === "inf") {
-      seekVideo(entry.media, outputLayerTargetTime(current));
-      void entry.media.play().catch(() => {});
-      return;
-    }
-
-    if (!isOutputLayerLooping(current)) {
-      this.onVideoEnded?.(cueId);
-      return;
-    }
-
-    entry.loopIterations += 1;
-    if (entry.loopIterations >= (current.loopCount as number)) {
-      this.onVideoEnded?.(cueId);
-      return;
-    }
-
-    seekVideo(entry.media, current.inTime);
-    void entry.media.play().catch(() => {});
-    this.scheduleLoopWrap(entry);
-  }
-
-  private scheduleLoopWrap(entry: LayerEntry): void {
-    window.clearTimeout(entry.loopTimerId);
-    entry.loopTimerId = 0;
-
-    const video = entry.media;
-    if (!(video instanceof HTMLVideoElement)) return;
-    if (!isOutputLayerLooping(entry.layer)) return;
-    if (!Number.isFinite(video.duration)) return;
-
-    const endSec = sliceEndSec(entry.layer.inTime, entry.layer.sliceSec);
-    const delayMs = Math.max(16, (endSec - video.currentTime) * 1000);
-
-    entry.loopTimerId = window.setTimeout(() => {
-      entry.loopTimerId = 0;
-      const current = entry.layer;
-      if (!isOutputLayerLooping(current)) return;
-
-      if (current.loopCount !== "inf") {
-        const next = entry.loopIterations + 1;
-        if (next >= (current.loopCount as number)) {
-          video.pause();
-          this.onVideoEnded?.(current.cueId);
-          return;
-        }
-        entry.loopIterations = next;
-      }
-
-      seekVideo(video, current.inTime);
-      void video.play().catch(() => {});
-      this.scheduleLoopWrap(entry);
-    }, delayMs);
+    return entry;
   }
 }
