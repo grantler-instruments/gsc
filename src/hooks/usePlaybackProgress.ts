@@ -9,6 +9,7 @@ import {
   createPlaybackBounds,
   cueNeedsKnownDuration,
   cueShowsPlaybackProgress,
+  isEngineManagedPlaybackCue,
   isFinitePlaybackComplete,
   type PlaybackBounds,
 } from "../lib/playback-slice";
@@ -96,6 +97,13 @@ export function usePlaybackProgress(): void {
       });
     };
 
+    const refreshSessionBounds = (cueId: string, cue: Cue) => {
+      const session = sessionsRef.current.get(cueId);
+      if (!session) return;
+      const sourceDurationSec = cue.assetPath ? getMediaDurationSec(cue.assetPath) : undefined;
+      session.bounds = createPlaybackBounds(cue, sourceDurationSec);
+    };
+
     const syncSessions = (activeCueIds: string[]) => {
       const now = transportNowMs();
       const { cueStartedAtMs } = useTransportStore.getState();
@@ -119,6 +127,7 @@ export function usePlaybackProgress(): void {
         const cue = cueById.get(id);
         if (cue && cueShowsPlaybackProgress(cue)) {
           tryStartSession(id, cue);
+          refreshSessionBounds(id, cue);
         }
       }
 
@@ -175,7 +184,10 @@ export function usePlaybackProgress(): void {
           });
 
           if (isFinitePlaybackComplete(session.bounds, elapsedSec)) {
-            completedCueIds.push(cueId);
+            const cue = cueById.get(cueId);
+            if (cue && !isEngineManagedPlaybackCue(cue)) {
+              completedCueIds.push(cueId);
+            }
           }
           continue;
         }
@@ -200,7 +212,7 @@ export function usePlaybackProgress(): void {
           ...snapshot,
         });
 
-        if (isFinitePlaybackComplete(bounds, elapsedSec)) {
+        if (isFinitePlaybackComplete(bounds, elapsedSec) && !isEngineManagedPlaybackCue(cue)) {
           completedCueIds.push(cueId);
         }
       }
@@ -213,7 +225,6 @@ export function usePlaybackProgress(): void {
 
       if (completedCueIds.length > 0) {
         useTransportStore.getState().stopMany(completedCueIds);
-        // Always notify — progress may stop audio before the engine onended callback runs.
         notifyStepPlaybackEnded(completedCueIds);
       }
 

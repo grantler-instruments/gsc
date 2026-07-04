@@ -4,6 +4,7 @@ import type { Cue } from "../types/cue";
 import { estimateStepDurationMs } from "./cue-duration";
 import { expandSequenceSteps, isFadeCue } from "./cues";
 import { fireStepCues, playbackCueIdsInStep } from "./fire-step-cues";
+import { isEngineManagedPlaybackCue } from "./playback-slice";
 import { clearSequenceTimers, scheduleSequenceStep } from "./sequence-timers";
 import { transportNowMs } from "./transport-clock";
 
@@ -172,5 +173,5 @@ export function handleSequenceFadeCueCompleted(fadeCueId: string): void {
 
 /** True when natural playback end is reported by the audio engine, not the progress tick. */
 export function cueCompletesViaAudioEngine(cue: Cue): boolean {
-  return cue.type === "audio" || cue.type === "video";
+  return isEngineManagedPlaybackCue(cue);
 }
