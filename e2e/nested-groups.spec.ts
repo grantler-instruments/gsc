@@ -72,20 +72,7 @@ test("sequence > parallel > sequence runs nested leaf steps in order @structure"
   await expect(activeCueRow(page, SHORT_A)).toBeVisible({ timeout: 10_000 });
   await expect(activeCueRow(page, SHORT_A)).toBeHidden({ timeout: 15_000 });
 
-  await expect
-    .poll(
-      async () => {
-        if (await activeCueRow(page, SHORT_B).isVisible()) return "active";
-        if (await sequenceCueRow(page, "Inner Seq").getByText("Playing step 2 of 2").isVisible()) {
-          return "step";
-        }
-        return "";
-      },
-      { timeout: 15_000 },
-    )
-    .not.toBe("");
-
-  await expect(activeCueRow(page, SHORT_B)).toBeVisible({ timeout: 10_000 });
+  await expect(activeCueRow(page, SHORT_B)).toBeVisible({ timeout: 15_000 });
   await expect(activeCueRow(page, SHORT_B)).toBeHidden({ timeout: 15_000 });
   await expect(activeCuesEmptyMessage(page)).toBeVisible({ timeout: 10_000 });
 });

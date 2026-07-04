@@ -55,17 +55,11 @@ export function useAudioEngine(): void {
           void audioEngine.stopAll();
           return;
         }
-        // Between sequence steps: abort stale syncs. Stop audio voices unless the
-        // running step includes video (keep element-based voices for fade→stop chains).
+        // Between sequence steps: abort stale sync work only. setRunningSequence can
+        // fire this path before goMany for the next step; sync([]) here races with
+        // that goMany and can stop the incoming step's voices. The next goMany sync
+        // stops voices not in the new target set.
         audioEngine.cancelPendingSync();
-        const cues = allProjectCues({ cueLists });
-        const stepHasVideo = runningSequence.stepCueIds.some((id) => {
-          const cue = cues.find((c) => c.id === id);
-          return cue?.type === "video";
-        });
-        if (!stepHasVideo) {
-          void audioEngine.sync([], cues, masterVolume, {}, audioBuses);
-        }
         return;
       }
       const cues = allProjectCues({ cueLists });
