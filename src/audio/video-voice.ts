@@ -72,6 +72,7 @@ export function startVideoVoice(
 
   const loopPlayCount = getLoopPlayCount(cue);
   const looping = isVideoLooping(cue);
+  let loopWrapped = false;
 
   const seekToClock = () => {
     if (!Number.isFinite(video.duration)) return;
@@ -104,23 +105,28 @@ export function startVideoVoice(
 
     if (!looping) return;
 
-    if (shouldWrapVideoAtSliceEnd(video.currentTime, endSec)) {
-      if (loopPlayCount === "inf") {
-        video.currentTime = videoTargetTime(cue, video.duration, goAtMs);
-        if (video.paused) {
-          void video.play().catch(() => {});
-        }
-        return;
-      }
-
-      voice.loopIteration += 1;
-      if (voice.loopIteration >= loopPlayCount) {
-        video.pause();
-        onEnded(cue.id);
-        return;
-      }
-      video.currentTime = offsetSec;
+    if (!shouldWrapVideoAtSliceEnd(video.currentTime, endSec)) {
+      loopWrapped = false;
+      return;
     }
+    if (loopWrapped) return;
+    loopWrapped = true;
+
+    if (loopPlayCount === "inf") {
+      video.currentTime = videoTargetTime(cue, video.duration, goAtMs);
+      if (video.paused) {
+        void video.play().catch(() => {});
+      }
+      return;
+    }
+
+    voice.loopIteration += 1;
+    if (voice.loopIteration >= loopPlayCount) {
+      video.pause();
+      onEnded(cue.id);
+      return;
+    }
+    video.currentTime = offsetSec;
   };
 
   const handleTimeUpdate = () => {
@@ -142,6 +148,9 @@ export function startVideoVoice(
       onEnded(cue.id);
       return;
     }
+
+    if (loopWrapped) return;
+    loopWrapped = true;
 
     voice.loopIteration += 1;
     if (voice.loopIteration >= loopPlayCount) {
