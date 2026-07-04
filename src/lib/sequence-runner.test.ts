@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useTransportStore } from "../stores/transport";
 import { resetTestProject, testCue } from "../test/fixtures/cues";
 import {
   advanceRunningSequence,
+  cueCompletesViaAudioEngine,
   notifyFadeCueComplete,
   notifyStepPlaybackEnded,
   runSequence,
@@ -190,5 +191,88 @@ describe("advanceRunningSequence", () => {
 
     advanceRunningSequence(cues);
     expect(useTransportStore.getState().runningSequence).toBeNull();
+  });
+});
+
+describe("notifyStepPlaybackEnded idempotency", () => {
+  beforeEach(() => {
+    resetTransport();
+  });
+
+  it("does not double-advance when called twice for the same step", () => {
+    const cues = [
+      testCue("seq", "Seq", "sequence"),
+      testCue("a", "A", "audio", { parentId: "seq", assetPath: "a.wav" }),
+      testCue("b", "B", "audio", { parentId: "seq", assetPath: "b.wav" }),
+      testCue("c", "C", "audio", { parentId: "seq", assetPath: "c.wav" }),
+    ];
+    resetTestProject(cues);
+    useTransportStore.setState({
+      activeCueIds: [],
+      runningSequence: {
+        rootId: "seq",
+        currentStep: 0,
+        stepCount: 3,
+        stepCueIds: ["a"],
+        stepStartedAtMs: 0,
+      },
+    });
+
+    notifyStepPlaybackEnded(["a"]);
+    notifyStepPlaybackEnded(["a"]);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      rootId: "seq",
+      currentStep: 1,
+      stepCueIds: ["b"],
+    });
+  });
+});
+
+describe("completeSequenceStep idempotency", () => {
+  beforeEach(() => {
+    resetTransport();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("ignores a stale step timer after playback-end already advanced", () => {
+    const cues = [
+      testCue("seq", "Seq", "sequence"),
+      testCue("a", "A", "audio", { parentId: "seq", assetPath: "a.wav" }),
+      testCue("b", "B", "audio", { parentId: "seq", assetPath: "b.wav" }),
+    ];
+    resetTestProject(cues);
+    runSequence(cues[0], cues);
+
+    expect(useTransportStore.getState().runningSequence?.currentStep).toBe(0);
+
+    useTransportStore.setState({ activeCueIds: [] });
+    notifyStepPlaybackEnded(["a"]);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      currentStep: 1,
+      stepCueIds: ["b"],
+    });
+
+    // Step-0 fallback timer would fire here on the old runner and re-enter step 1.
+    vi.advanceTimersByTime(500);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      currentStep: 1,
+      stepCueIds: ["b"],
+    });
+  });
+});
+
+describe("cueCompletesViaAudioEngine", () => {
+  it("is true for audio and video cues only", () => {
+    expect(cueCompletesViaAudioEngine(testCue("a", "A", "audio"))).toBe(true);
+    expect(cueCompletesViaAudioEngine(testCue("v", "V", "video"))).toBe(true);
+    expect(cueCompletesViaAudioEngine(testCue("i", "I", "image"))).toBe(false);
+    expect(cueCompletesViaAudioEngine(testCue("m", "M", "midi"))).toBe(false);
   });
 });

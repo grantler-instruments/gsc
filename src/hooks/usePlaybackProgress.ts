@@ -12,7 +12,7 @@ import {
   isFinitePlaybackComplete,
   type PlaybackBounds,
 } from "../lib/playback-slice";
-import { notifyStepPlaybackEnded } from "../lib/sequence-runner";
+import { cueCompletesViaAudioEngine, notifyStepPlaybackEnded } from "../lib/sequence-runner";
 import { isWaitCue } from "../lib/wait";
 import type { CuePlaybackProgress } from "../stores/playback";
 import { usePlaybackStore } from "../stores/playback";
@@ -213,7 +213,13 @@ export function usePlaybackProgress(): void {
 
       if (completedCueIds.length > 0) {
         useTransportStore.getState().stopMany(completedCueIds);
-        notifyStepPlaybackEnded(completedCueIds);
+        const sequenceAdvanceIds = completedCueIds.filter((id) => {
+          const cue = cueById.get(id);
+          return cue !== undefined && !cueCompletesViaAudioEngine(cue);
+        });
+        if (sequenceAdvanceIds.length > 0) {
+          notifyStepPlaybackEnded(sequenceAdvanceIds);
+        }
       }
 
       const transport = useTransportStore.getState();

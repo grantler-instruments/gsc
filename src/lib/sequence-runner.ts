@@ -11,10 +11,47 @@ export function cancelAllSequences(): void {
   useTransportStore.getState().setRunningSequence(null);
 }
 
-/** Advance the running sequence after the current step finishes. */
-export function advanceRunningSequence(cues: Cue[]): void {
+interface CompleteStepOptions {
+  /** Stop any playback cues still active in the step (timer fallback). */
+  forceStopPlayback?: boolean;
+}
+
+/** Advance or finish the sequence after the given step completes. Idempotent per step index. */
+function completeSequenceStep(
+  rootCue: Cue,
+  cues: Cue[],
+  steps: string[][],
+  stepIndex: number,
+  options: CompleteStepOptions = {},
+): void {
   const transport = useTransportStore.getState();
   const running = transport.runningSequence;
+  if (!running || running.rootId !== rootCue.id || running.currentStep !== stepIndex) {
+    return;
+  }
+
+  clearSequenceTimers();
+
+  if (options.forceStopPlayback) {
+    const playbackIds = playbackCueIdsInStep(running.stepCueIds, cues);
+    const stillActive = playbackIds.filter((id) => transport.activeCueIds.includes(id));
+    if (stillActive.length > 0) {
+      transport.stopMany(stillActive);
+    }
+  }
+
+  const nextIndex = stepIndex + 1;
+  if (nextIndex >= steps.length) {
+    cancelAllSequences();
+    return;
+  }
+
+  runSequenceStep(rootCue, cues, steps, nextIndex);
+}
+
+/** Advance the running sequence after the current step finishes. */
+export function advanceRunningSequence(cues: Cue[]): void {
+  const running = useTransportStore.getState().runningSequence;
   if (!running) return;
 
   const rootCue = cues.find((c) => c.id === running.rootId);
@@ -24,16 +61,7 @@ export function advanceRunningSequence(cues: Cue[]): void {
   }
 
   const steps = expandSequenceSteps(running.rootId, cues);
-  const nextIndex = running.currentStep + 1;
-
-  clearSequenceTimers();
-
-  if (nextIndex >= steps.length) {
-    cancelAllSequences();
-    return;
-  }
-
-  runSequenceStep(rootCue, cues, steps, nextIndex);
+  completeSequenceStep(rootCue, cues, steps, running.currentStep);
 }
 
 function runSequenceStep(rootCue: Cue, cues: Cue[], steps: string[][], index: number): void {
@@ -69,17 +97,9 @@ function runSequenceStep(rootCue: Cue, cues: Cue[], steps: string[][], index: nu
   );
 
   const durationMs = estimateStepDurationMs(stepCueIds, cues);
-  const playbackIds = playbackCueIdsInStep(stepCueIds, cues);
 
   scheduleSequenceStep(() => {
-    if (playbackIds.length > 0) {
-      transport.stopMany(playbackIds);
-    }
-    if (index + 1 >= steps.length) {
-      cancelAllSequences();
-      return;
-    }
-    runSequenceStep(rootCue, cues, steps, index + 1);
+    completeSequenceStep(rootCue, cues, steps, index, { forceStopPlayback: true });
   }, durationMs);
 }
 
@@ -94,7 +114,7 @@ export function runSequence(rootCue: Cue, cues: Cue[]): { started: boolean; step
   return { started: true, stepCount: steps.length };
 }
 
-/** Advance when all playback cues in the current step have stopped. */
+/** Called when playback cues in the current step have stopped (audio engine or progress fallback). */
 export function notifyStepPlaybackEnded(stoppedCueIds: string[]): void {
   if (stoppedCueIds.length === 0) return;
 
@@ -110,8 +130,14 @@ export function notifyStepPlaybackEnded(stoppedCueIds: string[]): void {
   const stillActive = playbackIds.filter((id) => transport.activeCueIds.includes(id));
   if (stillActive.length > 0) return;
 
-  clearSequenceTimers();
-  advanceRunningSequence(cues);
+  const rootCue = cues.find((c) => c.id === running.rootId);
+  if (!rootCue) {
+    cancelAllSequences();
+    return;
+  }
+
+  const steps = expandSequenceSteps(running.rootId, cues);
+  completeSequenceStep(rootCue, cues, steps, running.currentStep);
 }
 
 /** When a fade cue finishes, advance if the sequence is waiting on it. */
@@ -127,7 +153,13 @@ export function notifyFadeCueComplete(fadeCueId: string, cues: Cue[]): void {
   const stepIsFadeOnly = running.stepCueIds.length === 1 && running.stepCueIds[0] === fadeCueId;
 
   if (stepIsFadeOnly) {
-    advanceRunningSequence(cues);
+    const rootCue = cues.find((c) => c.id === running.rootId);
+    if (!rootCue) {
+      cancelAllSequences();
+      return;
+    }
+    const steps = expandSequenceSteps(running.rootId, cues);
+    completeSequenceStep(rootCue, cues, steps, running.currentStep);
   }
 }
 
@@ -135,4 +167,9 @@ export function notifyFadeCueComplete(fadeCueId: string, cues: Cue[]): void {
 export function handleSequenceFadeCueCompleted(fadeCueId: string): void {
   const cues = getActiveCueListFromState(useProjectStore.getState())?.cues ?? [];
   notifyFadeCueComplete(fadeCueId, cues);
+}
+
+/** True when natural playback end is reported by the audio engine, not the progress tick. */
+export function cueCompletesViaAudioEngine(cue: Cue): boolean {
+  return cue.type === "audio" || cue.type === "video";
 }
