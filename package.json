@@ -28,7 +28,8 @@
     "tauri": "tauri",
     "tauri:dev": "npm run icons && tauri dev",
     "tauri:dev:ndi": "npm run icons && tauri dev --features ndi",
-    "prepare": "husky"
+    "prepare": "husky",
+    "deploy:experimental": "git diff-index --quiet HEAD -- && git push origin HEAD:experimental --force-with-lease"
   },
   "dependencies": {
     "@elemaudio/core": "^4.0.1",
