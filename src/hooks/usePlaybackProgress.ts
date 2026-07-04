@@ -12,7 +12,7 @@ import {
   isFinitePlaybackComplete,
   type PlaybackBounds,
 } from "../lib/playback-slice";
-import { cueCompletesViaAudioEngine, notifyStepPlaybackEnded } from "../lib/sequence-runner";
+import { notifyStepPlaybackEnded } from "../lib/sequence-runner";
 import { transportNowMs } from "../lib/transport-clock";
 import { isWaitCue } from "../lib/wait";
 import type { CuePlaybackProgress } from "../stores/playback";
@@ -213,13 +213,8 @@ export function usePlaybackProgress(): void {
 
       if (completedCueIds.length > 0) {
         useTransportStore.getState().stopMany(completedCueIds);
-        const sequenceAdvanceIds = completedCueIds.filter((id) => {
-          const cue = cueById.get(id);
-          return cue !== undefined && !cueCompletesViaAudioEngine(cue);
-        });
-        if (sequenceAdvanceIds.length > 0) {
-          notifyStepPlaybackEnded(sequenceAdvanceIds);
-        }
+        // Always notify — progress may stop audio before the engine onended callback runs.
+        notifyStepPlaybackEnded(completedCueIds);
       }
 
       const transport = useTransportStore.getState();

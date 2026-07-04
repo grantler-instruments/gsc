@@ -194,17 +194,21 @@ describe("advanceRunningSequence", () => {
   });
 });
 
-describe("notifyStepPlaybackEnded idempotency", () => {
+describe("completeSequenceStep idempotency", () => {
   beforeEach(() => {
     resetTransport();
+    vi.useFakeTimers();
   });
 
-  it("does not double-advance when called twice for the same step", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("does not double-advance when notify is called twice for the same step", () => {
     const cues = [
       testCue("seq", "Seq", "sequence"),
       testCue("a", "A", "audio", { parentId: "seq", assetPath: "a.wav" }),
       testCue("b", "B", "audio", { parentId: "seq", assetPath: "b.wav" }),
-      testCue("c", "C", "audio", { parentId: "seq", assetPath: "c.wav" }),
     ];
     resetTestProject(cues);
     useTransportStore.setState({
@@ -212,7 +216,7 @@ describe("notifyStepPlaybackEnded idempotency", () => {
       runningSequence: {
         rootId: "seq",
         currentStep: 0,
-        stepCount: 3,
+        stepCount: 2,
         stepCueIds: ["a"],
         stepStartedAtMs: 0,
       },
@@ -226,17 +230,6 @@ describe("notifyStepPlaybackEnded idempotency", () => {
       currentStep: 1,
       stepCueIds: ["b"],
     });
-  });
-});
-
-describe("completeSequenceStep idempotency", () => {
-  beforeEach(() => {
-    resetTransport();
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it("ignores a stale step timer after playback-end already advanced", () => {
