@@ -50,7 +50,10 @@ export function useAudioEngine(): void {
       const { cueLists, audioBuses } = useProjectStore.getState();
       if (activeCueIds.length === 0) {
         audioEngine.syncMixer(audioBuses, masterVolume);
-        void audioEngine.stopAll();
+        // Keep voices alive between sequence steps (brief gap after stopCue, before goMany).
+        if (!useTransportStore.getState().runningSequence) {
+          void audioEngine.stopAll();
+        }
         return;
       }
       const cues = allProjectCues({ cueLists });

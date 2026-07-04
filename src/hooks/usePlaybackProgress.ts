@@ -42,7 +42,16 @@ function needsProgressUpdates(
   activeCueIds: string[],
   runningSequence: RunningSequence | null,
 ): boolean {
-  return activeCueIds.length > 0 || runningSequenceHasWaitProgress(runningSequence);
+  return (
+    activeCueIds.length > 0 ||
+    runningSequence !== null ||
+    runningSequenceHasWaitProgress(runningSequence)
+  );
+}
+
+/** Progress tick may stop/notify; video completion stays on the media element sync path. */
+function cueCompletesViaProgressTick(cue: Cue): boolean {
+  return !isEngineManagedPlaybackCue(cue) || cue.type === "audio";
 }
 
 export function usePlaybackProgress(): void {
@@ -185,7 +194,7 @@ export function usePlaybackProgress(): void {
 
           if (isFinitePlaybackComplete(session.bounds, elapsedSec)) {
             const cue = cueById.get(cueId);
-            if (cue && !isEngineManagedPlaybackCue(cue)) {
+            if (cue && cueCompletesViaProgressTick(cue)) {
               completedCueIds.push(cueId);
             }
           }
@@ -212,7 +221,7 @@ export function usePlaybackProgress(): void {
           ...snapshot,
         });
 
-        if (isFinitePlaybackComplete(bounds, elapsedSec) && !isEngineManagedPlaybackCue(cue)) {
+        if (isFinitePlaybackComplete(bounds, elapsedSec) && cueCompletesViaProgressTick(cue)) {
           completedCueIds.push(cueId);
         }
       }

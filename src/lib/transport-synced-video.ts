@@ -19,6 +19,10 @@ import {
 export const TRANSPORT_CLOCK_SYNC_DRIFT_SEC = 0.08;
 export const TRANSPORT_CLOCK_SYNC_MIN_INTERVAL_MS = 500;
 
+/** `HTMLMediaElement` readyState values (avoid DOM global for unit tests). */
+const VIDEO_HAVE_METADATA = 1;
+const VIDEO_HAVE_CURRENT_DATA = 2;
+
 export function seekVideoElement(video: HTMLVideoElement, timeSec: number): void {
   const target = Math.max(0, timeSec);
   if (typeof video.fastSeek === "function") {
@@ -80,16 +84,18 @@ export interface TransportVideoSyncState {
   loopIterations: number;
   loopWrapped: boolean;
   lastClockSyncMs: number;
+  ended: boolean;
 }
 
 export function createTransportVideoSyncState(): TransportVideoSyncState {
-  return { loopIterations: 0, loopWrapped: false, lastClockSyncMs: 0 };
+  return { loopIterations: 0, loopWrapped: false, lastClockSyncMs: 0, ended: false };
 }
 
 export function resetTransportVideoSyncState(state: TransportVideoSyncState): void {
   state.loopIterations = 0;
   state.loopWrapped = false;
   state.lastClockSyncMs = 0;
+  state.ended = false;
 }
 
 export interface TransportVideoSyncHandlers {
@@ -97,18 +103,33 @@ export interface TransportVideoSyncHandlers {
   syncDrift?: boolean;
 }
 
-/** Seek to the transport clock; returns false when non-looping playback is complete. */
+function finishTransportVideoIfComplete(
+  video: HTMLVideoElement,
+  timing: TransportVideoTiming,
+  handlers: Pick<TransportVideoSyncHandlers, "onEnded">,
+  state?: TransportVideoSyncState,
+): boolean {
+  if (state?.ended) return true;
+  if (!timing.isPlaybackComplete()) return false;
+  if (state) state.ended = true;
+  video.pause();
+  handlers.onEnded?.();
+  return true;
+}
+
+/** Seek to the transport clock; returns false when playback is complete. */
 export function seekTransportVideoToClock(
   video: HTMLVideoElement,
   timing: TransportVideoTiming,
   handlers: Pick<TransportVideoSyncHandlers, "onEnded"> = {},
+  state?: TransportVideoSyncState,
 ): boolean {
-  if (video.readyState < HTMLMediaElement.HAVE_METADATA || !Number.isFinite(video.duration)) {
+  if (state?.ended) return false;
+  if (video.readyState < VIDEO_HAVE_METADATA || !Number.isFinite(video.duration)) {
     return true;
   }
 
-  if (!timing.isLooping() && timing.isPlaybackComplete()) {
-    handlers.onEnded?.();
+  if (finishTransportVideoIfComplete(video, timing, handlers, state)) {
     return false;
   }
 
@@ -121,9 +142,9 @@ function syncVideoDriftToTransportClock(
   timing: TransportVideoTiming,
   state: TransportVideoSyncState,
 ): void {
-  if (video.paused || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+  if (video.paused || video.readyState < VIDEO_HAVE_CURRENT_DATA) return;
   if (!Number.isFinite(video.duration)) return;
-  if (!timing.isLooping() && timing.isPlaybackComplete()) return;
+  if (timing.isPlaybackComplete()) return;
 
   const nowMs = transportNowMs();
   if (nowMs - state.lastClockSyncMs < TRANSPORT_CLOCK_SYNC_MIN_INTERVAL_MS) return;
@@ -149,6 +170,10 @@ export function onTransportVideoTimeUpdate(
 ): void {
   if (!Number.isFinite(video.duration)) return;
 
+  if (finishTransportVideoIfComplete(video, timing, handlers, state)) {
+    return;
+  }
+
   if (handlers.syncDrift !== false) {
     syncVideoDriftToTransportClock(video, timing, state);
   }
@@ -173,6 +198,7 @@ export function onTransportVideoTimeUpdate(
 
   const next = state.loopIterations + 1;
   if (next >= (timing.loopCount as number)) {
+    state.ended = true;
     video.pause();
     handlers.onEnded?.();
     return;
@@ -198,12 +224,14 @@ export function onTransportVideoEnded(
   }
 
   if (!timing.isLooping()) {
+    state.ended = true;
     handlers.onEnded?.();
     return;
   }
 
   state.loopIterations += 1;
   if (state.loopIterations >= (timing.loopCount as number)) {
+    state.ended = true;
     handlers.onEnded?.();
     return;
   }
@@ -228,11 +256,38 @@ export function attachTransportSyncedVideo(
 ): TransportVideoSyncAttachment {
   const state = createTransportVideoSyncState();
 
-  const seekToClock = () => seekTransportVideoToClock(video, getTiming(), handlers);
+  const seekToClock = () => seekTransportVideoToClock(video, getTiming(), handlers, state);
+
+  let clockPollRafId = 0;
+  let clockPolling = false;
+
+  const stopClockPoll = () => {
+    clockPolling = false;
+    if (clockPollRafId !== 0) {
+      cancelAnimationFrame(clockPollRafId);
+      clockPollRafId = 0;
+    }
+  };
+
+  const pollTransportClock = () => {
+    if (!clockPolling) return;
+    if (seekToClock()) {
+      clockPollRafId = requestAnimationFrame(pollTransportClock);
+    } else {
+      stopClockPoll();
+    }
+  };
+
+  const startClockPoll = () => {
+    if (clockPolling) return;
+    clockPolling = true;
+    clockPollRafId = requestAnimationFrame(pollTransportClock);
+  };
 
   const seekAndPlay = () => {
     if (seekToClock()) {
       void video.play().catch(() => {});
+      startClockPoll();
     }
   };
 
@@ -253,6 +308,7 @@ export function attachTransportSyncedVideo(
     seekAndPlay,
     resetState: () => resetTransportVideoSyncState(state),
     detach: () => {
+      stopClockPoll();
       video.removeEventListener("timeupdate", onTimeUpdate);
       video.removeEventListener("ended", onEnded);
     },
