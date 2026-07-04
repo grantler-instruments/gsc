@@ -94,6 +94,26 @@ export function runSequence(rootCue: Cue, cues: Cue[]): { started: boolean; step
   return { started: true, stepCount: steps.length };
 }
 
+/** Advance when all playback cues in the current step have stopped. */
+export function notifyStepPlaybackEnded(stoppedCueIds: string[]): void {
+  if (stoppedCueIds.length === 0) return;
+
+  const transport = useTransportStore.getState();
+  const running = transport.runningSequence;
+  if (!running) return;
+
+  const cues = getActiveCueListFromState(useProjectStore.getState())?.cues ?? [];
+  const playbackIds = playbackCueIdsInStep(running.stepCueIds, cues);
+  const stoppedPlayback = stoppedCueIds.filter((id) => playbackIds.includes(id));
+  if (stoppedPlayback.length === 0) return;
+
+  const stillActive = playbackIds.filter((id) => transport.activeCueIds.includes(id));
+  if (stillActive.length > 0) return;
+
+  clearSequenceTimers();
+  advanceRunningSequence(cues);
+}
+
 /** When a fade cue finishes, advance if the sequence is waiting on it. */
 export function notifyFadeCueComplete(fadeCueId: string, cues: Cue[]): void {
   const running = useTransportStore.getState().runningSequence;

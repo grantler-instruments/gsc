@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useTransportStore } from "../stores/transport";
-import { testCue } from "../test/fixtures/cues";
-import { advanceRunningSequence, notifyFadeCueComplete, runSequence } from "./sequence-runner";
+import { resetTestProject, testCue } from "../test/fixtures/cues";
+import {
+  advanceRunningSequence,
+  notifyFadeCueComplete,
+  notifyStepPlaybackEnded,
+  runSequence,
+} from "./sequence-runner";
 
 function resetTransport() {
   useTransportStore.setState({
@@ -101,6 +106,62 @@ describe("notifyFadeCueComplete", () => {
     });
 
     notifyFadeCueComplete("fade", cues);
+
+    expect(useTransportStore.getState().runningSequence?.currentStep).toBe(0);
+  });
+});
+
+describe("notifyStepPlaybackEnded", () => {
+  beforeEach(() => {
+    resetTransport();
+  });
+
+  it("advances when the only playback cue in the step stops", () => {
+    const cues = [
+      testCue("seq", "Seq", "sequence"),
+      testCue("a", "A", "audio", { parentId: "seq", assetPath: "a.wav" }),
+      testCue("b", "B", "audio", { parentId: "seq", assetPath: "b.wav" }),
+    ];
+    resetTestProject(cues);
+    useTransportStore.setState({
+      activeCueIds: [],
+      runningSequence: {
+        rootId: "seq",
+        currentStep: 0,
+        stepCount: 2,
+        stepCueIds: ["a"],
+        stepStartedAtMs: 0,
+      },
+    });
+
+    notifyStepPlaybackEnded(["a"]);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      rootId: "seq",
+      currentStep: 1,
+      stepCueIds: ["b"],
+    });
+  });
+
+  it("waits until all parallel playback cues in the step stop", () => {
+    const cues = [
+      testCue("par", "Par", "group"),
+      testCue("a", "A", "audio", { parentId: "par", assetPath: "a.wav" }),
+      testCue("b", "B", "audio", { parentId: "par", assetPath: "b.wav" }),
+    ];
+    resetTestProject(cues);
+    useTransportStore.setState({
+      activeCueIds: ["b"],
+      runningSequence: {
+        rootId: "par",
+        currentStep: 0,
+        stepCount: 1,
+        stepCueIds: ["a", "b"],
+        stepStartedAtMs: 0,
+      },
+    });
+
+    notifyStepPlaybackEnded(["a"]);
 
     expect(useTransportStore.getState().runningSequence?.currentStep).toBe(0);
   });

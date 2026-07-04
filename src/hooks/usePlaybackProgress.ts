@@ -12,6 +12,7 @@ import {
   isFinitePlaybackComplete,
   type PlaybackBounds,
 } from "../lib/playback-slice";
+import { notifyStepPlaybackEnded } from "../lib/sequence-runner";
 import { isWaitCue } from "../lib/wait";
 import type { CuePlaybackProgress } from "../stores/playback";
 import { usePlaybackStore } from "../stores/playback";
@@ -212,6 +213,7 @@ export function usePlaybackProgress(): void {
 
       if (completedCueIds.length > 0) {
         useTransportStore.getState().stopMany(completedCueIds);
+        notifyStepPlaybackEnded(completedCueIds);
       }
 
       const transport = useTransportStore.getState();
