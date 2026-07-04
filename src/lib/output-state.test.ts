@@ -106,4 +106,89 @@ describe("buildMultiviewPreviewState", () => {
     expect(preview.destinations[1]?.busId).toBe("bus-lobby");
     expect(preview.destinations[1]?.layers.map((layer) => layer.cueId)).toEqual(["v2"]);
   });
+
+  it("includes bus effects and opacity in preview destinations", async () => {
+    const { useProjectStore } = await import("../stores/project");
+    const { useTransportStore } = await import("../stores/transport");
+
+    const list = createCueList("Main");
+    list.cues = [
+      testCue("v2", "Lobby clip", "video", {
+        assetPath: "/assets/lobby.mp4",
+        videoBusId: "bus-lobby",
+      }),
+    ];
+
+    useProjectStore.setState({
+      cueLists: [list],
+      activeCueListId: list.id,
+      videoBuses: [
+        {
+          id: "bus-lobby",
+          name: "Lobby",
+          opacity: 0.75,
+          effects: [
+            {
+              id: "fx-blur",
+              type: "blur",
+              enabled: true,
+              params: { radius: 4, mix: 1 },
+            },
+          ],
+        },
+      ],
+    });
+    useTransportStore.setState({
+      activeCueIds: ["v2"],
+      cueStartedAtMs: { v2: 1000 },
+    });
+
+    const preview = await buildMultiviewPreviewState(3);
+    const lobby = preview.destinations.find((destination) => destination.busId === "bus-lobby");
+
+    expect(lobby?.busOpacity).toBe(0.75);
+    expect(lobby?.busEffects).toEqual([
+      {
+        id: "fx-blur",
+        type: "blur",
+        enabled: true,
+        params: { radius: 4, mix: 1 },
+      },
+    ]);
+  });
+
+  it("includes master output effects and opacity on the main destination", async () => {
+    const { useProjectStore } = await import("../stores/project");
+    const { useTransportStore } = await import("../stores/transport");
+
+    const list = createCueList("Main");
+    list.cues = [testCue("v1", "Main clip", "video", { assetPath: "/assets/main.mp4" })];
+
+    useProjectStore.setState({
+      cueLists: [list],
+      activeCueListId: list.id,
+      videoBuses: [],
+      masterVideoOutputOpacity: 0.5,
+      masterVideoOutputEffects: [
+        {
+          id: "fx-grade",
+          type: "colorGrade",
+          enabled: true,
+          params: { brightness: 0.1, contrast: 1, saturation: 1 },
+        },
+      ],
+    });
+    useTransportStore.setState({
+      activeCueIds: ["v1"],
+      cueStartedAtMs: { v1: 1000 },
+    });
+
+    const master = await buildOutputState(4, undefined);
+    const preview = await buildMultiviewPreviewState(4);
+
+    expect(master.busOpacity).toBe(0.5);
+    expect(master.busEffects?.[0]?.type).toBe("colorGrade");
+    expect(preview.destinations[0]?.busOpacity).toBe(0.5);
+    expect(preview.destinations[0]?.busEffects?.[0]?.type).toBe("colorGrade");
+  });
 });

@@ -1,8 +1,11 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useVisualOutputPreviews } from "../hooks/useVisualOutputPreviews";
-import { VisualStage } from "./VisualStage";
+import { useTransportStore } from "../stores/transport";
+import { OutputImperativeStage } from "./OutputImperativeStage";
+import { visualStageEmptySx } from "./visualStageSx";
 
 interface VisualMonitorProps {
   /** Sidebar layout: 16:9 stage that sizes to panel width. */
@@ -17,7 +20,15 @@ function previewDestinationKey(busId: string | undefined): string {
 export function VisualMonitor({ variant = "default" }: VisualMonitorProps) {
   const { t } = useTranslation();
   const destinations = useVisualOutputPreviews();
+  const stopCue = useTransportStore((s) => s.stopCue);
   const sidebar = variant === "sidebar";
+
+  const handleVideoEnded = useCallback(
+    (cueId: string) => {
+      stopCue(cueId);
+    },
+    [stopCue],
+  );
 
   return (
     <Box
@@ -75,14 +86,29 @@ export function VisualMonitor({ variant = "default" }: VisualMonitorProps) {
             >
               {destination.busName}
             </Typography>
-            <VisualStage
-              layers={destination.layers}
+            <Box
               sx={{
+                position: "relative",
                 aspectRatio: "16 / 9",
                 height: sidebar ? "auto" : 120,
                 minHeight: sidebar ? 0 : 120,
+                bgcolor: "#000",
+                overflow: "hidden",
               }}
-            />
+            >
+              {destination.layers.length === 0 && (
+                <Typography component="span" sx={visualStageEmptySx}>
+                  {t("output.noActiveVisualCues")}
+                </Typography>
+              )}
+              <OutputImperativeStage
+                layers={destination.layers}
+                busEffects={destination.busEffects}
+                busOpacity={destination.busOpacity}
+                registerStage={false}
+                onVideoEnded={handleVideoEnded}
+              />
+            </Box>
           </Box>
         ))}
       </Box>

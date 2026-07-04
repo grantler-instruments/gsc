@@ -22,4 +22,5 @@ export const initialProjectData = {
   audioBuses: [],
   videoBuses: [],
   masterVideoOutputName: defaultMasterVideoOutputName(),
+  masterVideoOutputOpacity: 1,
 };

@@ -33,6 +33,8 @@ export function createSnapshotActions(
         audioBuses,
         videoBuses,
         masterVideoOutputName,
+        masterVideoOutputOpacity,
+        masterVideoOutputEffects,
       } = get();
       return cueListsToSnapshot(
         id,
@@ -48,6 +50,8 @@ export function createSnapshotActions(
         description,
         videoBuses,
         masterVideoOutputName,
+        masterVideoOutputOpacity,
+        masterVideoOutputEffects,
       );
     },
   };

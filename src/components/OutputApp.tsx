@@ -9,8 +9,8 @@ import { useOutputWindowLifecycle } from "../hooks/useOutputWindowLifecycle";
 import { useResolvedOutputLayers } from "../hooks/useResolvedOutputLayers";
 import { storeOutputAssetBlob } from "../lib/output-asset-bridge";
 import { createOutputChannel, isOutputMessage, postRequestState } from "../lib/output-channel";
-import { isOutputStateFadeOnly, outputStatesEqual } from "../lib/output-layer-sync";
-import { applyOutputLayerOpacities } from "../lib/output-opacity";
+import { isOutputStateVisualMixOnly, outputStatesEqual } from "../lib/output-layer-sync";
+import { applyOutputBusConfig, applyOutputLayerOpacities } from "../lib/output-opacity";
 import { getCurrentOutputBusId } from "../platform/output-window";
 import type { OutputState } from "../types/output";
 import { OutputImperativeStage } from "./OutputImperativeStage";
@@ -78,8 +78,12 @@ export function OutputApp() {
 
       if (outputStatesEqual(prev, next)) return;
 
-      if (isOutputStateFadeOnly(prev, next)) {
+      if (isOutputStateVisualMixOnly(prev, next)) {
         applyOutputLayerOpacities(next.layers);
+        applyOutputBusConfig({
+          effects: next.busEffects ?? [],
+          opacity: next.busOpacity ?? 1,
+        });
         return;
       }
 
@@ -112,7 +116,11 @@ export function OutputApp() {
           overflow: "hidden",
         }}
       >
-        <OutputImperativeStage layers={layers} />
+        <OutputImperativeStage
+          layers={layers}
+          busEffects={state.busEffects}
+          busOpacity={state.busOpacity}
+        />
       </Box>
     </>
   );

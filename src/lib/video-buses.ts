@@ -2,6 +2,7 @@ import { t } from "../i18n/t";
 import type { Cue } from "../types/cue";
 import type { VideoBus } from "../types/video-bus";
 import { randomId } from "./random-id";
+import { normalizeVideoEffects } from "./video-effects";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
@@ -31,11 +32,13 @@ export function defaultVideoBusName(buses: VideoBus[]): string {
 }
 
 function normalizeVideoBusFields(raw: Partial<VideoBus> & Pick<VideoBus, "id">): VideoBus {
+  const effects = normalizeVideoEffects(raw.effects);
   return {
     id: raw.id,
     name: raw.name?.trim() || "Untitled output",
     opacity: clamp01(raw.opacity ?? 1),
     ...(raw.muted ? { muted: true } : {}),
+    ...(effects.length > 0 ? { effects } : {}),
   };
 }
 
@@ -96,4 +99,8 @@ export function normalizeCueVideoBus(cue: Cue, buses: VideoBus[]): Cue {
 
 export function busEffectiveOpacity(bus: VideoBus): number {
   return bus.muted ? 0 : clamp01(bus.opacity);
+}
+
+export function masterVideoOutputEffectiveOpacity(opacity: number | undefined): number {
+  return clamp01(opacity ?? 1);
 }

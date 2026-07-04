@@ -17,6 +17,7 @@ import { getPlaybackSliceSec } from "./playback-slice";
 import {
   busEffectiveOpacity,
   findVideoBus,
+  masterVideoOutputEffectiveOpacity,
   normalizeMasterVideoOutputName,
   resolveCueVideoBusId,
 } from "./video-buses";
@@ -25,11 +26,7 @@ function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
-async function buildLayer(
-  cue: Cue,
-  goAtMs: number,
-  bus: VideoBus | undefined,
-): Promise<OutputLayer | undefined> {
+async function buildLayer(cue: Cue, goAtMs: number): Promise<OutputLayer | undefined> {
   if ((cue.type !== "video" && cue.type !== "image") || !cue.assetPath) {
     return undefined;
   }
@@ -50,14 +47,13 @@ async function buildLayer(
   const inTime = cue.inTime ?? 0;
   const loopCount = cue.type === "video" ? getLoopPlayCount(cue) : 1;
   const cueOpacity = resolveEffectiveOpacity(cue.id, clamp01(cue.opacity ?? 1));
-  const busOpacity = bus ? busEffectiveOpacity(bus) : 1;
 
   return {
     cueId: cue.id,
     type: cue.type,
     assetPath: cue.assetPath,
     objectUrl,
-    opacity: clamp01(cueOpacity * busOpacity),
+    opacity: cueOpacity,
     volume: resolveEffectiveVolume(cue.id, clamp01(cue.volume ?? 1)),
     inTime,
     outTime: cue.outTime,
@@ -98,7 +94,6 @@ async function buildLayersForActiveCues(
   const { cueLists, videoBuses, id: projectId } = useProjectStore.getState();
 
   const now = Date.now();
-  const destinationBus = filterBusId ? findVideoBus(videoBuses, filterBusId) : undefined;
 
   const layers: OutputLayer[] = [];
   for (const cueId of activeCueIds) {
@@ -109,7 +104,7 @@ async function buildLayersForActiveCues(
     const progress = progressByCueId[cueId];
     const goAtMs = cueStartedAtMs[cueId] ?? (progress ? now - progress.elapsedSec * 1000 : now);
 
-    const layer = await buildLayer(cue, goAtMs, destinationBus);
+    const layer = await buildLayer(cue, goAtMs);
     if (layer) layers.push(layer);
   }
 
@@ -122,7 +117,8 @@ export async function buildOutputState(
   filterBusId?: string,
 ): Promise<OutputState> {
   const { projectId, layers } = await buildLayersForActiveCues(filterBusId);
-  const { cueLists, videoBuses } = useProjectStore.getState();
+  const { cueLists, videoBuses, masterVideoOutputEffects, masterVideoOutputOpacity } =
+    useProjectStore.getState();
   const { activeCueIds } = useTransportStore.getState();
   const outputBus = filterBusId ? findVideoBus(videoBuses, filterBusId) : undefined;
   const masterName = normalizeMasterVideoOutputName(
@@ -144,20 +140,30 @@ export async function buildOutputState(
       ? { busId: filterBusId, ...(outputBus ? { busName: outputBus.name } : {}) }
       : { busName: masterName }),
     layers,
+    busOpacity: outputBus
+      ? busEffectiveOpacity(outputBus)
+      : masterVideoOutputEffectiveOpacity(masterVideoOutputOpacity),
+    ...(outputBus?.effects?.length
+      ? { busEffects: outputBus.effects }
+      : masterVideoOutputEffects?.length
+        ? { busEffects: masterVideoOutputEffects }
+        : {}),
   };
 }
 
 /** One preview tile per output window (master + each video bus). */
 export async function buildMultiviewPreviewState(revision: number): Promise<MultiviewPreviewState> {
   const videoBuses = useProjectStore.getState().videoBuses;
-  const masterName = normalizeMasterVideoOutputName(
-    useProjectStore.getState().masterVideoOutputName,
-  );
+  const { masterVideoOutputName, masterVideoOutputEffects, masterVideoOutputOpacity } =
+    useProjectStore.getState();
+  const masterName = normalizeMasterVideoOutputName(masterVideoOutputName);
   const master = await buildLayersForActiveCues(undefined);
   const destinations: MultiviewPreviewState["destinations"] = [
     {
       busName: masterName,
       layers: master.layers,
+      busOpacity: masterVideoOutputEffectiveOpacity(masterVideoOutputOpacity),
+      ...(masterVideoOutputEffects?.length ? { busEffects: masterVideoOutputEffects } : {}),
     },
   ];
 
@@ -167,6 +173,8 @@ export async function buildMultiviewPreviewState(revision: number): Promise<Mult
       busId: bus.id,
       busName: bus.name,
       layers,
+      busOpacity: busEffectiveOpacity(bus),
+      ...(bus.effects?.length ? { busEffects: bus.effects } : {}),
     });
   }
 

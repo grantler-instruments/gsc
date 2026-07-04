@@ -4,6 +4,7 @@ import type { Fixture } from "../types/fixture";
 import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
 import type { VideoBus } from "../types/video-bus";
+import type { VideoEffect } from "../types/video-effect";
 import { normalizeAudioBuses, normalizeCueAudioBus } from "./audio-buses";
 import type { CueList } from "./cue-lists";
 import { defaultDmxCueData, normalizeDmxCueData } from "./dmx";
@@ -12,11 +13,13 @@ import { normalizeFixtures } from "./fixtures";
 import { defaultMidiCueData } from "./midi";
 import { defaultOscCueData, normalizeOscArgs } from "./osc";
 import {
+  masterVideoOutputEffectiveOpacity,
   normalizeCueVideoBus,
   normalizeMasterVideoOutputName,
   normalizeVideoBuses,
   serializeMasterVideoOutputName,
 } from "./video-buses";
+import { normalizeVideoEffects } from "./video-effects";
 
 function normalizeCues(
   cues: Cue[],
@@ -65,11 +68,14 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   audioBuses: AudioBus[];
   videoBuses: VideoBus[];
   masterVideoOutputName: string;
+  masterVideoOutputOpacity: number;
+  masterVideoOutputEffects?: VideoEffect[];
 } {
   const fixtures = normalizeFixtures(snap.fixtures);
   const fixturePlot = normalizeFixturePlot(snap.fixturePlot, fixtures);
   const audioBuses = normalizeAudioBuses(snap.audioBuses);
   const videoBuses = normalizeVideoBuses(snap.videoBuses);
+  const masterVideoOutputEffects = normalizeVideoEffects(snap.masterVideoOutputEffects);
   const cueLists: CueList[] = snap.cueLists.map((list) => ({
     id: list.id,
     name: list.name,
@@ -92,6 +98,8 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
     audioBuses,
     videoBuses,
     masterVideoOutputName: normalizeMasterVideoOutputName(snap.masterVideoOutputName),
+    masterVideoOutputOpacity: masterVideoOutputEffectiveOpacity(snap.masterVideoOutputOpacity),
+    ...(masterVideoOutputEffects.length > 0 ? { masterVideoOutputEffects } : {}),
   };
 }
 
@@ -109,10 +117,14 @@ export function cueListsToSnapshot(
   description?: string,
   videoBuses: VideoBus[] = [],
   masterVideoOutputName?: string,
+  masterVideoOutputOpacity?: number,
+  masterVideoOutputEffects?: VideoEffect[],
 ): ProjectSnapshot {
   const normalizedFixtures = normalizeFixtures(fixtures);
   const normalizedMasterName = normalizeMasterVideoOutputName(masterVideoOutputName);
   const serializedMasterName = serializeMasterVideoOutputName(normalizedMasterName);
+  const normalizedMasterOpacity = masterVideoOutputEffectiveOpacity(masterVideoOutputOpacity);
+  const normalizedMasterEffects = normalizeVideoEffects(masterVideoOutputEffects);
   return {
     version: 2,
     id,
@@ -132,5 +144,9 @@ export function cueListsToSnapshot(
     ...(audioBuses.length > 0 ? { audioBuses: normalizeAudioBuses(audioBuses) } : {}),
     ...(videoBuses.length > 0 ? { videoBuses: normalizeVideoBuses(videoBuses) } : {}),
     ...(serializedMasterName ? { masterVideoOutputName: serializedMasterName } : {}),
+    ...(normalizedMasterOpacity < 1 ? { masterVideoOutputOpacity: normalizedMasterOpacity } : {}),
+    ...(normalizedMasterEffects.length > 0
+      ? { masterVideoOutputEffects: normalizedMasterEffects }
+      : {}),
   };
 }

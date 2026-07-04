@@ -15,6 +15,8 @@ export function useVisualOutputPreviews(): OutputPreviewDestination[] {
   const frameMs = useFadeStore((s) => s.frameMs);
   const videoBuses = useProjectStore((s) => s.videoBuses);
   const masterVideoOutputName = useProjectStore((s) => s.masterVideoOutputName);
+  const masterVideoOutputOpacity = useProjectStore((s) => s.masterVideoOutputOpacity);
+  const masterVideoOutputEffects = useProjectStore((s) => s.masterVideoOutputEffects);
   const [destinations, setDestinations] = useState<OutputPreviewDestination[]>([]);
 
   useEffect(() => {
@@ -25,6 +27,8 @@ export function useVisualOutputPreviews(): OutputPreviewDestination[] {
     void frameMs;
     void videoBuses;
     void masterVideoOutputName;
+    void masterVideoOutputOpacity;
+    void masterVideoOutputEffects;
     let cancelled = false;
     void buildMultiviewPreviewState(0).then((state) => {
       if (!cancelled) setDestinations(state.destinations);
@@ -40,6 +44,8 @@ export function useVisualOutputPreviews(): OutputPreviewDestination[] {
     frameMs,
     videoBuses,
     masterVideoOutputName,
+    masterVideoOutputOpacity,
+    masterVideoOutputEffects,
   ]);
 
   return destinations;

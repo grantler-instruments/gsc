@@ -297,6 +297,8 @@ export function useOutputPublisher(): void {
         s.cueLists !== prev.cueLists ||
         s.activeCueListId !== prev.activeCueListId ||
         s.masterVideoOutputName !== prev.masterVideoOutputName ||
+        s.masterVideoOutputOpacity !== prev.masterVideoOutputOpacity ||
+        s.masterVideoOutputEffects !== prev.masterVideoOutputEffects ||
         s.videoBuses !== prev.videoBuses;
 
       if (routingChanged || cuesChanged) {

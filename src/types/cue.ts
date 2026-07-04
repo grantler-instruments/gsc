@@ -86,6 +86,7 @@ import type { Fixture } from "./fixture";
 import type { FixturePlot } from "./fixture-plot";
 import type { MidiMapping } from "./midi-mapping";
 import type { VideoBus } from "./video-bus";
+import type { VideoEffect } from "./video-effect";
 
 export interface Cue {
   id: string;
@@ -170,4 +171,8 @@ export interface ProjectSnapshot {
   videoBuses?: VideoBus[];
   /** Display name for the main output window; defaults to "Main". */
   masterVideoOutputName?: string;
+  /** 0–1 master dimmer on the main output window. */
+  masterVideoOutputOpacity?: number;
+  /** Insert effects on the main output window. */
+  masterVideoOutputEffects?: VideoEffect[];
 }

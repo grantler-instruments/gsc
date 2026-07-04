@@ -20,6 +20,18 @@ export function applyRenumber(cues: Cue[]): Cue[] {
   return renumberCueList(cues);
 }
 
+/** Merge a cue patch and drop cleared optional routing fields. */
+export function mergeCuePatch(cue: Cue, patch: Partial<Cue>): Cue {
+  const merged = { ...cue, ...patch };
+  if ("videoBusId" in patch && patch.videoBusId === undefined) {
+    delete merged.videoBusId;
+  }
+  if ("audioBusId" in patch && patch.audioBusId === undefined) {
+    delete merged.audioBusId;
+  }
+  return merged;
+}
+
 export function getActiveCueListFromState(state: {
   cueLists: CueList[];
   activeCueListId: string;

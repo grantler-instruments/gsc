@@ -50,6 +50,8 @@ function captureEntry(state: ProjectPersistSlice & { cueLists: CueList[] }): Pro
       state.description,
       state.videoBuses,
       state.masterVideoOutputName,
+      state.masterVideoOutputOpacity,
+      state.masterVideoOutputEffects,
     ),
     selections: captureSelections(state.cueLists),
   };

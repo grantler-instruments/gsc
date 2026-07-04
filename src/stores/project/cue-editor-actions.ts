@@ -29,6 +29,7 @@ import {
   firstCueOrStub,
   getActiveCueListFromState,
   isMediaCueType,
+  mergeCuePatch,
   patchActiveList,
 } from "./helpers";
 import type { ProjectState } from "./types";
@@ -291,7 +292,7 @@ export function createCueEditorActions(
               list.cues.map((c) =>
                 c.id === id
                   ? normalizeCueVideoBus(
-                      normalizeCueAudioBus({ ...c, ...patch }, s.audioBuses),
+                      normalizeCueAudioBus(mergeCuePatch(c, patch), s.audioBuses),
                       s.videoBuses,
                     )
                   : c,

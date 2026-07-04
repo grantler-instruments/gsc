@@ -1,3 +1,5 @@
+import type { VideoEffect } from "./video-effect";
+
 /** Visual layer snapshot sent to the output window. */
 export interface OutputLayer {
   cueId: string;
@@ -30,6 +32,10 @@ export interface OutputState {
   /** Active transport cue ids — output keeps showing while non-empty even if layers are still loading. */
   activeCueIds: string[];
   layers: OutputLayer[];
+  /** Bus insert effects — applied after layer composite in the output compositor. */
+  busEffects?: VideoEffect[];
+  /** 0–1 master dimmer applied after bus effects. */
+  busOpacity?: number;
 }
 
 /** One destination in the in-app multiview preview. */
@@ -38,6 +44,10 @@ export interface OutputPreviewDestination {
   busId?: string;
   busName: string;
   layers: OutputLayer[];
+  /** Bus insert effects — same pipeline as the output window compositor. */
+  busEffects?: VideoEffect[];
+  /** 0–1 master dimmer applied after bus effects. */
+  busOpacity?: number;
 }
 
 export interface MultiviewPreviewState {

@@ -1,3 +1,5 @@
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CloseIcon from "@mui/icons-material/Close";
 import OndemandVideoOutlinedIcon from "@mui/icons-material/OndemandVideoOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
@@ -18,6 +20,8 @@ import { openOutputWindow, openVideoBusOutputWindow } from "../../platform/outpu
 import { useProjectStore } from "../../stores/project";
 import { useUiStore } from "../../stores/ui";
 import type { VideoBus } from "../../types/video-bus";
+import type { VideoEffectParams, VideoEffectType } from "../../types/video-effect";
+import { premixerContentWidth, VideoBusPremixer } from "./VideoBusPremixer";
 
 const DOCK_RESIZE_HANDLE_HEIGHT = 6;
 const STRIP_WIDTH = 132;
@@ -27,8 +31,21 @@ function MasterOutputStrip() {
   const showMode = useUiStore((s) => s.showMode);
   const canEdit = !showMode;
   const masterVideoOutputName = useProjectStore((s) => s.masterVideoOutputName);
+  const masterVideoOutputOpacity = useProjectStore((s) => s.masterVideoOutputOpacity);
+  const masterVideoOutputEffects = useProjectStore((s) => s.masterVideoOutputEffects);
   const updateMasterVideoOutputName = useProjectStore((s) => s.updateMasterVideoOutputName);
+  const updateMasterVideoOutputOpacity = useProjectStore((s) => s.updateMasterVideoOutputOpacity);
+  const addMasterVideoOutputEffect = useProjectStore((s) => s.addMasterVideoOutputEffect);
+  const updateMasterVideoOutputEffect = useProjectStore((s) => s.updateMasterVideoOutputEffect);
+  const removeMasterVideoOutputEffect = useProjectStore((s) => s.removeMasterVideoOutputEffect);
+  const reorderMasterVideoOutputEffectRelative = useProjectStore(
+    (s) => s.reorderMasterVideoOutputEffectRelative,
+  );
   const [openError, setOpenError] = useState<string | null>(null);
+  const [premixerOpen, setPremixerOpen] = useState((masterVideoOutputEffects?.length ?? 0) > 0);
+  const effectsHost = { effects: masterVideoOutputEffects };
+  const premixerWidth = premixerContentWidth(effectsHost);
+  const faderWidth = STRIP_WIDTH;
 
   const handleOpen = useCallback(async () => {
     setOpenError(null);
@@ -44,11 +61,11 @@ function MasterOutputStrip() {
       sx={{
         flexShrink: 0,
         height: "100%",
-        width: STRIP_WIDTH,
-        minWidth: STRIP_WIDTH,
         display: "flex",
         flexDirection: "column",
         mr: 1,
+        width: premixerOpen ? premixerWidth + faderWidth + 8 : faderWidth + 16,
+        minWidth: premixerOpen ? premixerWidth + faderWidth + 8 : faderWidth + 16,
         border: 1,
         borderColor: "primary.main",
         borderRadius: 1,
@@ -56,7 +73,10 @@ function MasterOutputStrip() {
       }}
     >
       <Stack
+        direction="row"
         sx={{
+          alignItems: "center",
+          gap: 0.25,
           px: 0.75,
           py: 0.5,
           borderBottom: 1,
@@ -65,6 +85,19 @@ function MasterOutputStrip() {
           minWidth: 0,
         }}
       >
+        <IconButton
+          size="small"
+          title={premixerOpen ? t("videoOutput.collapsePremixer") : t("videoOutput.expandPremixer")}
+          aria-expanded={premixerOpen}
+          onClick={() => setPremixerOpen((open) => !open)}
+          sx={{ flexShrink: 0, p: 0.5 }}
+        >
+          {premixerOpen ? (
+            <ChevronLeftIcon sx={{ fontSize: 16 }} />
+          ) : (
+            <ChevronRightIcon sx={{ fontSize: 16 }} />
+          )}
+        </IconButton>
         <TextField
           size="small"
           value={masterVideoOutputName}
@@ -72,41 +105,110 @@ function MasterOutputStrip() {
           onChange={(event) => updateMasterVideoOutputName(event.target.value)}
           variant="standard"
           sx={{
-            width: "100%",
+            flex: 1,
+            minWidth: 0,
             "& .MuiInput-root": { fontSize: 12, fontWeight: 600 },
             "& .MuiInput-input": { py: 0.25 },
           }}
         />
       </Stack>
 
-      <Stack
-        spacing={1}
+      <Box
         sx={{
           flex: 1,
           minHeight: 0,
-          px: 1,
-          py: 1,
-          justifyContent: "flex-end",
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "row",
+          overflow: "auto",
         }}
       >
-        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10, lineHeight: 1.4 }}>
-          {t("videoOutput.masterStripHint")}
-        </Typography>
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
-          onClick={handleOpen}
-          sx={{ minWidth: 0, px: 0.75, fontSize: 11 }}
-        >
-          {t("videoOutput.openWindow")}
-        </Button>
-        {openError && (
-          <Typography variant="caption" color="error" sx={{ fontSize: 10 }}>
-            {openError}
-          </Typography>
+        {premixerOpen && (
+          <Box
+            sx={{
+              width: premixerWidth,
+              minWidth: premixerWidth,
+              flexShrink: 0,
+              display: "flex",
+              flexDirection: "column",
+              borderRight: 1,
+              borderColor: "divider",
+              overflow: "auto",
+            }}
+          >
+            <VideoBusPremixer
+              host={effectsHost}
+              canEdit={canEdit}
+              onAddEffect={(type) => {
+                addMasterVideoOutputEffect(type);
+                setPremixerOpen(true);
+              }}
+              onUpdateEffect={(effectId, patch) => updateMasterVideoOutputEffect(effectId, patch)}
+              onRemoveEffect={removeMasterVideoOutputEffect}
+              onReorderEffect={reorderMasterVideoOutputEffectRelative}
+            />
+          </Box>
         )}
-      </Stack>
+
+        <Stack
+          spacing={1}
+          sx={{
+            width: faderWidth,
+            minWidth: faderWidth,
+            flexShrink: 0,
+            minHeight: 0,
+            px: 1,
+            py: 1,
+            alignItems: "stretch",
+            justifyContent: "flex-end",
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", color: "text.secondary" }}
+          >
+            {t("videoOutput.opacity")}
+          </Typography>
+          <Slider
+            orientation="vertical"
+            min={0}
+            max={1}
+            step={0.01}
+            value={masterVideoOutputOpacity}
+            disabled={!canEdit}
+            onChange={(_, value) => updateMasterVideoOutputOpacity(value as number)}
+            sx={{
+              flex: 1,
+              mx: "auto",
+              color: "primary.main",
+              "& .MuiSlider-rail": { width: 3, opacity: 0.35 },
+              "& .MuiSlider-track": { width: 3, border: "none" },
+              "& .MuiSlider-thumb": { width: 12, height: 12 },
+            }}
+          />
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ fontSize: 10, lineHeight: 1.4 }}
+          >
+            {t("videoOutput.masterStripHint")}
+          </Typography>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
+            onClick={handleOpen}
+            sx={{ minWidth: 0, px: 0.75, fontSize: 11 }}
+          >
+            {t("videoOutput.openWindow")}
+          </Button>
+          {openError && (
+            <Typography variant="caption" color="error" sx={{ fontSize: 10 }}>
+              {openError}
+            </Typography>
+          )}
+        </Stack>
+      </Box>
     </Box>
   );
 }
@@ -116,11 +218,33 @@ interface OutputStripProps {
   canEdit: boolean;
   onUpdate: (patch: Partial<Omit<VideoBus, "id">>) => void;
   onRemove: () => void;
+  onAddEffect: (type: VideoEffectType) => void;
+  onUpdateEffect: (
+    effectId: string,
+    patch: {
+      params?: Partial<VideoEffectParams>;
+      enabled?: boolean;
+    },
+  ) => void;
+  onRemoveEffect: (effectId: string) => void;
+  onReorderEffect: (draggedId: string, targetId: string, place: "before" | "after") => void;
 }
 
-function OutputStrip({ bus, canEdit, onUpdate, onRemove }: OutputStripProps) {
+function OutputStrip({
+  bus,
+  canEdit,
+  onUpdate,
+  onRemove,
+  onAddEffect,
+  onUpdateEffect,
+  onRemoveEffect,
+  onReorderEffect,
+}: OutputStripProps) {
   const { t } = useTranslation();
   const [openError, setOpenError] = useState<string | null>(null);
+  const [premixerOpen, setPremixerOpen] = useState((bus.effects?.length ?? 0) > 0);
+  const premixerWidth = premixerContentWidth(bus);
+  const faderWidth = STRIP_WIDTH;
 
   const handleOpen = useCallback(async () => {
     setOpenError(null);
@@ -136,11 +260,11 @@ function OutputStrip({ bus, canEdit, onUpdate, onRemove }: OutputStripProps) {
       sx={{
         flexShrink: 0,
         height: "100%",
-        width: STRIP_WIDTH,
-        minWidth: STRIP_WIDTH,
         display: "flex",
         flexDirection: "column",
         mr: 1,
+        width: premixerOpen ? premixerWidth + faderWidth + 8 : faderWidth + 16,
+        minWidth: premixerOpen ? premixerWidth + faderWidth + 8 : faderWidth + 16,
         border: 1,
         borderColor: "divider",
         borderRadius: 1,
@@ -160,6 +284,19 @@ function OutputStrip({ bus, canEdit, onUpdate, onRemove }: OutputStripProps) {
           minWidth: 0,
         }}
       >
+        <IconButton
+          size="small"
+          title={premixerOpen ? t("videoOutput.collapsePremixer") : t("videoOutput.expandPremixer")}
+          aria-expanded={premixerOpen}
+          onClick={() => setPremixerOpen((open) => !open)}
+          sx={{ flexShrink: 0, p: 0.5 }}
+        >
+          {premixerOpen ? (
+            <ChevronLeftIcon sx={{ fontSize: 16 }} />
+          ) : (
+            <ChevronRightIcon sx={{ fontSize: 16 }} />
+          )}
+        </IconButton>
         <TextField
           size="small"
           value={bus.name}
@@ -186,54 +323,94 @@ function OutputStrip({ bus, canEdit, onUpdate, onRemove }: OutputStripProps) {
         )}
       </Stack>
 
-      <Stack
-        spacing={1}
+      <Box
         sx={{
           flex: 1,
           minHeight: 0,
-          px: 1,
-          py: 1,
-          alignItems: "stretch",
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "row",
+          overflow: "auto",
         }}
       >
-        <Typography
-          variant="caption"
-          sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", color: "text.secondary" }}
-        >
-          {t("videoOutput.opacity")}
-        </Typography>
-        <Slider
-          orientation="vertical"
-          min={0}
-          max={1}
-          step={0.01}
-          value={bus.opacity}
-          disabled={!canEdit}
-          onChange={(_, value) => onUpdate({ opacity: value as number })}
-          sx={{
-            flex: 1,
-            mx: "auto",
-            color: "primary.main",
-            "& .MuiSlider-rail": { width: 3, opacity: 0.35 },
-            "& .MuiSlider-track": { width: 3, border: "none" },
-            "& .MuiSlider-thumb": { width: 12, height: 12 },
-          }}
-        />
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
-          onClick={handleOpen}
-          sx={{ minWidth: 0, px: 0.75, fontSize: 11 }}
-        >
-          {t("videoOutput.openWindow")}
-        </Button>
-        {openError && (
-          <Typography variant="caption" color="error" sx={{ fontSize: 10 }}>
-            {openError}
-          </Typography>
+        {premixerOpen && (
+          <Box
+            sx={{
+              width: premixerWidth,
+              minWidth: premixerWidth,
+              flexShrink: 0,
+              display: "flex",
+              flexDirection: "column",
+              borderRight: 1,
+              borderColor: "divider",
+              overflow: "auto",
+            }}
+          >
+            <VideoBusPremixer
+              host={bus}
+              canEdit={canEdit}
+              onAddEffect={(type) => {
+                onAddEffect(type);
+                setPremixerOpen(true);
+              }}
+              onUpdateEffect={onUpdateEffect}
+              onRemoveEffect={onRemoveEffect}
+              onReorderEffect={onReorderEffect}
+            />
+          </Box>
         )}
-      </Stack>
+
+        <Stack
+          spacing={1}
+          sx={{
+            width: faderWidth,
+            minWidth: faderWidth,
+            flexShrink: 0,
+            minHeight: 0,
+            px: 1,
+            py: 1,
+            alignItems: "stretch",
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", color: "text.secondary" }}
+          >
+            {t("videoOutput.opacity")}
+          </Typography>
+          <Slider
+            orientation="vertical"
+            min={0}
+            max={1}
+            step={0.01}
+            value={bus.opacity}
+            disabled={!canEdit}
+            onChange={(_, value) => onUpdate({ opacity: value as number })}
+            sx={{
+              flex: 1,
+              mx: "auto",
+              color: "primary.main",
+              "& .MuiSlider-rail": { width: 3, opacity: 0.35 },
+              "& .MuiSlider-track": { width: 3, border: "none" },
+              "& .MuiSlider-thumb": { width: 12, height: 12 },
+            }}
+          />
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
+            onClick={handleOpen}
+            sx={{ minWidth: 0, px: 0.75, fontSize: 11 }}
+          >
+            {t("videoOutput.openWindow")}
+          </Button>
+          {openError && (
+            <Typography variant="caption" color="error" sx={{ fontSize: 10 }}>
+              {openError}
+            </Typography>
+          )}
+        </Stack>
+      </Box>
     </Box>
   );
 }
@@ -314,6 +491,10 @@ export function VideoOutputDock() {
   const addVideoBus = useProjectStore((s) => s.addVideoBus);
   const updateVideoBus = useProjectStore((s) => s.updateVideoBus);
   const removeVideoBus = useProjectStore((s) => s.removeVideoBus);
+  const addVideoBusEffect = useProjectStore((s) => s.addVideoBusEffect);
+  const updateVideoBusEffect = useProjectStore((s) => s.updateVideoBusEffect);
+  const removeVideoBusEffect = useProjectStore((s) => s.removeVideoBusEffect);
+  const reorderVideoBusEffectRelative = useProjectStore((s) => s.reorderVideoBusEffectRelative);
 
   const handleAddBus = useCallback(() => {
     addVideoBus();
@@ -406,6 +587,12 @@ export function VideoOutputDock() {
                 canEdit={canEdit}
                 onUpdate={(patch) => updateVideoBus(bus.id, patch)}
                 onRemove={() => removeVideoBus(bus.id)}
+                onAddEffect={(type) => addVideoBusEffect(bus.id, type)}
+                onUpdateEffect={(effectId, patch) => updateVideoBusEffect(bus.id, effectId, patch)}
+                onRemoveEffect={(effectId) => removeVideoBusEffect(bus.id, effectId)}
+                onReorderEffect={(draggedId, targetId, place) =>
+                  reorderVideoBusEffectRelative(bus.id, draggedId, targetId, place)
+                }
               />
             ))}
           </Box>

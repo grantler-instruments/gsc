@@ -1,4 +1,5 @@
 import type { OutputLayer, OutputState } from "../types/output";
+import { videoEffectsEqual } from "./video-effects";
 
 /** Compare layers for visual/output sync — ignores publisher-only objectUrl differences. */
 export function outputLayersEqual(a: OutputLayer[], b: OutputLayer[]): boolean {
@@ -66,12 +67,14 @@ export function outputStatesEqual(a: OutputState, b: OutputState): boolean {
     a.projectId === b.projectId &&
     a.projectRootDir === b.projectRootDir &&
     activeCueIdsEqual(a.activeCueIds, b.activeCueIds) &&
-    outputLayersEqual(a.layers, b.layers)
+    outputLayersEqual(a.layers, b.layers) &&
+    (a.busOpacity ?? 1) === (b.busOpacity ?? 1) &&
+    videoEffectsEqual(a.busEffects, b.busEffects)
   );
 }
 
-/** Opacity/volume-only change — media mount and transport unchanged. */
-export function isOutputStateFadeOnly(prev: OutputState, next: OutputState): boolean {
+/** Layer opacity or bus dimmer/effects only — media mount and transport unchanged. */
+export function isOutputStateVisualMixOnly(prev: OutputState, next: OutputState): boolean {
   return (
     prev.projectId === next.projectId &&
     prev.projectRootDir === next.projectRootDir &&
@@ -80,6 +83,9 @@ export function isOutputStateFadeOnly(prev: OutputState, next: OutputState): boo
     !outputStatesEqual(prev, next)
   );
 }
+
+/** @deprecated Use isOutputStateVisualMixOnly */
+export const isOutputStateFadeOnly = isOutputStateVisualMixOnly;
 
 /** Stable key for deduping cross-window asset posts. */
 export function outputAssetKey(projectId: string, assetPath: string): string {

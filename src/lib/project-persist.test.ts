@@ -25,6 +25,7 @@ function projectState(overrides: Partial<ProjectPersistSlice> = {}): ProjectPers
     audioBuses: [],
     videoBuses: [],
     masterVideoOutputName: "Main",
+    masterVideoOutputOpacity: 1,
     ...overrides,
   };
 }
