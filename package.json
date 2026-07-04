@@ -18,7 +18,7 @@
     "test:e2e:desktop": "wdio run ./e2e-desktop/wdio.conf.ts",
     "test:e2e:install": "cross-env PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium",
     "test:e2e:fixtures": "node e2e/fixtures/generate-audio-fixtures.mjs && node e2e/fixtures/generate-video-fixtures.mjs",
-    "lint": "biome check .",
+    "lint": "biome check . && node scripts/check-e2e-imports.mjs",
     "lint:fix": "biome check --write .",
     "icons": "vite-node --script scripts/sync-favicon.ts",
     "version:sync": "node scripts/sync-version.mjs",

@@ -1,9 +1,9 @@
 import { expect, type Page } from "@playwright/test";
-import { driftSecWithinSlice as driftSecWithinPlaybackSlice } from "../../src/lib/playback-drift";
 import {
   expectOutputPlaybackStableOnPage,
   OUTPUT_VIDEO_LOAD_MAX_MS,
 } from "../shared/output-window";
+import { driftSecWithinSlice as driftSecWithinPlaybackSlice } from "../shared/playback-drift";
 import { getWaveformPositionSec } from "./active-cues";
 
 export { OUTPUT_VIDEO_LOAD_MAX_MS } from "../shared/output-window";
