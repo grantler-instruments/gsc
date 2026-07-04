@@ -1,8 +1,11 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAssetObjectUrl } from "../../hooks/useAssetObjectUrl";
 import {
@@ -18,13 +21,148 @@ import type { VideoEffect } from "../../types/video-effect";
 import type { NormalizedRect, VideoOutputFrame } from "../../types/video-output-frame";
 import { visualStageEmptySx } from "../visualStageSx";
 
-export const FRAME_PANEL_WIDTH = 228;
+export const EDITOR_COLUMN_WIDTH = 220;
+export const FRAME_PANEL_WIDTH = EDITOR_COLUMN_WIDTH * 2 + 24;
 
-const PREVIEW_WIDTH = 204;
+const PREVIEW_WIDTH = EDITOR_COLUMN_WIDTH;
 const PREVIEW_HEIGHT = 115;
 const MIN_DRAG_SIZE = 0.08;
 
-type DragMode = "move" | "resize-se";
+type DragMode = "move" | "resize-se" | "resize-nw";
+type RectField = keyof NormalizedRect;
+
+const RECT_FIELD_SX = {
+  flex: "1 1 46%",
+  minWidth: 0,
+  "& .MuiInputBase-root": { fontSize: 10 },
+  "& .MuiInputBase-input": { py: 0.25, px: 0.5, textAlign: "right" },
+  "& .MuiInputLabel-root": { fontSize: 10 },
+};
+
+function formatRectPercent(value: number): string {
+  return (value * 100).toFixed(1);
+}
+
+function parseRectPercentInput(value: string): number | undefined {
+  const parsed = Number.parseFloat(value.trim());
+  if (!Number.isFinite(parsed)) return undefined;
+  return Math.max(0, Math.min(100, parsed)) / 100;
+}
+
+function applyLinkedDestSize(frame: VideoOutputFrame, linkDestSize: boolean): VideoOutputFrame {
+  if (!linkDestSize) return frame;
+  return normalizeVideoOutputFrame({
+    ...frame,
+    dest: normalizeNormalizedRect({
+      ...frame.dest,
+      w: frame.crop.w,
+      h: frame.crop.h,
+    }),
+  });
+}
+
+function RectPercentField({
+  label,
+  value,
+  disabled,
+  onCommit,
+}: {
+  label: string;
+  value: number;
+  disabled: boolean;
+  onCommit: (value: number) => void;
+}) {
+  const [draft, setDraft] = useState(() => formatRectPercent(value));
+
+  useEffect(() => {
+    setDraft(formatRectPercent(value));
+  }, [value]);
+
+  const commitDraft = useCallback(() => {
+    const parsed = parseRectPercentInput(draft);
+    if (parsed === undefined) {
+      setDraft(formatRectPercent(value));
+      return;
+    }
+    onCommit(parsed);
+  }, [draft, onCommit, value]);
+
+  return (
+    <TextField
+      label={label}
+      size="small"
+      value={draft}
+      disabled={disabled}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commitDraft}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.currentTarget.blur();
+        }
+      }}
+      slotProps={{
+        input: {
+          endAdornment: (
+            <Typography component="span" sx={{ fontSize: 10, color: "text.secondary", pl: 0.25 }}>
+              %
+            </Typography>
+          ),
+        },
+      }}
+      sx={RECT_FIELD_SX}
+    />
+  );
+}
+
+function RectValueFields({
+  rect,
+  disabled,
+  lockSize,
+  onChange,
+}: {
+  rect: NormalizedRect;
+  disabled: boolean;
+  lockSize?: boolean;
+  onChange: (rect: NormalizedRect) => void;
+}) {
+  const { t } = useTranslation();
+
+  const patchField = useCallback(
+    (field: RectField, value: number) => {
+      onChange(normalizeNormalizedRect({ ...rect, [field]: value }));
+    },
+    [onChange, rect],
+  );
+
+  return (
+    <Stack direction="row" useFlexGap spacing={0.5} sx={{ pt: 0.25, flexWrap: "wrap" }}>
+      <RectPercentField
+        label={t("videoOutput.frameX")}
+        value={rect.x}
+        disabled={disabled}
+        onCommit={(value) => patchField("x", value)}
+      />
+      <RectPercentField
+        label={t("videoOutput.frameY")}
+        value={rect.y}
+        disabled={disabled}
+        onCommit={(value) => patchField("y", value)}
+      />
+      <RectPercentField
+        label={t("videoOutput.frameW")}
+        value={rect.w}
+        disabled={disabled || Boolean(lockSize)}
+        onCommit={(value) => patchField("w", value)}
+      />
+      <RectPercentField
+        label={t("videoOutput.frameH")}
+        value={rect.h}
+        disabled={disabled || Boolean(lockSize)}
+        onCommit={(value) => patchField("h", value)}
+      />
+    </Stack>
+  );
+}
 
 export interface VideoOutputFramePreviewSource {
   layers: OutputLayer[];
@@ -202,6 +340,8 @@ interface RectEditorProps {
   disabled: boolean;
   preview: VideoOutputFramePreviewSource;
   previewFrame?: VideoOutputFrame;
+  lockSize?: boolean;
+  enableNwHandle?: boolean;
   onChange: (rect: NormalizedRect) => void;
 }
 
@@ -216,6 +356,43 @@ function pointerToNormalized(
   };
 }
 
+function resizeRectFromCorner(
+  origin: NormalizedRect,
+  dx: number,
+  dy: number,
+  corner: "se" | "nw",
+): NormalizedRect {
+  if (corner === "se") {
+    return normalizeNormalizedRect({
+      x: origin.x,
+      y: origin.y,
+      w: Math.max(MIN_DRAG_SIZE, origin.w + dx),
+      h: Math.max(MIN_DRAG_SIZE, origin.h + dy),
+    });
+  }
+
+  let nextX = origin.x + dx;
+  let nextY = origin.y + dy;
+  let nextW = origin.w - dx;
+  let nextH = origin.h - dy;
+
+  if (nextW < MIN_DRAG_SIZE) {
+    nextX = origin.x + origin.w - MIN_DRAG_SIZE;
+    nextW = MIN_DRAG_SIZE;
+  }
+  if (nextH < MIN_DRAG_SIZE) {
+    nextY = origin.y + origin.h - MIN_DRAG_SIZE;
+    nextH = MIN_DRAG_SIZE;
+  }
+
+  return normalizeNormalizedRect({
+    x: nextX,
+    y: nextY,
+    w: nextW,
+    h: nextH,
+  });
+}
+
 function RectEditor({
   label,
   rect,
@@ -223,6 +400,8 @@ function RectEditor({
   disabled,
   preview,
   previewFrame,
+  lockSize,
+  enableNwHandle,
   onChange,
 }: RectEditorProps) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -257,14 +436,7 @@ function RectEditor({
         return;
       }
 
-      onChange(
-        normalizeNormalizedRect({
-          x: origin.x,
-          y: origin.y,
-          w: Math.max(MIN_DRAG_SIZE, origin.w + dx),
-          h: Math.max(MIN_DRAG_SIZE, origin.h + dy),
-        }),
-      );
+      onChange(resizeRectFromCorner(origin, dx, dy, drag.mode === "resize-nw" ? "nw" : "se"));
     },
     [onChange],
   );
@@ -301,7 +473,10 @@ function RectEditor({
   const showHandles = !disabled && preview.layers.length > 0;
 
   return (
-    <Stack spacing={0.5}>
+    <Stack
+      spacing={0.5}
+      sx={{ flex: "1 1 0", minWidth: EDITOR_COLUMN_WIDTH, maxWidth: EDITOR_COLUMN_WIDTH }}
+    >
       <Typography variant="caption" sx={{ fontSize: 10, fontWeight: 700, color: "text.secondary" }}>
         {label}
       </Typography>
@@ -347,6 +522,22 @@ function RectEditor({
                 background: "transparent",
               }}
             >
+              {enableNwHandle && (
+                <Box
+                  onPointerDown={(event) => startDrag(event, "resize-nw")}
+                  sx={{
+                    position: "absolute",
+                    left: -5,
+                    top: -5,
+                    width: 12,
+                    height: 12,
+                    borderRadius: "50%",
+                    bgcolor: color,
+                    border: "2px solid #000",
+                    cursor: "nesw-resize",
+                  }}
+                />
+              )}
               <Box
                 onPointerDown={(event) => startDrag(event, "resize-se")}
                 sx={{
@@ -365,6 +556,7 @@ function RectEditor({
           </>
         )}
       </Box>
+      <RectValueFields rect={rect} disabled={disabled} lockSize={lockSize} onChange={onChange} />
     </Stack>
   );
 }
@@ -384,12 +576,20 @@ export function VideoOutputFramePanel({
 }: VideoOutputFramePanelProps) {
   const { t } = useTranslation();
   const normalized = normalizeVideoOutputFrame(frame);
+  const [linkDestSize, setLinkDestSize] = useState(true);
+
+  const applyFrame = useCallback(
+    (next: VideoOutputFrame) => {
+      onChange(applyLinkedDestSize(next, linkDestSize));
+    },
+    [linkDestSize, onChange],
+  );
 
   const patchRect = useCallback(
     (field: "crop" | "dest", rect: NormalizedRect) => {
-      onChange(normalizeVideoOutputFrame({ ...normalized, [field]: rect }));
+      applyFrame(normalizeVideoOutputFrame({ ...normalized, [field]: rect }));
     },
-    [normalized, onChange],
+    [applyFrame, normalized],
   );
 
   return (
@@ -408,23 +608,50 @@ export function VideoOutputFramePanel({
       <Typography variant="caption" sx={{ fontSize: 10, fontWeight: 700, color: "text.secondary" }}>
         {t("videoOutput.outputFrame")}
       </Typography>
-      <RectEditor
-        label={t("videoOutput.frameCrop")}
-        rect={normalized.crop}
-        color="#42a5f5"
-        disabled={!canEdit}
-        preview={preview}
-        onChange={(crop) => patchRect("crop", crop)}
-      />
-      <RectEditor
-        label={t("videoOutput.framePlacement")}
-        rect={normalized.dest}
-        color="#66bb6a"
-        disabled={!canEdit}
-        preview={preview}
-        previewFrame={normalized}
-        onChange={(dest) => patchRect("dest", dest)}
-      />
+      <Stack direction="row" spacing={1} sx={{ minWidth: 0, alignItems: "flex-start" }}>
+        <RectEditor
+          label={t("videoOutput.frameCrop")}
+          rect={normalized.crop}
+          color="#42a5f5"
+          disabled={!canEdit}
+          preview={preview}
+          enableNwHandle
+          onChange={(crop) => patchRect("crop", crop)}
+        />
+        <RectEditor
+          label={t("videoOutput.framePlacement")}
+          rect={normalized.dest}
+          color="#66bb6a"
+          disabled={!canEdit}
+          preview={preview}
+          previewFrame={normalized}
+          lockSize={linkDestSize}
+          onChange={(dest) => patchRect("dest", dest)}
+        />
+      </Stack>
+      {canEdit && (
+        <FormControlLabel
+          control={
+            <Checkbox
+              size="small"
+              checked={linkDestSize}
+              onChange={(_, checked) => {
+                setLinkDestSize(checked);
+                if (checked) {
+                  applyFrame(normalized);
+                }
+              }}
+              sx={{ py: 0 }}
+            />
+          }
+          label={t("videoOutput.frameLinkSize")}
+          sx={{
+            m: 0,
+            alignItems: "flex-start",
+            "& .MuiFormControlLabel-label": { fontSize: 10, lineHeight: 1.3 },
+          }}
+        />
+      )}
       {canEdit && !isIdentityVideoOutputFrame(normalized) && (
         <Button
           size="small"
