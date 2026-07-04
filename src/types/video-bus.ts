@@ -10,6 +10,6 @@ export interface VideoBus {
   muted?: boolean;
   /** Insert effects applied after layer composite, before the master dimmer. */
   effects?: VideoEffect[];
-  /** Crop and placement on the output canvas (before future warp). */
+  /** Crop, placement, and corner-pin warp on the output canvas. */
   outputFrame?: VideoOutputFrame;
 }

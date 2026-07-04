@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { outputLayersEqual, outputLayersMediaEqual } from "../lib/output-layer-sync";
 import { OutputStageEngine } from "../lib/output-stage-engine";
 import { registerOutputStage } from "../lib/output-stage-registry";
@@ -86,6 +86,10 @@ export function OutputImperativeStage({
     outputFrameRef.current = frame;
     engineRef.current?.syncBusConfig({ effects, opacity, outputFrame: frame });
   }, [busEffects, busOpacity, outputFrame]);
+
+  useLayoutEffect(() => {
+    engineRef.current?.syncLayout();
+  }, [layers, busEffects, busOpacity, outputFrame]);
 
   return (
     <div

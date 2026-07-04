@@ -166,6 +166,7 @@ export class VideoCompositor {
     this.composer.setSize(nextW, nextH, false);
     this.layerScene.resize(nextW, nextH);
     resizeBusEffectRuntimes(this.effectRuntimes, nextW, nextH);
+    this.syncEffectPass();
   }
 
   start(): void {
@@ -212,6 +213,8 @@ export class VideoCompositor {
   }
 
   private syncEffectPass(): void {
+    if (this.width <= 0 || this.height <= 0) return;
+
     const enabledEffects = this.busEffects.filter((effect) => effect.enabled);
     const needsFrame = !isIdentityVideoOutputFrame(this.outputFrame);
     const needsPass = enabledEffects.length > 0 || this.busOpacity < 1 || needsFrame;
@@ -221,6 +224,8 @@ export class VideoCompositor {
       this.renderPass.renderToScreen = true;
       return;
     }
+
+    this.renderPass.renderToScreen = false;
 
     const chainKey = buildBusEffectChain(enabledEffects, this.width, this.height).key;
     const needsRebuild =

@@ -9,17 +9,32 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAssetObjectUrl } from "../../hooks/useAssetObjectUrl";
 import {
+  applyLinkedDestQuadSize,
   defaultVideoOutputFrame,
   isIdentityVideoOutputFrame,
   normalizeNormalizedRect,
   normalizeVideoOutputFrame,
+  patchNormalizedQuadCorner,
+  patchNormalizedQuadFromRect,
+  quadToBoundingRect,
+  rectToQuad,
+  translateNormalizedQuad,
 } from "../../lib/video-output-frame";
 import { outputLayerTargetTime } from "../../lib/video-playback";
 import { resolveEffectiveOpacity, useFadeStore } from "../../stores/fade";
+import { useVfsStore } from "../../stores/vfs";
 import type { OutputLayer } from "../../types/output";
 import type { VideoEffect } from "../../types/video-effect";
-import type { NormalizedRect, VideoOutputFrame } from "../../types/video-output-frame";
+import type {
+  NormalizedPoint,
+  NormalizedQuad,
+  NormalizedRect,
+  QuadCorner,
+  VideoOutputFrame,
+} from "../../types/video-output-frame";
+import { vfsGetObjectUrl } from "../../vfs/engine";
 import { visualStageEmptySx } from "../visualStageSx";
+import { FrameWarpPreview } from "./FrameWarpPreview";
 
 export const EDITOR_COLUMN_WIDTH = 220;
 export const FRAME_PANEL_WIDTH = EDITOR_COLUMN_WIDTH * 2 + 24;
@@ -28,8 +43,10 @@ const PREVIEW_WIDTH = EDITOR_COLUMN_WIDTH;
 const PREVIEW_HEIGHT = 115;
 const MIN_DRAG_SIZE = 0.08;
 
-type DragMode = "move" | "resize-se" | "resize-nw";
+const QUAD_CORNERS: QuadCorner[] = ["tl", "tr", "br", "bl"];
 type RectField = keyof NormalizedRect;
+type RectDragMode = "move" | "resize-se" | "resize-nw";
+type QuadDragMode = "move" | QuadCorner;
 
 const RECT_FIELD_SX = {
   flex: "1 1 46%",
@@ -49,15 +66,52 @@ function parseRectPercentInput(value: string): number | undefined {
   return Math.max(0, Math.min(100, parsed)) / 100;
 }
 
-function applyLinkedDestSize(frame: VideoOutputFrame, linkDestSize: boolean): VideoOutputFrame {
-  if (!linkDestSize) return frame;
-  return normalizeVideoOutputFrame({
-    ...frame,
-    dest: normalizeNormalizedRect({
-      ...frame.dest,
-      w: frame.crop.w,
-      h: frame.crop.h,
-    }),
+function quadPolygonPoints(quad: NormalizedQuad): string {
+  return QUAD_CORNERS.map((corner) => `${quad[corner].x * 100},${quad[corner].y * 100}`).join(" ");
+}
+
+function cropDimClipPath(rect: NormalizedRect): string {
+  const x1 = rect.x * 100;
+  const y1 = rect.y * 100;
+  const x2 = (rect.x + rect.w) * 100;
+  const y2 = (rect.y + rect.h) * 100;
+  return `polygon(evenodd, 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, ${x1}% ${y1}%, ${x2}% ${y1}%, ${x2}% ${y2}%, ${x1}% ${y2}%, ${x1}% ${y1}%)`;
+}
+
+function resizeRectFromCorner(
+  origin: NormalizedRect,
+  dx: number,
+  dy: number,
+  corner: "se" | "nw",
+): NormalizedRect {
+  if (corner === "se") {
+    return normalizeNormalizedRect({
+      x: origin.x,
+      y: origin.y,
+      w: Math.max(MIN_DRAG_SIZE, origin.w + dx),
+      h: Math.max(MIN_DRAG_SIZE, origin.h + dy),
+    });
+  }
+
+  let nextX = origin.x + dx;
+  let nextY = origin.y + dy;
+  let nextW = origin.w - dx;
+  let nextH = origin.h - dy;
+
+  if (nextW < MIN_DRAG_SIZE) {
+    nextX = origin.x + origin.w - MIN_DRAG_SIZE;
+    nextW = MIN_DRAG_SIZE;
+  }
+  if (nextH < MIN_DRAG_SIZE) {
+    nextY = origin.y + origin.h - MIN_DRAG_SIZE;
+    nextH = MIN_DRAG_SIZE;
+  }
+
+  return normalizeNormalizedRect({
+    x: nextX,
+    y: nextY,
+    w: nextW,
+    h: nextH,
   });
 }
 
@@ -164,6 +218,28 @@ function RectValueFields({
   );
 }
 
+function QuadValueFields({
+  quad,
+  disabled,
+  lockSize,
+  onChange,
+}: {
+  quad: NormalizedQuad;
+  disabled: boolean;
+  lockSize?: boolean;
+  onChange: (quad: NormalizedQuad) => void;
+}) {
+  const rect = quadToBoundingRect(quad);
+  return (
+    <RectValueFields
+      rect={rect}
+      disabled={disabled}
+      lockSize={lockSize}
+      onChange={(next) => onChange(patchNormalizedQuadFromRect(quad, next))}
+    />
+  );
+}
+
 export interface VideoOutputFramePreviewSource {
   layers: OutputLayer[];
   busEffects?: VideoEffect[];
@@ -172,7 +248,6 @@ export interface VideoOutputFramePreviewSource {
 
 interface FramePreviewStageProps {
   preview: VideoOutputFramePreviewSource;
-  outputFrame?: VideoOutputFrame;
 }
 
 function livePreviewLayers(preview: VideoOutputFramePreviewSource, frameMs: number): OutputLayer[] {
@@ -183,12 +258,16 @@ function livePreviewLayers(preview: VideoOutputFramePreviewSource, frameMs: numb
   }));
 }
 
-function cropDimClipPath(rect: NormalizedRect): string {
-  const x1 = rect.x * 100;
-  const y1 = rect.y * 100;
-  const x2 = (rect.x + rect.w) * 100;
-  const y2 = (rect.y + rect.h) * 100;
-  return `polygon(evenodd, 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, ${x1}% ${y1}%, ${x2}% ${y1}%, ${x2}% ${y2}%, ${x1}% ${y2}%, ${x1}% ${y1}%)`;
+/** Compositor layers — match VisualMonitor (bus dimmer applied once in the compositor). */
+function compositorPreviewLayers(
+  preview: VideoOutputFramePreviewSource,
+  frameMs: number,
+): OutputLayer[] {
+  return preview.layers.map((layer) => ({
+    ...layer,
+    objectUrl: layer.objectUrl || vfsGetObjectUrl(layer.assetPath) || "",
+    opacity: resolveEffectiveOpacity(layer.cueId, layer.opacity, frameMs),
+  }));
 }
 
 function FramePreviewLayer({ layer, zIndex }: { layer: OutputLayer; zIndex: number }) {
@@ -267,70 +346,95 @@ function FramePreviewLayerStack({ layers }: { layers: OutputLayer[] }) {
   );
 }
 
-/** Maps crop/dest frame in DOM space (matches the output-frame shader layout). */
-function OutputFrameDomWrap({
-  frame,
-  children,
-}: {
-  frame: VideoOutputFrame;
-  children: React.ReactNode;
-}) {
-  const normalized = normalizeVideoOutputFrame(frame);
-  const { crop, dest } = normalized;
-
-  return (
-    <Box sx={{ position: "absolute", inset: 0, bgcolor: "#000" }}>
-      <Box
-        sx={{
-          position: "absolute",
-          left: `${dest.x * 100}%`,
-          top: `${dest.y * 100}%`,
-          width: `${dest.w * 100}%`,
-          height: `${dest.h * 100}%`,
-          overflow: "hidden",
-        }}
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            left: `${(-crop.x / crop.w) * 100}%`,
-            top: `${(-crop.y / crop.h) * 100}%`,
-            width: `${(1 / crop.w) * 100}%`,
-            height: `${(1 / crop.h) * 100}%`,
-          }}
-        >
-          {children}
-        </Box>
-      </Box>
-    </Box>
-  );
-}
-
-function FramePreviewStage({ preview, outputFrame }: FramePreviewStageProps) {
+function FramePreviewStage({ preview }: FramePreviewStageProps) {
   const { t } = useTranslation();
   const frameMs = useFadeStore((s) => s.frameMs);
   const layers = useMemo(
     () => livePreviewLayers(preview, frameMs),
     [preview.layers, preview.busOpacity, frameMs],
   );
-  const mappedFrame = outputFrame ? normalizeVideoOutputFrame(outputFrame) : undefined;
-  const showFrameMap = mappedFrame !== undefined && !isIdentityVideoOutputFrame(mappedFrame);
 
   return (
-    <Box sx={{ position: "absolute", inset: 0, bgcolor: "#000", overflow: "hidden" }}>
+    <Box
+      sx={{
+        position: "absolute",
+        inset: 0,
+        bgcolor: "#000",
+        overflow: "hidden",
+        pointerEvents: "none",
+      }}
+    >
       {preview.layers.length === 0 ? (
         <Typography component="span" sx={visualStageEmptySx}>
           {t("videoOutput.frameNoPreview")}
         </Typography>
-      ) : showFrameMap ? (
-        <OutputFrameDomWrap frame={mappedFrame}>
-          <FramePreviewLayerStack layers={layers} />
-        </OutputFrameDomWrap>
       ) : (
         <FramePreviewLayerStack layers={layers} />
       )}
     </Box>
   );
+}
+
+interface FrameWarpPreviewStageProps {
+  preview: VideoOutputFramePreviewSource;
+  outputFrame: VideoOutputFrame;
+}
+
+function FrameWarpPreviewStage({ preview, outputFrame }: FrameWarpPreviewStageProps) {
+  const { t } = useTranslation();
+  const frameMs = useFadeStore((s) => s.frameMs);
+  const vfsLoadedKey = useVfsStore((s) =>
+    s.entries.map((entry) => `${entry.path}:${entry.loaded}`).join("|"),
+  );
+  const layers = useMemo(
+    () => compositorPreviewLayers(preview, frameMs),
+    [preview.layers, frameMs, vfsLoadedKey],
+  );
+  const mappedFrame = useMemo(() => normalizeVideoOutputFrame(outputFrame), [outputFrame]);
+
+  return (
+    <Box
+      sx={{
+        position: "absolute",
+        inset: 0,
+        bgcolor: "#000",
+        overflow: "hidden",
+        pointerEvents: "none",
+      }}
+    >
+      {preview.layers.length === 0 ? (
+        <Typography component="span" sx={visualStageEmptySx}>
+          {t("videoOutput.frameNoPreview")}
+        </Typography>
+      ) : (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            width: PREVIEW_WIDTH,
+            height: PREVIEW_HEIGHT,
+            pointerEvents: "none",
+            "& canvas": { pointerEvents: "none", display: "block" },
+          }}
+        >
+          <FrameWarpPreview
+            layers={layers}
+            outputFrame={mappedFrame}
+            busOpacity={preview.busOpacity ?? 1}
+            width={PREVIEW_WIDTH}
+            height={PREVIEW_HEIGHT}
+          />
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+function pointerToNormalized(clientX: number, clientY: number, bounds: DOMRect): NormalizedPoint {
+  return {
+    x: Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width)),
+    y: Math.max(0, Math.min(1, (clientY - bounds.top) / bounds.height)),
+  };
 }
 
 interface RectEditorProps {
@@ -339,74 +443,13 @@ interface RectEditorProps {
   color: string;
   disabled: boolean;
   preview: VideoOutputFramePreviewSource;
-  previewFrame?: VideoOutputFrame;
-  lockSize?: boolean;
-  enableNwHandle?: boolean;
   onChange: (rect: NormalizedRect) => void;
 }
 
-function pointerToNormalized(
-  clientX: number,
-  clientY: number,
-  bounds: DOMRect,
-): { x: number; y: number } {
-  return {
-    x: Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width)),
-    y: Math.max(0, Math.min(1, (clientY - bounds.top) / bounds.height)),
-  };
-}
-
-function resizeRectFromCorner(
-  origin: NormalizedRect,
-  dx: number,
-  dy: number,
-  corner: "se" | "nw",
-): NormalizedRect {
-  if (corner === "se") {
-    return normalizeNormalizedRect({
-      x: origin.x,
-      y: origin.y,
-      w: Math.max(MIN_DRAG_SIZE, origin.w + dx),
-      h: Math.max(MIN_DRAG_SIZE, origin.h + dy),
-    });
-  }
-
-  let nextX = origin.x + dx;
-  let nextY = origin.y + dy;
-  let nextW = origin.w - dx;
-  let nextH = origin.h - dy;
-
-  if (nextW < MIN_DRAG_SIZE) {
-    nextX = origin.x + origin.w - MIN_DRAG_SIZE;
-    nextW = MIN_DRAG_SIZE;
-  }
-  if (nextH < MIN_DRAG_SIZE) {
-    nextY = origin.y + origin.h - MIN_DRAG_SIZE;
-    nextH = MIN_DRAG_SIZE;
-  }
-
-  return normalizeNormalizedRect({
-    x: nextX,
-    y: nextY,
-    w: nextW,
-    h: nextH,
-  });
-}
-
-function RectEditor({
-  label,
-  rect,
-  color,
-  disabled,
-  preview,
-  previewFrame,
-  lockSize,
-  enableNwHandle,
-  onChange,
-}: RectEditorProps) {
+function RectEditor({ label, rect, color, disabled, preview, onChange }: RectEditorProps) {
   const boxRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
-    mode: DragMode;
+    mode: RectDragMode;
     startX: number;
     startY: number;
     origin: NormalizedRect;
@@ -449,7 +492,7 @@ function RectEditor({
   }, [onPointerMove]);
 
   const startDrag = useCallback(
-    (event: React.PointerEvent, mode: DragMode) => {
+    (event: React.PointerEvent, mode: RectDragMode) => {
       if (disabled) return;
       event.preventDefault();
       event.stopPropagation();
@@ -463,6 +506,7 @@ function RectEditor({
         startY: point.y,
         origin: rect,
       };
+      event.currentTarget.setPointerCapture(event.pointerId);
       window.addEventListener("pointermove", onPointerMove);
       window.addEventListener("pointerup", endDrag);
       window.addEventListener("pointercancel", endDrag);
@@ -470,7 +514,7 @@ function RectEditor({
     [disabled, endDrag, onPointerMove, rect],
   );
 
-  const showHandles = !disabled && preview.layers.length > 0;
+  const showHandles = !disabled;
 
   return (
     <Stack
@@ -494,7 +538,7 @@ function RectEditor({
           bgcolor: "#000",
         }}
       >
-        <FramePreviewStage preview={preview} outputFrame={previewFrame} />
+        <FramePreviewStage preview={preview} />
         {showHandles && (
           <>
             <Box
@@ -522,22 +566,20 @@ function RectEditor({
                 background: "transparent",
               }}
             >
-              {enableNwHandle && (
-                <Box
-                  onPointerDown={(event) => startDrag(event, "resize-nw")}
-                  sx={{
-                    position: "absolute",
-                    left: -5,
-                    top: -5,
-                    width: 12,
-                    height: 12,
-                    borderRadius: "50%",
-                    bgcolor: color,
-                    border: "2px solid #000",
-                    cursor: "nesw-resize",
-                  }}
-                />
-              )}
+              <Box
+                onPointerDown={(event) => startDrag(event, "resize-nw")}
+                sx={{
+                  position: "absolute",
+                  left: -5,
+                  top: -5,
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  bgcolor: color,
+                  border: "2px solid #000",
+                  cursor: "nesw-resize",
+                }}
+              />
               <Box
                 onPointerDown={(event) => startDrag(event, "resize-se")}
                 sx={{
@@ -556,7 +598,198 @@ function RectEditor({
           </>
         )}
       </Box>
-      <RectValueFields rect={rect} disabled={disabled} lockSize={lockSize} onChange={onChange} />
+      <RectValueFields rect={rect} disabled={disabled} onChange={onChange} />
+    </Stack>
+  );
+}
+
+interface QuadEditorProps {
+  label: string;
+  quad: NormalizedQuad;
+  color: string;
+  disabled: boolean;
+  preview: VideoOutputFramePreviewSource;
+  previewFrame: VideoOutputFrame;
+  lockSize?: boolean;
+  onChange: (quad: NormalizedQuad) => void;
+}
+
+function QuadEditor({
+  label,
+  quad,
+  color,
+  disabled,
+  preview,
+  previewFrame,
+  lockSize,
+  onChange,
+}: QuadEditorProps) {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    mode: QuadDragMode;
+    startX: number;
+    startY: number;
+    origin: NormalizedQuad;
+  } | null>(null);
+
+  const onPointerMove = useCallback(
+    (event: PointerEvent) => {
+      const drag = dragRef.current;
+      const box = boxRef.current;
+      if (!drag || !box) return;
+
+      const bounds = box.getBoundingClientRect();
+      const point = pointerToNormalized(event.clientX, event.clientY, bounds);
+      const dx = point.x - drag.startX;
+      const dy = point.y - drag.startY;
+
+      if (drag.mode === "move") {
+        onChange(translateNormalizedQuad(drag.origin, dx, dy));
+        return;
+      }
+
+      onChange(
+        patchNormalizedQuadCorner(drag.origin, drag.mode, {
+          x: drag.origin[drag.mode].x + dx,
+          y: drag.origin[drag.mode].y + dy,
+        }),
+      );
+    },
+    [onChange],
+  );
+
+  const endDrag = useCallback(() => {
+    dragRef.current = null;
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", endDrag);
+    window.removeEventListener("pointercancel", endDrag);
+  }, [onPointerMove]);
+
+  const startDrag = useCallback(
+    (event: React.PointerEvent, mode: QuadDragMode) => {
+      if (disabled) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const box = boxRef.current;
+      if (!box) return;
+      const bounds = box.getBoundingClientRect();
+      const point = pointerToNormalized(event.clientX, event.clientY, bounds);
+      dragRef.current = {
+        mode,
+        startX: point.x,
+        startY: point.y,
+        origin: quad,
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", endDrag);
+      window.addEventListener("pointercancel", endDrag);
+    },
+    [disabled, endDrag, onPointerMove, quad],
+  );
+
+  const showHandles = !disabled;
+
+  return (
+    <Stack
+      spacing={0.5}
+      sx={{ flex: "1 1 0", minWidth: EDITOR_COLUMN_WIDTH, maxWidth: EDITOR_COLUMN_WIDTH }}
+    >
+      <Typography variant="caption" sx={{ fontSize: 10, fontWeight: 700, color: "text.secondary" }}>
+        {label}
+      </Typography>
+      <Box
+        ref={boxRef}
+        sx={{
+          position: "relative",
+          width: PREVIEW_WIDTH,
+          height: PREVIEW_HEIGHT,
+          touchAction: "none",
+        }}
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            border: 1,
+            borderColor: "divider",
+            borderRadius: 0.5,
+            overflow: "hidden",
+            bgcolor: "#000",
+          }}
+        >
+          <FrameWarpPreviewStage preview={preview} outputFrame={previewFrame} />
+        </Box>
+        {showHandles && (
+          <Box
+            sx={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 1,
+              pointerEvents: "none",
+            }}
+          >
+            <svg
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                pointerEvents: "none",
+              }}
+            >
+              <polygon
+                points={quadPolygonPoints(quad)}
+                fill="none"
+                stroke={color}
+                strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+            <svg
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                touchAction: "none",
+              }}
+            >
+              <polygon
+                points={quadPolygonPoints(quad)}
+                fill="rgba(0,0,0,0.001)"
+                stroke="transparent"
+                style={{ cursor: "move", pointerEvents: "auto" }}
+                onPointerDown={(event) => startDrag(event, "move")}
+              />
+            </svg>
+            {QUAD_CORNERS.map((corner) => (
+              <Box
+                key={corner}
+                onPointerDown={(event) => startDrag(event, corner)}
+                sx={{
+                  position: "absolute",
+                  left: `calc(${quad[corner].x * 100}% - 6px)`,
+                  top: `calc(${quad[corner].y * 100}% - 6px)`,
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  bgcolor: color,
+                  border: "2px solid #000",
+                  cursor: "grab",
+                  pointerEvents: "auto",
+                  touchAction: "none",
+                }}
+              />
+            ))}
+          </Box>
+        )}
+      </Box>
+      <QuadValueFields quad={quad} disabled={disabled} lockSize={lockSize} onChange={onChange} />
     </Stack>
   );
 }
@@ -578,18 +811,27 @@ export function VideoOutputFramePanel({
   const normalized = normalizeVideoOutputFrame(frame);
   const [linkDestSize, setLinkDestSize] = useState(true);
 
-  const applyFrame = useCallback(
-    (next: VideoOutputFrame) => {
-      onChange(applyLinkedDestSize(next, linkDestSize));
+  const patchQuad = useCallback(
+    (field: "crop" | "dest", quad: NormalizedQuad) => {
+      const next = normalizeVideoOutputFrame({ ...normalized, [field]: quad });
+      if (field === "crop" && linkDestSize) {
+        onChange(applyLinkedDestQuadSize(next, true));
+        return;
+      }
+      onChange(next);
     },
-    [linkDestSize, onChange],
+    [linkDestSize, normalized, onChange],
   );
 
-  const patchRect = useCallback(
-    (field: "crop" | "dest", rect: NormalizedRect) => {
-      applyFrame(normalizeVideoOutputFrame({ ...normalized, [field]: rect }));
+  const patchCropRect = useCallback(
+    (rect: NormalizedRect) => {
+      const next = normalizeVideoOutputFrame({
+        ...normalized,
+        crop: rectToQuad(rect),
+      });
+      onChange(linkDestSize ? applyLinkedDestQuadSize(next, true) : next);
     },
-    [applyFrame, normalized],
+    [linkDestSize, normalized, onChange],
   );
 
   return (
@@ -611,22 +853,21 @@ export function VideoOutputFramePanel({
       <Stack direction="row" spacing={1} sx={{ minWidth: 0, alignItems: "flex-start" }}>
         <RectEditor
           label={t("videoOutput.frameCrop")}
-          rect={normalized.crop}
+          rect={quadToBoundingRect(normalized.crop)}
           color="#42a5f5"
           disabled={!canEdit}
           preview={preview}
-          enableNwHandle
-          onChange={(crop) => patchRect("crop", crop)}
+          onChange={patchCropRect}
         />
-        <RectEditor
+        <QuadEditor
           label={t("videoOutput.framePlacement")}
-          rect={normalized.dest}
+          quad={normalized.dest}
           color="#66bb6a"
           disabled={!canEdit}
           preview={preview}
           previewFrame={normalized}
           lockSize={linkDestSize}
-          onChange={(dest) => patchRect("dest", dest)}
+          onChange={(dest) => patchQuad("dest", dest)}
         />
       </Stack>
       {canEdit && (
@@ -638,7 +879,7 @@ export function VideoOutputFramePanel({
               onChange={(_, checked) => {
                 setLinkDestSize(checked);
                 if (checked) {
-                  applyFrame(normalized);
+                  onChange(applyLinkedDestQuadSize(normalized, true));
                 }
               }}
               sx={{ py: 0 }}

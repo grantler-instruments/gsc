@@ -1,5 +1,6 @@
 import { visualLayerSx } from "../components/visualStageSx";
 import type { OutputLayer } from "../types/output";
+import { vfsGetObjectUrl } from "../vfs/engine";
 import type { OutputBusConfig, OutputStageHandle } from "./output-stage-registry";
 import {
   type CompositorLayer,
@@ -7,6 +8,10 @@ import {
   type VideoCompositor,
 } from "./video-compositor";
 import { isOutputLayerLooping, outputLayerTargetTime, sliceEndSec } from "./video-playback";
+
+function layerObjectUrl(layer: OutputLayer): string {
+  return layer.objectUrl || vfsGetObjectUrl(layer.assetPath) || "";
+}
 
 export interface OutputStageEngineOptions {
   /** Control preview — notify when a non-looping clip finishes. */
@@ -94,7 +99,15 @@ export class OutputStageEngine implements OutputStageHandle {
         this.syncCompositorSize();
       });
       this.resizeObserver.observe(this.root);
+      requestAnimationFrame(() => {
+        this.syncCompositorSize();
+      });
     }
+  }
+
+  /** Re-measure host size after layout (embedded previews). */
+  syncLayout(): void {
+    this.syncCompositorSize();
   }
 
   syncLayers(layers: OutputLayer[]): void {
@@ -120,6 +133,8 @@ export class OutputStageEngine implements OutputStageHandle {
       entry.layer = { ...entry.layer, opacity: layer.opacity };
       if (!this.compositor) {
         entry.wrap.style.opacity = String(clamp01(layer.opacity));
+      } else {
+        entry.wrap.style.opacity = "0";
       }
     }
     this.syncCompositorLayers();
@@ -206,12 +221,13 @@ export class OutputStageEngine implements OutputStageHandle {
       existing.layer = { ...existing.layer, ...layer };
     }
 
-    if (existing.objectUrl !== layer.objectUrl) {
-      existing.objectUrl = layer.objectUrl;
+    const nextObjectUrl = layerObjectUrl(layer);
+    if (existing.objectUrl !== nextObjectUrl) {
+      existing.objectUrl = nextObjectUrl;
       if (existing.media instanceof HTMLVideoElement) {
-        existing.media.src = layer.objectUrl;
+        existing.media.src = existing.objectUrl;
       } else {
-        existing.media.src = layer.objectUrl;
+        existing.media.src = existing.objectUrl;
       }
     }
 
@@ -269,7 +285,7 @@ export class OutputStageEngine implements OutputStageHandle {
           this.handleVideoEnded(layer.cueId);
         });
       }
-      video.src = layer.objectUrl;
+      video.src = layerObjectUrl(layer);
       if (video.readyState >= 1) startPlayback();
       media = video;
     } else {
@@ -283,7 +299,7 @@ export class OutputStageEngine implements OutputStageHandle {
       img.addEventListener("error", () => {
         console.warn("[output] Could not load", layer.objectUrl);
       });
-      img.src = layer.objectUrl;
+      img.src = layerObjectUrl(layer);
       media = img;
     }
 
@@ -294,7 +310,7 @@ export class OutputStageEngine implements OutputStageHandle {
       layer,
       wrap,
       media,
-      objectUrl: layer.objectUrl,
+      objectUrl: layerObjectUrl(layer),
       loopTimerId: 0,
       loopIterations: 0,
       goAtMs: layer.goAtMs,
