@@ -145,7 +145,7 @@ describe("notifyStepPlaybackEnded", () => {
 
   it("waits until all parallel playback cues in the step stop", () => {
     const cues = [
-      testCue("par", "Par", "parallel"),
+      testCue("par", "Par", "group"),
       testCue("a", "A", "audio", { parentId: "par", assetPath: "a.wav" }),
       testCue("b", "B", "audio", { parentId: "par", assetPath: "b.wav" }),
     ];
