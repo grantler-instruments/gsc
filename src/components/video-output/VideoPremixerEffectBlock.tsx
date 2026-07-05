@@ -44,6 +44,8 @@ import { FX_BLOCK_WIDTH } from "./video-premixer-layout";
 
 const horizontalSliderSx = {
   color: "primary.main",
+  width: "calc(100% - 12px)",
+  mx: "auto",
   "& .MuiSlider-rail": { opacity: 0.35 },
 } as const;
 
@@ -120,11 +122,12 @@ function EffectBlockShell({
       onDrop={reorder?.onDrop}
       sx={{
         width: FX_BLOCK_WIDTH,
+        boxSizing: "border-box",
         flexShrink: 0,
         display: "flex",
         flexDirection: "column",
         gap: 0.75,
-        px: 0.75,
+        px: 1.25,
         py: 0.75,
         borderRight: 1,
         borderColor: "divider",
@@ -170,10 +173,27 @@ function EffectBlockShell({
       <Button
         size="small"
         fullWidth
-        variant={enabled ? "contained" : "outlined"}
+        variant="outlined"
         disabled={!canEdit}
         onClick={onToggle}
-        sx={{ fontSize: 10, py: 0.25, mt: "auto" }}
+        sx={{
+          fontSize: 10,
+          py: 0.25,
+          mt: "auto",
+          ...(enabled
+            ? {
+                borderColor: "primary.main",
+                color: "primary.main",
+                "&:hover": {
+                  borderColor: "primary.main",
+                  bgcolor: "transparent",
+                },
+              }
+            : {
+                borderColor: "divider",
+                color: "text.secondary",
+              }),
+        }}
       >
         {enabled ? t("videoOutput.effectOn") : t("videoOutput.effectOff")}
       </Button>
