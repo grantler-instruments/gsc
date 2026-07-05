@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { audioEngine } from "../audio/engine";
-import { notifyStepPlaybackEnded } from "../lib/sequence-runner";
+import {
+  notifyStepPlaybackEnded,
+  tryAdvanceSequenceIfStepPlaybackInactive,
+} from "../lib/sequence-runner";
 import { useFadeStore } from "../stores/fade";
 import { useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
@@ -43,6 +46,7 @@ export function useAudioEngine(): void {
     audioEngine.onVoiceEnded((cueId) => {
       useTransportStore.getState().stopCue(cueId);
       notifyStepPlaybackEnded([cueId]);
+      tryAdvanceSequenceIfStepPlaybackInactive();
     });
 
     const runSync = () => {

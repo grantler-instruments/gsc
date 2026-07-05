@@ -9,6 +9,7 @@ import {
   notifyFadeCueComplete,
   notifyStepPlaybackEnded,
   runSequence,
+  tryAdvanceSequenceIfStepPlaybackInactive,
 } from "./sequence-runner";
 
 function resetTransport() {
@@ -327,6 +328,33 @@ describe("completeSequenceStep idempotency", () => {
 describe("nested sequences", () => {
   beforeEach(() => {
     resetTransport();
+  });
+
+  it("advances when step playback cues are all inactive", () => {
+    const cues = [
+      testCue("seq", "Seq", "sequence"),
+      testCue("a", "A", "audio", { parentId: "seq", assetPath: "a.wav" }),
+      testCue("b", "B", "audio", { parentId: "seq", assetPath: "b.wav" }),
+    ];
+    resetTestProject(cues);
+    useTransportStore.setState({
+      activeCueIds: [],
+      runningSequence: {
+        rootId: "seq",
+        currentStep: 0,
+        stepCount: 2,
+        stepCueIds: ["a"],
+        stepStartedAtMs: 0,
+      },
+    });
+
+    tryAdvanceSequenceIfStepPlaybackInactive();
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      currentStep: 1,
+      stepCueIds: ["b"],
+    });
+    expect(useTransportStore.getState().activeCueIds).toContain("b");
   });
 
   it("does not drop playback-end notification when runningSequence is set before firing", () => {

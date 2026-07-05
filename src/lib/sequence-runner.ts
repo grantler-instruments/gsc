@@ -226,6 +226,25 @@ export function notifyStepPlaybackEnded(stoppedCueIds: string[]): void {
   completeSequenceStep(rootCue, cues, steps, running.currentStep);
 }
 
+/**
+ * Fallback when playback-end notifications are missed (headless CI / engine races).
+ * Advances once every playback cue in the current step is inactive.
+ */
+export function tryAdvanceSequenceIfStepPlaybackInactive(): void {
+  const transport = useTransportStore.getState();
+  const running = transport.runningSequence;
+  if (!running) return;
+
+  const cues = getActiveCueListFromState(useProjectStore.getState())?.cues ?? [];
+  const playbackIds = playbackCueIdsInStep(running.stepCueIds, cues);
+  if (playbackIds.length === 0) return;
+
+  const stillActive = playbackIds.filter((id) => transport.activeCueIds.includes(id));
+  if (stillActive.length > 0) return;
+
+  notifyStepPlaybackEnded(playbackIds);
+}
+
 /** When a fade cue finishes, advance if the sequence is waiting on it. */
 export function notifyFadeCueComplete(fadeCueId: string, cues: Cue[]): void {
   const running = useTransportStore.getState().runningSequence;

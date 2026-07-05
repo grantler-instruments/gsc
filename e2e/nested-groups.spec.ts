@@ -14,6 +14,7 @@ import {
 } from "./helpers/container-cues";
 import { expectCueInSequenceList, sequenceCueRow } from "./helpers/cue-list-panel";
 import { dropAudioOnCueList, fixturePath } from "./helpers/drop-audio";
+import { prefetchClipDurations } from "./helpers/sequence";
 
 const SHORT_A = "white-noise-short-a.wav";
 const SHORT_B = "white-noise-short-b.wav";
@@ -68,8 +69,7 @@ test("sequence > parallel > sequence runs nested leaf steps in order @structure"
     sequenceCueRow(page, "Inner Seq").getByText(/2 cue\(s\) · sequential/),
   ).toBeVisible();
 
-  await sequenceCueRow(page, SHORT_A).click();
-  await sequenceCueRow(page, SHORT_B).click();
+  await prefetchClipDurations(page, [SHORT_A, SHORT_B]);
   await sequenceCueRow(page, "Root Seq").click();
   await openActiveCuesTab(page);
   await pressTransportGo(page);

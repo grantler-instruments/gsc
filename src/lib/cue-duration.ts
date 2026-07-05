@@ -1,3 +1,4 @@
+import { getCachedAudioBuffer } from "../audio/buffer-cache";
 import type { Cue } from "../types/cue";
 import {
   expandSequenceSteps,
@@ -63,7 +64,9 @@ function leafDurationMs(cue: Cue): number {
     return Math.max(MIN_STEP_SEC * 1000, cue.outTime * 1000);
   }
 
-  const sourceDur = cue.assetPath ? getMediaDurationSec(cue.assetPath) : undefined;
+  const sourceDur = cue.assetPath
+    ? (getMediaDurationSec(cue.assetPath) ?? getCachedAudioBuffer(cue.assetPath)?.duration)
+    : undefined;
   const slice = getPlaybackSliceSec(cue, sourceDur);
   const sliceMs = slice * 1000 + fadeIn + fadeOut;
   const plays = getLoopPlayCount(cue);
