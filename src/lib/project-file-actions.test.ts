@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useProjectLocationStore } from "../stores/project-location";
 import { saveProjectAsFile, saveProjectFile } from "./project-file-actions";
 
-const persistPlatformProject = vi.fn(async () => {});
-const exportProjectBundle = vi.fn(async () => ({ missing: [] as string[] }));
+const { persistPlatformProject, exportProjectBundle } = vi.hoisted(() => ({
+  persistPlatformProject: vi.fn(async () => {}),
+  exportProjectBundle: vi.fn(async () => ({ missing: [] as string[] })),
+}));
 const notifyWarning = vi.fn();
 let platform: "web" | "tauri" = "tauri";
 let canEdit = true;
@@ -13,8 +15,8 @@ vi.mock("../platform", () => ({
 }));
 
 vi.mock("../platform/project-storage", () => ({
-  persistPlatformProject: (...args: unknown[]) => persistPlatformProject(...args),
-  exportProjectBundle: (...args: unknown[]) => exportProjectBundle(...args),
+  persistPlatformProject,
+  exportProjectBundle,
 }));
 
 vi.mock("./show-mode", () => ({

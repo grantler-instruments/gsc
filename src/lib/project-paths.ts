@@ -40,7 +40,8 @@ export function enclosingGscProjectDirPath(targetPath: string): string | null {
   if (parts.length < 2) return null;
 
   for (let i = parts.length - 1; i >= 1; i--) {
-    if (isGscProjectDirName(parts[i - 1]!)) {
+    const parentName = parts[i - 1];
+    if (parentName !== undefined && isGscProjectDirName(parentName)) {
       const joined = parts.slice(0, i).join(sep);
       return isAbsolute ? `${sep}${joined}` : joined;
     }

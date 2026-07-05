@@ -4,7 +4,6 @@ import {
   ensureStartupProjectsDialogVisible,
   refreshStartupProjectsRecents,
   requestStartupProjectsChoice,
-  resolveStartupProjectsChoice,
   useStartupProjectsPromptStore,
 } from "./startup-projects-prompt";
 

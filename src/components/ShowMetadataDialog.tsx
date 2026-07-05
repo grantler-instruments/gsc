@@ -11,7 +11,6 @@ import { useTranslation } from "react-i18next";
 import { saveProjectAsFile } from "../lib/project-file-actions";
 import {
   runAfterShowMetadataSave,
-  saveKeyboardAction,
   shouldPromptSaveProjectAfterMetadata,
 } from "../lib/project-save-flow";
 import { getPlatform } from "../platform";
