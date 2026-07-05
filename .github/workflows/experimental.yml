@@ -20,9 +20,6 @@ jobs:
   build-web:
     needs: test
     runs-on: ubuntu-latest
-    concurrency:
-      group: pages
-      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v6
 
