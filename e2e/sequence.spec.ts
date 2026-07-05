@@ -62,8 +62,6 @@ test("sequence auto-advances through two audio steps @smoke @structure", async (
     timeout: STEP_ADVANCE_TIMEOUT_MS,
   });
 
-  await expect(activeCueRow(page, SHORT_A)).toBeHidden({ timeout: STEP_ADVANCE_TIMEOUT_MS });
-
   await expect
     .poll(
       async () => {

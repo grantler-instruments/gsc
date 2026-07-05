@@ -418,6 +418,22 @@ describe("nested sequences", () => {
     expect(useTransportStore.getState().runningSequence).toBeNull();
     expect(useTransportStore.getState().activeCueIds).toEqual([]);
   });
+
+  it("resumes the parent sequence after a nested child finishes", () => {
+    const cues = [
+      testCue("root", "Root Seq", "sequence"),
+      testCue("mid", "Mid Par", "group", { parentId: "root" }),
+      testCue("inner", "Inner Seq", "sequence", { parentId: "mid" }),
+      testCue("a", "A", "audio", { parentId: "inner", assetPath: "a.wav" }),
+    ];
+    resetTestProject(cues);
+
+    runSequence(cues[0], cues);
+    useTransportStore.setState({ activeCueIds: [] });
+    notifyStepPlaybackEnded(["a"]);
+
+    expect(useTransportStore.getState().runningSequence).toBeNull();
+  });
 });
 
 describe("cueCompletesViaAudioEngine", () => {

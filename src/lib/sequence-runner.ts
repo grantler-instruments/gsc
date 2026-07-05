@@ -37,7 +37,14 @@ function resumeParentSequence(cues: Cue[], parent: { rootId: string; stepIndex: 
   }
   const parentSteps = expandSequenceSteps(parent.rootId, cues);
   clearSequenceTimers();
-  useTransportStore.getState().setRunningSequence(null);
+  // Do not copy the child's `parent` link — it points at this sequence, not its grandparent.
+  useTransportStore.getState().setRunningSequence({
+    rootId: parent.rootId,
+    currentStep: parent.stepIndex,
+    stepCount: parentSteps.length,
+    stepCueIds: parentSteps[parent.stepIndex] ?? [],
+    stepStartedAtMs: transportNowMs(),
+  });
   completeSequenceStep(parentRoot, cues, parentSteps, parent.stepIndex);
 }
 
@@ -171,6 +178,12 @@ function runSequenceStep(
     return;
   }
 
+  const playbackInStep = playbackCueIdsInStep(stepCueIds, cues);
+  // Container-only steps (parallel/sequence children) delegate timing to nested runners.
+  if (playbackInStep.length === 0) {
+    return;
+  }
+
   if (
     nestedRunning?.rootId !== rootCue.id ||
     nestedRunning.currentStep !== index ||
@@ -180,17 +193,14 @@ function runSequenceStep(
   }
 
   const durationMs = estimateStepDurationMs(stepCueIds, cues);
-  const hasPlaybackStep = playbackCueIdsInStep(stepCueIds, cues).length > 0;
 
   scheduleSequenceStep(() => {
     completeSequenceStep(rootCue, cues, steps, index, { forceStopPlayback: true });
   }, durationMs);
 
-  if (hasPlaybackStep) {
-    scheduleSequenceStepWatchdog(() => {
-      tryAdvanceSequenceIfStepPlaybackInactive();
-    });
-  }
+  scheduleSequenceStepWatchdog(() => {
+    tryAdvanceSequenceIfStepPlaybackInactive();
+  });
 }
 
 export function runSequence(

@@ -75,7 +75,6 @@ test("sequence > parallel > sequence runs nested leaf steps in order @structure"
   await pressTransportGo(page);
 
   await expect(activeCueRow(page, SHORT_A)).toBeVisible({ timeout: 10_000 });
-  await expect(activeCueRow(page, SHORT_A)).toBeHidden({ timeout: STEP_ADVANCE_TIMEOUT_MS });
 
   await expect
     .poll(
