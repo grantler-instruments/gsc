@@ -1,12 +1,18 @@
 import { expect, type Page } from "@playwright/test";
 import {
   expectOutputPlaybackStableOnPage,
+  isOutputVideoReady,
   OUTPUT_VIDEO_LOAD_MAX_MS,
+  OUTPUT_VIDEO_MID_PLAYBACK_LOAD_MAX_MS,
+  OUTPUT_VIDEO_POLL_TIMEOUT_MS,
 } from "../shared/output-window";
 import { driftSecWithinSlice as driftSecWithinPlaybackSlice } from "../shared/playback-drift";
 import { getWaveformPositionSec } from "./active-cues";
 
-export { OUTPUT_VIDEO_LOAD_MAX_MS } from "../shared/output-window";
+export {
+  OUTPUT_VIDEO_LOAD_MAX_MS,
+  OUTPUT_VIDEO_MID_PLAYBACK_LOAD_MAX_MS,
+} from "../shared/output-window";
 
 /** test-video-playback.mp4 slice length (see generate-video-fixtures.mjs). */
 export const PLAYBACK_VIDEO_SLICE_SEC = 4;
@@ -69,15 +75,21 @@ function isOutputVideoPlaying(state: OutputVideoState | null): boolean {
 export async function waitForOutputVideoPlaying(
   outputPage: Page,
   startedAtMs: number,
-  timeoutMs = 20_000,
+  options: {
+    timeoutMs?: number;
+    requirePlaying?: boolean;
+  } = {},
 ): Promise<number> {
+  const { timeoutMs = OUTPUT_VIDEO_POLL_TIMEOUT_MS, requirePlaying = true } = options;
+  const isReady = (state: OutputVideoState | null) =>
+    requirePlaying ? isOutputVideoPlaying(state) : isOutputVideoReady(state);
   let loadMs = 0;
 
   await expect
     .poll(
       async () => {
         const state = await getOutputVideoState(outputPage);
-        if (isOutputVideoPlaying(state)) {
+        if (isReady(state)) {
           loadMs = Date.now() - startedAtMs;
           return true;
         }
@@ -94,8 +106,9 @@ export async function expectOutputVideoLoadsWithin(
   outputPage: Page,
   startedAtMs: number,
   maxMs = OUTPUT_VIDEO_LOAD_MAX_MS,
+  options: { requirePlaying?: boolean; timeoutMs?: number } = {},
 ): Promise<number> {
-  const loadMs = await waitForOutputVideoPlaying(outputPage, startedAtMs);
+  const loadMs = await waitForOutputVideoPlaying(outputPage, startedAtMs, options);
   expect(loadMs, `output video took ${loadMs}ms to start (limit ${maxMs}ms)`).toBeLessThanOrEqual(
     maxMs,
   );

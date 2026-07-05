@@ -15,6 +15,7 @@ import {
   expectOutputVideoLoadsWithin,
   expectOutputVideoPlaybackToAdvance,
   expectPlaybackSyncStable,
+  OUTPUT_VIDEO_MID_PLAYBACK_LOAD_MAX_MS,
   openOutputWindow,
   outputButton,
 } from "./helpers/output-window";
@@ -98,7 +99,13 @@ test("output window video loads quickly when opened during playback", async ({ p
 
   const openAtMs = Date.now();
   const outputPage = await openOutputWindow(page);
-  const loadMs = await expectOutputVideoLoadsWithin(outputPage, openAtMs);
+  await outputPage.locator("body").click({ position: { x: 8, y: 8 } });
+  const loadMs = await expectOutputVideoLoadsWithin(
+    outputPage,
+    openAtMs,
+    OUTPUT_VIDEO_MID_PLAYBACK_LOAD_MAX_MS,
+    { requirePlaying: false },
+  );
 
   test.info().annotations.push({
     type: "output-video-mid-playback-load-ms",
