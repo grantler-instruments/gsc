@@ -2,7 +2,7 @@ import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
 import { estimateStepDurationMs } from "./cue-duration";
-import { expandSequenceSteps, isFadeCue } from "./cues";
+import { expandSequenceSteps, isFadeCue, isParallelGroup, isSequenceGroup } from "./cues";
 import { fireStepCues, playbackCueIdsInStep } from "./fire-step-cues";
 import { isEngineManagedPlaybackCue } from "./playback-slice";
 import {
@@ -179,8 +179,14 @@ function runSequenceStep(
   }
 
   const playbackInStep = playbackCueIdsInStep(stepCueIds, cues);
-  // Container-only steps (parallel/sequence children) delegate timing to nested runners.
-  if (playbackInStep.length === 0) {
+  const delegatesToNestedRunner =
+    playbackInStep.length === 0 &&
+    stepCueIds.some((id) => {
+      const cue = cues.find((c) => c.id === id);
+      return cue !== undefined && (isSequenceGroup(cue) || isParallelGroup(cue));
+    });
+  // Container-only steps delegate timing to nested runners; wait/fade/stop still need timers.
+  if (delegatesToNestedRunner) {
     return;
   }
 

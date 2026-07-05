@@ -296,6 +296,34 @@ describe("completeSequenceStep idempotency", () => {
     });
   });
 
+  it("schedules a timer for wait-only steps", () => {
+    const cues = [
+      testCue("seq", "Seq", "sequence"),
+      testCue("a", "A", "audio", { parentId: "seq", assetPath: "a.wav" }),
+      testCue("w", "Wait", "wait", { parentId: "seq", waitDurationSec: 2 }),
+      testCue("b", "B", "audio", { parentId: "seq", assetPath: "b.wav" }),
+    ];
+    resetTestProject(cues);
+
+    runSequence(cues[0], cues);
+    useTransportStore.setState({ activeCueIds: [] });
+    notifyStepPlaybackEnded(["a"]);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      currentStep: 1,
+      stepCueIds: ["w"],
+    });
+    expect(useTransportStore.getState().activeCueIds).toEqual([]);
+
+    vi.advanceTimersByTime(2000);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      currentStep: 2,
+      stepCueIds: ["b"],
+    });
+    expect(useTransportStore.getState().activeCueIds).toContain("b");
+  });
+
   it("ignores a stale step timer after playback-end already advanced", () => {
     const cues = [
       testCue("seq", "Seq", "sequence"),
