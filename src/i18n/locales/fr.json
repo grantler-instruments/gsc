@@ -283,6 +283,7 @@
     "unsavedDraft": "Brouillon non enregistré",
     "restoreDraftHint": "Restaurer le travail de votre dernière session",
     "recentProjects": "Projets récents",
+    "removeRecentProject": "Retirer {{projectName}} des projets récents",
     "description": "Choisissez un projet récent, parcourez un fichier ou démarrez un nouveau spectacle.",
     "newShow": "Nouveau spectacle"
   },

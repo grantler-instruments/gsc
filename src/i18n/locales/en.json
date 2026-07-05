@@ -283,6 +283,7 @@
     "unsavedDraft": "Unsaved draft",
     "restoreDraftHint": "Restore work from your last session",
     "recentProjects": "Recent projects",
+    "removeRecentProject": "Remove {{projectName}} from recent projects",
     "description": "Choose a recent project, browse for a file, or start a new show.",
     "newShow": "New Show"
   },

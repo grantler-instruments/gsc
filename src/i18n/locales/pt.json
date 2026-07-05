@@ -283,6 +283,7 @@
     "unsavedDraft": "Rascunho não salvo",
     "restoreDraftHint": "Restaure o trabalho da sua última sessão",
     "recentProjects": "Projetos recentes",
+    "removeRecentProject": "Remover {{projectName}} dos projetos recentes",
     "description": "Escolha um projeto recente, procure um arquivo ou inicie um novo espetáculo.",
     "newShow": "Novo espetáculo"
   },

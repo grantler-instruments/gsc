@@ -283,6 +283,7 @@
     "unsavedDraft": "未保存草稿",
     "restoreDraftHint": "恢复上次会话的工作",
     "recentProjects": "最近项目",
+    "removeRecentProject": "从最近项目中移除 {{projectName}}",
     "description": "选择最近项目、浏览文件或开始新演出。",
     "newShow": "新演出"
   },

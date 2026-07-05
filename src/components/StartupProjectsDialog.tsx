@@ -1,3 +1,4 @@
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import EditNoteOutlinedIcon from "@mui/icons-material/EditNoteOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
@@ -6,7 +7,9 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
@@ -14,8 +17,11 @@ import ListSubheader from "@mui/material/ListSubheader";
 import Typography from "@mui/material/Typography";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { removeRecentProject } from "../lib/recent-projects";
+import { listRecentProjects } from "../platform/project-storage";
 import {
   ensureStartupProjectsDialogVisible,
+  refreshStartupProjectsRecents,
   resolveStartupProjectsChoice,
   useStartupProjectsPromptStore,
 } from "../stores/startup-projects-prompt";
@@ -36,6 +42,11 @@ export function StartupProjectsDialog() {
   useEffect(() => {
     ensureStartupProjectsDialogVisible();
   }, []);
+
+  const handleRemoveRecent = async (path: string) => {
+    removeRecentProject(path);
+    refreshStartupProjectsRecents(await listRecentProjects());
+  };
 
   return (
     <Dialog
@@ -64,17 +75,42 @@ export function StartupProjectsDialog() {
             subheader={<ListSubheader component="div">{t("startup.recentProjects")}</ListSubheader>}
           >
             {recents.map((entry) => (
-              <ListItemButton
+              <ListItem
                 key={entry.path}
-                onClick={() =>
-                  resolveStartupProjectsChoice({ type: "open-recent", path: entry.path })
+                disablePadding
+                sx={{
+                  "@media (hover: hover)": {
+                    "& .MuiListItemSecondaryAction-root": {
+                      opacity: 0,
+                      transition: "opacity 0.15s ease",
+                    },
+                    "&:hover .MuiListItemSecondaryAction-root, &:focus-within .MuiListItemSecondaryAction-root":
+                      {
+                        opacity: 1,
+                      },
+                  },
+                }}
+                secondaryAction={
+                  <IconButton
+                    edge="end"
+                    aria-label={t("startup.removeRecentProject", { projectName: entry.name })}
+                    onClick={() => void handleRemoveRecent(entry.path)}
+                  >
+                    <CloseOutlinedIcon fontSize="small" />
+                  </IconButton>
                 }
               >
-                <ListItemIcon sx={{ minWidth: 36 }}>
-                  <HistoryOutlinedIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary={entry.name} secondary={truncatePath(entry.path)} />
-              </ListItemButton>
+                <ListItemButton
+                  onClick={() =>
+                    resolveStartupProjectsChoice({ type: "open-recent", path: entry.path })
+                  }
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <HistoryOutlinedIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary={entry.name} secondary={truncatePath(entry.path)} />
+                </ListItemButton>
+              </ListItem>
             ))}
           </List>
         ) : null}

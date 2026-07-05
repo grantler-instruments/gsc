@@ -283,6 +283,7 @@
     "unsavedDraft": "مسودة غير محفوظة",
     "restoreDraftHint": "استعد العمل من جلستك الأخيرة",
     "recentProjects": "المشاريع الأخيرة",
+    "removeRecentProject": "إزالة {{projectName}} من المشاريع الأخيرة",
     "description": "اختر مشروعًا حديثًا، أو استعرض ملفًا، أو ابدأ عرضًا جديدًا.",
     "newShow": "عرض جديد"
   },

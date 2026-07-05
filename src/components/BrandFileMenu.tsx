@@ -1,6 +1,7 @@
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import InstallDesktopOutlinedIcon from "@mui/icons-material/InstallDesktopOutlined";
@@ -10,6 +11,7 @@ import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivism
 import Box from "@mui/material/Box";
 import ButtonBase from "@mui/material/ButtonBase";
 import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
@@ -32,6 +34,7 @@ import {
 import type { IdbProjectSummary } from "../lib/project-idb";
 import { BUNDLE_EXTENSION } from "../lib/project-paths";
 import type { RecentProjectEntry } from "../lib/recent-projects";
+import { removeRecentProject } from "../lib/recent-projects";
 import { getPlatform } from "../platform";
 import {
   exportProjectBundle,
@@ -222,11 +225,36 @@ export function BrandFileMenu() {
                   close();
                   void openRecentProjectPath(entry.path);
                 }}
+                sx={{
+                  pr: 1,
+                  "@media (hover: hover)": {
+                    "& .recent-project-remove": {
+                      opacity: 0,
+                      transition: "opacity 0.15s ease",
+                    },
+                    "&:hover .recent-project-remove, &:focus-within .recent-project-remove": {
+                      opacity: 1,
+                    },
+                  },
+                }}
               >
                 <ListItemIcon>
                   <HistoryOutlinedIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary={entry.name} secondary={truncatePath(entry.path)} />
+                <IconButton
+                  className="recent-project-remove"
+                  size="small"
+                  aria-label={t("startup.removeRecentProject", { projectName: entry.name })}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeRecentProject(entry.path);
+                    setRecents((prev) => prev.filter((recent) => recent.path !== entry.path));
+                  }}
+                  sx={{ ml: 1, flexShrink: 0 }}
+                >
+                  <CloseOutlinedIcon fontSize="small" />
+                </IconButton>
               </MenuItem>
             ))
           : null}

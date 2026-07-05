@@ -283,6 +283,7 @@
     "unsavedDraft": "Ungespeicherter Entwurf",
     "restoreDraftHint": "Arbeit der letzten Sitzung wiederherstellen",
     "recentProjects": "Zuletzt geöffnet",
+    "removeRecentProject": "{{projectName}} aus zuletzt geöffnet entfernen",
     "description": "Zuletzt geöffnetes Projekt wählen, Datei durchsuchen oder neue Show starten.",
     "newShow": "Neue Show"
   },
