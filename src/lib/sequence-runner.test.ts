@@ -144,6 +144,7 @@ describe("notifyStepPlaybackEnded", () => {
       currentStep: 1,
       stepCueIds: ["b"],
     });
+    expect(useTransportStore.getState().activeCueIds).toContain("b");
   });
 
   it("waits until all parallel playback cues in the step stop", () => {

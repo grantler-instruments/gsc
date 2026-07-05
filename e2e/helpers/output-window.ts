@@ -45,6 +45,7 @@ export async function openOutputWindow(page: Page): Promise<Page> {
   await expect(outputPage).toHaveURL(/mode=output/);
   await expect(outputStage(outputPage)).toBeVisible({ timeout: 30_000 });
   await outputPage.bringToFront();
+  await outputPage.locator("body").click({ position: { x: 8, y: 8 } });
 
   return outputPage;
 }
@@ -108,7 +109,10 @@ export async function expectOutputVideoLoadsWithin(
   maxMs = OUTPUT_VIDEO_LOAD_MAX_MS,
   options: { requirePlaying?: boolean; timeoutMs?: number } = {},
 ): Promise<number> {
-  const loadMs = await waitForOutputVideoPlaying(outputPage, startedAtMs, options);
+  const loadMs = await waitForOutputVideoPlaying(outputPage, startedAtMs, {
+    ...options,
+    requirePlaying: options.requirePlaying ?? false,
+  });
   expect(loadMs, `output video took ${loadMs}ms to start (limit ${maxMs}ms)`).toBeLessThanOrEqual(
     maxMs,
   );

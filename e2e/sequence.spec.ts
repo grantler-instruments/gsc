@@ -50,6 +50,8 @@ test("sequence auto-advances through two audio steps @smoke @structure", async (
   test.setTimeout(60_000);
 
   await prepareTwoStepSequence(page);
+  await sequenceCueRow(page, SHORT_A).click();
+  await sequenceCueRow(page, SHORT_B).click();
   await containerCueRow(page, "Sequence").click();
   await openActiveCuesTab(page);
 

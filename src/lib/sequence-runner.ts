@@ -79,13 +79,7 @@ function runSequenceStep(rootCue: Cue, cues: Cue[], steps: string[][], index: nu
     return;
   }
 
-  transport.setRunningSequence({
-    rootId: rootCue.id,
-    currentStep: index,
-    stepCount: steps.length,
-    stepCueIds,
-    stepStartedAtMs: transportNowMs(),
-  });
+  const stepStartedAtMs = transportNowMs();
 
   fireStepCues(
     stepCueIds,
@@ -97,6 +91,14 @@ function runSequenceStep(rootCue: Cue, cues: Cue[], steps: string[][], index: nu
     },
     { runSequence: (cue, list) => runSequence(cue, list) },
   );
+
+  transport.setRunningSequence({
+    rootId: rootCue.id,
+    currentStep: index,
+    stepCount: steps.length,
+    stepCueIds,
+    stepStartedAtMs,
+  });
 
   const durationMs = estimateStepDurationMs(stepCueIds, cues);
 

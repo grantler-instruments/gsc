@@ -7,9 +7,14 @@ import {
   transportGoButton,
 } from "./helpers/active-cues";
 import { gotoApp } from "./helpers/app";
-import { expectCueInSequenceList } from "./helpers/cue-list-panel";
+import { expectCueInSequenceList, sequenceCueRow } from "./helpers/cue-list-panel";
 import { dropAudioOnCueList, fixturePath } from "./helpers/drop-audio";
-import { prepareLoopCue, startSelectedLoopCue } from "./helpers/loop-playback";
+import { enableLoopPlayback } from "./helpers/fade-cues";
+import {
+  prepareLoopCue,
+  setInfiniteLoopIterations,
+  startSelectedLoopCue,
+} from "./helpers/loop-playback";
 import {
   expectOutputPlaybackStable,
   expectOutputVideoLoadsWithin,
@@ -28,6 +33,10 @@ async function setupVideoCue(page: Page) {
   await gotoApp(page);
   await dropAudioOnCueList(page, fixturePath(VIDEO_FIXTURE), VIDEO_FIXTURE, "video/mp4");
   await expectCueInSequenceList(page, VIDEO_FIXTURE);
+  // Fixture slice is 4s — loop so load + stable windows do not outlive playback.
+  await sequenceCueRow(page, VIDEO_FIXTURE).click();
+  await enableLoopPlayback(page);
+  await setInfiniteLoopIterations(page);
   await expect(outputButton(page)).toBeVisible();
 }
 
@@ -43,6 +52,7 @@ test("output window plays video when cue is triggered", async ({ page }) => {
 
   await expectOutputVideoPlaybackToAdvance(outputPage);
 
+  await pressPanic(page);
   await outputPage.close();
 });
 
@@ -64,6 +74,7 @@ test("output window video loads quickly after GO", async ({ page }) => {
     description: String(loadMs),
   });
 
+  await pressPanic(page);
   await outputPage.close();
 });
 
@@ -83,6 +94,7 @@ test("output window keeps a single video element without reloading during playba
   await expectOutputVideoLoadsWithin(outputPage, goAtMs);
   await expectOutputPlaybackStable(outputPage);
 
+  await pressPanic(page);
   await outputPage.close();
 });
 
@@ -99,7 +111,6 @@ test("output window video loads quickly when opened during playback", async ({ p
 
   const openAtMs = Date.now();
   const outputPage = await openOutputWindow(page);
-  await outputPage.locator("body").click({ position: { x: 8, y: 8 } });
   const loadMs = await expectOutputVideoLoadsWithin(
     outputPage,
     openAtMs,
@@ -112,6 +123,7 @@ test("output window video loads quickly when opened during playback", async ({ p
     description: String(loadMs),
   });
 
+  await pressPanic(page);
   await outputPage.close();
 });
 
