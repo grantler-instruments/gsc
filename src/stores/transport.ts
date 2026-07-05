@@ -16,6 +16,11 @@ export interface RunningSequence {
   stepCueIds: string[];
   /** Wall-clock ms when the current step started (for wait progress). */
   stepStartedAtMs: number;
+  /** Set when a child sequence temporarily owns `runningSequence`. */
+  parent?: {
+    rootId: string;
+    stepIndex: number;
+  };
 }
 
 interface TransportState {

@@ -324,6 +324,50 @@ describe("completeSequenceStep idempotency", () => {
   });
 });
 
+describe("nested sequences", () => {
+  beforeEach(() => {
+    resetTransport();
+  });
+
+  it("runs a child sequence without the parent overwriting runningSequence", () => {
+    const cues = [
+      testCue("root", "Root Seq", "sequence"),
+      testCue("mid", "Mid Par", "group", { parentId: "root" }),
+      testCue("inner", "Inner Seq", "sequence", { parentId: "mid" }),
+      testCue("a", "A", "audio", { parentId: "inner", assetPath: "a.wav" }),
+      testCue("b", "B", "audio", { parentId: "inner", assetPath: "b.wav" }),
+    ];
+    resetTestProject(cues);
+
+    runSequence(cues[0], cues);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      rootId: "inner",
+      currentStep: 0,
+      stepCueIds: ["a"],
+      parent: { rootId: "root", stepIndex: 0 },
+    });
+    expect(useTransportStore.getState().activeCueIds).toContain("a");
+
+    useTransportStore.setState({ activeCueIds: [] });
+    notifyStepPlaybackEnded(["a"]);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      rootId: "inner",
+      currentStep: 1,
+      stepCueIds: ["b"],
+      parent: { rootId: "root", stepIndex: 0 },
+    });
+    expect(useTransportStore.getState().activeCueIds).toContain("b");
+
+    useTransportStore.setState({ activeCueIds: [] });
+    notifyStepPlaybackEnded(["b"]);
+
+    expect(useTransportStore.getState().runningSequence).toBeNull();
+    expect(useTransportStore.getState().activeCueIds).toEqual([]);
+  });
+});
+
 describe("cueCompletesViaAudioEngine", () => {
   it("is true for audio and video cues only", () => {
     expect(cueCompletesViaAudioEngine(testCue("a", "A", "audio"))).toBe(true);

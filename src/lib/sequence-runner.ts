@@ -18,6 +18,45 @@ interface CompleteStepOptions {
   forceStopPlayback?: boolean;
 }
 
+interface RunSequenceOptions {
+  parent?: {
+    rootId: string;
+    stepIndex: number;
+  };
+}
+
+function resumeParentSequence(cues: Cue[], parent: { rootId: string; stepIndex: number }): void {
+  const parentRoot = cues.find((c) => c.id === parent.rootId);
+  if (!parentRoot) {
+    cancelAllSequences();
+    return;
+  }
+  const parentSteps = expandSequenceSteps(parent.rootId, cues);
+  clearSequenceTimers();
+  useTransportStore.getState().setRunningSequence(null);
+  completeSequenceStep(parentRoot, cues, parentSteps, parent.stepIndex);
+}
+
+function finishSequenceOrAdvance(
+  rootCue: Cue,
+  cues: Cue[],
+  steps: string[][],
+  stepIndex: number,
+): void {
+  const nextIndex = stepIndex + 1;
+  if (nextIndex >= steps.length) {
+    const parent = useTransportStore.getState().runningSequence?.parent;
+    if (parent) {
+      resumeParentSequence(cues, parent);
+      return;
+    }
+    cancelAllSequences();
+    return;
+  }
+
+  runSequenceStep(rootCue, cues, steps, nextIndex);
+}
+
 /** Advance or finish the sequence after the given step completes. Idempotent per step index. */
 function completeSequenceStep(
   rootCue: Cue,
@@ -44,7 +83,7 @@ function completeSequenceStep(
 
   const nextIndex = stepIndex + 1;
   if (nextIndex >= steps.length) {
-    cancelAllSequences();
+    finishSequenceOrAdvance(rootCue, cues, steps, stepIndex);
     return;
   }
 
@@ -66,20 +105,27 @@ export function advanceRunningSequence(cues: Cue[]): void {
   completeSequenceStep(rootCue, cues, steps, running.currentStep);
 }
 
-function runSequenceStep(rootCue: Cue, cues: Cue[], steps: string[][], index: number): void {
+function runSequenceStep(
+  rootCue: Cue,
+  cues: Cue[],
+  steps: string[][],
+  index: number,
+  parent?: RunSequenceOptions["parent"],
+): void {
   const transport = useTransportStore.getState();
   const stepCueIds = steps[index];
 
   if (stepCueIds.length === 0) {
     if (index + 1 >= steps.length) {
-      cancelAllSequences();
+      finishSequenceOrAdvance(rootCue, cues, steps, index);
       return;
     }
-    runSequenceStep(rootCue, cues, steps, index + 1);
+    runSequenceStep(rootCue, cues, steps, index + 1, parent);
     return;
   }
 
   const stepStartedAtMs = transportNowMs();
+  const runningBefore = useTransportStore.getState().runningSequence;
 
   fireStepCues(
     stepCueIds,
@@ -89,16 +135,32 @@ function runSequenceStep(rootCue: Cue, cues: Cue[], steps: string[][], index: nu
       go: (id) => transport.go(id),
       stopMany: (ids) => transport.stopMany(ids),
     },
-    { runSequence: (cue, list) => runSequence(cue, list) },
+    {
+      runSequence: (cue, list) =>
+        runSequence(cue, list, { parent: { rootId: rootCue.id, stepIndex: index } }),
+    },
   );
 
-  transport.setRunningSequence({
-    rootId: rootCue.id,
-    currentStep: index,
-    stepCount: steps.length,
-    stepCueIds,
-    stepStartedAtMs,
-  });
+  const nestedRunning = useTransportStore.getState().runningSequence;
+  if (nestedRunning && nestedRunning.rootId !== rootCue.id) {
+    if (!nestedRunning.parent) {
+      transport.setRunningSequence({
+        ...nestedRunning,
+        parent: { rootId: rootCue.id, stepIndex: index },
+      });
+    }
+  } else {
+    const preservedParent =
+      parent ?? (runningBefore?.rootId === rootCue.id ? runningBefore.parent : undefined);
+    transport.setRunningSequence({
+      rootId: rootCue.id,
+      currentStep: index,
+      stepCount: steps.length,
+      stepCueIds,
+      stepStartedAtMs,
+      ...(preservedParent ? { parent: preservedParent } : {}),
+    });
+  }
 
   const durationMs = estimateStepDurationMs(stepCueIds, cues);
 
@@ -107,14 +169,22 @@ function runSequenceStep(rootCue: Cue, cues: Cue[], steps: string[][], index: nu
   }, durationMs);
 }
 
-export function runSequence(rootCue: Cue, cues: Cue[]): { started: boolean; stepCount: number } {
+export function runSequence(
+  rootCue: Cue,
+  cues: Cue[],
+  options: RunSequenceOptions = {},
+): { started: boolean; stepCount: number } {
   const steps = expandSequenceSteps(rootCue.id, cues);
   if (steps.length === 0) {
     return { started: false, stepCount: 0 };
   }
 
-  cancelAllSequences();
-  runSequenceStep(rootCue, cues, steps, 0);
+  if (options.parent) {
+    clearSequenceTimers();
+  } else {
+    cancelAllSequences();
+  }
+  runSequenceStep(rootCue, cues, steps, 0, options.parent);
   return { started: true, stepCount: steps.length };
 }
 
