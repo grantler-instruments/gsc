@@ -19,10 +19,12 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { removeRecentProject } from "../lib/recent-projects";
 import { listRecentProjects } from "../platform/project-storage";
+import { requestDiscardDraftChoice } from "../stores/discard-draft-prompt";
 import {
   ensureStartupProjectsDialogVisible,
   refreshStartupProjectsRecents,
   resolveStartupProjectsChoice,
+  type StartupProjectsChoice,
   useStartupProjectsPromptStore,
 } from "../stores/startup-projects-prompt";
 
@@ -48,10 +50,18 @@ export function StartupProjectsDialog() {
     refreshStartupProjectsRecents(await listRecentProjects());
   };
 
+  const tryChoice = async (choice: StartupProjectsChoice) => {
+    if (draft && choice.type !== "restore-draft") {
+      const confirmed = await requestDiscardDraftChoice(draft.name);
+      if (!confirmed) return;
+    }
+    resolveStartupProjectsChoice(choice);
+  };
+
   return (
     <Dialog
       open={open}
-      onClose={() => resolveStartupProjectsChoice({ type: "new-show" })}
+      onClose={() => void tryChoice({ type: "new-show" })}
       maxWidth="sm"
       fullWidth
     >
@@ -61,7 +71,7 @@ export function StartupProjectsDialog() {
           <List
             subheader={<ListSubheader component="div">{t("startup.unsavedDraft")}</ListSubheader>}
           >
-            <ListItemButton onClick={() => resolveStartupProjectsChoice({ type: "restore-draft" })}>
+            <ListItemButton onClick={() => void tryChoice({ type: "restore-draft" })}>
               <ListItemIcon sx={{ minWidth: 36 }}>
                 <EditNoteOutlinedIcon fontSize="small" color="warning" />
               </ListItemIcon>
@@ -101,9 +111,7 @@ export function StartupProjectsDialog() {
                 }
               >
                 <ListItemButton
-                  onClick={() =>
-                    resolveStartupProjectsChoice({ type: "open-recent", path: entry.path })
-                  }
+                  onClick={() => void tryChoice({ type: "open-recent", path: entry.path })}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <HistoryOutlinedIcon fontSize="small" />
@@ -122,13 +130,11 @@ export function StartupProjectsDialog() {
         ) : null}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={() => resolveStartupProjectsChoice({ type: "new-show" })}>
-          {t("startup.newShow")}
-        </Button>
+        <Button onClick={() => void tryChoice({ type: "new-show" })}>{t("startup.newShow")}</Button>
         <Button
           variant="contained"
           startIcon={<FolderOpenOutlinedIcon />}
-          onClick={() => resolveStartupProjectsChoice({ type: "browse" })}
+          onClick={() => void tryChoice({ type: "browse" })}
         >
           {t("common.action.browse")}
         </Button>

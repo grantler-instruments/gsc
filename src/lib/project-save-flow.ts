@@ -72,3 +72,18 @@ export async function runAfterShowMetadataSave(options: {
     await options.saveProjectAs();
   }
 }
+
+export const DRAFT_SAVE_REMINDER_INTERVAL_MS = 15 * 60 * 1000;
+
+export function shouldShowDraftSaveReminder(options: {
+  isDraft: boolean;
+  now: number;
+  draftStartedAt: number;
+  lastRemindedAt: number | null;
+}): boolean {
+  if (!options.isDraft) return false;
+  const elapsed = options.now - options.draftStartedAt;
+  if (elapsed < DRAFT_SAVE_REMINDER_INTERVAL_MS) return false;
+  const sinceLastReminder = options.lastRemindedAt ? options.now - options.lastRemindedAt : elapsed;
+  return sinceLastReminder >= DRAFT_SAVE_REMINDER_INTERVAL_MS;
+}

@@ -65,6 +65,10 @@
     "namePlaceholder": "Unbenannte Show",
     "nameAriaLabel": "Show-Name",
     "draftHint": " · Entwurf (speichern, um Speicherort zu wählen)",
+    "draftBanner": {
+      "message": "Diese Show ist noch nicht in einem Ordner auf Ihrem Computer gespeichert. Speichern Sie sie, bevor Sie die App schließen.",
+      "saveAs": "Speichern unter…"
+    },
     "savingToHint": " · Speichern in {{folder}}",
     "restoringProject": "Projekt wird wiederhergestellt…",
     "loadingAssets": "Assets werden geladen…",
@@ -292,6 +296,11 @@
     "removeRecentProject": "{{projectName}} aus zuletzt geöffnet entfernen",
     "description": "Zuletzt geöffnetes Projekt wählen, Datei durchsuchen oder neue Show starten.",
     "newShow": "Neue Show"
+  },
+  "discardDraft": {
+    "title": "Ungespeicherten Entwurf verwerfen?",
+    "body": "Beim Öffnen eines anderen Projekts wird der ungespeicherte Entwurf „{{projectName}}“ dauerhaft gelöscht. Speichern Sie ihn zuerst mit Speichern unter…, wenn Sie ihn behalten möchten.",
+    "confirm": "Entwurf verwerfen"
   },
   "unsaved": {
     "title": "Änderungen speichern?",

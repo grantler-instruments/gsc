@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  DRAFT_SAVE_REMINDER_INTERVAL_MS,
   nestedProjectSaveParentToReject,
   projectSaveRootStrategy,
   runAfterShowMetadataSave,
   saveKeyboardAction,
   shouldPromptSaveProjectAfterMetadata,
+  shouldShowDraftSaveReminder,
 } from "./project-save-flow";
 
 describe("projectSaveRootStrategy", () => {
@@ -156,5 +158,42 @@ describe("runAfterShowMetadataSave", () => {
 
     expect(requestSaveProjectNow).toHaveBeenCalledWith("My Show");
     expect(saveProjectAs).not.toHaveBeenCalled();
+  });
+});
+
+describe("shouldShowDraftSaveReminder", () => {
+  const started = 0;
+
+  it("waits until the first reminder interval has elapsed", () => {
+    expect(
+      shouldShowDraftSaveReminder({
+        isDraft: true,
+        now: DRAFT_SAVE_REMINDER_INTERVAL_MS - 1,
+        draftStartedAt: started,
+        lastRemindedAt: null,
+      }),
+    ).toBe(false);
+  });
+
+  it("shows a reminder after the interval", () => {
+    expect(
+      shouldShowDraftSaveReminder({
+        isDraft: true,
+        now: DRAFT_SAVE_REMINDER_INTERVAL_MS,
+        draftStartedAt: started,
+        lastRemindedAt: null,
+      }),
+    ).toBe(true);
+  });
+
+  it("respects the time since the last reminder", () => {
+    expect(
+      shouldShowDraftSaveReminder({
+        isDraft: true,
+        now: DRAFT_SAVE_REMINDER_INTERVAL_MS + 1000,
+        draftStartedAt: started,
+        lastRemindedAt: DRAFT_SAVE_REMINDER_INTERVAL_MS,
+      }),
+    ).toBe(false);
   });
 });

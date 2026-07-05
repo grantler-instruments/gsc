@@ -65,6 +65,10 @@
     "namePlaceholder": "Untitled show",
     "nameAriaLabel": "Show name",
     "draftHint": " · Draft (save to choose location)",
+    "draftBanner": {
+      "message": "This show isn't saved to a folder on your computer yet. Save it before closing the app.",
+      "saveAs": "Save As…"
+    },
     "savingToHint": " · Saving to {{folder}}",
     "restoringProject": "Restoring project…",
     "loadingAssets": "Loading assets…",
@@ -292,6 +296,11 @@
     "removeRecentProject": "Remove {{projectName}} from recent projects",
     "description": "Choose a recent project, browse for a file, or start a new show.",
     "newShow": "New Show"
+  },
+  "discardDraft": {
+    "title": "Discard unsaved draft?",
+    "body": "Opening another project will permanently delete the unsaved draft \"{{projectName}}\". Save it with Save As… first if you want to keep it.",
+    "confirm": "Discard draft"
   },
   "unsaved": {
     "title": "Save changes?",

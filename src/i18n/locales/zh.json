@@ -65,6 +65,10 @@
     "namePlaceholder": "未命名演出",
     "nameAriaLabel": "演出名称",
     "draftHint": " · 草稿（保存以选择位置）",
+    "draftBanner": {
+      "message": "此演出尚未保存到电脑上的文件夹。关闭应用前请先保存。",
+      "saveAs": "另存为…"
+    },
     "savingToHint": " · 保存至 {{folder}}",
     "restoringProject": "正在恢复项目…",
     "loadingAssets": "正在加载资源…",
@@ -292,6 +296,11 @@
     "removeRecentProject": "从最近项目中移除 {{projectName}}",
     "description": "选择最近项目、浏览文件或开始新演出。",
     "newShow": "新演出"
+  },
+  "discardDraft": {
+    "title": "丢弃未保存的草稿？",
+    "body": "打开其他项目将永久删除未保存的草稿「{{projectName}}」。如需保留，请先使用「另存为…」保存。",
+    "confirm": "丢弃草稿"
   },
   "unsaved": {
     "title": "保存更改？",

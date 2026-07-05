@@ -65,6 +65,10 @@
     "namePlaceholder": "Espetáculo sem título",
     "nameAriaLabel": "Nome do espetáculo",
     "draftHint": " · Rascunho (salve para escolher o local)",
+    "draftBanner": {
+      "message": "Este show ainda não está salvo em uma pasta no seu computador. Salve-o antes de fechar o app.",
+      "saveAs": "Salvar como…"
+    },
     "savingToHint": " · Salvando em {{folder}}",
     "restoringProject": "Restaurando projeto…",
     "loadingAssets": "Carregando mídias…",
@@ -292,6 +296,11 @@
     "removeRecentProject": "Remover {{projectName}} dos projetos recentes",
     "description": "Escolha um projeto recente, procure um arquivo ou inicie um novo espetáculo.",
     "newShow": "Novo espetáculo"
+  },
+  "discardDraft": {
+    "title": "Descartar rascunho não salvo?",
+    "body": "Abrir outro projeto excluirá permanentemente o rascunho não salvo “{{projectName}}”. Salve-o com Salvar como… primeiro se quiser mantê-lo.",
+    "confirm": "Descartar rascunho"
   },
   "unsaved": {
     "title": "Salvar alterações?",

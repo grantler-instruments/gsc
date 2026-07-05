@@ -6,7 +6,9 @@ import { CueInspector } from "./components/CueInspector";
 import { CueList } from "./components/CueList";
 import { DeleteAssetInUseDialog } from "./components/DeleteAssetInUseDialog";
 import { DeleteStoredProjectDialog } from "./components/DeleteStoredProjectDialog";
+import { DiscardDraftDialog } from "./components/DiscardDraftDialog";
 import { DmxPreviewConfirmDialog } from "./components/DmxPreviewConfirmDialog";
+import { DraftProjectBanner } from "./components/DraftProjectBanner";
 import { LeftSidebar } from "./components/LeftSidebar";
 import { ProjectLoadingScreen } from "./components/ProjectLoadingScreen";
 import { ProjectToolbar } from "./components/ProjectToolbar";
@@ -50,6 +52,7 @@ function App() {
         <DeleteStoredProjectDialog />
         <UnsavedProjectDialog />
         <SaveProjectPromptDialog />
+        <DiscardDraftDialog />
         <Qlab5ImportConfirmDialogHost />
         <Qlab5ImportReportDialogHost />
         <AppSnackbar />
@@ -69,6 +72,7 @@ function App() {
       }}
     >
       <ProjectToolbar />
+      <DraftProjectBanner />
 
       <Box
         sx={{
@@ -111,6 +115,7 @@ function App() {
       <DmxPreviewConfirmDialog />
       <UnsavedProjectDialog />
       <SaveProjectPromptDialog />
+      <DiscardDraftDialog />
       <StartupProjectsDialog />
       <WebOpenProjectsDialog />
       <DeleteStoredProjectDialog />
