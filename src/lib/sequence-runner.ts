@@ -5,7 +5,11 @@ import { estimateStepDurationMs } from "./cue-duration";
 import { expandSequenceSteps, isFadeCue } from "./cues";
 import { fireStepCues, playbackCueIdsInStep } from "./fire-step-cues";
 import { isEngineManagedPlaybackCue } from "./playback-slice";
-import { clearSequenceTimers, scheduleSequenceStep } from "./sequence-timers";
+import {
+  clearSequenceTimers,
+  scheduleSequenceStep,
+  scheduleSequenceStepWatchdog,
+} from "./sequence-timers";
 import { transportNowMs } from "./transport-clock";
 
 export function cancelAllSequences(): void {
@@ -163,6 +167,7 @@ function runSequenceStep(
         parent: { rootId: rootCue.id, stepIndex: index },
       });
     }
+    // Child sequence schedules its own timers/watchdog in its runSequenceStep.
     return;
   }
 
@@ -175,10 +180,17 @@ function runSequenceStep(
   }
 
   const durationMs = estimateStepDurationMs(stepCueIds, cues);
+  const hasPlaybackStep = playbackCueIdsInStep(stepCueIds, cues).length > 0;
 
   scheduleSequenceStep(() => {
     completeSequenceStep(rootCue, cues, steps, index, { forceStopPlayback: true });
   }, durationMs);
+
+  if (hasPlaybackStep) {
+    scheduleSequenceStepWatchdog(() => {
+      tryAdvanceSequenceIfStepPlaybackInactive();
+    });
+  }
 }
 
 export function runSequence(

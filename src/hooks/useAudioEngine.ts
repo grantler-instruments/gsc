@@ -86,6 +86,9 @@ export function useAudioEngine(): void {
     runSync();
     const unsubTransport = useTransportStore.subscribe((state, prev) => {
       if (audioSyncStateChanged(selectAudioSyncState(prev), selectAudioSyncState(state))) {
+        if (state.activeCueIds !== prev.activeCueIds) {
+          tryAdvanceSequenceIfStepPlaybackInactive();
+        }
         runSync();
       } else if (prev.masterVolume !== state.masterVolume) {
         syncMixerOnly();

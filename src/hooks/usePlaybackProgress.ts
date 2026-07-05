@@ -278,6 +278,12 @@ export function usePlaybackProgress(): void {
       ) {
         return;
       }
+      if (
+        state.activeCueIds !== prev.activeCueIds ||
+        state.runningSequence !== prev.runningSequence
+      ) {
+        tryAdvanceSequenceIfStepPlaybackInactive();
+      }
       ensureTickLoop();
     });
 
