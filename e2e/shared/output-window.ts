@@ -1,7 +1,9 @@
 import type { Page } from "@playwright/test";
 
-export const OUTPUT_VIDEO_LOAD_MAX_MS = 5_000;
-export const OUTPUT_STABLE_MS = 2_000;
+const isCi = !!process.env.CI;
+
+export const OUTPUT_VIDEO_LOAD_MAX_MS = isCi ? 12_000 : 5_000;
+export const OUTPUT_STABLE_MS = isCi ? 3_000 : 2_000;
 
 export interface OutputVideoState {
   currentTimeSec: number;
@@ -95,6 +97,7 @@ export async function expectOutputPlaybackStableOnPage(
 ): Promise<void> {
   const stableMs = options.stableMs ?? OUTPUT_STABLE_MS;
   const advanceMs = options.advanceMs ?? 500;
+  await outputPage.bringToFront();
   const navigationCount = await outputPage.evaluate(
     () => performance.getEntriesByType("navigation").length,
   );

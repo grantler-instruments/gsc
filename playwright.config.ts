@@ -5,8 +5,21 @@ const isCi = !!process.env.CI;
 /** CI runs `npm run build:pages` before e2e — skip the duplicate build in webServer. */
 const skipWebServerBuild = isCi || process.env.PLAYWRIGHT_PREBUILT === "1";
 
+/** Headless Ubuntu throttles background popups — keep output window timers/media realtime. */
+const ciChromiumLaunchArgs = [
+  "--disable-background-timer-throttling",
+  "--disable-backgrounding-occluded-windows",
+  "--disable-renderer-backgrounding",
+];
+
+const chromiumUse = {
+  ...devices["Desktop Chrome"],
+  ...(isCi ? { launchOptions: { args: ciChromiumLaunchArgs } } : {}),
+};
+
 export default defineConfig({
   testDir: "./e2e",
+  outputDir: "test-results",
   fullyParallel: true,
   forbidOnly: isCi,
   retries: isCi ? 2 : 0,
@@ -23,12 +36,12 @@ export default defineConfig({
     {
       name: "chromium",
       grepInvert: /@smoke/,
-      use: { ...devices["Desktop Chrome"] },
+      use: chromiumUse,
     },
     {
       name: "smoke",
       grep: /@smoke/,
-      use: { ...devices["Desktop Chrome"] },
+      use: chromiumUse,
     },
   ],
   webServer: {

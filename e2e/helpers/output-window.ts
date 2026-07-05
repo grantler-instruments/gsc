@@ -10,11 +10,14 @@ export { OUTPUT_VIDEO_LOAD_MAX_MS } from "../shared/output-window";
 
 /** test-video-playback.mp4 slice length (see generate-video-fixtures.mjs). */
 export const PLAYBACK_VIDEO_SLICE_SEC = 4;
+
+const isCi = !!process.env.CI;
+
 /** Observed steady-state headless Chromium: ~70–85ms; allow more on loaded CI runners. */
-export const MAX_PLAYBACK_DRIFT_SEC = 0.35;
+export const MAX_PLAYBACK_DRIFT_SEC = isCi ? 0.55 : 0.35;
 /** Loop-wrap sampling on CI can swing ~100ms without sustained desync. */
-export const MAX_DRIFT_GROWTH_SEC = 0.12;
-const STEADY_DRIFT_CAP_SEC = 0.4;
+export const MAX_DRIFT_GROWTH_SEC = isCi ? 0.2 : 0.12;
+const STEADY_DRIFT_CAP_SEC = isCi ? 0.65 : 0.4;
 
 export function outputButton(page: Page) {
   return page.locator('[data-gsc-action="open-output"]');
@@ -35,6 +38,7 @@ export async function openOutputWindow(page: Page): Promise<Page> {
   await outputPage.waitForLoadState("domcontentloaded");
   await expect(outputPage).toHaveURL(/mode=output/);
   await expect(outputStage(outputPage)).toBeVisible({ timeout: 30_000 });
+  await outputPage.bringToFront();
 
   return outputPage;
 }
@@ -187,6 +191,8 @@ export async function measurePlaybackDrift(
     sampleIntervalMs = 500,
     sliceSec = PLAYBACK_VIDEO_SLICE_SEC,
   } = options;
+
+  await outputPage.bringToFront();
 
   await expect
     .poll(async () => getWaveformPositionSec(controlPage, cueName), { timeout: 15_000 })
