@@ -83,7 +83,12 @@
       "editAriaLabel": "编辑演出详情",
       "location": "位置",
       "locationDraft": "草稿（保存以选择位置）",
-      "locationWeb": "浏览器会话（导出以保存到磁盘）"
+      "locationWeb": "浏览器会话（导出以保存到磁盘）",
+      "saveProjectPrompt": {
+        "title": "保存演出到磁盘？",
+        "body": "「{{projectName}}」尚未保存到文件夹。现在是选择保存位置的好时机。",
+        "later": "稍后"
+      }
     }
   },
   "fileMenu": {
@@ -101,6 +106,7 @@
     "deleteStoredProject": "删除 {{projectName}}",
     "openWebEmpty": "此浏览器中尚无已保存的项目。导入 {{extension}} 文件以开始。",
     "save": "保存",
+    "saveAs": "另存为…",
     "saveChooseLocation": "选择位置…",
     "export": "导出…",
     "exportHint": "下载包含所有资源的 {{extension}}",
@@ -694,6 +700,7 @@
     "dialogExportProject": "导出项目",
     "dialogSaveProjectAs": "项目另存为",
     "pathExistsError": "「{{path}}」已存在且非空。请选择其他名称或位置。",
+    "nestedProjectError": "无法在其他项目文件夹内保存项目。请选择「{{path}}」之外的位置。",
     "selectGscFolder": "选择 .gsc 项目文件夹（例如 MyShow.gsc）。",
     "noProjectJson": "所选文件夹中无 project.json",
     "unsupportedVersion": "不支持的项目版本"

@@ -83,7 +83,12 @@
       "editAriaLabel": "Modifier les détails du spectacle",
       "location": "Emplacement",
       "locationDraft": "Brouillon (enregistrer pour choisir l’emplacement)",
-      "locationWeb": "Session du navigateur (exporter pour enregistrer sur le disque)"
+      "locationWeb": "Session du navigateur (exporter pour enregistrer sur le disque)",
+      "saveProjectPrompt": {
+        "title": "Enregistrer le spectacle sur le disque ?",
+        "body": "« {{projectName}} » n’est pas encore enregistré dans un dossier. C’est le bon moment pour choisir où le conserver.",
+        "later": "Pas maintenant"
+      }
     }
   },
   "fileMenu": {
@@ -101,6 +106,7 @@
     "deleteStoredProject": "Supprimer {{projectName}}",
     "openWebEmpty": "Aucun projet enregistré dans ce navigateur pour l’instant. Importez un fichier {{extension}} pour commencer.",
     "save": "Enregistrer",
+    "saveAs": "Enregistrer sous…",
     "saveChooseLocation": "Choisir l’emplacement…",
     "export": "Exporter…",
     "exportHint": "Télécharger {{extension}} avec tous les médias",
@@ -694,6 +700,7 @@
     "dialogExportProject": "Exporter le projet",
     "dialogSaveProjectAs": "Enregistrer le projet sous",
     "pathExistsError": "« {{path}} » existe déjà et n’est pas vide. Choisissez un autre nom ou emplacement.",
+    "nestedProjectError": "Les projets ne peuvent pas être enregistrés dans un autre dossier de projet. Choisissez un emplacement en dehors de « {{path}} ».",
     "selectGscFolder": "Sélectionnez un dossier de projet .gsc (par ex. MyShow.gsc).",
     "noProjectJson": "Aucun project.json dans le dossier sélectionné",
     "unsupportedVersion": "Version de projet non prise en charge"

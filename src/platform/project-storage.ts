@@ -114,6 +114,7 @@ export async function discardTemporaryProjectRoot(rootDir: string): Promise<void
 
 export async function persistPlatformProject(options?: {
   promptForLocation?: boolean;
+  saveAs?: boolean;
 }): Promise<void> {
   if (getPlatform() === "tauri") {
     const { persistTauriProject } = await import("./project-storage.tauri");

@@ -83,7 +83,12 @@
       "editAriaLabel": "Edit show details",
       "location": "Location",
       "locationDraft": "Draft (save to choose location)",
-      "locationWeb": "Browser session (export to save to disk)"
+      "locationWeb": "Browser session (export to save to disk)",
+      "saveProjectPrompt": {
+        "title": "Save show to disk?",
+        "body": "\"{{projectName}}\" isn't saved to a folder yet. Now is a good time to choose where to keep it.",
+        "later": "Not now"
+      }
     }
   },
   "fileMenu": {
@@ -101,6 +106,7 @@
     "deleteStoredProject": "Delete {{projectName}}",
     "openWebEmpty": "No saved projects in this browser yet. Import a {{extension}} file to get started.",
     "save": "Save",
+    "saveAs": "Save As…",
     "saveChooseLocation": "Choose location…",
     "export": "Export…",
     "exportHint": "Download {{extension}} with all assets",
@@ -714,6 +720,7 @@
     "dialogExportProject": "Export project",
     "dialogSaveProjectAs": "Save project as",
     "pathExistsError": "\"{{path}}\" already exists and is not empty. Choose another name or location.",
+    "nestedProjectError": "Projects can't be saved inside another project folder. Choose a location outside \"{{path}}\".",
     "selectGscFolder": "Select a .gsc project folder (e.g. MyShow.gsc).",
     "noProjectJson": "No project.json in selected folder",
     "unsupportedVersion": "Unsupported project version"

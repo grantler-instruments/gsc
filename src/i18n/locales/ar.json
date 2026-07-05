@@ -83,7 +83,12 @@
       "editAriaLabel": "تحرير تفاصيل العرض",
       "location": "الموقع",
       "locationDraft": "مسودة (احفظ لاختيار الموقع)",
-      "locationWeb": "جلسة المتصفح (صدّر للحفظ على القرص)"
+      "locationWeb": "جلسة المتصفح (صدّر للحفظ على القرص)",
+      "saveProjectPrompt": {
+        "title": "حفظ العرض على القرص؟",
+        "body": "«{{projectName}}» لم يُحفَظ في مجلد بعد. الآن وقت مناسب لاختيار مكان حفظه.",
+        "later": "ليس الآن"
+      }
     }
   },
   "fileMenu": {
@@ -101,6 +106,7 @@
     "deleteStoredProject": "حذف {{projectName}}",
     "openWebEmpty": "لا توجد مشاريع محفوظة في هذا المتصفح بعد. استورد ملف {{extension}} للبدء.",
     "save": "حفظ",
+    "saveAs": "حفظ باسم…",
     "saveChooseLocation": "اختيار الموقع…",
     "export": "تصدير…",
     "exportHint": "نزّل {{extension}} مع جميع الأصول",
@@ -694,6 +700,7 @@
     "dialogExportProject": "تصدير مشروع",
     "dialogSaveProjectAs": "حفظ المشروع باسم",
     "pathExistsError": "‏«{{path}}» موجود بالفعل وليس فارغًا. اختر اسمًا أو موقعًا آخر.",
+    "nestedProjectError": "لا يمكن حفظ المشاريع داخل مجلد مشروع آخر. اختر موقعًا خارج «{{path}}».",
     "selectGscFolder": "حدّد مجلد مشروع ‎.gsc (مثل MyShow.gsc).",
     "noProjectJson": "لا يوجد project.json في المجلد المحدد",
     "unsupportedVersion": "إصدار مشروع غير مدعوم"

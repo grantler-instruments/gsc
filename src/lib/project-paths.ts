@@ -26,6 +26,28 @@ export function isGscProjectDirPath(path: string): boolean {
   return isGscProjectDirName(leaf);
 }
 
+/** True when the target path sits inside a parent `.gsc` project directory. */
+export function isInsideGscProjectDir(targetPath: string): boolean {
+  return enclosingGscProjectDirPath(targetPath) !== null;
+}
+
+/** Parent `.gsc` project directory containing the target path, if any. */
+export function enclosingGscProjectDirPath(targetPath: string): string | null {
+  const normalized = targetPath.replace(/\\/g, "/").replace(/\/+$/, "");
+  const isAbsolute = normalized.startsWith("/");
+  const sep = targetPath.includes("\\") ? "\\" : "/";
+  const parts = normalized.split("/").filter(Boolean);
+  if (parts.length < 2) return null;
+
+  for (let i = parts.length - 1; i >= 1; i--) {
+    if (isGscProjectDirName(parts[i - 1]!)) {
+      const joined = parts.slice(0, i).join(sep);
+      return isAbsolute ? `${sep}${joined}` : joined;
+    }
+  }
+  return null;
+}
+
 /** Default folder name for a new desktop project (always ends with `.gsc`). */
 export function projectDirNameFromShowName(name: string): string {
   const base = sanitizeShowName(name);

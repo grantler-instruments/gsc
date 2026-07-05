@@ -83,7 +83,12 @@
       "editAriaLabel": "Editar detalles del show",
       "location": "Ubicación",
       "locationDraft": "Borrador (guardar para elegir ubicación)",
-      "locationWeb": "Sesión del navegador (exportar para guardar en disco)"
+      "locationWeb": "Sesión del navegador (exportar para guardar en disco)",
+      "saveProjectPrompt": {
+        "title": "¿Guardar espectáculo en disco?",
+        "body": "«{{projectName}}» aún no está guardado en una carpeta. Es un buen momento para elegir dónde guardarlo.",
+        "later": "Ahora no"
+      }
     }
   },
   "fileMenu": {
@@ -101,6 +106,7 @@
     "deleteStoredProject": "Eliminar {{projectName}}",
     "openWebEmpty": "Aún no hay proyectos guardados en este navegador. Importe un archivo {{extension}} para empezar.",
     "save": "Guardar",
+    "saveAs": "Guardar como…",
     "saveChooseLocation": "Elegir ubicación…",
     "export": "Exportar…",
     "exportHint": "Descargar {{extension}} con todos los assets",
@@ -714,6 +720,7 @@
     "dialogExportProject": "Exportar proyecto",
     "dialogSaveProjectAs": "Guardar proyecto como",
     "pathExistsError": "\"{{path}}\" ya existe y no está vacío. Elija otro nombre o ubicación.",
+    "nestedProjectError": "Los proyectos no se pueden guardar dentro de otra carpeta de proyecto. Elija una ubicación fuera de \"{{path}}\".",
     "selectGscFolder": "Seleccione una carpeta de proyecto .gsc (p. ej. MyShow.gsc).",
     "noProjectJson": "No hay project.json en la carpeta seleccionada",
     "unsupportedVersion": "Versión de proyecto no compatible"

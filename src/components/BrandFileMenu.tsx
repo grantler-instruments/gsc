@@ -29,7 +29,7 @@ import {
   openProjectFile,
   openRecentProjectPath,
   openStoredProjectFile,
-  saveProjectFile,
+  saveProjectAsFile,
 } from "../lib/project-file-actions";
 import type { IdbProjectSummary } from "../lib/project-idb";
 import { BUNDLE_EXTENSION } from "../lib/project-paths";
@@ -118,7 +118,7 @@ export function BrandFileMenu() {
       : projectFolderLabel
         ? t("project.savingToHint", { folder: projectFolderLabel })
         : "";
-  const saveShortcut = formatShortcut("S");
+  const saveAsShortcut = formatShortcut("S", true);
 
   return (
     <>
@@ -280,21 +280,15 @@ export function BrandFileMenu() {
             disabled={showMode}
             onClick={() => {
               close();
-              void saveProjectFile();
+              void saveProjectAsFile();
             }}
           >
             <ListItemIcon>
               <ArchiveOutlinedIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText
-              primary={t("fileMenu.save")}
-              secondary={
-                showMode
-                  ? t("common.state.disabledInShowMode")
-                  : isTemporaryRoot
-                    ? `${saveShortcut} · ${t("fileMenu.saveChooseLocation")}`
-                    : saveShortcut
-              }
+              primary={t("fileMenu.saveAs")}
+              secondary={showMode ? t("common.state.disabledInShowMode") : saveAsShortcut}
             />
           </MenuItem>
         ) : null}
@@ -310,7 +304,7 @@ export function BrandFileMenu() {
                 ? t("common.state.disabledInShowMode")
                 : isTauri
                   ? t("fileMenu.exportHint", { extension: BUNDLE_EXTENSION })
-                  : `${saveShortcut} · ${t("fileMenu.exportHint", { extension: BUNDLE_EXTENSION })}`
+                  : `${saveAsShortcut} · ${t("fileMenu.exportHint", { extension: BUNDLE_EXTENSION })}`
             }
           />
         </MenuItem>

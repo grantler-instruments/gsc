@@ -13,6 +13,7 @@ import { ProjectToolbar } from "./components/ProjectToolbar";
 import { Qlab5ImportConfirmDialogHost } from "./components/Qlab5ImportConfirmDialogHost";
 import { Qlab5ImportReportDialogHost } from "./components/Qlab5ImportReportDialogHost";
 import { RightSidebar } from "./components/RightSidebar";
+import { SaveProjectPromptDialog } from "./components/SaveProjectPromptDialog";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { StartupProjectsDialog } from "./components/StartupProjectsDialog";
 import { TransportBar } from "./components/TransportBar";
@@ -48,6 +49,7 @@ function App() {
         <WebOpenProjectsDialog />
         <DeleteStoredProjectDialog />
         <UnsavedProjectDialog />
+        <SaveProjectPromptDialog />
         <Qlab5ImportConfirmDialogHost />
         <Qlab5ImportReportDialogHost />
         <AppSnackbar />
@@ -108,6 +110,7 @@ function App() {
       <SettingsDialog />
       <DmxPreviewConfirmDialog />
       <UnsavedProjectDialog />
+      <SaveProjectPromptDialog />
       <StartupProjectsDialog />
       <WebOpenProjectsDialog />
       <DeleteStoredProjectDialog />
