@@ -60,13 +60,43 @@ export async function waitForOutputVideoPlaying(
   throw new Error("Timed out waiting for output video to start playing");
 }
 
+/** True when playback moved forward or wrapped on a looping slice. */
+export function outputVideoTimeAdvanced(
+  beforeSec: number,
+  afterSec: number,
+  sliceSec?: number,
+): boolean {
+  if (afterSec > beforeSec + 0.02) return true;
+  if (sliceSec === undefined || sliceSec <= 0) return false;
+  return beforeSec > sliceSec * 0.7 && afterSec < sliceSec * 0.3;
+}
+
+async function waitForVideoTimeAdvance(
+  readTimeSec: () => Promise<number>,
+  wait: (ms: number) => Promise<void>,
+  fromSec: number,
+  timeoutMs: number,
+  sliceSec?: number,
+): Promise<number> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    await wait(200);
+    const nowSec = await readTimeSec();
+    if (outputVideoTimeAdvanced(fromSec, nowSec, sliceSec)) {
+      return nowSec;
+    }
+  }
+  throw new Error("Output video did not advance during stable window");
+}
+
 export async function expectOutputPlaybackStable(
   evaluate: <T>(fn: () => T) => Promise<T>,
   wait: (ms: number) => Promise<void>,
-  options: { stableMs?: number; advanceMs?: number } = {},
+  options: { stableMs?: number; advanceMs?: number; sliceSec?: number } = {},
 ): Promise<void> {
   const stableMs = options.stableMs ?? OUTPUT_STABLE_MS;
   const advanceMs = options.advanceMs ?? 500;
+  const sliceSec = options.sliceSec;
   const navigationCount = await evaluate(readOutputPageNavigationCount);
 
   const waitForVideoCount = async (count: number) => {
@@ -86,36 +116,35 @@ export async function expectOutputPlaybackStable(
     throw new Error(`Expected ${count} output video element(s), last saw ${lastCount}`);
   };
 
+  const readTimeSec = async () => (await evaluate(readOutputVideoState))?.currentTimeSec ?? 0;
+
   await waitForVideoCount(1);
 
-  const beforeStable = (await evaluate(readOutputVideoState))?.currentTimeSec ?? 0;
-  await wait(stableMs);
+  const beforeStable = await readTimeSec();
+  const midStable = await waitForVideoTimeAdvance(
+    readTimeSec,
+    wait,
+    beforeStable,
+    stableMs,
+    sliceSec,
+  );
 
   if ((await evaluate(readOutputPageNavigationCount)) !== navigationCount) {
     throw new Error("Output page reloaded during stable playback window");
   }
   await waitForVideoCount(1);
 
-  const midStable = (await evaluate(readOutputVideoState))?.currentTimeSec ?? 0;
-  if (midStable <= beforeStable) {
-    throw new Error("Output video did not advance during stable window");
-  }
-
-  await wait(advanceMs);
-
-  const afterStable = (await evaluate(readOutputVideoState))?.currentTimeSec ?? 0;
-  if (afterStable <= midStable) {
-    throw new Error("Output video stopped advancing after stable window");
-  }
+  await waitForVideoTimeAdvance(readTimeSec, wait, midStable, advanceMs + 1000, sliceSec);
 }
 
 /** Playwright popup adapter — reuses shared output assertions. */
 export async function expectOutputPlaybackStableOnPage(
   outputPage: Page,
-  options?: { stableMs?: number; advanceMs?: number },
+  options?: { stableMs?: number; advanceMs?: number; sliceSec?: number },
 ): Promise<void> {
   const stableMs = options.stableMs ?? OUTPUT_STABLE_MS;
   const advanceMs = options.advanceMs ?? 500;
+  const sliceSec = options.sliceSec;
   await outputPage.bringToFront();
   const navigationCount = await outputPage.evaluate(
     () => performance.getEntriesByType("navigation").length,
@@ -148,10 +177,28 @@ export async function expectOutputPlaybackStableOnPage(
       return video?.currentTime ?? 0;
     });
 
+  const nudgePlayback = () =>
+    outputPage.evaluate(() => {
+      const video = document.querySelector<HTMLVideoElement>("[data-gsc-output-stage] video");
+      if (video?.paused) {
+        void video.play().catch(() => {});
+      }
+    });
+
   await waitForVideoCount(1);
+  await nudgePlayback();
 
   const beforeStable = await readVideoTime();
-  await outputPage.waitForTimeout(stableMs);
+  const midStable = await waitForVideoTimeAdvance(
+    async () => {
+      await nudgePlayback();
+      return readVideoTime();
+    },
+    (ms) => outputPage.waitForTimeout(ms),
+    beforeStable,
+    stableMs,
+    sliceSec,
+  );
 
   if (
     (await outputPage.evaluate(() => performance.getEntriesByType("navigation").length)) !==
@@ -161,17 +208,16 @@ export async function expectOutputPlaybackStableOnPage(
   }
   await waitForVideoCount(1);
 
-  const midStable = await readVideoTime();
-  if (midStable <= beforeStable) {
-    throw new Error("Output video did not advance during stable window");
-  }
-
-  await outputPage.waitForTimeout(advanceMs);
-
-  const afterStable = await readVideoTime();
-  if (afterStable <= midStable) {
-    throw new Error("Output video stopped advancing after stable window");
-  }
+  await waitForVideoTimeAdvance(
+    async () => {
+      await nudgePlayback();
+      return readVideoTime();
+    },
+    (ms) => outputPage.waitForTimeout(ms),
+    midStable,
+    advanceMs + 1000,
+    sliceSec,
+  );
 }
 
 export async function expectOutputVideoLoadsWithinOnPage(

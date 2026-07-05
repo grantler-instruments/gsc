@@ -329,6 +329,30 @@ describe("nested sequences", () => {
     resetTransport();
   });
 
+  it("does not drop playback-end notification when runningSequence is set before firing", () => {
+    const cues = [
+      testCue("seq", "Seq", "sequence"),
+      testCue("a", "A", "audio", { parentId: "seq", assetPath: "a.wav" }),
+      testCue("b", "B", "audio", { parentId: "seq", assetPath: "b.wav" }),
+    ];
+    resetTestProject(cues);
+
+    runSequence(cues[0], cues);
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      rootId: "seq",
+      currentStep: 0,
+      stepCueIds: ["a"],
+    });
+
+    useTransportStore.setState({ activeCueIds: [] });
+    notifyStepPlaybackEnded(["a"]);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      currentStep: 1,
+      stepCueIds: ["b"],
+    });
+  });
+
   it("runs a child sequence without the parent overwriting runningSequence", () => {
     const cues = [
       testCue("root", "Root Seq", "sequence"),

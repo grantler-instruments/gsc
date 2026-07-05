@@ -23,6 +23,7 @@ import {
   OUTPUT_VIDEO_MID_PLAYBACK_LOAD_MAX_MS,
   openOutputWindow,
   outputButton,
+  PLAYBACK_VIDEO_SLICE_SEC,
 } from "./helpers/output-window";
 
 test.describe.configure({ mode: "serial" });
@@ -92,7 +93,7 @@ test("output window keeps a single video element without reloading during playba
   const goAtMs = Date.now();
   await pressTransportGo(page);
   await expectOutputVideoLoadsWithin(outputPage, goAtMs);
-  await expectOutputPlaybackStable(outputPage);
+  await expectOutputPlaybackStable(outputPage, { sliceSec: PLAYBACK_VIDEO_SLICE_SEC });
 
   await pressPanic(page);
   await outputPage.close();

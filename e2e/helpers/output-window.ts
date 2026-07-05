@@ -294,7 +294,7 @@ export async function expectOutputVideoPlaybackToAdvance(outputPage: Page): Prom
 /** Assert the output popup keeps one video element mounted and does not reload during playback. */
 export async function expectOutputPlaybackStable(
   outputPage: Page,
-  options: { stableMs?: number; advanceMs?: number } = {},
+  options: { stableMs?: number; advanceMs?: number; sliceSec?: number } = {},
 ): Promise<void> {
   await expectOutputPlaybackStableOnPage(outputPage, options);
 }

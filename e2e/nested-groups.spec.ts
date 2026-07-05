@@ -68,9 +68,9 @@ test("sequence > parallel > sequence runs nested leaf steps in order @structure"
     sequenceCueRow(page, "Inner Seq").getByText(/2 cue\(s\) · sequential/),
   ).toBeVisible();
 
-  await sequenceCueRow(page, "Root Seq").click();
   await sequenceCueRow(page, SHORT_A).click();
   await sequenceCueRow(page, SHORT_B).click();
+  await sequenceCueRow(page, "Root Seq").click();
   await openActiveCuesTab(page);
   await pressTransportGo(page);
 

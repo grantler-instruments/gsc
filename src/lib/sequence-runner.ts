@@ -126,6 +126,20 @@ function runSequenceStep(
 
   const stepStartedAtMs = transportNowMs();
   const runningBefore = useTransportStore.getState().runningSequence;
+  const preservedParent =
+    parent ?? (runningBefore?.rootId === rootCue.id ? runningBefore.parent : undefined);
+  const stepRunning = {
+    rootId: rootCue.id,
+    currentStep: index,
+    stepCount: steps.length,
+    stepCueIds,
+    stepStartedAtMs,
+    ...(preservedParent ? { parent: preservedParent } : {}),
+  };
+
+  // Set before firing so notifyStepPlaybackEnded is not dropped when a short clip
+  // ends during the same turn as fireStepCues (common on CI).
+  transport.setRunningSequence(stepRunning);
 
   fireStepCues(
     stepCueIds,
@@ -149,17 +163,15 @@ function runSequenceStep(
         parent: { rootId: rootCue.id, stepIndex: index },
       });
     }
-  } else {
-    const preservedParent =
-      parent ?? (runningBefore?.rootId === rootCue.id ? runningBefore.parent : undefined);
-    transport.setRunningSequence({
-      rootId: rootCue.id,
-      currentStep: index,
-      stepCount: steps.length,
-      stepCueIds,
-      stepStartedAtMs,
-      ...(preservedParent ? { parent: preservedParent } : {}),
-    });
+    return;
+  }
+
+  if (
+    nestedRunning?.rootId !== rootCue.id ||
+    nestedRunning.currentStep !== index ||
+    nestedRunning.stepCueIds !== stepCueIds
+  ) {
+    transport.setRunningSequence(stepRunning);
   }
 
   const durationMs = estimateStepDurationMs(stepCueIds, cues);
