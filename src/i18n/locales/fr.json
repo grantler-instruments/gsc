@@ -510,7 +510,14 @@
     "dmxGroupBeam": "Faisceau",
     "dmxGroupOther": "Autres",
     "dmxPreset": "Preset",
-    "dmxCustomValue": "Personnalisé"
+    "dmxCustomValue": "Personnalisé",
+    "dmxColorPicker": "Couleur",
+    "dmxColorRed": "Rouge",
+    "dmxColorGreen": "Vert",
+    "dmxColorBlue": "Bleu",
+    "dmxColorCyan": "Cyan",
+    "dmxColorMagenta": "Magenta",
+    "dmxColorYellow": "Jaune"
   },
   "assets": {
     "dropHint": "Déposez des fichiers audio, vidéo ou image ici…",

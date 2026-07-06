@@ -510,7 +510,14 @@
     "dmxGroupBeam": "Haz",
     "dmxGroupOther": "Otros",
     "dmxPreset": "Preset",
-    "dmxCustomValue": "Personalizado"
+    "dmxCustomValue": "Personalizado",
+    "dmxColorPicker": "Color",
+    "dmxColorRed": "Rojo",
+    "dmxColorGreen": "Verde",
+    "dmxColorBlue": "Azul",
+    "dmxColorCyan": "Cian",
+    "dmxColorMagenta": "Magenta",
+    "dmxColorYellow": "Amarillo"
   },
   "assets": {
     "dropHint": "Arrastre archivos de audio, video o imagen aquí…",

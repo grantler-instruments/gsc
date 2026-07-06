@@ -510,7 +510,14 @@
     "dmxGroupBeam": "Strahl",
     "dmxGroupOther": "Sonstiges",
     "dmxPreset": "Preset",
-    "dmxCustomValue": "Benutzerdefiniert"
+    "dmxCustomValue": "Benutzerdefiniert",
+    "dmxColorPicker": "Farbe",
+    "dmxColorRed": "Rot",
+    "dmxColorGreen": "Grün",
+    "dmxColorBlue": "Blau",
+    "dmxColorCyan": "Cyan",
+    "dmxColorMagenta": "Magenta",
+    "dmxColorYellow": "Gelb"
   },
   "assets": {
     "dropHint": "Audio-, Video- oder Bilddateien hierher ziehen…",

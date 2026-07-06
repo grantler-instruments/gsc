@@ -510,7 +510,14 @@
     "dmxGroupBeam": "Луч",
     "dmxGroupOther": "Прочее",
     "dmxPreset": "Пресет",
-    "dmxCustomValue": "Своё значение"
+    "dmxCustomValue": "Своё значение",
+    "dmxColorPicker": "Цвет",
+    "dmxColorRed": "Красный",
+    "dmxColorGreen": "Зелёный",
+    "dmxColorBlue": "Синий",
+    "dmxColorCyan": "Голубой",
+    "dmxColorMagenta": "Пурпурный",
+    "dmxColorYellow": "Жёлтый"
   },
   "assets": {
     "dropHint": "Перетащите сюда файлы аудио, видео или изображений…",

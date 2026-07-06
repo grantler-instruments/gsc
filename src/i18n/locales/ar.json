@@ -510,7 +510,14 @@
     "dmxGroupBeam": "الحزمة",
     "dmxGroupOther": "أخرى",
     "dmxPreset": "إعداد مسبق",
-    "dmxCustomValue": "مخصص"
+    "dmxCustomValue": "مخصص",
+    "dmxColorPicker": "اللون",
+    "dmxColorRed": "أحمر",
+    "dmxColorGreen": "أخضر",
+    "dmxColorBlue": "أزرق",
+    "dmxColorCyan": "سماوي",
+    "dmxColorMagenta": "أرجواني",
+    "dmxColorYellow": "أصفر"
   },
   "assets": {
     "dropHint": "أفلِت ملفات الصوت أو الفيديو أو الصور هنا…",
