@@ -110,3 +110,10 @@ export function resolveStartupProjectsChoice(choice: StartupProjectsChoice): voi
   });
   resolve?.(choice);
 }
+
+export function refreshStartupProjectsRecents(recents: RecentProjectEntry[]): void {
+  if (pendingStartupChoice) {
+    pendingStartupChoice.recents = recents;
+  }
+  useStartupProjectsPromptStore.setState({ recents });
+}

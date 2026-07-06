@@ -2,7 +2,7 @@ import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react";
 import { startNewProject } from "../lib/new-project";
 import { openSettings } from "../lib/open-settings";
-import { openProjectFile, saveProjectFile } from "../lib/project-file-actions";
+import { openProjectFile, saveProjectAsFile } from "../lib/project-file-actions";
 import { redoProjectEdit, undoProjectEdit } from "../lib/project-history";
 import { getPlatform } from "../platform";
 
@@ -32,7 +32,7 @@ export function useTauriAppMenu(): void {
     });
 
     void listen("gsc://save-project", () => {
-      void saveProjectFile();
+      void saveProjectAsFile();
     }).then((fn) => {
       unlisteners.push(fn);
     });

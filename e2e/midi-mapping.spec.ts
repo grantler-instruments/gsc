@@ -156,6 +156,25 @@ test("multiple MIDI messages can map to the same action", async ({ page }) => {
   await expectTransportShowsCue(page, WHITE_NOISE_ALT_NAME);
 });
 
+test("MIDI debounce suppresses rapid note-on presses on the same control", async ({ page }) => {
+  await gotoApp(page, { resetStorage: true });
+
+  await dropAudioOnCueList(page, WHITE_NOISE_FIXTURE, WHITE_NOISE_NAME);
+  await dropAudioOnCueList(page, WHITE_NOISE_ALT_FIXTURE, WHITE_NOISE_ALT_NAME);
+  await dropAudioOnCueList(page, PLAYBACK_FIXTURE, PLAYBACK_WAV, PLAYBACK_WAV_MIME);
+  await selectSequenceCue(page, WHITE_NOISE_NAME);
+
+  await configureMidiInput(page);
+  await learnMidiMapping(page, { action: "Next cue", note: 60 });
+  await setMidiDebounceMs(page, 100);
+  await closeSettings(page);
+
+  await sendMidiNoteOn(page, 60, 127, 1, { waitForDebounce: false });
+  await sendMidiNoteOn(page, 60, 127, 1, { waitForDebounce: false });
+
+  await expectTransportShowsCue(page, WHITE_NOISE_ALT_NAME);
+});
+
 test("MIDI debounce suppresses on-off-on bounce on the same control", async ({ page }) => {
   await gotoApp(page, { resetStorage: true });
 

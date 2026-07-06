@@ -45,10 +45,18 @@ describe("midiControlKey", () => {
     expect(midiControlKey({ channel: 1, kind: "note-off", note: 60, velocity: 0 })).toBe(
       "note:1:60",
     );
+    expect(midiControlKey({ channel: 1, kind: "note-on", note: 60, velocity: 0 })).toBe(
+      "note:1:60",
+    );
   });
 
-  it("ignores note-on with zero velocity", () => {
-    expect(midiControlKey({ channel: 1, kind: "note-on", note: 60, velocity: 0 })).toBeNull();
+  it("uses the same key for control-change regardless of value", () => {
+    expect(midiControlKey({ channel: 1, kind: "control-change", controller: 7, value: 127 })).toBe(
+      "cc:1:7",
+    );
+    expect(midiControlKey({ channel: 1, kind: "control-change", controller: 7, value: 1 })).toBe(
+      "cc:1:7",
+    );
   });
 
   it("uses separate keys for different notes", () => {
@@ -200,6 +208,53 @@ describe("handleIncomingMidi", () => {
     handleIncomingMidi([0x90, 60, 127], [goCueMapping]);
 
     expect(useTransportStore.getState().activeCueIds).toEqual(["a"]);
+  });
+
+  it("debounces low control-change values on the same controller", () => {
+    const ccMapping = {
+      id: "cc1",
+      match: { channel: 1, kind: "control-change" as const, controller: 7, value: 1 },
+      action: { type: "go-cue" as const, cueId: "a" },
+    };
+
+    handleIncomingMidi([0xb0, 7, 1], [ccMapping]);
+    expect(useTransportStore.getState().activeCueIds).toEqual(["a"]);
+
+    useTransportStore.getState().stop();
+    vi.mocked(performance.now).mockReturnValue(mockNow + 10);
+    handleIncomingMidi([0xb0, 7, 1], [ccMapping]);
+
+    expect(useTransportStore.getState().activeCueIds).toEqual([]);
+  });
+
+  it("debounces note-off after note-on on the same control", () => {
+    const noteOffMapping = {
+      id: "off1",
+      match: { channel: 1, kind: "note-off" as const, note: 60, velocity: 0 },
+      action: { type: "go-cue" as const, cueId: "b" },
+    };
+
+    handleIncomingMidi([0x90, 60, 127], [goCueMapping]);
+    expect(useTransportStore.getState().activeCueIds).toEqual(["a"]);
+
+    useTransportStore.getState().stop();
+    vi.mocked(performance.now).mockReturnValue(mockNow + 20);
+    handleIncomingMidi([0x80, 60, 0], [goCueMapping, noteOffMapping]);
+
+    expect(useTransportStore.getState().activeCueIds).toEqual([]);
+  });
+
+  it("falls back to the default debounce window when preference is invalid", () => {
+    usePreferencesStore.setState({ midiDebounceMs: Number.NaN });
+
+    handleIncomingMidi([0x90, 60, 127], [goCueMapping]);
+    expect(useTransportStore.getState().activeCueIds).toEqual(["a"]);
+
+    useTransportStore.getState().stop();
+    vi.mocked(performance.now).mockReturnValue(mockNow + 10);
+    handleIncomingMidi([0x90, 60, 127], [goCueMapping]);
+
+    expect(useTransportStore.getState().activeCueIds).toEqual([]);
   });
 });
 

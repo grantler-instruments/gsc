@@ -38,6 +38,7 @@ import {
   projectDirNameFromShowName,
   projectRootFromSavePath,
 } from "../lib/project-paths";
+import { nestedProjectSaveParentToReject, projectSaveRootStrategy } from "../lib/project-save-flow";
 import { collectSessionAssetPaths } from "../lib/project-session";
 import { snapshotToCueLists } from "../lib/project-snapshot";
 import { isQlab5WorkspacePath } from "../lib/qlab5/import-qlab5-project";
@@ -130,10 +131,11 @@ function showError(err: unknown): void {
   notifyErrorFromUnknown(err);
 }
 
-async function isDirectoryEmpty(dir: string): Promise<boolean> {
-  if (!(await exists(dir))) return true;
-  const entries = await readDir(dir);
-  return entries.filter((e) => !IGNORED_DIR_ENTRIES.has(e.name)).length === 0;
+function rejectIfInsideExistingProject(targetPath: string): boolean {
+  const parentProject = nestedProjectSaveParentToReject(targetPath, isMacPlatform());
+  if (!parentProject) return true;
+  showError(new Error(t("notification.nestedProjectError", { path: parentProject })));
+  return false;
 }
 
 /**
@@ -142,25 +144,23 @@ async function isDirectoryEmpty(dir: string): Promise<boolean> {
 export async function promptTauriProjectFolder(
   title: string,
   defaultName: string,
+  defaultPath?: string,
 ): Promise<string | null> {
   const selected = await save({
     title,
-    defaultPath: projectDirNameFromShowName(defaultName),
+    defaultPath: defaultPath ?? projectDirNameFromShowName(defaultName),
     canCreateDirectories: true,
   });
   if (!selected || typeof selected !== "string") return null;
 
   const rootDir = projectRootFromSavePath(selected);
+  if (!rejectIfInsideExistingProject(rootDir)) return null;
 
-  if (await exists(rootDir)) {
-    if (!(await isDirectoryEmpty(rootDir))) {
-      throw new Error(t("notification.pathExistsError", { path: rootDir }));
-    }
-    return rootDir;
+  if (!(await exists(rootDir))) {
+    await mkdir(rootDir, { recursive: true });
+    await markGscProjectPackage(rootDir);
   }
 
-  await mkdir(rootDir, { recursive: true });
-  await markGscProjectPackage(rootDir);
   return rootDir;
 }
 
@@ -234,7 +234,7 @@ export async function loadProjectFromFolder(
   }
 
   vfsClear();
-  const loaded = snapshotToCueLists(snap);
+  const loaded = snapshotToCueLists(snap, { initialOpen: true });
   replaceProjectWithoutHistory(() => {
     setActiveProjectId(loaded.id);
     useProjectStore.setState(loaded);
@@ -446,9 +446,12 @@ async function promptAndCommitProjectLocation(): Promise<string | null> {
     bindFolderPromise = (async () => {
       const { rootDir: previousRoot, isTemporaryRoot } = useProjectLocationStore.getState();
       const showName = useProjectStore.getState().name;
+      const defaultPath =
+        previousRoot && !isTemporaryRoot ? previousRoot : projectDirNameFromShowName(showName);
       const folder = await promptTauriProjectFolder(
         t("notification.dialogSaveProjectAs"),
         showName,
+        defaultPath,
       );
       if (!folder) return null;
       useProjectLocationStore.getState().setRootDir(folder, { temporary: false });
@@ -468,12 +471,21 @@ async function promptAndCommitProjectLocation(): Promise<string | null> {
 
 async function resolveProjectRootDir(options?: {
   promptForLocation?: boolean;
+  saveAs?: boolean;
 }): Promise<string | null> {
   const { rootDir, isTemporaryRoot } = useProjectLocationStore.getState();
+  const strategy = projectSaveRootStrategy({
+    saveAs: options?.saveAs,
+    promptForLocation: options?.promptForLocation,
+    rootDir,
+    isTemporaryRoot,
+  });
 
-  if (options?.promptForLocation) {
-    if (rootDir && !isTemporaryRoot) return rootDir;
+  if (strategy.type === "prompt-and-commit") {
     return promptAndCommitProjectLocation();
+  }
+  if (strategy.type === "use-existing") {
+    return strategy.rootDir;
   }
 
   if (rootDir) return rootDir;
@@ -653,18 +665,17 @@ let restorePromise: Promise<boolean> | undefined;
 
 export async function persistTauriProject(options?: {
   promptForLocation?: boolean;
+  saveAs?: boolean;
 }): Promise<void> {
   try {
     const rootDir = await resolveProjectRootDir(options);
     if (!rootDir) return;
+    const { isTemporaryRoot } = useProjectLocationStore.getState();
+    if (!isTemporaryRoot && !rejectIfInsideExistingProject(rootDir)) return;
     await saveProjectToFolder(rootDir);
     syncDraftRootKey();
-  } catch (err) {
-    if (err instanceof Error && err.message.includes("already exists")) {
-      showError(err);
-    } else {
-      notifyWarningDeduped(t("notification.autosaveFailed"));
-    }
+  } catch {
+    notifyWarningDeduped(t("notification.autosaveFailed"));
   }
 }
 
@@ -686,6 +697,8 @@ export async function exportProjectBundleTauri(): Promise<boolean> {
     filters: [{ name: "GSC project bundle", extensions: ["gsc.zip", "zip"] }],
   });
   if (!path) return false;
+
+  if (!rejectIfInsideExistingProject(path)) return false;
 
   await writeFile(path, zip);
   return true;

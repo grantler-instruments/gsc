@@ -65,6 +65,10 @@
     "namePlaceholder": "Unbenannte Show",
     "nameAriaLabel": "Show-Name",
     "draftHint": " · Entwurf (speichern, um Speicherort zu wählen)",
+    "draftBanner": {
+      "message": "Diese Show ist noch nicht in einem Ordner auf Ihrem Computer gespeichert. Speichern Sie sie, bevor Sie die App schließen.",
+      "saveAs": "Speichern unter…"
+    },
     "savingToHint": " · Speichern in {{folder}}",
     "restoringProject": "Projekt wird wiederhergestellt…",
     "loadingAssets": "Assets werden geladen…",
@@ -83,7 +87,12 @@
       "editAriaLabel": "Show-Details bearbeiten",
       "location": "Speicherort",
       "locationDraft": "Entwurf (speichern, um Speicherort zu wählen)",
-      "locationWeb": "Browsersitzung (exportieren, um auf Festplatte zu speichern)"
+      "locationWeb": "Browsersitzung (exportieren, um auf Festplatte zu speichern)",
+      "saveProjectPrompt": {
+        "title": "Show auf Festplatte speichern?",
+        "body": "„{{projectName}}“ ist noch nicht in einem Ordner gespeichert. Jetzt ist ein guter Zeitpunkt, den Speicherort zu wählen.",
+        "later": "Nicht jetzt"
+      }
     }
   },
   "fileMenu": {
@@ -101,6 +110,7 @@
     "deleteStoredProject": "{{projectName}} löschen",
     "openWebEmpty": "Noch keine gespeicherten Projekte in diesem Browser. Importieren Sie eine {{extension}}-Datei, um zu beginnen.",
     "save": "Speichern",
+    "saveAs": "Speichern unter…",
     "saveChooseLocation": "Speicherort wählen…",
     "export": "Exportieren…",
     "exportHint": "{{extension}} mit allen Assets herunterladen",
@@ -283,8 +293,14 @@
     "unsavedDraft": "Ungespeicherter Entwurf",
     "restoreDraftHint": "Arbeit der letzten Sitzung wiederherstellen",
     "recentProjects": "Zuletzt geöffnet",
+    "removeRecentProject": "{{projectName}} aus zuletzt geöffnet entfernen",
     "description": "Zuletzt geöffnetes Projekt wählen, Datei durchsuchen oder neue Show starten.",
     "newShow": "Neue Show"
+  },
+  "discardDraft": {
+    "title": "Ungespeicherten Entwurf verwerfen?",
+    "body": "Beim Öffnen eines anderen Projekts wird der ungespeicherte Entwurf „{{projectName}}“ dauerhaft gelöscht. Speichern Sie ihn zuerst mit Speichern unter…, wenn Sie ihn behalten möchten.",
+    "confirm": "Entwurf verwerfen"
   },
   "unsaved": {
     "title": "Änderungen speichern?",
@@ -693,6 +709,7 @@
     "dialogExportProject": "Projekt exportieren",
     "dialogSaveProjectAs": "Projekt speichern unter",
     "pathExistsError": "\"{{path}}\" existiert bereits und ist nicht leer. Anderen Namen oder Speicherort wählen.",
+    "nestedProjectError": "Projekte können nicht in einem anderen Projektordner gespeichert werden. Wählen Sie einen Speicherort außerhalb von \"{{path}}\".",
     "selectGscFolder": ".gsc-Projektordner wählen (z. B. MyShow.gsc).",
     "noProjectJson": "Kein project.json im gewählten Ordner",
     "unsupportedVersion": "Nicht unterstützte Projektversion"

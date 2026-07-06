@@ -6,20 +6,20 @@ import type { Cue } from "../types/cue";
 import type { MidiAction, MidiMapping, MidiMatch } from "../types/midi-mapping";
 import { selectNextCue, selectPreviousCue } from "./cue-navigation";
 import { midiMatches, parseMidiMessage } from "./midi";
+import { DEFAULT_MIDI_DEBOUNCE_MS } from "./midi-defaults";
 import { randomId } from "./random-id";
 import { triggerGoAndAdvance, triggerGoSelected } from "./transport-actions";
 
 const lastFireByControl = new Map<string, number>();
 
-/** Physical control identity for debounce (ignores on/off message type). */
+/** Physical control identity for debounce (ignores on/off message type and CC value). */
 export function midiControlKey(match: MidiMatch): string | null {
   switch (match.kind) {
     case "note-on":
-      return (match.velocity ?? 0) > 0 ? `note:${match.channel}:${match.note ?? 60}` : null;
     case "note-off":
       return `note:${match.channel}:${match.note ?? 60}`;
     case "control-change":
-      return (match.value ?? 0) >= 64 ? `cc:${match.channel}:${match.controller ?? 0}` : null;
+      return `cc:${match.channel}:${match.controller ?? 0}`;
     case "program-change":
       return `pc:${match.channel}:${match.program ?? 0}`;
     case "pitch-bend":
@@ -31,6 +31,11 @@ export function midiControlKey(match: MidiMatch): string | null {
     default:
       return null;
   }
+}
+
+function resolveMidiDebounceMs(): number {
+  const ms = Number(usePreferencesStore.getState().midiDebounceMs);
+  return Number.isFinite(ms) ? Math.max(0, ms) : DEFAULT_MIDI_DEBOUNCE_MS;
 }
 
 function shouldDebounceControl(match: MidiMatch, debounceMs: number): boolean {
@@ -90,12 +95,12 @@ export function handleIncomingMidi(data: number[], mappings: MidiMapping[]): voi
     return;
   }
 
-  const debounceMs = usePreferencesStore.getState().midiDebounceMs;
+  const debounceMs = resolveMidiDebounceMs();
 
   for (const mapping of mappings) {
     if (mapping.enabled === false) continue;
     if (!midiMatches(mapping.match, incoming)) continue;
-    if (shouldDebounceControl(incoming, debounceMs)) return;
+    if (shouldDebounceControl(mapping.match, debounceMs)) return;
     dispatchMidiAction(mapping.action);
     return;
   }

@@ -1,3 +1,4 @@
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import EditNoteOutlinedIcon from "@mui/icons-material/EditNoteOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
@@ -6,7 +7,9 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
@@ -14,9 +17,14 @@ import ListSubheader from "@mui/material/ListSubheader";
 import Typography from "@mui/material/Typography";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { removeRecentProject } from "../lib/recent-projects";
+import { listRecentProjects } from "../platform/project-storage";
+import { requestDiscardDraftChoice } from "../stores/discard-draft-prompt";
 import {
   ensureStartupProjectsDialogVisible,
+  refreshStartupProjectsRecents,
   resolveStartupProjectsChoice,
+  type StartupProjectsChoice,
   useStartupProjectsPromptStore,
 } from "../stores/startup-projects-prompt";
 
@@ -37,10 +45,23 @@ export function StartupProjectsDialog() {
     ensureStartupProjectsDialogVisible();
   }, []);
 
+  const handleRemoveRecent = async (path: string) => {
+    removeRecentProject(path);
+    refreshStartupProjectsRecents(await listRecentProjects());
+  };
+
+  const tryChoice = async (choice: StartupProjectsChoice) => {
+    if (draft && choice.type !== "restore-draft") {
+      const confirmed = await requestDiscardDraftChoice(draft.name);
+      if (!confirmed) return;
+    }
+    resolveStartupProjectsChoice(choice);
+  };
+
   return (
     <Dialog
       open={open}
-      onClose={() => resolveStartupProjectsChoice({ type: "new-show" })}
+      onClose={() => void tryChoice({ type: "new-show" })}
       maxWidth="sm"
       fullWidth
     >
@@ -50,7 +71,7 @@ export function StartupProjectsDialog() {
           <List
             subheader={<ListSubheader component="div">{t("startup.unsavedDraft")}</ListSubheader>}
           >
-            <ListItemButton onClick={() => resolveStartupProjectsChoice({ type: "restore-draft" })}>
+            <ListItemButton onClick={() => void tryChoice({ type: "restore-draft" })}>
               <ListItemIcon sx={{ minWidth: 36 }}>
                 <EditNoteOutlinedIcon fontSize="small" color="warning" />
               </ListItemIcon>
@@ -64,17 +85,40 @@ export function StartupProjectsDialog() {
             subheader={<ListSubheader component="div">{t("startup.recentProjects")}</ListSubheader>}
           >
             {recents.map((entry) => (
-              <ListItemButton
+              <ListItem
                 key={entry.path}
-                onClick={() =>
-                  resolveStartupProjectsChoice({ type: "open-recent", path: entry.path })
+                disablePadding
+                sx={{
+                  "@media (hover: hover)": {
+                    "& .MuiListItemSecondaryAction-root": {
+                      opacity: 0,
+                      transition: "opacity 0.15s ease",
+                    },
+                    "&:hover .MuiListItemSecondaryAction-root, &:focus-within .MuiListItemSecondaryAction-root":
+                      {
+                        opacity: 1,
+                      },
+                  },
+                }}
+                secondaryAction={
+                  <IconButton
+                    edge="end"
+                    aria-label={t("startup.removeRecentProject", { projectName: entry.name })}
+                    onClick={() => void handleRemoveRecent(entry.path)}
+                  >
+                    <CloseOutlinedIcon fontSize="small" />
+                  </IconButton>
                 }
               >
-                <ListItemIcon sx={{ minWidth: 36 }}>
-                  <HistoryOutlinedIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary={entry.name} secondary={truncatePath(entry.path)} />
-              </ListItemButton>
+                <ListItemButton
+                  onClick={() => void tryChoice({ type: "open-recent", path: entry.path })}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <HistoryOutlinedIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary={entry.name} secondary={truncatePath(entry.path)} />
+                </ListItemButton>
+              </ListItem>
             ))}
           </List>
         ) : null}
@@ -86,13 +130,11 @@ export function StartupProjectsDialog() {
         ) : null}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={() => resolveStartupProjectsChoice({ type: "new-show" })}>
-          {t("startup.newShow")}
-        </Button>
+        <Button onClick={() => void tryChoice({ type: "new-show" })}>{t("startup.newShow")}</Button>
         <Button
           variant="contained"
           startIcon={<FolderOpenOutlinedIcon />}
-          onClick={() => resolveStartupProjectsChoice({ type: "browse" })}
+          onClick={() => void tryChoice({ type: "browse" })}
         >
           {t("common.action.browse")}
         </Button>

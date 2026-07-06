@@ -134,8 +134,13 @@ fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         MenuItem::with_id(handle, "new_project", "New Project", true, Some("CmdOrCtrl+N"))?;
     let open_project =
         MenuItem::with_id(handle, "open_project", "Open…", true, Some("CmdOrCtrl+O"))?;
-    let save_project =
-        MenuItem::with_id(handle, "save_project", "Save", true, Some("CmdOrCtrl+S"))?;
+    let save_project = MenuItem::with_id(
+        handle,
+        "save_project",
+        "Save As…",
+        true,
+        Some("CmdOrCtrl+Shift+S"),
+    )?;
     let settings =
         MenuItem::with_id(handle, "open_settings", "Settings…", true, Some("CmdOrCtrl+,"))?;
     let file_submenu = Submenu::with_items(

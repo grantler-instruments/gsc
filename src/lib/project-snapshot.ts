@@ -8,6 +8,7 @@ import type { VideoEffect } from "../types/video-effect";
 import type { VideoOutputFrame } from "../types/video-output-frame";
 import { normalizeAudioBuses, normalizeCueAudioBus } from "./audio-buses";
 import type { CueList } from "./cue-lists";
+import { initialCueListSelection } from "./cue-selection";
 import { defaultDmxCueData, normalizeDmxCueData } from "./dmx";
 import { normalizeFixturePlot } from "./fixture-plot";
 import { normalizeFixtures } from "./fixtures";
@@ -56,7 +57,15 @@ function normalizeCues(
   });
 }
 
-export function snapshotToCueLists(snap: ProjectSnapshot): {
+export type SnapshotToCueListsOptions = {
+  /** When opening a project file, activate the first cuelist and select its first cue. */
+  initialOpen?: boolean;
+};
+
+export function snapshotToCueLists(
+  snap: ProjectSnapshot,
+  options?: SnapshotToCueListsOptions,
+): {
   id: string;
   name: string;
   startDate?: string;
@@ -82,14 +91,23 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   const masterVideoOutputFrame = serializeVideoOutputFrame(
     normalizeVideoOutputFrame(snap.masterVideoOutputFrame),
   );
-  const cueLists: CueList[] = snap.cueLists.map((list) => ({
-    id: list.id,
-    name: list.name,
-    cues: normalizeCues(list.cues, fixtures, audioBuses, videoBuses),
-    selectedCueIds: [],
-    selectionAnchorId: null,
-  }));
-  const active = cueLists.find((l) => l.id === snap.activeCueListId) ?? cueLists[0];
+  const cueLists: CueList[] = snap.cueLists.map((list, index) => {
+    const cues = normalizeCues(list.cues, fixtures, audioBuses, videoBuses);
+    const selection =
+      options?.initialOpen && index === 0
+        ? initialCueListSelection(cues)
+        : { selectedCueIds: [], selectionAnchorId: null };
+    return {
+      id: list.id,
+      name: list.name,
+      cues,
+      ...selection,
+    };
+  });
+  const active =
+    options?.initialOpen && cueLists[0]
+      ? cueLists[0]
+      : (cueLists.find((l) => l.id === snap.activeCueListId) ?? cueLists[0]);
   return {
     id: snap.id,
     name: snap.name,
