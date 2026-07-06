@@ -1,12 +1,8 @@
 import { t } from "../../i18n/t";
 import { idbGetOflCache, idbPutOflCache, initProjectIdb } from "../project-idb";
 import { OFL_MANUFACTURERS_URL, oflFixtureRawUrl, oflManufacturerContentsUrl } from "./constants";
-import type {
-  OflFixtureListEntry,
-  OflFixtureSummary,
-  OflManufacturer,
-  OflModeSummary,
-} from "./types";
+import { parseOflFixtureDefinition } from "./parse-definition";
+import type { OflFixtureListEntry, OflFixtureSummary, OflManufacturer } from "./types";
 
 interface GitHubContentEntry {
   name: string;
@@ -91,61 +87,29 @@ export async function fetchOflFixtureList(manufacturerKey: string): Promise<OflF
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function parseOflModes(raw: unknown): OflModeSummary[] {
-  if (!raw || typeof raw !== "object" || !("modes" in raw)) return [];
-  const modes = (raw as { modes?: unknown }).modes;
-  if (!Array.isArray(modes)) return [];
-
-  return modes
-    .map((mode): OflModeSummary | null => {
-      if (!mode || typeof mode !== "object") return null;
-      const record = mode as { name?: string; shortName?: string; channels?: unknown };
-      const name = record.name?.trim();
-      if (!name) return null;
-      const channels = Array.isArray(record.channels)
-        ? record.channels
-            .map((channel) => {
-              if (typeof channel === "string" && channel.trim()) {
-                return { key: channel.trim() };
-              }
-              return null;
-            })
-            .filter((channel): channel is { key: string } => channel !== null)
-        : [];
-      return {
-        name,
-        shortName: record.shortName?.trim() || undefined,
-        channelCount: Math.max(channels.length, 1),
-        channels,
-      };
-    })
-    .filter((mode): mode is OflModeSummary => mode !== null);
-}
-
 export function parseOflFixtureJson(
   manufacturerKey: string,
   manufacturerName: string,
   fixtureKey: string,
   raw: unknown,
 ): OflFixtureSummary {
-  const record =
-    raw && typeof raw === "object" ? (raw as { name?: string; categories?: unknown }) : {};
-  const modes = parseOflModes(raw);
-  if (modes.length === 0) {
+  const definition = parseOflFixtureDefinition(raw);
+  if (!definition || definition.modes.length === 0) {
     throw new Error(t("ofl.noDmxModes"));
   }
-
-  const categories = Array.isArray(record.categories)
-    ? record.categories.filter((entry): entry is string => typeof entry === "string")
-    : undefined;
 
   return {
     manufacturerKey,
     manufacturer: manufacturerName,
     fixtureKey,
-    name: record.name?.trim() || titleCaseFromKey(fixtureKey),
-    categories,
-    modes,
+    name: definition.name,
+    categories: definition.categories,
+    modes: definition.modes.map((mode) => ({
+      name: mode.name,
+      shortName: mode.shortName,
+      channelCount: mode.channelCount,
+      channels: mode.channels,
+    })),
   };
 }
 

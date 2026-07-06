@@ -502,7 +502,15 @@
     "addFixturesMenu": "+ Refletores ▾",
     "addAllFixtures": "Adicionar todos os refletores",
     "fixtureSubheader": "Refletor",
-    "allFixturesInCue": "Todos os refletores em patch já estão nesta deixa"
+    "allFixturesInCue": "Todos os refletores em patch já estão nesta deixa",
+    "dmxGroupIntensity": "Intensidade",
+    "dmxGroupColor": "Cor",
+    "dmxGroupPosition": "Posição",
+    "dmxGroupWheels": "Rodas",
+    "dmxGroupBeam": "Feixe",
+    "dmxGroupOther": "Outros",
+    "dmxPreset": "Preset",
+    "dmxCustomValue": "Personalizado"
   },
   "assets": {
     "dropHint": "Solte arquivos de áudio, vídeo ou imagem aqui…",

@@ -8,17 +8,14 @@ import {
   addAllDmxFixturesToCue,
   addDmxFixtureToCue,
   availableDmxFixtures,
-  clampDmxValue,
-  fixtureChannelLabel,
   removeDmxFixtureFromCue,
   resolveLightFadeDmx,
-  updateDmxFixtureChannelValue,
+  updateDmxFixtureChannelValues,
 } from "../../lib/dmx";
-import { fixtureChannelAddress } from "../../lib/fixtures";
 import { useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
-import { SliderNumberField } from "../SliderNumberField";
 import { AddDmxFixturesMenu } from "./AddDmxFixturesMenu";
+import { DmxFixtureChannels } from "./DmxFixtureChannels";
 import { DmxPreviewField } from "./DmxPreviewField";
 
 interface DmxInspectorFieldsProps {
@@ -145,60 +142,14 @@ export function DmxInspectorFields({
                 </IconButton>
               )}
             </Stack>
-            {entry.values.map((value, index) => {
-              const channelLabel = fixtureChannelLabel(fixture, index);
-              return (
-                <Stack
-                  key={`${entry.fixtureId}-${fixtureChannelAddress(fixture, index)}`}
-                  direction="row"
-                  sx={{ gap: 0.75, alignItems: "center" }}
-                >
-                  <Typography
-                    component="span"
-                    sx={{
-                      minWidth: 28,
-                      fontSize: 12,
-                      color: "text.secondary",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {fixtureChannelAddress(fixture, index)}
-                  </Typography>
-                  <Typography
-                    component="span"
-                    sx={{
-                      minWidth: 56,
-                      flexShrink: 0,
-                      fontSize: 12,
-                      color: "text.secondary",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {channelLabel ?? t("inspector.level")}
-                  </Typography>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <SliderNumberField
-                      value={value}
-                      min={0}
-                      max={255}
-                      readOnly={readOnly}
-                      onChange={(next) =>
-                        patchDmx(
-                          updateDmxFixtureChannelValue(
-                            dmx,
-                            entry.fixtureId,
-                            index,
-                            clampDmxValue(next),
-                          ),
-                        )
-                      }
-                    />
-                  </Box>
-                </Stack>
-              );
-            })}
+            <DmxFixtureChannels
+              fixture={fixture}
+              values={entry.values}
+              readOnly={readOnly}
+              onChannelValuesChange={(updates) =>
+                patchDmx(updateDmxFixtureChannelValues(dmx, entry.fixtureId, updates))
+              }
+            />
           </Box>
         );
       })}

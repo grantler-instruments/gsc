@@ -502,7 +502,15 @@
     "addFixturesMenu": "+ Projecteurs ▾",
     "addAllFixtures": "Ajouter tous les projecteurs",
     "fixtureSubheader": "Projecteur",
-    "allFixturesInCue": "Tous les projecteurs patchés sont déjà dans ce top"
+    "allFixturesInCue": "Tous les projecteurs patchés sont déjà dans ce top",
+    "dmxGroupIntensity": "Intensité",
+    "dmxGroupColor": "Couleur",
+    "dmxGroupPosition": "Position",
+    "dmxGroupWheels": "Roues",
+    "dmxGroupBeam": "Faisceau",
+    "dmxGroupOther": "Autres",
+    "dmxPreset": "Preset",
+    "dmxCustomValue": "Personnalisé"
   },
   "assets": {
     "dropHint": "Déposez des fichiers audio, vidéo ou image ici…",

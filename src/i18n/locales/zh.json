@@ -502,7 +502,15 @@
     "addFixturesMenu": "+ 灯具 ▾",
     "addAllFixtures": "添加所有灯具",
     "fixtureSubheader": "灯具",
-    "allFixturesInCue": "所有已配接灯具已在此提示中"
+    "allFixturesInCue": "所有已配接灯具已在此提示中",
+    "dmxGroupIntensity": "亮度",
+    "dmxGroupColor": "颜色",
+    "dmxGroupPosition": "位置",
+    "dmxGroupWheels": "轮盘",
+    "dmxGroupBeam": "光束",
+    "dmxGroupOther": "其他",
+    "dmxPreset": "预设",
+    "dmxCustomValue": "自定义"
   },
   "assets": {
     "dropHint": "将音频、视频或图像文件拖到这里…",

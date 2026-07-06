@@ -256,6 +256,20 @@ export function updateDmxFixtureChannelValue(
   channelIndex: number,
   value: number,
 ): DmxCueData {
+  return updateDmxFixtureChannelValues(data, fixtureId, [{ channelIndex, value }]);
+}
+
+export function updateDmxFixtureChannelValues(
+  data: DmxCueData,
+  fixtureId: string,
+  updates: ReadonlyArray<{ channelIndex: number; value: number }>,
+): DmxCueData {
+  if (updates.length === 0) return data;
+
+  const updateMap = new Map(
+    updates.map((update) => [update.channelIndex, clampDmxValue(update.value)]),
+  );
+
   return {
     ...data,
     fixtures: data.fixtures.map((entry) =>
@@ -263,7 +277,7 @@ export function updateDmxFixtureChannelValue(
         ? {
             ...entry,
             values: entry.values.map((current, index) =>
-              index === channelIndex ? clampDmxValue(value) : current,
+              updateMap.has(index) ? (updateMap.get(index) ?? current) : current,
             ),
           }
         : entry,

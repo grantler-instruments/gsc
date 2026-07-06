@@ -502,7 +502,15 @@
     "addFixturesMenu": "+ Приборы ▾",
     "addAllFixtures": "Добавить все приборы",
     "fixtureSubheader": "Прибор",
-    "allFixturesInCue": "Все подключённые приборы уже есть в этом кью"
+    "allFixturesInCue": "Все подключённые приборы уже есть в этом кью",
+    "dmxGroupIntensity": "Яркость",
+    "dmxGroupColor": "Цвет",
+    "dmxGroupPosition": "Положение",
+    "dmxGroupWheels": "Колёса",
+    "dmxGroupBeam": "Луч",
+    "dmxGroupOther": "Прочее",
+    "dmxPreset": "Пресет",
+    "dmxCustomValue": "Своё значение"
   },
   "assets": {
     "dropHint": "Перетащите сюда файлы аудио, видео или изображений…",

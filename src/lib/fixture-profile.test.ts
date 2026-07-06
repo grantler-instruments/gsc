@@ -20,7 +20,11 @@ const sampleFixture: Fixture = {
     fixtureKey: "rgb-par",
     model: "RGB Par",
     modeName: "6-channel",
-    channels: [{ key: "Red" }, { key: "Green" }, { key: "Blue" }],
+    channels: [
+      { key: "Red", kind: "red" },
+      { key: "Green", kind: "green" },
+      { key: "Blue", kind: "blue" },
+    ],
   },
 };
 

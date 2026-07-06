@@ -37,7 +37,12 @@ describe("fixture plot", () => {
             fixtureKey: "rgb",
             model: "RGB",
             modeName: "4ch",
-            channels: [{ key: "Red" }, { key: "Green" }, { key: "Blue" }, { key: "Dimmer" }],
+            channels: [
+              { key: "Red", kind: "red" },
+              { key: "Green", kind: "green" },
+              { key: "Blue", kind: "blue" },
+              { key: "Dimmer", kind: "intensity" },
+            ],
           },
         }),
       ),

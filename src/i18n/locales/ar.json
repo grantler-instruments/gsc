@@ -502,7 +502,15 @@
     "addFixturesMenu": "+ وحدات ▾",
     "addAllFixtures": "إضافة كل الوحدات",
     "fixtureSubheader": "وحدة",
-    "allFixturesInCue": "جميع الوحدات الموصّلة موجودة بالفعل في هذه الإشارة"
+    "allFixturesInCue": "جميع الوحدات الموصّلة موجودة بالفعل في هذه الإشارة",
+    "dmxGroupIntensity": "الشدة",
+    "dmxGroupColor": "اللون",
+    "dmxGroupPosition": "الموضع",
+    "dmxGroupWheels": "العجلات",
+    "dmxGroupBeam": "الحزمة",
+    "dmxGroupOther": "أخرى",
+    "dmxPreset": "إعداد مسبق",
+    "dmxCustomValue": "مخصص"
   },
   "assets": {
     "dropHint": "أفلِت ملفات الصوت أو الفيديو أو الصور هنا…",

@@ -502,7 +502,15 @@
     "addFixturesMenu": "+ Fixtures ▾",
     "addAllFixtures": "Añadir todos los fixtures",
     "fixtureSubheader": "Fixture",
-    "allFixturesInCue": "Todos los fixtures parcheados ya están en este cue"
+    "allFixturesInCue": "Todos los fixtures parcheados ya están en este cue",
+    "dmxGroupIntensity": "Intensidad",
+    "dmxGroupColor": "Color",
+    "dmxGroupPosition": "Posición",
+    "dmxGroupWheels": "Ruedas",
+    "dmxGroupBeam": "Haz",
+    "dmxGroupOther": "Otros",
+    "dmxPreset": "Preset",
+    "dmxCustomValue": "Personalizado"
   },
   "assets": {
     "dropHint": "Arrastre archivos de audio, video o imagen aquí…",

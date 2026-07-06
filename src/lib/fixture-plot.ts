@@ -6,6 +6,11 @@ import type {
   FixtureRenderKind,
 } from "../types/fixture-plot";
 import { fixtureChannelLabel } from "./dmx";
+import {
+  findFirstChannelByKind,
+  fixtureHasRgbChannels,
+  fixtureOflChannels,
+} from "./fixture-definition";
 
 export const DEFAULT_PLOT_ENTRY_SIZE = 0.12;
 export const LEGACY_PLOT_ENTRY_SIZE = 0.08;
@@ -38,18 +43,19 @@ export function emptyFixturePlot(): FixturePlot {
   return { entries: [] };
 }
 
-function oflChannelKeys(fixture: Fixture): string[] {
-  return fixture.ofl?.channels.map((channel) => channel.key.toLowerCase()) ?? [];
-}
-
 export function inferFixtureRenderKind(fixture: Fixture): FixtureRenderKind {
-  if (fixture.channelCount === 1) return "dimmer";
+  if (fixture.channelCount === 1 && !fixture.ofl) return "dimmer";
 
-  const keys = oflChannelKeys(fixture);
-  const hasRed = keys.some((key) => key.includes("red"));
-  const hasGreen = keys.some((key) => key.includes("green"));
-  const hasBlue = keys.some((key) => key.includes("blue"));
-  if (hasRed && hasGreen && hasBlue) return "rgb";
+  if (fixture.ofl) {
+    if (fixtureHasRgbChannels(fixture.ofl)) return "rgb";
+    const kinds = new Set(fixtureOflChannels(fixture.ofl).map((channel) => channel.kind));
+    if (kinds.has("intensity") && kinds.size === 1) return "dimmer";
+    if (kinds.has("intensity") && !kinds.has("red") && !kinds.has("green") && !kinds.has("blue")) {
+      return "dimmer";
+    }
+  }
+
+  if (fixture.channelCount === 1) return "dimmer";
 
   return "abstract";
 }
@@ -58,24 +64,21 @@ export function defaultFixturePlotChannelMap(
   fixture: Fixture,
   render: FixtureRenderKind,
 ): FixturePlotChannelMap | undefined {
-  if (render === "dimmer") return { intensity: 0 };
+  if (render === "dimmer") {
+    return { intensity: findFirstChannelByKind(fixture.ofl, "intensity") ?? 0 };
+  }
   if (render !== "rgb") return undefined;
 
-  const keys = oflChannelKeys(fixture);
-  const findIndex = (match: (key: string) => boolean) => keys.findIndex(match);
-
-  const red = findIndex((key) => key.includes("red"));
-  const green = findIndex((key) => key.includes("green"));
-  const blue = findIndex((key) => key.includes("blue"));
-  const intensity = findIndex(
-    (key) => key.includes("dimmer") || key.includes("intensity") || key.includes("master"),
-  );
+  const red = findFirstChannelByKind(fixture.ofl, "red");
+  const green = findFirstChannelByKind(fixture.ofl, "green");
+  const blue = findFirstChannelByKind(fixture.ofl, "blue");
+  const intensity = findFirstChannelByKind(fixture.ofl, "intensity");
 
   return {
-    red: red >= 0 ? red : 0,
-    green: green >= 0 ? green : 1,
-    blue: blue >= 0 ? blue : 2,
-    ...(intensity >= 0 ? { intensity } : {}),
+    red: red ?? 0,
+    green: green ?? 1,
+    blue: blue ?? 2,
+    ...(intensity !== undefined ? { intensity } : {}),
   };
 }
 

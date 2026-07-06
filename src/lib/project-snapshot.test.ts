@@ -123,7 +123,11 @@ describe("project snapshot round-trip", () => {
           fixtureKey: "rgb-par",
           model: "RGB Par",
           modeName: "3 Channel RGB",
-          channels: [{ key: "Red" }, { key: "Green" }, { key: "Blue" }],
+          channels: [
+            { key: "Red", kind: "red" },
+            { key: "Green", kind: "green" },
+            { key: "Blue", kind: "blue" },
+          ],
         },
       },
     ];

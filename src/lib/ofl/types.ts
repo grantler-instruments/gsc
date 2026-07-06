@@ -1,8 +1,10 @@
+import type { FixtureOflChannel } from "../../types/fixture";
+
 export interface OflModeSummary {
   name: string;
   shortName?: string;
   channelCount: number;
-  channels: { key: string }[];
+  channels: FixtureOflChannel[];
 }
 
 export interface OflFixtureSummary {
