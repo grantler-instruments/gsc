@@ -13,7 +13,10 @@ export function SettingsVideoPanel({ isTauri }: SettingsVideoPanelProps) {
   const { t } = useTranslation();
 
   return (
-    <Stack sx={inspectorFieldsSx}>
+    <Stack sx={inspectorFieldsSx} spacing={2}>
+      <Typography variant="body2" color="text.secondary">
+        {t("videoOutput.settingsHint")}
+      </Typography>
       {isTauri && NDI_ENABLED ? (
         <NdiSettingsPanel />
       ) : !isTauri ? (

@@ -1,6 +1,7 @@
 import { t } from "../i18n/t";
 import type { Cue, FadeCueType } from "../types/cue";
 import type { Fixture } from "../types/fixture";
+import { clampPan } from "./clamp";
 import { normalizeDmxCueData, resolveLightFadeDmx } from "./dmx";
 import { buildDmxFadePlan } from "./dmx-fade";
 
@@ -88,10 +89,6 @@ export function isLightFadeReady(fadeCue: Cue, fixtures: Fixture[], cues: Cue[] 
 }
 
 /** Level at GO time — target cue's current volume/opacity, not a stored fadeFrom. */
-function clampPan(value: number): number {
-  return Math.max(-1, Math.min(1, value));
-}
-
 export function resolveFadeFromLevel(fadeCue: Cue, target: Cue): number {
   if (isVolumeFadeCue(fadeCue)) {
     return Math.max(0, Math.min(1, target.volume ?? 1));

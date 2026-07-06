@@ -19,6 +19,9 @@ import type {
 import type { Fixture } from "../../types/fixture";
 import type { FixturePlot, FixturePlotEntry } from "../../types/fixture-plot";
 import type { MidiMapping } from "../../types/midi-mapping";
+import type { VideoBus } from "../../types/video-bus";
+import type { VideoEffect, VideoEffectParams, VideoEffectType } from "../../types/video-effect";
+import type { VideoOutputFrame } from "../../types/video-output-frame";
 
 export interface ProjectState {
   id: string;
@@ -32,6 +35,11 @@ export interface ProjectState {
   fixtures: Fixture[];
   fixturePlot: FixturePlot;
   audioBuses: AudioBus[];
+  videoBuses: VideoBus[];
+  masterVideoOutputName: string;
+  masterVideoOutputOpacity: number;
+  masterVideoOutputEffects?: VideoEffect[];
+  masterVideoOutputFrame?: VideoOutputFrame;
   addCue: (opts: {
     name: string;
     type: CueType;
@@ -113,6 +121,40 @@ export interface ProjectState {
   removeBusEffect: (busId: string, effectId: string) => void;
   reorderBusEffectRelative: (
     busId: string,
+    draggedId: string,
+    targetId: string,
+    place: "before" | "after",
+  ) => void;
+  addVideoBus: (opts?: Partial<Omit<VideoBus, "id">>) => VideoBus;
+  removeVideoBus: (id: string) => void;
+  updateVideoBus: (id: string, patch: Partial<Omit<VideoBus, "id">>) => void;
+  addVideoBusEffect: (busId: string, type: VideoEffectType) => VideoEffect | null;
+  updateVideoBusEffect: (
+    busId: string,
+    effectId: string,
+    patch: Partial<Omit<VideoEffect, "id" | "params" | "type">> & {
+      params?: Partial<VideoEffectParams>;
+    },
+  ) => void;
+  removeVideoBusEffect: (busId: string, effectId: string) => void;
+  reorderVideoBusEffectRelative: (
+    busId: string,
+    draggedId: string,
+    targetId: string,
+    place: "before" | "after",
+  ) => void;
+  updateMasterVideoOutputName: (name: string) => void;
+  updateMasterVideoOutputOpacity: (opacity: number) => void;
+  updateMasterVideoOutputFrame: (frame: VideoOutputFrame) => void;
+  addMasterVideoOutputEffect: (type: VideoEffectType) => VideoEffect | null;
+  updateMasterVideoOutputEffect: (
+    effectId: string,
+    patch: Partial<Omit<VideoEffect, "id" | "params" | "type">> & {
+      params?: Partial<VideoEffectParams>;
+    },
+  ) => void;
+  removeMasterVideoOutputEffect: (effectId: string) => void;
+  reorderMasterVideoOutputEffectRelative: (
     draggedId: string,
     targetId: string,
     place: "before" | "after",

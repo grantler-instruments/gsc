@@ -24,6 +24,11 @@ export function cueShowsPlaybackProgress(cue: Cue): boolean {
   );
 }
 
+/** Audio/video playback lifecycle is owned by the audio engine, not the progress tick. */
+export function isEngineManagedPlaybackCue(cue: Cue): boolean {
+  return cue.type === "audio" || cue.type === "video";
+}
+
 /** Length of one in→out slice in seconds (excludes fade padding). */
 export function getPlaybackSliceSec(cue: Cue, sourceDurationSec?: number): number {
   if (cue.type === "midi") {

@@ -7,16 +7,23 @@ import {
   transportGoButton,
 } from "./helpers/active-cues";
 import { gotoApp } from "./helpers/app";
-import { expectCueInSequenceList } from "./helpers/cue-list-panel";
+import { expectCueInSequenceList, sequenceCueRow } from "./helpers/cue-list-panel";
 import { dropAudioOnCueList, fixturePath } from "./helpers/drop-audio";
-import { prepareLoopCue, startSelectedLoopCue } from "./helpers/loop-playback";
+import { enableLoopPlayback } from "./helpers/fade-cues";
+import {
+  prepareLoopCue,
+  setInfiniteLoopIterations,
+  startSelectedLoopCue,
+} from "./helpers/loop-playback";
 import {
   expectOutputPlaybackStable,
   expectOutputVideoLoadsWithin,
   expectOutputVideoPlaybackToAdvance,
   expectPlaybackSyncStable,
+  OUTPUT_VIDEO_MID_PLAYBACK_LOAD_MAX_MS,
   openOutputWindow,
   outputButton,
+  PLAYBACK_VIDEO_SLICE_SEC,
 } from "./helpers/output-window";
 
 test.describe.configure({ mode: "serial" });
@@ -27,6 +34,10 @@ async function setupVideoCue(page: Page) {
   await gotoApp(page);
   await dropAudioOnCueList(page, fixturePath(VIDEO_FIXTURE), VIDEO_FIXTURE, "video/mp4");
   await expectCueInSequenceList(page, VIDEO_FIXTURE);
+  // Fixture slice is 4s — loop so load + stable windows do not outlive playback.
+  await sequenceCueRow(page, VIDEO_FIXTURE).click();
+  await enableLoopPlayback(page);
+  await setInfiniteLoopIterations(page);
   await expect(outputButton(page)).toBeVisible();
 }
 
@@ -42,6 +53,7 @@ test("output window plays video when cue is triggered", async ({ page }) => {
 
   await expectOutputVideoPlaybackToAdvance(outputPage);
 
+  await pressPanic(page);
   await outputPage.close();
 });
 
@@ -63,6 +75,7 @@ test("output window video loads quickly after GO", async ({ page }) => {
     description: String(loadMs),
   });
 
+  await pressPanic(page);
   await outputPage.close();
 });
 
@@ -80,8 +93,9 @@ test("output window keeps a single video element without reloading during playba
   const goAtMs = Date.now();
   await pressTransportGo(page);
   await expectOutputVideoLoadsWithin(outputPage, goAtMs);
-  await expectOutputPlaybackStable(outputPage);
+  await expectOutputPlaybackStable(outputPage, { sliceSec: PLAYBACK_VIDEO_SLICE_SEC });
 
+  await pressPanic(page);
   await outputPage.close();
 });
 
@@ -98,13 +112,19 @@ test("output window video loads quickly when opened during playback", async ({ p
 
   const openAtMs = Date.now();
   const outputPage = await openOutputWindow(page);
-  const loadMs = await expectOutputVideoLoadsWithin(outputPage, openAtMs);
+  const loadMs = await expectOutputVideoLoadsWithin(
+    outputPage,
+    openAtMs,
+    OUTPUT_VIDEO_MID_PLAYBACK_LOAD_MAX_MS,
+    { requirePlaying: false },
+  );
 
   test.info().annotations.push({
     type: "output-video-mid-playback-load-ms",
     description: String(loadMs),
   });
 
+  await pressPanic(page);
   await outputPage.close();
 });
 

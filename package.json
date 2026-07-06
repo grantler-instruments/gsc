@@ -18,7 +18,7 @@
     "test:e2e:desktop": "wdio run ./e2e-desktop/wdio.conf.ts",
     "test:e2e:install": "cross-env PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium",
     "test:e2e:fixtures": "node e2e/fixtures/generate-audio-fixtures.mjs && node e2e/fixtures/generate-video-fixtures.mjs",
-    "lint": "biome check .",
+    "lint": "biome check . && node scripts/check-e2e-imports.mjs",
     "lint:fix": "biome check --write .",
     "icons": "vite-node --script scripts/sync-favicon.ts",
     "version:sync": "node scripts/sync-version.mjs",
@@ -47,6 +47,7 @@
     "buffer": "^6.0.3",
     "fflate": "^0.8.3",
     "i18next": "^26.2.0",
+    "postprocessing": "^6.39.2",
     "qrcode": "^1.5.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -54,6 +55,7 @@
     "stylis": "^4.4.0",
     "stylis-plugin-rtl": "^2.1.1",
     "tauri-plugin-keepawake-api": "^0.1.0",
+    "three": "^0.185.1",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
@@ -65,6 +67,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/stylis": "^4.2.7",
+    "@types/three": "^0.185.0",
     "@vitejs/plugin-react": "^4.6.0",
     "@vitest/coverage-v8": "^3.2.6",
     "@wdio/cli": "^9.19.0",

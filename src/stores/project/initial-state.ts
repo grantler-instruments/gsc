@@ -3,6 +3,7 @@ import { setActiveProjectId } from "../../lib/active-project-id";
 import { createCueList } from "../../lib/cue-lists";
 import { emptyFixturePlot } from "../../lib/fixture-plot";
 import { randomId } from "../../lib/random-id";
+import { defaultMasterVideoOutputName } from "../../lib/video-buses";
 import type { MidiMapping } from "../../types/midi-mapping";
 
 export const initialList = createCueList(t("project.defaultListName"));
@@ -19,4 +20,7 @@ export const initialProjectData = {
   fixtures: [],
   fixturePlot: emptyFixturePlot(),
   audioBuses: [],
+  videoBuses: [],
+  masterVideoOutputName: defaultMasterVideoOutputName(),
+  masterVideoOutputOpacity: 1,
 };

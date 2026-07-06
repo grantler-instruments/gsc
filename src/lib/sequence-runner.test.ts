@@ -1,13 +1,15 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useFadeStore } from "../stores/fade";
 import { useTransportStore } from "../stores/transport";
 import { resetTestProject, testCue } from "../test/fixtures/cues";
 import { expandSequenceSteps } from "./cues";
 import {
   advanceRunningSequence,
+  cueCompletesViaAudioEngine,
   notifyFadeCueComplete,
   notifyStepPlaybackEnded,
   runSequence,
+  tryAdvanceSequenceIfStepPlaybackInactive,
 } from "./sequence-runner";
 
 function resetTransport() {
@@ -143,6 +145,7 @@ describe("notifyStepPlaybackEnded", () => {
       currentStep: 1,
       stepCueIds: ["b"],
     });
+    expect(useTransportStore.getState().activeCueIds).toContain("b");
   });
 
   it("waits until all parallel playback cues in the step stop", () => {
@@ -252,5 +255,220 @@ describe("advanceRunningSequence", () => {
 
     advanceRunningSequence(cues);
     expect(useTransportStore.getState().runningSequence).toBeNull();
+  });
+});
+
+describe("completeSequenceStep idempotency", () => {
+  beforeEach(() => {
+    resetTransport();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("does not double-advance when notify is called twice for the same step", () => {
+    const cues = [
+      testCue("seq", "Seq", "sequence"),
+      testCue("a", "A", "audio", { parentId: "seq", assetPath: "a.wav" }),
+      testCue("b", "B", "audio", { parentId: "seq", assetPath: "b.wav" }),
+    ];
+    resetTestProject(cues);
+    useTransportStore.setState({
+      activeCueIds: [],
+      runningSequence: {
+        rootId: "seq",
+        currentStep: 0,
+        stepCount: 2,
+        stepCueIds: ["a"],
+        stepStartedAtMs: 0,
+      },
+    });
+
+    notifyStepPlaybackEnded(["a"]);
+    notifyStepPlaybackEnded(["a"]);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      rootId: "seq",
+      currentStep: 1,
+      stepCueIds: ["b"],
+    });
+  });
+
+  it("schedules a timer for wait-only steps", () => {
+    const cues = [
+      testCue("seq", "Seq", "sequence"),
+      testCue("a", "A", "audio", { parentId: "seq", assetPath: "a.wav" }),
+      testCue("w", "Wait", "wait", { parentId: "seq", waitDurationSec: 2 }),
+      testCue("b", "B", "audio", { parentId: "seq", assetPath: "b.wav" }),
+    ];
+    resetTestProject(cues);
+
+    runSequence(cues[0], cues);
+    useTransportStore.setState({ activeCueIds: [] });
+    notifyStepPlaybackEnded(["a"]);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      currentStep: 1,
+      stepCueIds: ["w"],
+    });
+    expect(useTransportStore.getState().activeCueIds).toEqual([]);
+
+    vi.advanceTimersByTime(2000);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      currentStep: 2,
+      stepCueIds: ["b"],
+    });
+    expect(useTransportStore.getState().activeCueIds).toContain("b");
+  });
+
+  it("ignores a stale step timer after playback-end already advanced", () => {
+    const cues = [
+      testCue("seq", "Seq", "sequence"),
+      testCue("a", "A", "audio", { parentId: "seq", assetPath: "a.wav" }),
+      testCue("b", "B", "audio", { parentId: "seq", assetPath: "b.wav" }),
+    ];
+    resetTestProject(cues);
+    runSequence(cues[0], cues);
+
+    expect(useTransportStore.getState().runningSequence?.currentStep).toBe(0);
+
+    useTransportStore.setState({ activeCueIds: [] });
+    notifyStepPlaybackEnded(["a"]);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      currentStep: 1,
+      stepCueIds: ["b"],
+    });
+
+    // Step-0 fallback timer would fire here on the old runner and re-enter step 1.
+    vi.advanceTimersByTime(500);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      currentStep: 1,
+      stepCueIds: ["b"],
+    });
+  });
+});
+
+describe("nested sequences", () => {
+  beforeEach(() => {
+    resetTransport();
+  });
+
+  it("advances when step playback cues are all inactive", () => {
+    const cues = [
+      testCue("seq", "Seq", "sequence"),
+      testCue("a", "A", "audio", { parentId: "seq", assetPath: "a.wav" }),
+      testCue("b", "B", "audio", { parentId: "seq", assetPath: "b.wav" }),
+    ];
+    resetTestProject(cues);
+    useTransportStore.setState({
+      activeCueIds: [],
+      runningSequence: {
+        rootId: "seq",
+        currentStep: 0,
+        stepCount: 2,
+        stepCueIds: ["a"],
+        stepStartedAtMs: 0,
+      },
+    });
+
+    tryAdvanceSequenceIfStepPlaybackInactive();
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      currentStep: 1,
+      stepCueIds: ["b"],
+    });
+    expect(useTransportStore.getState().activeCueIds).toContain("b");
+  });
+
+  it("does not drop playback-end notification when runningSequence is set before firing", () => {
+    const cues = [
+      testCue("seq", "Seq", "sequence"),
+      testCue("a", "A", "audio", { parentId: "seq", assetPath: "a.wav" }),
+      testCue("b", "B", "audio", { parentId: "seq", assetPath: "b.wav" }),
+    ];
+    resetTestProject(cues);
+
+    runSequence(cues[0], cues);
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      rootId: "seq",
+      currentStep: 0,
+      stepCueIds: ["a"],
+    });
+
+    useTransportStore.setState({ activeCueIds: [] });
+    notifyStepPlaybackEnded(["a"]);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      currentStep: 1,
+      stepCueIds: ["b"],
+    });
+  });
+
+  it("runs a child sequence without the parent overwriting runningSequence", () => {
+    const cues = [
+      testCue("root", "Root Seq", "sequence"),
+      testCue("mid", "Mid Par", "group", { parentId: "root" }),
+      testCue("inner", "Inner Seq", "sequence", { parentId: "mid" }),
+      testCue("a", "A", "audio", { parentId: "inner", assetPath: "a.wav" }),
+      testCue("b", "B", "audio", { parentId: "inner", assetPath: "b.wav" }),
+    ];
+    resetTestProject(cues);
+
+    runSequence(cues[0], cues);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      rootId: "inner",
+      currentStep: 0,
+      stepCueIds: ["a"],
+      parent: { rootId: "root", stepIndex: 0 },
+    });
+    expect(useTransportStore.getState().activeCueIds).toContain("a");
+
+    useTransportStore.setState({ activeCueIds: [] });
+    notifyStepPlaybackEnded(["a"]);
+
+    expect(useTransportStore.getState().runningSequence).toMatchObject({
+      rootId: "inner",
+      currentStep: 1,
+      stepCueIds: ["b"],
+      parent: { rootId: "root", stepIndex: 0 },
+    });
+    expect(useTransportStore.getState().activeCueIds).toContain("b");
+
+    useTransportStore.setState({ activeCueIds: [] });
+    notifyStepPlaybackEnded(["b"]);
+
+    expect(useTransportStore.getState().runningSequence).toBeNull();
+    expect(useTransportStore.getState().activeCueIds).toEqual([]);
+  });
+
+  it("resumes the parent sequence after a nested child finishes", () => {
+    const cues = [
+      testCue("root", "Root Seq", "sequence"),
+      testCue("mid", "Mid Par", "group", { parentId: "root" }),
+      testCue("inner", "Inner Seq", "sequence", { parentId: "mid" }),
+      testCue("a", "A", "audio", { parentId: "inner", assetPath: "a.wav" }),
+    ];
+    resetTestProject(cues);
+
+    runSequence(cues[0], cues);
+    useTransportStore.setState({ activeCueIds: [] });
+    notifyStepPlaybackEnded(["a"]);
+
+    expect(useTransportStore.getState().runningSequence).toBeNull();
+  });
+});
+
+describe("cueCompletesViaAudioEngine", () => {
+  it("is true for audio and video cues only", () => {
+    expect(cueCompletesViaAudioEngine(testCue("a", "A", "audio"))).toBe(true);
+    expect(cueCompletesViaAudioEngine(testCue("v", "V", "video"))).toBe(true);
+    expect(cueCompletesViaAudioEngine(testCue("i", "I", "image"))).toBe(false);
+    expect(cueCompletesViaAudioEngine(testCue("m", "M", "midi"))).toBe(false);
   });
 });

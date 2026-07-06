@@ -4,12 +4,10 @@ import Typography from "@mui/material/Typography";
 import { type CSSProperties, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  isOutputLayerLooping,
-  isOutputLayerPlaybackComplete,
-  outputLayerTargetTime,
-  shouldWrapVideoAtSliceEnd,
-  sliceEndSec,
-} from "../lib/video-playback";
+  attachTransportSyncedVideo,
+  type TransportVideoSyncAttachment,
+  transportTimingFromOutputLayer,
+} from "../lib/transport-synced-video";
 import { useTransportStore } from "../stores/transport";
 import type { OutputLayer } from "../types/output";
 import { visualLayerSx, visualLayerWrapSx, visualStageEmptySx } from "./visualStageSx";
@@ -27,14 +25,10 @@ interface VideoLayerProps {
 function ControlVideoLayer({ layer, onEnded }: VideoLayerProps) {
   const ref = useRef<HTMLVideoElement>(null);
   const layerRef = useRef(layer);
-  const loopIterationRef = useRef(0);
-  const loopWrappedRef = useRef(false);
+  const syncRef = useRef<TransportVideoSyncAttachment | null>(null);
   layerRef.current = layer;
 
   useEffect(() => {
-    loopIterationRef.current = 0;
-    loopWrappedRef.current = false;
-
     const video = ref.current;
     if (!video) return;
 
@@ -43,90 +37,17 @@ function ControlVideoLayer({ layer, onEnded }: VideoLayerProps) {
     video.playsInline = true;
     video.preload = "auto";
 
-    const seekToClock = () => {
-      const current = layerRef.current;
-      if (video.readyState < 1 || !Number.isFinite(video.duration)) return;
-
-      if (current.loopCount !== "inf" && isOutputLayerPlaybackComplete(current)) {
-        onEnded?.(current.cueId);
-        return;
-      }
-
-      try {
-        video.currentTime = outputLayerTargetTime(current);
-      } catch {
-        /* seek not ready */
-      }
-    };
+    const sync = attachTransportSyncedVideo(
+      video,
+      () => transportTimingFromOutputLayer(layerRef.current),
+      {
+        onEnded: onEnded ? () => onEnded(layerRef.current.cueId) : undefined,
+      },
+    );
+    syncRef.current = sync;
 
     const seekAndPlay = () => {
-      seekToClock();
-      void video.play().catch(() => {
-        /* autoplay policy — user may need to interact with the control app first */
-      });
-    };
-
-    const wrapLoopIfNeeded = () => {
-      const current = layerRef.current;
-      if (!Number.isFinite(video.duration) || !isOutputLayerLooping(current)) return;
-
-      const endSec = sliceEndSec(current.inTime, current.sliceSec);
-      if (!shouldWrapVideoAtSliceEnd(video.currentTime, endSec)) {
-        loopWrappedRef.current = false;
-        return;
-      }
-      if (loopWrappedRef.current) return;
-      loopWrappedRef.current = true;
-
-      if (current.loopCount === "inf") {
-        seekToClock();
-        if (video.paused) {
-          void video.play().catch(() => {});
-        }
-        return;
-      }
-
-      loopIterationRef.current += 1;
-      if (loopIterationRef.current >= (current.loopCount as number)) {
-        video.pause();
-        onEnded?.(current.cueId);
-        return;
-      }
-
-      try {
-        video.currentTime = current.inTime;
-      } catch {
-        /* seek not ready */
-      }
-    };
-
-    const handleEnded = () => {
-      const current = layerRef.current;
-      if (!Number.isFinite(video.duration)) return;
-
-      if (current.loopCount === "inf") {
-        seekToClock();
-        void video.play().catch(() => {});
-        return;
-      }
-
-      if (!isOutputLayerLooping(current)) {
-        onEnded?.(current.cueId);
-        return;
-      }
-
-      loopIterationRef.current += 1;
-      if (loopIterationRef.current >= (current.loopCount as number)) {
-        onEnded?.(current.cueId);
-        return;
-      }
-
-      try {
-        video.currentTime = current.inTime;
-      } catch {
-        /* seek not ready */
-      }
-      void video.play().catch(() => {});
+      sync.seekAndPlay();
     };
 
     const onError = () => {
@@ -134,8 +55,6 @@ function ControlVideoLayer({ layer, onEnded }: VideoLayerProps) {
     };
 
     video.addEventListener("loadedmetadata", seekAndPlay);
-    video.addEventListener("timeupdate", wrapLoopIfNeeded);
-    video.addEventListener("ended", handleEnded);
     video.addEventListener("error", onError);
 
     if (video.readyState >= 1) {
@@ -143,9 +62,9 @@ function ControlVideoLayer({ layer, onEnded }: VideoLayerProps) {
     }
 
     return () => {
+      sync.detach();
+      syncRef.current = null;
       video.removeEventListener("loadedmetadata", seekAndPlay);
-      video.removeEventListener("timeupdate", wrapLoopIfNeeded);
-      video.removeEventListener("ended", handleEnded);
       video.removeEventListener("error", onError);
       video.pause();
       video.removeAttribute("src");
@@ -154,16 +73,10 @@ function ControlVideoLayer({ layer, onEnded }: VideoLayerProps) {
   }, [layer.objectUrl, onEnded]);
 
   useEffect(() => {
-    const video = ref.current;
-    if (!video || video.readyState < 1 || !Number.isFinite(video.duration)) return;
-
-    loopIterationRef.current = 0;
-    loopWrappedRef.current = false;
-    try {
-      video.currentTime = outputLayerTargetTime(layerRef.current);
-    } catch {
-      /* seek not ready */
-    }
+    const sync = syncRef.current;
+    if (!sync) return;
+    sync.resetState();
+    sync.seekToClock();
   }, [layer.goAtMs, layer.inTime, layer.sliceSec, layer.loopCount]);
 
   return (

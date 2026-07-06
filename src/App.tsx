@@ -21,6 +21,7 @@ import { StartupProjectsDialog } from "./components/StartupProjectsDialog";
 import { TransportBar } from "./components/TransportBar";
 import { TriggerNoteToasts } from "./components/TriggerNoteToasts";
 import { UnsavedProjectDialog } from "./components/UnsavedProjectDialog";
+import { VideoOutputDock } from "./components/VideoOutputDock";
 import { WebOpenProjectsDialog } from "./components/WebOpenProjectsDialog";
 import { useAppRuntime } from "./hooks/useAppRuntime";
 import { useCompactLayout } from "./hooks/useCompactLayout";
@@ -38,6 +39,7 @@ function App() {
   const compact = useCompactLayout();
   const showMode = useUiStore((s) => s.showMode);
   const audioMixerOpen = useUiStore((s) => s.audioMixerOpen);
+  const videoOutputOpen = useUiStore((s) => s.videoOutputOpen);
   const fixtures = useProjectStore((s) => s.fixtures);
   const selectedCueIds = useActiveCueList().selectedCueIds;
   const hasSelectedCue = getPrimarySelectedCueId(selectedCueIds) !== null;
@@ -107,6 +109,7 @@ function App() {
       </Box>
 
       <Box sx={{ flexShrink: 0, minWidth: 0 }}>
+        {videoOutputOpen && <VideoOutputDock />}
         {audioMixerOpen && <AudioMixerDock />}
         <TransportBar />
       </Box>

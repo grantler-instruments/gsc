@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { audioEngine } from "../audio/engine";
-import { notifyStepPlaybackEnded } from "../lib/sequence-runner";
+import {
+  notifyStepPlaybackEnded,
+  tryAdvanceSequenceIfStepPlaybackInactive,
+} from "../lib/sequence-runner";
 import { useFadeStore } from "../stores/fade";
 import { useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
@@ -43,6 +46,7 @@ export function useAudioEngine(): void {
     audioEngine.onVoiceEnded((cueId) => {
       useTransportStore.getState().stopCue(cueId);
       notifyStepPlaybackEnded([cueId]);
+      tryAdvanceSequenceIfStepPlaybackInactive();
     });
 
     const runSync = () => {
@@ -50,7 +54,16 @@ export function useAudioEngine(): void {
       const { cueLists, audioBuses } = useProjectStore.getState();
       if (activeCueIds.length === 0) {
         audioEngine.syncMixer(audioBuses, masterVolume);
-        void audioEngine.stopAll();
+        const runningSequence = useTransportStore.getState().runningSequence;
+        if (!runningSequence) {
+          void audioEngine.stopAll();
+          return;
+        }
+        // Between sequence steps: abort stale sync work only. setRunningSequence can
+        // fire this path before goMany for the next step; sync([]) here races with
+        // that goMany and can stop the incoming step's voices. The next goMany sync
+        // stops voices not in the new target set.
+        audioEngine.cancelPendingSync();
         return;
       }
       const cues = allProjectCues({ cueLists });
@@ -73,6 +86,9 @@ export function useAudioEngine(): void {
     runSync();
     const unsubTransport = useTransportStore.subscribe((state, prev) => {
       if (audioSyncStateChanged(selectAudioSyncState(prev), selectAudioSyncState(state))) {
+        if (state.activeCueIds !== prev.activeCueIds) {
+          tryAdvanceSequenceIfStepPlaybackInactive();
+        }
         runSync();
       } else if (prev.masterVolume !== state.masterVolume) {
         syncMixerOnly();

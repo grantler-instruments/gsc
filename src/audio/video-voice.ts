@@ -1,22 +1,12 @@
-import { getLoopPlayCount } from "../lib/loop";
+import { clamp01, clampPan } from "../lib/clamp";
 import {
-  isVideoLooping,
-  isVideoPlaybackComplete,
-  shouldWrapVideoAtSliceEnd,
-  videoPlaybackWindow,
-  videoTargetTime,
-} from "../lib/video-playback";
+  attachTransportSyncedVideo,
+  type TransportVideoSyncAttachment,
+  transportTimingFromCue,
+} from "../lib/transport-synced-video";
 import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
 import type { Cue } from "../types/cue";
 import { vfsGetObjectUrl } from "../vfs/engine";
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
-function clampPan(value: number): number {
-  return Math.max(-1, Math.min(1, value));
-}
 
 export interface VideoVoice {
   cueId: string;
@@ -27,6 +17,8 @@ export interface VideoVoice {
   goAtMs: number;
   loopIteration: number;
   audioBusId?: string;
+  cue: Cue;
+  sync: TransportVideoSyncAttachment;
 }
 
 export type VideoVoiceEndedHandler = (cueId: string) => void;
@@ -68,102 +60,28 @@ export function startVideoVoice(
     goAtMs,
     loopIteration: 0,
     audioBusId,
+    cue,
+    sync: undefined as unknown as TransportVideoSyncAttachment,
   };
 
-  const loopPlayCount = getLoopPlayCount(cue);
-  const looping = isVideoLooping(cue);
-  let loopWrapped = false;
-
-  const seekToClock = () => {
-    if (!Number.isFinite(video.duration)) return;
-
-    if (isVideoPlaybackComplete(cue, video.duration, goAtMs)) {
-      onEnded(cue.id);
-      return;
-    }
-
-    const target = videoTargetTime(cue, video.duration, goAtMs);
-    try {
-      video.currentTime = target;
-    } catch {
-      /* not seekable yet */
-    }
-  };
+  voice.sync = attachTransportSyncedVideo(
+    video,
+    () =>
+      transportTimingFromCue(
+        cue,
+        Number.isFinite(video.duration) ? video.duration : 0,
+        voice.goAtMs,
+      ),
+    {
+      onEnded: () => onEnded(cue.id),
+    },
+  );
 
   const seekAndPlay = () => {
-    seekToClock();
-    void video.play().catch((err) => {
-      console.warn("[audio] Video voice play blocked — interact with the page first", err);
-    });
-  };
-
-  const wrapLoopIfNeeded = () => {
-    if (!Number.isFinite(video.duration)) return;
-
-    const { offsetSec, durationSec } = videoPlaybackWindow(cue, video.duration);
-    const endSec = offsetSec + durationSec;
-
-    if (!looping) return;
-
-    if (!shouldWrapVideoAtSliceEnd(video.currentTime, endSec)) {
-      loopWrapped = false;
-      return;
-    }
-    if (loopWrapped) return;
-    loopWrapped = true;
-
-    if (loopPlayCount === "inf") {
-      video.currentTime = videoTargetTime(cue, video.duration, goAtMs);
-      if (video.paused) {
-        void video.play().catch(() => {});
-      }
-      return;
-    }
-
-    voice.loopIteration += 1;
-    if (voice.loopIteration >= loopPlayCount) {
-      video.pause();
-      onEnded(cue.id);
-      return;
-    }
-    video.currentTime = offsetSec;
-  };
-
-  const handleTimeUpdate = () => {
-    wrapLoopIfNeeded();
-  };
-
-  const handleEnded = () => {
-    if (!Number.isFinite(video.duration)) return;
-
-    const { offsetSec } = videoPlaybackWindow(cue, video.duration);
-
-    if (loopPlayCount === "inf") {
-      video.currentTime = videoTargetTime(cue, video.duration, goAtMs);
-      void video.play().catch(() => {});
-      return;
-    }
-
-    if (!looping) {
-      onEnded(cue.id);
-      return;
-    }
-
-    if (loopWrapped) return;
-    loopWrapped = true;
-
-    voice.loopIteration += 1;
-    if (voice.loopIteration >= loopPlayCount) {
-      onEnded(cue.id);
-      return;
-    }
-    video.currentTime = offsetSec;
-    void video.play().catch(() => {});
+    voice.sync.seekAndPlay();
   };
 
   video.addEventListener("loadedmetadata", seekAndPlay);
-  video.addEventListener("timeupdate", handleTimeUpdate);
-  video.addEventListener("ended", handleEnded);
 
   if (video.readyState >= 1) {
     seekAndPlay();
@@ -172,18 +90,13 @@ export function startVideoVoice(
   return voice;
 }
 
-export function seekVideoVoice(voice: VideoVoice, cue: Cue, goAtMs: number): void {
+export function seekVideoVoice(voice: VideoVoice, _cue: Cue, goAtMs: number): void {
   voice.goAtMs = goAtMs;
-  voice.loopIteration = 0;
+  voice.sync.resetState();
 
   if (!Number.isFinite(voice.video.duration)) return;
 
-  const target = videoTargetTime(cue, voice.video.duration, goAtMs);
-  try {
-    voice.video.currentTime = target;
-  } catch {
-    /* not seekable yet */
-  }
+  voice.sync.seekToClock();
 }
 
 export function updateVideoVoiceLevels(voice: VideoVoice, cue: Cue): void {
@@ -192,6 +105,7 @@ export function updateVideoVoiceLevels(voice: VideoVoice, cue: Cue): void {
 }
 
 export function stopVideoVoice(voice: VideoVoice): void {
+  voice.sync.detach();
   voice.video.pause();
   voice.video.removeAttribute("src");
   voice.video.load();

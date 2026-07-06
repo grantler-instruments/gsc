@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { clamp01 } from "../lib/clamp";
 import { getMediaDurationSec } from "../lib/media-duration";
 import { goAtMsForSeekPosition } from "../lib/playback-seek";
 import { clearSequenceTimers } from "../lib/sequence-timers";
+import { transportNowMs } from "../lib/transport-clock";
 import type { Cue } from "../types/cue";
 import { useFadeStore } from "./fade";
 import { getActiveCueListFromState, useProjectStore } from "./project";
@@ -14,6 +16,11 @@ export interface RunningSequence {
   stepCueIds: string[];
   /** Wall-clock ms when the current step started (for wait progress). */
   stepStartedAtMs: number;
+  /** Set when a child sequence temporarily owns `runningSequence`. */
+  parent?: {
+    rootId: string;
+    stepIndex: number;
+  };
 }
 
 interface TransportState {
@@ -64,7 +71,7 @@ export const useTransportStore = create<TransportState>()(
         useFadeStore.getState().clearRuntimeLevels([cueId]);
         useFadeStore.getState().clearDmxFade(cueId);
         set((s) => {
-          const now = Date.now();
+          const now = transportNowMs();
           const activeCueIds = mergeActiveIds(
             s.activeCueIds.filter((id) => id !== cueId),
             [cueId],
@@ -86,7 +93,7 @@ export const useTransportStore = create<TransportState>()(
         }
         set((s) => {
           if (cueIds.length === 0) return s;
-          const now = Date.now();
+          const now = transportNowMs();
           const cueStartedAtMs = { ...s.cueStartedAtMs };
           for (const id of cueIds) {
             cueStartedAtMs[id] = now;
@@ -167,8 +174,7 @@ export const useTransportStore = create<TransportState>()(
         });
       },
 
-      setMasterVolume: (masterVolume) =>
-        set({ masterVolume: Math.max(0, Math.min(1, masterVolume)) }),
+      setMasterVolume: (masterVolume) => set({ masterVolume: clamp01(masterVolume) }),
 
       seekCue: (cueId, positionSec) =>
         set((s) => {

@@ -2,19 +2,108 @@ import { getActiveCueListFromState, useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
 import { estimateStepDurationMs } from "./cue-duration";
-import { expandSequenceSteps, isFadeCue } from "./cues";
+import { expandSequenceSteps, isFadeCue, isParallelGroup, isSequenceGroup } from "./cues";
 import { fireStepCues, playbackCueIdsInStep } from "./fire-step-cues";
-import { clearSequenceTimers, scheduleSequenceStep } from "./sequence-timers";
+import { isEngineManagedPlaybackCue } from "./playback-slice";
+import {
+  clearSequenceTimers,
+  scheduleSequenceStep,
+  scheduleSequenceStepWatchdog,
+} from "./sequence-timers";
+import { transportNowMs } from "./transport-clock";
 
 export function cancelAllSequences(): void {
   clearSequenceTimers();
   useTransportStore.getState().setRunningSequence(null);
 }
 
-/** Advance the running sequence after the current step finishes. */
-export function advanceRunningSequence(cues: Cue[]): void {
+interface CompleteStepOptions {
+  /** Stop any playback cues still active in the step (timer fallback). */
+  forceStopPlayback?: boolean;
+}
+
+interface RunSequenceOptions {
+  parent?: {
+    rootId: string;
+    stepIndex: number;
+  };
+}
+
+function resumeParentSequence(cues: Cue[], parent: { rootId: string; stepIndex: number }): void {
+  const parentRoot = cues.find((c) => c.id === parent.rootId);
+  if (!parentRoot) {
+    cancelAllSequences();
+    return;
+  }
+  const parentSteps = expandSequenceSteps(parent.rootId, cues);
+  clearSequenceTimers();
+  // Do not copy the child's `parent` link — it points at this sequence, not its grandparent.
+  useTransportStore.getState().setRunningSequence({
+    rootId: parent.rootId,
+    currentStep: parent.stepIndex,
+    stepCount: parentSteps.length,
+    stepCueIds: parentSteps[parent.stepIndex] ?? [],
+    stepStartedAtMs: transportNowMs(),
+  });
+  completeSequenceStep(parentRoot, cues, parentSteps, parent.stepIndex);
+}
+
+function finishSequenceOrAdvance(
+  rootCue: Cue,
+  cues: Cue[],
+  steps: string[][],
+  stepIndex: number,
+): void {
+  const nextIndex = stepIndex + 1;
+  if (nextIndex >= steps.length) {
+    const parent = useTransportStore.getState().runningSequence?.parent;
+    if (parent) {
+      resumeParentSequence(cues, parent);
+      return;
+    }
+    cancelAllSequences();
+    return;
+  }
+
+  runSequenceStep(rootCue, cues, steps, nextIndex);
+}
+
+/** Advance or finish the sequence after the given step completes. Idempotent per step index. */
+function completeSequenceStep(
+  rootCue: Cue,
+  cues: Cue[],
+  steps: string[][],
+  stepIndex: number,
+  options: CompleteStepOptions = {},
+): void {
   const transport = useTransportStore.getState();
   const running = transport.runningSequence;
+  if (!running || running.rootId !== rootCue.id || running.currentStep !== stepIndex) {
+    return;
+  }
+
+  clearSequenceTimers();
+
+  if (options.forceStopPlayback) {
+    const playbackIds = playbackCueIdsInStep(running.stepCueIds, cues);
+    const stillActive = playbackIds.filter((id) => transport.activeCueIds.includes(id));
+    if (stillActive.length > 0) {
+      transport.stopMany(stillActive);
+    }
+  }
+
+  const nextIndex = stepIndex + 1;
+  if (nextIndex >= steps.length) {
+    finishSequenceOrAdvance(rootCue, cues, steps, stepIndex);
+    return;
+  }
+
+  runSequenceStep(rootCue, cues, steps, nextIndex);
+}
+
+/** Advance the running sequence after the current step finishes. */
+export function advanceRunningSequence(cues: Cue[]): void {
+  const running = useTransportStore.getState().runningSequence;
   if (!running) return;
 
   const rootCue = cues.find((c) => c.id === running.rootId);
@@ -24,38 +113,44 @@ export function advanceRunningSequence(cues: Cue[]): void {
   }
 
   const steps = expandSequenceSteps(running.rootId, cues);
-  const nextIndex = running.currentStep + 1;
-
-  clearSequenceTimers();
-
-  if (nextIndex >= steps.length) {
-    cancelAllSequences();
-    return;
-  }
-
-  runSequenceStep(rootCue, cues, steps, nextIndex);
+  completeSequenceStep(rootCue, cues, steps, running.currentStep);
 }
 
-function runSequenceStep(rootCue: Cue, cues: Cue[], steps: string[][], index: number): void {
+function runSequenceStep(
+  rootCue: Cue,
+  cues: Cue[],
+  steps: string[][],
+  index: number,
+  parent?: RunSequenceOptions["parent"],
+): void {
   const transport = useTransportStore.getState();
   const stepCueIds = steps[index];
 
   if (stepCueIds.length === 0) {
     if (index + 1 >= steps.length) {
-      cancelAllSequences();
+      finishSequenceOrAdvance(rootCue, cues, steps, index);
       return;
     }
-    runSequenceStep(rootCue, cues, steps, index + 1);
+    runSequenceStep(rootCue, cues, steps, index + 1, parent);
     return;
   }
 
-  transport.setRunningSequence({
+  const stepStartedAtMs = transportNowMs();
+  const runningBefore = useTransportStore.getState().runningSequence;
+  const preservedParent =
+    parent ?? (runningBefore?.rootId === rootCue.id ? runningBefore.parent : undefined);
+  const stepRunning = {
     rootId: rootCue.id,
     currentStep: index,
     stepCount: steps.length,
     stepCueIds,
-    stepStartedAtMs: performance.now(),
-  });
+    stepStartedAtMs,
+    ...(preservedParent ? { parent: preservedParent } : {}),
+  };
+
+  // Set before firing so notifyStepPlaybackEnded is not dropped when a short clip
+  // ends during the same turn as fireStepCues (common on CI).
+  transport.setRunningSequence(stepRunning);
 
   fireStepCues(
     stepCueIds,
@@ -65,36 +160,75 @@ function runSequenceStep(rootCue: Cue, cues: Cue[], steps: string[][], index: nu
       go: (id) => transport.go(id),
       stopMany: (ids) => transport.stopMany(ids),
     },
-    { runSequence: (cue, list) => runSequence(cue, list) },
+    {
+      runSequence: (cue, list) =>
+        runSequence(cue, list, { parent: { rootId: rootCue.id, stepIndex: index } }),
+    },
   );
 
+  const nestedRunning = useTransportStore.getState().runningSequence;
+  if (nestedRunning && nestedRunning.rootId !== rootCue.id) {
+    if (!nestedRunning.parent) {
+      transport.setRunningSequence({
+        ...nestedRunning,
+        parent: { rootId: rootCue.id, stepIndex: index },
+      });
+    }
+    // Child sequence schedules its own timers/watchdog in its runSequenceStep.
+    return;
+  }
+
+  const playbackInStep = playbackCueIdsInStep(stepCueIds, cues);
+  const delegatesToNestedRunner =
+    playbackInStep.length === 0 &&
+    stepCueIds.some((id) => {
+      const cue = cues.find((c) => c.id === id);
+      return cue !== undefined && (isSequenceGroup(cue) || isParallelGroup(cue));
+    });
+  // Container-only steps delegate timing to nested runners; wait/fade/stop still need timers.
+  if (delegatesToNestedRunner) {
+    return;
+  }
+
+  if (
+    nestedRunning?.rootId !== rootCue.id ||
+    nestedRunning.currentStep !== index ||
+    nestedRunning.stepCueIds !== stepCueIds
+  ) {
+    transport.setRunningSequence(stepRunning);
+  }
+
   const durationMs = estimateStepDurationMs(stepCueIds, cues);
-  const playbackIds = playbackCueIdsInStep(stepCueIds, cues);
 
   scheduleSequenceStep(() => {
-    if (playbackIds.length > 0) {
-      transport.stopMany(playbackIds);
-    }
-    if (index + 1 >= steps.length) {
-      cancelAllSequences();
-      return;
-    }
-    runSequenceStep(rootCue, cues, steps, index + 1);
+    completeSequenceStep(rootCue, cues, steps, index, { forceStopPlayback: true });
   }, durationMs);
+
+  scheduleSequenceStepWatchdog(() => {
+    tryAdvanceSequenceIfStepPlaybackInactive();
+  });
 }
 
-export function runSequence(rootCue: Cue, cues: Cue[]): { started: boolean; stepCount: number } {
+export function runSequence(
+  rootCue: Cue,
+  cues: Cue[],
+  options: RunSequenceOptions = {},
+): { started: boolean; stepCount: number } {
   const steps = expandSequenceSteps(rootCue.id, cues);
   if (steps.length === 0) {
     return { started: false, stepCount: 0 };
   }
 
-  cancelAllSequences();
-  runSequenceStep(rootCue, cues, steps, 0);
+  if (options.parent) {
+    clearSequenceTimers();
+  } else {
+    cancelAllSequences();
+  }
+  runSequenceStep(rootCue, cues, steps, 0, options.parent);
   return { started: true, stepCount: steps.length };
 }
 
-/** Advance when all playback cues in the current step have stopped. */
+/** Called when playback cues in the current step have stopped (audio engine or progress fallback). */
 export function notifyStepPlaybackEnded(stoppedCueIds: string[]): void {
   if (stoppedCueIds.length === 0) return;
 
@@ -110,8 +244,33 @@ export function notifyStepPlaybackEnded(stoppedCueIds: string[]): void {
   const stillActive = playbackIds.filter((id) => transport.activeCueIds.includes(id));
   if (stillActive.length > 0) return;
 
-  clearSequenceTimers();
-  advanceRunningSequence(cues);
+  const rootCue = cues.find((c) => c.id === running.rootId);
+  if (!rootCue) {
+    cancelAllSequences();
+    return;
+  }
+
+  const steps = expandSequenceSteps(running.rootId, cues);
+  completeSequenceStep(rootCue, cues, steps, running.currentStep);
+}
+
+/**
+ * Fallback when playback-end notifications are missed (headless CI / engine races).
+ * Advances once every playback cue in the current step is inactive.
+ */
+export function tryAdvanceSequenceIfStepPlaybackInactive(): void {
+  const transport = useTransportStore.getState();
+  const running = transport.runningSequence;
+  if (!running) return;
+
+  const cues = getActiveCueListFromState(useProjectStore.getState())?.cues ?? [];
+  const playbackIds = playbackCueIdsInStep(running.stepCueIds, cues);
+  if (playbackIds.length === 0) return;
+
+  const stillActive = playbackIds.filter((id) => transport.activeCueIds.includes(id));
+  if (stillActive.length > 0) return;
+
+  notifyStepPlaybackEnded(playbackIds);
 }
 
 /** When a fade cue finishes, advance if the sequence is waiting on it. */
@@ -127,7 +286,13 @@ export function notifyFadeCueComplete(fadeCueId: string, cues: Cue[]): void {
   const stepIsFadeOnly = running.stepCueIds.length === 1 && running.stepCueIds[0] === fadeCueId;
 
   if (stepIsFadeOnly) {
-    advanceRunningSequence(cues);
+    const rootCue = cues.find((c) => c.id === running.rootId);
+    if (!rootCue) {
+      cancelAllSequences();
+      return;
+    }
+    const steps = expandSequenceSteps(running.rootId, cues);
+    completeSequenceStep(rootCue, cues, steps, running.currentStep);
   }
 }
 
@@ -135,4 +300,9 @@ export function notifyFadeCueComplete(fadeCueId: string, cues: Cue[]): void {
 export function handleSequenceFadeCueCompleted(fadeCueId: string): void {
   const cues = getActiveCueListFromState(useProjectStore.getState())?.cues ?? [];
   notifyFadeCueComplete(fadeCueId, cues);
+}
+
+/** True when natural playback end is reported by the audio engine, not the progress tick. */
+export function cueCompletesViaAudioEngine(cue: Cue): boolean {
+  return isEngineManagedPlaybackCue(cue);
 }

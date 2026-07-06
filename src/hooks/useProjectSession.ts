@@ -18,9 +18,29 @@ function debounce(fn: () => void, ms: number): () => void {
   };
 }
 
+let sessionRestoreDone = false;
+let webRestorePromise: Promise<void> | null = null;
+
+async function restoreWebSessionOnce(): Promise<void> {
+  if (!webRestorePromise) {
+    webRestorePromise = restorePlatformProject()
+      .then(() => undefined)
+      .finally(() => {
+        webRestorePromise = null;
+      });
+  }
+  return webRestorePromise;
+}
+
+/** Test-only reset of session bootstrap state. */
+export function resetProjectSessionBootstrapForTests(): void {
+  sessionRestoreDone = false;
+  webRestorePromise = null;
+}
+
 /** Restore last project and autosave (web: localStorage+cache, Tauri: disk folder). */
 export function useProjectSession(): boolean {
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(sessionRestoreDone);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,29 +71,12 @@ export function useProjectSession(): boolean {
     window.addEventListener("beforeunload", onUnload);
     window.addEventListener("pagehide", onPageHide);
 
-    void (async () => {
-      try {
-        if (getPlatform() === "tauri") {
-          const { applyTauriStartupChoice, prepareTauriStartupRestore } = await import(
-            "../platform/project-storage.tauri"
-          );
-          const choice = await prepareTauriStartupRestore();
-          if (cancelled) return;
-          setReady(true);
-          if (choice) {
-            await applyTauriStartupChoice(choice);
-          }
-        } else {
-          await restorePlatformProject();
-          if (cancelled) return;
-          setReady(true);
-        }
-      } catch (err) {
-        console.error("[session] restore failed", err);
-        notifyWarning(t("notification.restoreProjectFailed"));
-        if (!cancelled) setReady(true);
-      }
-      if (cancelled) return;
+    const markReady = () => {
+      sessionRestoreDone = true;
+      if (!cancelled) setReady(true);
+    };
+
+    const attachPersistSubscriptions = () => {
       unsubs.push(
         useProjectStore.subscribe((state, prev) => {
           if (projectPersistStateChanged(prev, state)) {
@@ -92,6 +95,39 @@ export function useProjectSession(): boolean {
         }),
       );
       useProjectLoadingStore.getState().clearAssetProgress();
+    };
+
+    void (async () => {
+      if (sessionRestoreDone) {
+        markReady();
+        attachPersistSubscriptions();
+        return;
+      }
+
+      try {
+        if (getPlatform() === "tauri") {
+          const { applyTauriStartupChoice, prepareTauriStartupRestore } = await import(
+            "../platform/project-storage.tauri"
+          );
+          const choice = await prepareTauriStartupRestore();
+          if (cancelled) return;
+          markReady();
+          if (choice) {
+            await applyTauriStartupChoice(choice);
+          }
+        } else {
+          await restoreWebSessionOnce();
+          if (cancelled) return;
+          markReady();
+        }
+      } catch (err) {
+        console.error("[session] restore failed", err);
+        notifyWarning(t("notification.restoreProjectFailed"));
+        if (!cancelled) markReady();
+      }
+
+      if (cancelled) return;
+      attachPersistSubscriptions();
     })();
 
     return () => {
