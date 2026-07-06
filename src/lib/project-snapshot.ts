@@ -40,7 +40,15 @@ function normalizeCues(cues: Cue[], fixtures: Fixture[] = [], audioBuses: AudioB
   });
 }
 
-export function snapshotToCueLists(snap: ProjectSnapshot): {
+export type SnapshotToCueListsOptions = {
+  /** When opening a project file, activate the first cuelist and select its first cue. */
+  initialOpen?: boolean;
+};
+
+export function snapshotToCueLists(
+  snap: ProjectSnapshot,
+  options?: SnapshotToCueListsOptions,
+): {
   id: string;
   name: string;
   startDate?: string;
@@ -59,7 +67,9 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   const cueLists: CueList[] = snap.cueLists.map((list, index) => {
     const cues = normalizeCues(list.cues, fixtures, audioBuses);
     const selection =
-      index === 0 ? initialCueListSelection(cues) : { selectedCueIds: [], selectionAnchorId: null };
+      options?.initialOpen && index === 0
+        ? initialCueListSelection(cues)
+        : { selectedCueIds: [], selectionAnchorId: null };
     return {
       id: list.id,
       name: list.name,
@@ -67,7 +77,10 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
       ...selection,
     };
   });
-  const firstList = cueLists[0];
+  const active =
+    options?.initialOpen && cueLists[0]
+      ? cueLists[0]
+      : (cueLists.find((l) => l.id === snap.activeCueListId) ?? cueLists[0]);
   return {
     id: snap.id,
     name: snap.name,
@@ -75,7 +88,7 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
     endDate: snap.endDate,
     description: snap.description,
     cueLists,
-    activeCueListId: firstList?.id ?? snap.activeCueListId,
+    activeCueListId: active?.id ?? snap.activeCueListId,
     midiMappings: snap.midiMappings ?? [],
     fixtures,
     fixturePlot,

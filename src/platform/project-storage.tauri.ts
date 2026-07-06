@@ -234,7 +234,7 @@ export async function loadProjectFromFolder(
   }
 
   vfsClear();
-  const loaded = snapshotToCueLists(snap);
+  const loaded = snapshotToCueLists(snap, { initialOpen: true });
   replaceProjectWithoutHistory(() => {
     setActiveProjectId(loaded.id);
     useProjectStore.setState(loaded);

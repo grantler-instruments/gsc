@@ -23,7 +23,7 @@ import {
   initProjectIdb,
   type PersistedAssetEntry,
 } from "./project-idb";
-import { snapshotToCueLists } from "./project-snapshot";
+import { type SnapshotToCueListsOptions, snapshotToCueLists } from "./project-snapshot";
 import { randomId } from "./random-id";
 import { replaceWithFreshProject } from "./reset-project-runtime";
 import { requestPersistentStorage } from "./storage-persistence";
@@ -152,14 +152,17 @@ export async function persistProjectSessionAsync(): Promise<void> {
   }
 }
 
-async function restoreFromSession(session: ProjectSession): Promise<void> {
+async function restoreFromSession(
+  session: ProjectSession,
+  options?: SnapshotToCueListsOptions,
+): Promise<void> {
   if (session.snapshot.version !== 2) {
     setActiveProjectId(useProjectStore.getState().id);
     return;
   }
 
   vfsClear();
-  const loaded = snapshotToCueLists(session.snapshot);
+  const loaded = snapshotToCueLists(session.snapshot, options);
   const projectId = loaded.id || randomId();
   if (!loaded.id) {
     loaded.id = projectId;
@@ -250,7 +253,10 @@ export async function openStoredProject(projectId: string): Promise<boolean> {
     await updateActiveProjectMetaAfterRemoval(projectId);
     return false;
   }
-  await restoreFromSession({ snapshot: record.snapshot, assets: record.assets });
+  await restoreFromSession(
+    { snapshot: record.snapshot, assets: record.assets },
+    { initialOpen: true },
+  );
   await idbTouchProjectOpened(projectId);
   await idbSetActiveProjectId(projectId);
   return true;

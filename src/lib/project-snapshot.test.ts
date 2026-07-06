@@ -32,8 +32,7 @@ describe("project snapshot round-trip", () => {
     expect(loaded.cueLists[0].cues[0].assetPath).toBe("/assets/intro.wav");
     expect(loaded.midiMappings).toHaveLength(1);
     expect(loaded.activeCueListId).toBe(list.id);
-    expect(loaded.cueLists[0].selectedCueIds).toEqual(["a"]);
-    expect(loaded.cueLists[0].selectionAnchorId).toBe("a");
+    expect(loaded.cueLists[0].selectedCueIds).toEqual([]);
   });
 
   it("selects the first cue in the first cuelist when opening a project", () => {
@@ -43,11 +42,25 @@ describe("project snapshot round-trip", () => {
     second.cues = [testCue("c3", "Three", "audio")];
 
     const snap = cueListsToSnapshot("project-1", "My Show", [first, second], second.id);
-    const loaded = snapshotToCueLists(snap);
+    const loaded = snapshotToCueLists(snap, { initialOpen: true });
 
     expect(loaded.activeCueListId).toBe(first.id);
     expect(loaded.cueLists[0].selectedCueIds).toEqual(["c1"]);
     expect(loaded.cueLists[0].selectionAnchorId).toBe("c1");
+    expect(loaded.cueLists[1].selectedCueIds).toEqual([]);
+  });
+
+  it("preserves the active cuelist when restoring a session", () => {
+    const first = createCueList("First");
+    first.cues = [testCue("c1", "One", "audio")];
+    const second = createCueList("Second");
+    second.cues = [testCue("c2", "Two", "audio")];
+
+    const snap = cueListsToSnapshot("project-1", "My Show", [first, second], second.id);
+    const loaded = snapshotToCueLists(snap);
+
+    expect(loaded.activeCueListId).toBe(second.id);
+    expect(loaded.cueLists[0].selectedCueIds).toEqual([]);
     expect(loaded.cueLists[1].selectedCueIds).toEqual([]);
   });
 

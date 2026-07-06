@@ -64,7 +64,7 @@ export async function importProjectBundleWeb(file: File): Promise<void> {
   const { snapshot, assets } = parseProjectBundleZip(data);
 
   vfsClear();
-  const loaded = snapshotToCueLists(snapshot);
+  const loaded = snapshotToCueLists(snapshot, { initialOpen: true });
   replaceProjectWithoutHistory(() => {
     setActiveProjectId(loaded.id);
     useProjectStore.setState(loaded);

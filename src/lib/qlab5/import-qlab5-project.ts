@@ -49,7 +49,7 @@ export async function importQlab5Project(input: Qlab5ImportInput): Promise<Qlab5
     report,
   });
 
-  const loaded = snapshotToCueLists(snapshot);
+  const loaded = snapshotToCueLists(snapshot, { initialOpen: true });
   replaceProjectWithoutHistory(() => {
     useProjectStore.setState(loaded);
   });
