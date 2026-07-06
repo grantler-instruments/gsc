@@ -10,11 +10,15 @@ import { useUiStore } from "../stores/ui";
 export function useMidiInput(): void {
   useEffect(() => {
     let cleanup = () => {};
+    let attachGeneration = 0;
 
     const attach = async () => {
+      const generation = ++attachGeneration;
       cleanup();
+      cleanup = () => {};
+
       const portId = usePreferencesStore.getState().midiInputId;
-      cleanup = await openMidiInput(portId, (data) => {
+      const nextCleanup = await openMidiInput(portId, (data) => {
         const learnAction = useUiStore.getState().midiLearnAction;
         if (learnAction) {
           const match = parseMidiMessage(data);
@@ -30,6 +34,13 @@ export function useMidiInput(): void {
         const mappings = useProjectStore.getState().midiMappings;
         handleIncomingMidi(data, mappings);
       });
+
+      if (generation !== attachGeneration) {
+        nextCleanup();
+        return;
+      }
+
+      cleanup = nextCleanup;
     };
 
     void attach();
