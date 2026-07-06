@@ -45,6 +45,14 @@ describe("isGscProjectDirPath", () => {
   it("returns false for plain folders", () => {
     expect(isGscProjectDirPath("/Users/me/Shows/My_Show")).toBe(false);
   });
+
+  it("returns false for reverse-DNS bundle identifier folders", () => {
+    expect(isGscProjectDirName("com.grantler-instruments.gsc")).toBe(false);
+  });
+
+  it("still treats dotted show names as project folders", () => {
+    expect(isGscProjectDirName("My.Show.gsc")).toBe(true);
+  });
 });
 
 describe("isInsideGscProjectDir", () => {
@@ -64,6 +72,14 @@ describe("isInsideGscProjectDir", () => {
 
   it("returns false for sibling project folders", () => {
     expect(isInsideGscProjectDir("/Users/me/Shows/Another_Show.gsc")).toBe(false);
+  });
+
+  it("returns false for draft paths under the app bundle cache folder", () => {
+    expect(
+      isInsideGscProjectDir(
+        "C:\\Users\\me\\AppData\\Local\\com.grantler-instruments.gsc\\cache\\drafts\\abc\\My_Show.gsc",
+      ),
+    ).toBe(false);
   });
 });
 

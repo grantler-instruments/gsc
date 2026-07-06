@@ -16,8 +16,20 @@ export function sanitizeShowName(name: string): string {
   return name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "") || "Untitled_Show";
 }
 
+const REVERSE_DNS_PREFIXES = new Set(["com", "org", "net", "io", "dev", "app"]);
+
+function looksLikeBundleIdentifier(name: string): boolean {
+  const lower = name.toLowerCase();
+  if (!lower.endsWith(PROJECT_DIR_EXTENSION)) return false;
+  const base = lower.slice(0, -PROJECT_DIR_EXTENSION.length);
+  const dot = base.indexOf(".");
+  if (dot < 0) return false;
+  return REVERSE_DNS_PREFIXES.has(base.slice(0, dot));
+}
+
 export function isGscProjectDirName(name: string): boolean {
-  return name.toLowerCase().endsWith(PROJECT_DIR_EXTENSION);
+  if (!name.toLowerCase().endsWith(PROJECT_DIR_EXTENSION)) return false;
+  return !looksLikeBundleIdentifier(name);
 }
 
 export function isGscProjectDirPath(path: string): boolean {

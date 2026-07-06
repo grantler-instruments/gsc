@@ -670,7 +670,8 @@ export async function persistTauriProject(options?: {
   try {
     const rootDir = await resolveProjectRootDir(options);
     if (!rootDir) return;
-    if (!rejectIfInsideExistingProject(rootDir)) return;
+    const { isTemporaryRoot } = useProjectLocationStore.getState();
+    if (!isTemporaryRoot && !rejectIfInsideExistingProject(rootDir)) return;
     await saveProjectToFolder(rootDir);
     syncDraftRootKey();
   } catch {
