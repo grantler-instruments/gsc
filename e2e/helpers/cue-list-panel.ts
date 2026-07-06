@@ -83,6 +83,13 @@ export async function expectCueInSequenceList(page: Page, fileName: string): Pro
   await expect(sequenceCueRow(page, fileName)).toHaveCount(1);
 }
 
+/** Assert the cue inspector reflects the primary selected cue. */
+export async function expectSelectedCueInInspector(page: Page, cueName: string): Promise<void> {
+  const nameField = page.getByLabel("Name");
+  await expect(nameField).toBeVisible();
+  await expect(nameField).toHaveValue(cueName);
+}
+
 /** Sequence or parallel container row (identified by cue-type badge title). */
 export function containerCueRow(page: Page, type: "Sequence" | "Parallel") {
   return sequenceCueList(page).locator("[data-cue-id]", {

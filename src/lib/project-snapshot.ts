@@ -5,6 +5,7 @@ import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
 import { normalizeAudioBuses, normalizeCueAudioBus } from "./audio-buses";
 import type { CueList } from "./cue-lists";
+import { initialCueListSelection } from "./cue-selection";
 import { defaultDmxCueData, normalizeDmxCueData } from "./dmx";
 import { normalizeFixturePlot } from "./fixture-plot";
 import { normalizeFixtures } from "./fixtures";
@@ -55,14 +56,18 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   const fixtures = normalizeFixtures(snap.fixtures);
   const fixturePlot = normalizeFixturePlot(snap.fixturePlot, fixtures);
   const audioBuses = normalizeAudioBuses(snap.audioBuses);
-  const cueLists: CueList[] = snap.cueLists.map((list) => ({
-    id: list.id,
-    name: list.name,
-    cues: normalizeCues(list.cues, fixtures, audioBuses),
-    selectedCueIds: [],
-    selectionAnchorId: null,
-  }));
-  const active = cueLists.find((l) => l.id === snap.activeCueListId) ?? cueLists[0];
+  const cueLists: CueList[] = snap.cueLists.map((list, index) => {
+    const cues = normalizeCues(list.cues, fixtures, audioBuses);
+    const selection =
+      index === 0 ? initialCueListSelection(cues) : { selectedCueIds: [], selectionAnchorId: null };
+    return {
+      id: list.id,
+      name: list.name,
+      cues,
+      ...selection,
+    };
+  });
+  const firstList = cueLists[0];
   return {
     id: snap.id,
     name: snap.name,
@@ -70,7 +75,7 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
     endDate: snap.endDate,
     description: snap.description,
     cueLists,
-    activeCueListId: active?.id ?? snap.activeCueListId,
+    activeCueListId: firstList?.id ?? snap.activeCueListId,
     midiMappings: snap.midiMappings ?? [],
     fixtures,
     fixturePlot,

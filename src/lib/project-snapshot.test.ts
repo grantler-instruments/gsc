@@ -32,6 +32,23 @@ describe("project snapshot round-trip", () => {
     expect(loaded.cueLists[0].cues[0].assetPath).toBe("/assets/intro.wav");
     expect(loaded.midiMappings).toHaveLength(1);
     expect(loaded.activeCueListId).toBe(list.id);
+    expect(loaded.cueLists[0].selectedCueIds).toEqual(["a"]);
+    expect(loaded.cueLists[0].selectionAnchorId).toBe("a");
+  });
+
+  it("selects the first cue in the first cuelist when opening a project", () => {
+    const first = createCueList("First");
+    first.cues = [testCue("c1", "One", "audio"), testCue("c2", "Two", "audio")];
+    const second = createCueList("Second");
+    second.cues = [testCue("c3", "Three", "audio")];
+
+    const snap = cueListsToSnapshot("project-1", "My Show", [first, second], second.id);
+    const loaded = snapshotToCueLists(snap);
+
+    expect(loaded.activeCueListId).toBe(first.id);
+    expect(loaded.cueLists[0].selectedCueIds).toEqual(["c1"]);
+    expect(loaded.cueLists[0].selectionAnchorId).toBe("c1");
+    expect(loaded.cueLists[1].selectedCueIds).toEqual([]);
   });
 
   it("adds default midi data when loading midi cues without payload", () => {
