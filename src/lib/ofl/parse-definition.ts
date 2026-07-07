@@ -338,7 +338,6 @@ function buildFineAliasOwners(
 
 function expandTemplateFineAliases(
   modeChannelKeys: string[],
-  availableChannels: Record<string, OflChannelRaw>,
   templateChannels: Record<string, OflChannelRaw> | undefined,
   fineAliasOwners: Map<string, string>,
 ): void {
@@ -430,7 +429,7 @@ function parseMode(
 
   const modeChannelKeys = flattenModeChannelKeys(mode);
   const fineAliasOwners = buildFineAliasOwners(availableChannels, templateChannels);
-  expandTemplateFineAliases(modeChannelKeys, availableChannels, templateChannels, fineAliasOwners);
+  expandTemplateFineAliases(modeChannelKeys, templateChannels, fineAliasOwners);
 
   const channels: FixtureOflChannel[] = modeChannelKeys.map((channelKey) =>
     parseModeChannelKey(channelKey, availableChannels, templateChannels),

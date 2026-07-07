@@ -1,4 +1,9 @@
-import type { Fixture, FixtureChannelKind, FixtureOflChannel } from "../types/fixture";
+import type {
+  Fixture,
+  FixtureChannelCapability,
+  FixtureChannelKind,
+  FixtureOflChannel,
+} from "../types/fixture";
 import { fixtureChannelLabel } from "./dmx";
 import { isFineChannel } from "./fixture-definition";
 
@@ -83,7 +88,7 @@ export function splitCoarseFineDmx(combined: number): { coarse: number; fine: nu
   return { coarse: (clamped >> 8) & 0xff, fine: clamped & 0xff };
 }
 
-function presetLabel(cap: FixtureOflChannel["capabilities"][number]): string {
+function presetLabel(cap: FixtureChannelCapability): string {
   if (cap.label?.trim()) return cap.label.trim();
   if (cap.slotNumber !== undefined) return `Slot ${cap.slotNumber}`;
   return `DMX ${cap.dmxRange[0]}–${cap.dmxRange[1]}`;

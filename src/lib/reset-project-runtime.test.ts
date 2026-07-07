@@ -32,7 +32,7 @@ describe("replaceWithFreshProject", () => {
       midiMappings: [
         {
           id: "m1",
-          match: { status: 144, channel: 1, note: 60, velocity: 127 },
+          match: { channel: 1, kind: "note-on", note: 60, velocity: 127 },
           action: { type: "panic" },
         },
       ],

@@ -196,7 +196,7 @@ export function DmxInspectorFields({
         return (
           <Box
             key={entry.fixtureId}
-            ref={(node) => {
+            ref={(node: HTMLDivElement | null) => {
               fixtureRefs.current.set(entry.fixtureId, node);
             }}
             sx={{
