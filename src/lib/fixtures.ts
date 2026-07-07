@@ -152,6 +152,12 @@ export function normalizeFixture(raw: Partial<Fixture> & Pick<Fixture, "id">): F
   }
 
   syncManualFixtureChannels(fixture, raw.channels);
+  if (raw.homePanTilt) {
+    fixture.homePanTilt = {
+      pan: raw.homePanTilt.pan,
+      tilt: raw.homePanTilt.tilt,
+    };
+  }
   return fixture;
 }
 

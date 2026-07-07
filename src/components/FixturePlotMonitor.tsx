@@ -6,10 +6,18 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  ensureFixtureInActiveLightCue,
+  patchActiveLightCueFixturePosition,
+  useActiveLightCueContext,
+} from "../hooks/useActiveLightCueContext";
+import type { FixturePositionDegrees } from "../lib/fixture-position";
+import { getPlatform } from "../platform";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
+import { FixturePlotBackgroundControls } from "./FixturePlotBackgroundControls";
 import { FixturePlotCanvas } from "./FixturePlotCanvas";
 
 interface FixturePlotMonitorProps {
@@ -29,10 +37,17 @@ export function FixturePlotMonitor({
   const setFixturePlotEditMode = useUiStore((s) => s.setFixturePlotEditMode);
   const fixturePlotExpanded = useUiStore((s) => s.fixturePlotExpanded);
   const toggleFixturePlotExpanded = useUiStore((s) => s.toggleFixturePlotExpanded);
+  const inspectedFixtureId = useUiStore((s) => s.inspectedFixtureId);
+  const setInspectedFixtureId = useUiStore((s) => s.setInspectedFixtureId);
+  const setRightSidebarTab = useUiStore((s) => s.setRightSidebarTab);
+  const setCompactInspectorDrawerOpen = useUiStore((s) => s.setCompactInspectorDrawerOpen);
   const syncFixturePlot = useProjectStore((s) => s.syncFixturePlot);
   const moveFixturePlotEntry = useProjectStore((s) => s.moveFixturePlotEntry);
+  const updateCue = useProjectStore((s) => s.updateCue);
   const fixtures = useProjectStore((s) => s.fixtures);
-  const [selectedFixtureId, setSelectedFixtureId] = useState<string | null>(null);
+  const lightCue = useActiveLightCueContext();
+  const [layoutSelectedFixtureId, setLayoutSelectedFixtureId] = useState<string | null>(null);
+  const plotContainerRef = useRef<HTMLDivElement>(null);
 
   const editMode = editModeProp ?? (fixturePlotEditMode && !showMode);
   const setEditMode =
@@ -42,6 +57,17 @@ export function FixturePlotMonitor({
     });
 
   useEffect(() => {
+    if (!inspectedFixtureId || editMode) return;
+    plotContainerRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [editMode, inspectedFixtureId]);
+
+  const dmxDisabled = getPlatform() !== "tauri";
+  const canInteract = Boolean(lightCue.cue?.dmx) && !showMode;
+  const canAim = canInteract && lightCue.editable && !dmxDisabled;
+
+  const fixtureIdsInCue = useMemo(() => lightCue.fixtureIdsInCue, [lightCue.fixtureIdsInCue]);
+
+  useEffect(() => {
     if (fixtures.length > 0) {
       syncFixturePlot();
     }
@@ -49,9 +75,15 @@ export function FixturePlotMonitor({
 
   useEffect(() => {
     if (!editMode) {
-      setSelectedFixtureId(null);
+      setLayoutSelectedFixtureId(null);
+      return;
     }
-  }, [editMode]);
+    setInspectedFixtureId(null);
+  }, [editMode, setInspectedFixtureId]);
+
+  useEffect(() => {
+    setInspectedFixtureId(null);
+  }, [lightCue.cue?.id, setInspectedFixtureId]);
 
   useEffect(() => {
     if (!editMode) return;
@@ -71,12 +103,68 @@ export function FixturePlotMonitor({
     [moveFixturePlotEntry],
   );
 
+  const handleInspectFixture = useCallback(
+    (fixtureId: string) => {
+      setInspectedFixtureId(fixtureId);
+      setRightSidebarTab("cue");
+      setCompactInspectorDrawerOpen(true);
+
+      const fixture = fixtures.find((item) => item.id === fixtureId);
+      if (!fixture || !lightCue.cue) return;
+
+      const nextDmx = ensureFixtureInActiveLightCue(lightCue, fixture);
+      if (nextDmx && nextDmx !== lightCue.cue.dmx) {
+        updateCue(lightCue.cue.id, { dmx: nextDmx });
+      }
+    },
+    [
+      fixtures,
+      lightCue,
+      setCompactInspectorDrawerOpen,
+      setInspectedFixtureId,
+      setRightSidebarTab,
+      updateCue,
+    ],
+  );
+
+  const handleAimFixture = useCallback(
+    (fixtureId: string, position: FixturePositionDegrees) => {
+      const fixture = fixtures.find((item) => item.id === fixtureId);
+      if (!fixture || !lightCue.cue) return;
+
+      let dmx = lightCue.cue.dmx;
+      if (!dmx) return;
+
+      const ensured = ensureFixtureInActiveLightCue(lightCue, fixture);
+      if (ensured) dmx = ensured;
+
+      const nextDmx = patchActiveLightCueFixturePosition(
+        { ...lightCue, cue: { ...lightCue.cue, dmx } },
+        fixture,
+        position,
+      );
+      if (nextDmx) {
+        updateCue(lightCue.cue.id, { dmx: nextDmx });
+      }
+    },
+    [fixtures, lightCue, updateCue],
+  );
+
   if (fixtures.length === 0) {
     return null;
   }
 
+  const hint = editMode
+    ? t("fixtures.dragToReposition")
+    : canInteract
+      ? canAim
+        ? t("fixtures.plotInspectAimHint")
+        : t("fixtures.plotInspectHint")
+      : null;
+
   return (
     <Box
+      ref={plotContainerRef}
       sx={{
         display: "flex",
         flexDirection: "column",
@@ -159,21 +247,30 @@ export function FixturePlotMonitor({
         </Stack>
       </Stack>
 
+      {editMode && <FixturePlotBackgroundControls />}
+
       <FixturePlotCanvas
         editMode={editMode}
         expanded={expanded}
-        selectedFixtureId={selectedFixtureId}
-        onSelectFixture={setSelectedFixtureId}
+        layoutSelectedFixtureId={layoutSelectedFixtureId}
+        inspectedFixtureId={inspectedFixtureId}
+        fixtureIdsInCue={fixtureIdsInCue}
+        canInteract={canInteract}
+        canAim={canAim}
+        onLayoutSelectFixture={setLayoutSelectedFixtureId}
+        onInspectFixture={handleInspectFixture}
+        onClearInspect={() => setInspectedFixtureId(null)}
+        onAimFixture={handleAimFixture}
         onMoveEntry={handleMoveEntry}
       />
 
-      {editMode && (
+      {hint && (
         <Typography
           variant="caption"
           color="text.secondary"
           sx={{ px: 1.5, py: 0.5, display: "block" }}
         >
-          {t("fixtures.dragToReposition")}
+          {hint}
         </Typography>
       )}
     </Box>

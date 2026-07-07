@@ -26,7 +26,8 @@ interface UiState {
   fixturePlotEditMode: boolean;
   /** When true, a larger fixture plot is shown above the cue list. */
   fixturePlotExpanded: boolean;
-  /** Compact-layout inspector drawer is open (blocks global Escape → panic). */
+  /** Fixture selected on the plot for cue inspector focus. */
+  inspectedFixtureId: string | null;
   compactInspectorDrawerOpen: boolean;
   /** Compact inspector drawer stays closed until the user selects a cue. */
   compactInspectorDrawerDismissed: boolean;
@@ -51,6 +52,7 @@ interface UiState {
   setFixturePlotEditMode: (open: boolean) => void;
   setFixturePlotExpanded: (expanded: boolean) => void;
   toggleFixturePlotExpanded: () => void;
+  setInspectedFixtureId: (fixtureId: string | null) => void;
   setCompactInspectorDrawerOpen: (open: boolean) => void;
   setCompactInspectorDrawerDismissed: (dismissed: boolean) => void;
   setHoveredAssetPath: (path: string | null) => void;
@@ -76,6 +78,7 @@ export const useUiStore = create<UiState>()(
         dmxPreviewCueIds: [],
         fixturePlotEditMode: false,
         fixturePlotExpanded: false,
+        inspectedFixtureId: null,
         compactInspectorDrawerOpen: false,
         compactInspectorDrawerDismissed: true,
         hoveredAssetPath: null,
@@ -116,6 +119,7 @@ export const useUiStore = create<UiState>()(
         setFixturePlotExpanded: (fixturePlotExpanded) => set({ fixturePlotExpanded }),
         toggleFixturePlotExpanded: () =>
           set((s) => ({ fixturePlotExpanded: !s.fixturePlotExpanded })),
+        setInspectedFixtureId: (inspectedFixtureId) => set({ inspectedFixtureId }),
         setCompactInspectorDrawerOpen: (compactInspectorDrawerOpen) =>
           set({ compactInspectorDrawerOpen }),
         setCompactInspectorDrawerDismissed: (compactInspectorDrawerDismissed) =>

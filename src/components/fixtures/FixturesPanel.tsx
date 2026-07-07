@@ -2,7 +2,7 @@ import GridViewOutlinedIcon from "@mui/icons-material/GridViewOutlined";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { buildFixtureOflProfile, oflProfileChannelCount } from "../../lib/ofl/profile";
 import { useProjectStore } from "../../stores/project";
@@ -10,8 +10,8 @@ import { useUiStore } from "../../stores/ui";
 import type { Fixture } from "../../types/fixture";
 import { AddFixtureMenu } from "../AddFixtureMenu";
 import { OflBrowseDialog, type OflBrowseImportPayload } from "../OflBrowseDialog";
-import { FixtureEditor } from "./FixtureEditor";
 import { FixtureList } from "./FixtureList";
+import { FixtureProfileImportDialog } from "./FixtureProfileImportDialog";
 import { useFixtureProfileActions } from "./useFixtureProfileActions";
 
 export function FixturesPanel() {
@@ -25,19 +25,14 @@ export function FixturesPanel() {
   const addFixture = useProjectStore((s) => s.addFixture);
   const removeFixture = useProjectStore((s) => s.removeFixture);
   const updateFixture = useProjectStore((s) => s.updateFixture);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [browseDialogOpen, setBrowseDialogOpen] = useState(false);
 
-  const selectedFixture = useMemo(
-    () => fixtures.find((fixture) => fixture.id === selectedId) ?? null,
-    [fixtures, selectedId],
-  );
-
-  const profileActions = useFixtureProfileActions(canEdit, fixtures, projectName, setSelectedId);
+  const profileActions = useFixtureProfileActions(canEdit, fixtures, projectName, setExpandedId);
 
   const handleAddFixture = useCallback(() => {
     const fixture = addFixture();
-    setSelectedId(fixture.id);
+    setExpandedId(fixture.id);
   }, [addFixture]);
 
   const handleFixtureUpdate = useCallback(
@@ -47,14 +42,10 @@ export function FixturesPanel() {
     [updateFixture],
   );
 
-  const handleSelect = useCallback((fixture: Fixture) => {
-    setSelectedId(fixture.id);
-  }, []);
-
   const handleRemove = useCallback(
     (id: string) => {
       removeFixture(id);
-      setSelectedId((current) => (current === id ? null : current));
+      setExpandedId((current) => (current === id ? null : current));
     },
     [removeFixture],
   );
@@ -67,7 +58,7 @@ export function FixturesPanel() {
         channelCount: oflProfileChannelCount(profile),
         ofl: profile,
       });
-      setSelectedId(fixture.id);
+      setExpandedId(fixture.id);
     },
     [addFixture],
   );
@@ -83,7 +74,11 @@ export function FixturesPanel() {
       }}
     >
       <Typography variant="caption" sx={{ px: 1.5, py: 1, m: 0, flexShrink: 0 }}>
-        {canEdit ? t("fixtures.dropHint") : t("fixtures.showModeHint")}
+        {canEdit
+          ? fixtures.length === 0
+            ? t("fixtures.emptyHint")
+            : t("fixtures.dropHint")
+          : t("fixtures.showModeHint")}
       </Typography>
 
       <Box
@@ -97,20 +92,13 @@ export function FixturesPanel() {
       >
         <FixtureList
           fixtures={fixtures}
-          selectedId={selectedId}
+          expandedId={expandedId}
           canEdit={canEdit}
-          onSelect={handleSelect}
+          readOnly={!canEdit}
+          onExpandedChange={setExpandedId}
+          onUpdate={handleFixtureUpdate}
           onRemove={handleRemove}
         />
-
-        {selectedFixture && (
-          <FixtureEditor
-            fixture={selectedFixture}
-            fixtures={fixtures}
-            readOnly={!canEdit}
-            onUpdate={(patch) => handleFixtureUpdate(selectedFixture.id, patch)}
-          />
-        )}
 
         {fixtures.length > 0 && (
           <Box sx={{ px: 1.5, py: 1, flexShrink: 0, borderTop: 1, borderColor: "divider" }}>
@@ -169,6 +157,17 @@ export function FixturesPanel() {
         accept={profileActions.profileImportAccept}
         hidden
         onChange={profileActions.handleImportProfileFile}
+      />
+
+      <FixtureProfileImportDialog
+        open={profileActions.importDialogOpen}
+        profileName={profileActions.importDialogProfileName}
+        importedCount={profileActions.importDialogFixtureCount}
+        existingCount={fixtures.length}
+        hasPlot={profileActions.importDialogHasPlot}
+        onCancel={profileActions.handleImportCancel}
+        onMerge={() => void profileActions.handleImportMerge()}
+        onReplace={() => void profileActions.handleImportReplace()}
       />
     </Box>
   );

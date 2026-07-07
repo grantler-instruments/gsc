@@ -1,8 +1,10 @@
+import type { FixtureOflChannel } from "../../types/fixture";
+
 export interface OflModeSummary {
   name: string;
   shortName?: string;
   channelCount: number;
-  channels: { key: string }[];
+  channels: FixtureOflChannel[];
 }
 
 export interface OflFixtureSummary {
@@ -23,4 +25,15 @@ export interface OflFixtureListEntry {
   manufacturerKey: string;
   fixtureKey: string;
   name: string;
+}
+
+export interface OflCatalogEntry extends OflFixtureListEntry {
+  manufacturerName: string;
+  categories: string[];
+}
+
+export interface OflCatalogFilters {
+  query: string;
+  manufacturerKey: string;
+  category: string;
 }

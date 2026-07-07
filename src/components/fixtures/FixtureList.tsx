@@ -1,11 +1,15 @@
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { formatFixtureListDetail, getFixtureConflicts } from "../../lib/fixtures";
-import { useGscTokens } from "../../theme/useGscTokens";
 import type { Fixture } from "../../types/fixture";
+import { FixtureEditor } from "./FixtureEditor";
 
 const emptyListSx = {
   py: 2,
@@ -14,112 +18,147 @@ const emptyListSx = {
   fontSize: 13,
 } as const;
 
+const accordionSx = {
+  bgcolor: "transparent",
+  boxShadow: "none",
+  "&:before": { display: "none" },
+  borderBottom: 1,
+  borderColor: "divider",
+  "&.Mui-expanded": { margin: 0 },
+} as const;
+
 export interface FixtureListProps {
   fixtures: Fixture[];
-  selectedId: string | null;
+  expandedId: string | null;
   canEdit: boolean;
-  onSelect: (fixture: Fixture) => void;
+  readOnly: boolean;
+  onExpandedChange: (fixtureId: string | null) => void;
+  onUpdate: (id: string, patch: Partial<Omit<Fixture, "id">>) => void;
   onRemove: (id: string) => void;
 }
 
 export function FixtureList({
   fixtures,
-  selectedId,
+  expandedId,
   canEdit,
-  onSelect,
+  readOnly,
+  onExpandedChange,
+  onUpdate,
   onRemove,
 }: FixtureListProps) {
   const { t } = useTranslation();
-  const tokens = useGscTokens();
 
   return (
-    <Box
-      component="ul"
-      sx={{
-        listStyle: "none",
-        m: 0,
-        py: 0.5,
-        px: 0,
-        flexShrink: 0,
-      }}
-    >
-      {fixtures.length === 0 && (
-        <Box component="li" sx={emptyListSx}>
-          {t("fixtures.empty")}
-        </Box>
-      )}
+    <Box sx={{ flexShrink: 0 }}>
+      {fixtures.length === 0 && <Box sx={emptyListSx}>{t("fixtures.empty")}</Box>}
       {fixtures.map((fixture) => {
         const conflicts = getFixtureConflicts(fixture, fixtures);
-        const selected = fixture.id === selectedId;
+        const expanded = expandedId === fixture.id;
+
         return (
-          <Box
-            component="li"
+          <Accordion
             key={fixture.id}
-            onClick={() => onSelect(fixture)}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              py: 0.75,
-              px: 1.5,
-              borderBottom: 1,
-              borderColor: "divider",
-              cursor: "pointer",
-              bgcolor: selected ? tokens.bgHover : "transparent",
-              "&:hover": { bgcolor: tokens.bgHover },
-            }}
+            disableGutters
+            elevation={0}
+            square
+            expanded={expanded}
+            onChange={(_, isExpanded) => onExpandedChange(isExpanded ? fixture.id : null)}
+            sx={accordionSx}
           >
-            <Box
-              component="span"
+            <AccordionSummary
+              expandIcon={
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.25 }}>
+                  {canEdit && (
+                    <IconButton
+                      size="small"
+                      title={t("fixtures.removeFixture")}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onRemove(fixture.id);
+                      }}
+                    >
+                      ×
+                    </IconButton>
+                  )}
+                  <ExpandMoreIcon sx={{ fontSize: 18 }} />
+                </Box>
+              }
+              aria-controls={`fixture-${fixture.id}-content`}
+              id={`fixture-${fixture.id}-header`}
               sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 24,
-                height: 24,
-                borderRadius: 1,
-                bgcolor: "background.default",
-                color: "primary.main",
-                flexShrink: 0,
+                minHeight: 40,
+                px: 1.5,
+                py: 0.25,
+                "& .MuiAccordionSummary-content": {
+                  my: 0.5,
+                  minWidth: 0,
+                  overflow: "visible",
+                  alignItems: "flex-start",
+                  gap: 0.75,
+                },
+                "&.Mui-expanded": {
+                  minHeight: 40,
+                },
+                "&.Mui-expanded .MuiAccordionSummary-content": {
+                  my: 0.5,
+                },
               }}
             >
-              <LightbulbOutlinedIcon sx={{ fontSize: 16 }} aria-hidden />
-            </Box>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
+              <Box
                 component="span"
-                noWrap
-                title={fixture.name}
-                sx={{ display: "block", fontSize: 13 }}
-              >
-                {fixture.name}
-              </Typography>
-              <Typography
-                component="span"
-                noWrap
                 sx={{
-                  display: "block",
-                  fontSize: 11,
-                  color: conflicts.length > 0 ? "warning.main" : "text.secondary",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 20,
+                  height: 20,
+                  mt: 0.125,
+                  borderRadius: 1,
+                  bgcolor: "background.default",
+                  color: "primary.main",
+                  flexShrink: 0,
                 }}
               >
-                {formatFixtureListDetail(fixture)}
-                {conflicts.length > 0 ? t("fixtures.addressConflict") : ""}
-              </Typography>
-            </Box>
-            {canEdit && (
-              <IconButton
-                size="small"
-                title={t("fixtures.removeFixture")}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onRemove(fixture.id);
-                }}
-              >
-                ×
-              </IconButton>
-            )}
-          </Box>
+                <LightbulbOutlinedIcon sx={{ fontSize: 14 }} aria-hidden />
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
+                  component="span"
+                  title={fixture.name}
+                  sx={{
+                    display: "block",
+                    fontSize: 12,
+                    lineHeight: 1.35,
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {fixture.name}
+                </Typography>
+                <Typography
+                  component="span"
+                  sx={{
+                    display: "block",
+                    fontSize: 11,
+                    lineHeight: 1.3,
+                    color: conflicts.length > 0 ? "warning.main" : "text.secondary",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {formatFixtureListDetail(fixture)}
+                  {conflicts.length > 0 ? t("fixtures.addressConflict") : ""}
+                </Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails sx={{ px: 1.5, pt: 0, pb: 1.5 }}>
+              <FixtureEditor
+                fixture={fixture}
+                fixtures={fixtures}
+                readOnly={readOnly}
+                embedded
+                onUpdate={(patch) => onUpdate(fixture.id, patch)}
+              />
+            </AccordionDetails>
+          </Accordion>
         );
       })}
     </Box>

@@ -37,7 +37,7 @@ function triggerLightFadeCue(fadeCue: Cue, cues: Cue[]): boolean {
   const endDmx = resolveLightFadeEndDmx(fadeCue, cues, fixtures);
   if (!endDmx) return false;
 
-  const plan = buildDmxFadePlan(endDmx, fixtures);
+  const plan = buildDmxFadePlan(endDmx, fixtures, fadeCue.lightFadeChannels ?? "all");
   if (!plan) return false;
 
   const durationSec = Math.max(0.01, fadeCue.fadeDuration ?? 2);

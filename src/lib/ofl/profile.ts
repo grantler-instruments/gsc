@@ -1,5 +1,6 @@
 import type { FixtureOflProfile } from "../../types/fixture";
 import { normalizePath } from "../../vfs/engine";
+import { normalizeOflChannel } from "../fixture-definition";
 import type { OflFixtureSummary, OflModeSummary } from "./types";
 
 export function buildFixtureOflProfile(
@@ -14,9 +15,8 @@ export function buildFixtureOflProfile(
     fixtureKey: summary.fixtureKey,
     model: summary.name,
     modeName: mode.name,
-    channels: mode.channels.map((channel) => ({
-      key: channel.key,
-    })),
+    categories: summary.categories,
+    channels: mode.channels.map((channel) => normalizeOflChannel(channel)),
   };
 }
 
@@ -30,9 +30,19 @@ export function normalizeFixtureOflProfile(
     fixtureKey: raw.fixtureKey?.trim() || "fixture",
     model: raw.model?.trim() || "Fixture",
     modeName: raw.modeName?.trim() || "Unnamed mode",
-    channels: (raw.channels ?? []).map((channel) => ({
-      key: channel.key?.trim() || "Unknown",
-    })),
+    categories: raw.categories?.length ? [...raw.categories] : undefined,
+    channels: (raw.channels ?? []).map((channel) =>
+      normalizeOflChannel({
+        key: channel.key?.trim() || "Unknown",
+        kind: channel.kind,
+        coarseIndex: channel.coarseIndex,
+        fineIndex: channel.fineIndex,
+        angleRange: channel.angleRange,
+        colorTemperatureRange: channel.colorTemperatureRange,
+        capabilities: channel.capabilities,
+        wheel: channel.wheel,
+      }),
+    ),
   };
 }
 

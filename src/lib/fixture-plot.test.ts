@@ -3,7 +3,10 @@ import type { Fixture } from "../types/fixture";
 import {
   defaultFixturePlotEntry,
   ensureFixturePlot,
+  fixturePlotStorageToView,
   fixturePlotTooltipChannels,
+  fixturePlotViewBox,
+  fixturePlotViewToStorage,
   inferFixtureRenderKind,
   normalizeFixturePlot,
   resolveFixtureVisualState,
@@ -21,6 +24,25 @@ function fixture(id: string, overrides: Partial<Omit<Fixture, "id">> = {}): Fixt
 }
 
 describe("fixture plot", () => {
+  it("preserves background asset path when normalizing", () => {
+    const fixtures = [fixture("a")];
+    const plot = normalizeFixturePlot(
+      {
+        backgroundAssetPath: "/assets/images/stage.png",
+        entries: [],
+      },
+      fixtures,
+    );
+    expect(plot.backgroundAssetPath).toBe("/assets/images/stage.png");
+    expect(plot.entries).toHaveLength(1);
+  });
+
+  it("maps stored plot coordinates to a widescreen view box", () => {
+    expect(fixturePlotStorageToView(0.5, 0.25)).toEqual({ x: 1, y: 0.25 });
+    expect(fixturePlotViewToStorage(1, 0.25)).toEqual({ x: 0.5, y: 0.25 });
+    expect(fixturePlotViewBox()).toBe("0 0 2 1");
+  });
+
   it("infers dimmer render for single-channel fixtures", () => {
     expect(inferFixtureRenderKind(fixture("a", { channelCount: 1 }))).toBe("dimmer");
   });
@@ -37,11 +59,66 @@ describe("fixture plot", () => {
             fixtureKey: "rgb",
             model: "RGB",
             modeName: "4ch",
-            channels: [{ key: "Red" }, { key: "Green" }, { key: "Blue" }, { key: "Dimmer" }],
+            channels: [
+              { key: "Red", kind: "red" },
+              { key: "Green", kind: "green" },
+              { key: "Blue", kind: "blue" },
+              { key: "Dimmer", kind: "intensity" },
+            ],
           },
         }),
       ),
     ).toBe("rgb");
+  });
+
+  it("infers moving head render from pan and tilt channels", () => {
+    expect(
+      inferFixtureRenderKind(
+        fixture("spot", {
+          channelCount: 4,
+          ofl: {
+            filePath: "/assets/fixtures/ofl/test/spot.json",
+            manufacturerKey: "test",
+            manufacturer: "Test",
+            fixtureKey: "spot",
+            model: "Spot",
+            modeName: "std",
+            categories: ["Moving Head"],
+            channels: [
+              { key: "Pan", kind: "pan", fineIndex: 1, angleRange: { start: 0, end: 540 } },
+              { key: "Pan fine", kind: "pan", coarseIndex: 0 },
+              { key: "Tilt", kind: "tilt", fineIndex: 3, angleRange: { start: 0, end: 270 } },
+              { key: "Tilt fine", kind: "tilt", coarseIndex: 2 },
+            ],
+          },
+        }),
+      ),
+    ).toBe("movingHead");
+  });
+
+  it("resolves beam direction for moving heads", () => {
+    const f = fixture("spot", {
+      channelCount: 4,
+      ofl: {
+        filePath: "/assets/fixtures/ofl/test/spot.json",
+        manufacturerKey: "test",
+        manufacturer: "Test",
+        fixtureKey: "spot",
+        model: "Spot",
+        modeName: "std",
+        categories: ["Moving Head"],
+        channels: [
+          { key: "Pan", kind: "pan", fineIndex: 1, angleRange: { start: 0, end: 540 } },
+          { key: "Pan fine", kind: "pan", coarseIndex: 0 },
+          { key: "Tilt", kind: "tilt", fineIndex: 3, angleRange: { start: 0, end: 270 } },
+          { key: "Tilt fine", kind: "tilt", coarseIndex: 2 },
+        ],
+      },
+    });
+    const entry = defaultFixturePlotEntry(f, 0, 1);
+    const visual = resolveFixtureVisualState(f, [128, 0, 64, 0], entry);
+    expect(visual.beam).toBeDefined();
+    expect(visual.beam?.reach).toBeGreaterThan(0);
   });
 
   it("creates plot entries for all fixtures", () => {

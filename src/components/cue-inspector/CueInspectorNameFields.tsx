@@ -51,7 +51,6 @@ export function CueInspectorNameFields({
           fullWidth
           slotProps={{ input: { readOnly } }}
           onChange={(e) => onNameChange(e.target.value)}
-          sx={{ mb: 1.5 }}
         />
       )}
 
@@ -66,7 +65,6 @@ export function CueInspectorNameFields({
         placeholder={t("inspector.notesPlaceholder")}
         slotProps={{ input: { readOnly } }}
         onChange={(e) => onNotesChange(e.target.value)}
-        sx={{ mb: 1 }}
       />
 
       <TextField
@@ -80,7 +78,6 @@ export function CueInspectorNameFields({
         placeholder={t("inspector.triggerNotePlaceholder")}
         slotProps={{ input: { readOnly } }}
         onChange={(e) => onTriggerNoteChange(e.target.value)}
-        sx={{ mb: 1 }}
       />
     </>
   );

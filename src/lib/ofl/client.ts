@@ -1,18 +1,8 @@
 import { t } from "../../i18n/t";
 import { idbGetOflCache, idbPutOflCache, initProjectIdb } from "../project-idb";
-import { OFL_MANUFACTURERS_URL, oflFixtureRawUrl, oflManufacturerContentsUrl } from "./constants";
-import type {
-  OflFixtureListEntry,
-  OflFixtureSummary,
-  OflManufacturer,
-  OflModeSummary,
-} from "./types";
-
-interface GitHubContentEntry {
-  name: string;
-  type: "file" | "dir" | "symlink" | "submodule";
-  download_url: string | null;
-}
+import { OFL_JSDELIVR_FLAT_URL, OFL_MANUFACTURERS_URL, oflFixtureRawUrl } from "./constants";
+import { parseOflFixtureDefinition } from "./parse-definition";
+import type { OflFixtureListEntry, OflFixtureSummary, OflManufacturer } from "./types";
 
 function fixtureKeyFromFileName(fileName: string): string | null {
   if (!fileName.endsWith(".json")) return null;
@@ -69,57 +59,54 @@ export async function fetchOflManufacturers(): Promise<OflManufacturer[]> {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export async function fetchOflFixtureList(manufacturerKey: string): Promise<OflFixtureListEntry[]> {
-  const url = oflManufacturerContentsUrl(manufacturerKey);
-  let entries: GitHubContentEntry[];
+export async function fetchAllOflFixtureEntries(): Promise<OflFixtureListEntry[]> {
   try {
-    entries = await fetchJsonWithOflCache<GitHubContentEntry[]>(url);
+    const data = await fetchJsonWithOflCache<{ files?: { name: string }[] }>(OFL_JSDELIVR_FLAT_URL);
+    const files = Array.isArray(data.files) ? data.files : [];
+    return parseOflFixtureFlatIndex(files);
   } catch (err) {
     const status = err instanceof Error ? err.message : "unknown";
-    throw new Error(t("ofl.fixturesError", { key: manufacturerKey, status }));
+    throw new Error(t("ofl.fixturesIndexError", { status }));
   }
+}
 
-  return entries
-    .filter((entry) => entry.type === "file")
-    .map((entry) => fixtureKeyFromFileName(entry.name))
-    .filter((fixtureKey): fixtureKey is string => fixtureKey !== null)
-    .map((fixtureKey) => ({
+export function parseOflFixtureFlatIndex(
+  files: readonly { name: string }[],
+): OflFixtureListEntry[] {
+  const entries: OflFixtureListEntry[] = [];
+
+  for (const file of files) {
+    if (!file.name.startsWith("/fixtures/")) continue;
+    if (!file.name.endsWith(".json")) continue;
+    if (file.name.endsWith("-redirect.json")) continue;
+    if (file.name === "/fixtures/manufacturers.json") continue;
+
+    const relative = file.name.slice("/fixtures/".length);
+    const slash = relative.indexOf("/");
+    if (slash <= 0) continue;
+
+    const manufacturerKey = relative.slice(0, slash);
+    const fixtureKey = fixtureKeyFromFileName(relative.slice(slash + 1));
+    if (!fixtureKey) continue;
+
+    entries.push({
       manufacturerKey,
       fixtureKey,
       name: titleCaseFromKey(fixtureKey),
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    });
+  }
+
+  return entries.sort((a, b) => {
+    const byManufacturer = a.manufacturerKey.localeCompare(b.manufacturerKey);
+    if (byManufacturer !== 0) return byManufacturer;
+    return a.name.localeCompare(b.name);
+  });
 }
 
-function parseOflModes(raw: unknown): OflModeSummary[] {
-  if (!raw || typeof raw !== "object" || !("modes" in raw)) return [];
-  const modes = (raw as { modes?: unknown }).modes;
-  if (!Array.isArray(modes)) return [];
-
-  return modes
-    .map((mode): OflModeSummary | null => {
-      if (!mode || typeof mode !== "object") return null;
-      const record = mode as { name?: string; shortName?: string; channels?: unknown };
-      const name = record.name?.trim();
-      if (!name) return null;
-      const channels = Array.isArray(record.channels)
-        ? record.channels
-            .map((channel) => {
-              if (typeof channel === "string" && channel.trim()) {
-                return { key: channel.trim() };
-              }
-              return null;
-            })
-            .filter((channel): channel is { key: string } => channel !== null)
-        : [];
-      return {
-        name,
-        shortName: record.shortName?.trim() || undefined,
-        channelCount: Math.max(channels.length, 1),
-        channels,
-      };
-    })
-    .filter((mode): mode is OflModeSummary => mode !== null);
+/** @deprecated Prefer fetchAllOflFixtureEntries — GitHub Contents API hits rate limits quickly. */
+export async function fetchOflFixtureList(manufacturerKey: string): Promise<OflFixtureListEntry[]> {
+  const all = await fetchAllOflFixtureEntries();
+  return all.filter((entry) => entry.manufacturerKey === manufacturerKey);
 }
 
 export function parseOflFixtureJson(
@@ -128,24 +115,23 @@ export function parseOflFixtureJson(
   fixtureKey: string,
   raw: unknown,
 ): OflFixtureSummary {
-  const record =
-    raw && typeof raw === "object" ? (raw as { name?: string; categories?: unknown }) : {};
-  const modes = parseOflModes(raw);
-  if (modes.length === 0) {
+  const definition = parseOflFixtureDefinition(raw);
+  if (!definition || definition.modes.length === 0) {
     throw new Error(t("ofl.noDmxModes"));
   }
-
-  const categories = Array.isArray(record.categories)
-    ? record.categories.filter((entry): entry is string => typeof entry === "string")
-    : undefined;
 
   return {
     manufacturerKey,
     manufacturer: manufacturerName,
     fixtureKey,
-    name: record.name?.trim() || titleCaseFromKey(fixtureKey),
-    categories,
-    modes,
+    name: definition.name,
+    categories: definition.categories,
+    modes: definition.modes.map((mode) => ({
+      name: mode.name,
+      shortName: mode.shortName,
+      channelCount: mode.channelCount,
+      channels: mode.channels,
+    })),
   };
 }
 
@@ -181,6 +167,27 @@ export function filterOflFixtureList(
     const haystack = `${entry.name} ${entry.fixtureKey}`.toLowerCase();
     return haystack.includes(normalized);
   });
+}
+
+export function parseOflFixtureMeta(raw: unknown): { name?: string; categories: string[] } {
+  if (!raw || typeof raw !== "object") return { categories: [] };
+  const record = raw as { name?: string; categories?: unknown };
+  const categories = Array.isArray(record.categories)
+    ? record.categories.filter((entry): entry is string => typeof entry === "string")
+    : [];
+  return {
+    name: record.name?.trim() || undefined,
+    categories,
+  };
+}
+
+export async function fetchOflFixtureMeta(
+  manufacturerKey: string,
+  fixtureKey: string,
+): Promise<{ name?: string; categories: string[] }> {
+  const url = oflFixtureRawUrl(manufacturerKey, fixtureKey);
+  const raw = await fetchJsonWithOflCache<unknown>(url);
+  return parseOflFixtureMeta(raw);
 }
 
 export function formatOflFixtureListEntry(entry: OflFixtureListEntry): string {

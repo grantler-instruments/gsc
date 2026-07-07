@@ -1,10 +1,14 @@
 import type { AssetKind, ProjectSnapshot } from "../types/cue";
 import { normalizePath } from "../vfs/engine";
+import type { OflCatalogEntry, OflManufacturer } from "./ofl/types";
 import { randomId } from "./random-id";
 import { sessionHasMeaningfulContent } from "./unsaved-project";
 
 const DB_NAME = "gsc-v1";
 const DB_VERSION = 1;
+
+export const OFL_CATALOG_CACHE_META_KEY = "oflCatalogCache";
+export const OFL_CATALOG_CACHE_VERSION = 1;
 
 const STORES = {
   projects: "projects",
@@ -55,6 +59,19 @@ interface IdbOflEntry {
   body: string;
   contentType: string;
   cachedAt: number;
+}
+
+export interface OflCatalogCacheFingerprint {
+  fixtureCount: number;
+  manufacturerCount: number;
+}
+
+export interface IdbOflCatalogCache {
+  version: typeof OFL_CATALOG_CACHE_VERSION;
+  fingerprint: OflCatalogCacheFingerprint;
+  cachedAt: number;
+  manufacturers: OflManufacturer[];
+  catalog: OflCatalogEntry[];
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -264,6 +281,17 @@ export async function idbGetOflCache(url: string): Promise<IdbOflEntry | undefin
   );
   await txDone(tx);
   return entry;
+}
+
+export async function idbGetOflCatalogCache(): Promise<IdbOflCatalogCache | undefined> {
+  const cached = await idbGetMeta<IdbOflCatalogCache>(OFL_CATALOG_CACHE_META_KEY);
+  if (!cached || cached.version !== OFL_CATALOG_CACHE_VERSION) return undefined;
+  if (!Array.isArray(cached.manufacturers) || !Array.isArray(cached.catalog)) return undefined;
+  return cached;
+}
+
+export async function idbPutOflCatalogCache(entry: IdbOflCatalogCache): Promise<void> {
+  await idbSetMeta(OFL_CATALOG_CACHE_META_KEY, entry);
 }
 
 function legacyCacheKey(path: string): string {

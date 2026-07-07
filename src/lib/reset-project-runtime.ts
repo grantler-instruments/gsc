@@ -9,6 +9,7 @@ import { useVfsStore } from "../stores/vfs";
 import { vfsClear } from "../vfs/engine";
 import { setActiveProjectId } from "./active-project-id";
 import { createCueList } from "./cue-lists";
+import { emptyFixturePlot } from "./fixture-plot";
 import { replaceProjectWithoutHistory } from "./project-history";
 import { randomId } from "./random-id";
 
@@ -19,8 +20,15 @@ function createFreshProjectState(projectName = t("project.defaultName")) {
   return {
     id,
     name: projectName,
+    startDate: undefined,
+    endDate: undefined,
+    description: undefined,
     cueLists: [list],
     activeCueListId: list.id,
+    midiMappings: [],
+    fixtures: [],
+    fixturePlot: emptyFixturePlot(),
+    audioBuses: [],
   };
 }
 

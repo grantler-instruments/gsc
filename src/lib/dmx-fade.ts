@@ -1,26 +1,26 @@
 import { bumpDmxOutputRevision } from "../stores/dmx-output";
-import type { DmxCueData } from "../types/cue";
+import type { DmxCueData, LightFadeChannelScope } from "../types/cue";
 import type { Fixture } from "../types/fixture";
 import {
   clampDmxValue,
   type DmxUniverseFrame,
-  getDmxChannelLevel,
   getDmxUniverseFrame,
   normalizeDmxCueData,
+  readFixtureValuesFromOutput,
   setDmxChannelLevel,
 } from "./dmx";
+import { interpolateFixtureFadeValues } from "./dmx-fade-semantic";
 import { fixtureChannelAddress } from "./fixtures";
 
-export interface DmxFadeChannel {
-  universe: number;
-  /** 0-based index into the 512-channel universe buffer. */
-  index: number;
-  from: number;
-  to: number;
+export interface DmxFadeFixtureEntry {
+  fixture: Fixture;
+  fromValues: number[];
+  toValues: number[];
 }
 
 export interface DmxFadePlan {
-  channels: DmxFadeChannel[];
+  entries: DmxFadeFixtureEntry[];
+  channelScope: LightFadeChannelScope;
 }
 
 function targetValuesByFixture(data: DmxCueData, fixtures: Fixture[]): Map<string, number[]> {
@@ -39,8 +39,12 @@ function targetValuesByFixture(data: DmxCueData, fixtures: Fixture[]): Map<strin
   return byId;
 }
 
-/** Build per-channel fade steps from current output to a light cue's levels. */
-export function buildDmxFadePlan(data: DmxCueData, fixtures: Fixture[]): DmxFadePlan | null {
+/** Build per-fixture fade steps from current output to a light cue's levels. */
+export function buildDmxFadePlan(
+  data: DmxCueData,
+  fixtures: Fixture[],
+  channelScope: LightFadeChannelScope = "all",
+): DmxFadePlan | null {
   if (fixtures.length === 0) return null;
 
   const normalized = normalizeDmxCueData(data, fixtures);
@@ -49,7 +53,7 @@ export function buildDmxFadePlan(data: DmxCueData, fixtures: Fixture[]): DmxFade
   }
 
   const targets = targetValuesByFixture(normalized, fixtures);
-  const channels: DmxFadeChannel[] = [];
+  const entries: DmxFadeFixtureEntry[] = [];
 
   const fixturesToFade =
     normalized.mode === "snapshot"
@@ -57,35 +61,38 @@ export function buildDmxFadePlan(data: DmxCueData, fixtures: Fixture[]): DmxFade
       : fixtures.filter((fixture) => targets.has(fixture.id));
 
   for (const fixture of fixturesToFade) {
-    const values = targets.get(fixture.id);
-    if (!values) continue;
+    const toValues = targets.get(fixture.id);
+    if (!toValues) continue;
 
-    for (let channelIndex = 0; channelIndex < values.length; channelIndex += 1) {
-      const address = fixtureChannelAddress(fixture, channelIndex);
-      if (address < 1 || address > 512) continue;
-      channels.push({
-        universe: fixture.universe,
-        index: address - 1,
-        from: getDmxChannelLevel(fixture.universe, address),
-        to: clampDmxValue(values[channelIndex]),
-      });
-    }
+    entries.push({
+      fixture,
+      fromValues: readFixtureValuesFromOutput(fixture),
+      toValues: toValues.map((value) => clampDmxValue(value)),
+    });
   }
 
-  return channels.length > 0 ? { channels } : null;
+  return entries.length > 0 ? { entries, channelScope } : null;
 }
 
 export function sampleDmxFadePlan(plan: DmxFadePlan, t: number): DmxUniverseFrame[] {
   const clampedT = Math.max(0, Math.min(1, t));
   const universes = new Set<number>();
 
-  for (const channel of plan.channels) {
-    setDmxChannelLevel(
-      channel.universe,
-      channel.index + 1,
-      channel.from + (channel.to - channel.from) * clampedT,
+  for (const entry of plan.entries) {
+    const values = interpolateFixtureFadeValues(
+      entry.fixture,
+      entry.fromValues,
+      entry.toValues,
+      clampedT,
+      plan.channelScope,
     );
-    universes.add(channel.universe);
+
+    for (let channelIndex = 0; channelIndex < values.length; channelIndex += 1) {
+      const address = fixtureChannelAddress(entry.fixture, channelIndex);
+      if (address < 1 || address > 512) continue;
+      setDmxChannelLevel(entry.fixture.universe, address, values[channelIndex] ?? 0);
+      universes.add(entry.fixture.universe);
+    }
   }
 
   bumpDmxOutputRevision();

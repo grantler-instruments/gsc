@@ -112,11 +112,13 @@ export function TransportCueThumbnail({ cue, allCues }: TransportCueThumbnailPro
     return null;
   }
 
+  const isFixturePlot = preview.kind === "fixturePlot";
+
   return (
     <Box
       sx={{
         width: THUMB_SIZE,
-        height: THUMB_SIZE,
+        height: isFixturePlot ? THUMB_SIZE / 2 : THUMB_SIZE,
         flexShrink: 0,
         borderRadius: 1,
         overflow: "hidden",
