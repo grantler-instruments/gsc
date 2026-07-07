@@ -81,6 +81,9 @@ export interface DmxCueData {
   fixtures: DmxFixtureValues[];
 }
 
+/** Which channel groups participate in a light fade. */
+export type LightFadeChannelScope = "all" | "colorIntensity";
+
 import type { AudioBus } from "./audio-bus";
 import type { Fixture } from "./fixture";
 import type { FixturePlot } from "./fixture-plot";
@@ -124,6 +127,8 @@ export interface Cue {
   fadeFrom?: number;
   /** End level for fade cues (0–1). */
   fadeTo?: number;
+  /** For light fades: which channel groups to interpolate (default all). */
+  lightFadeChannels?: LightFadeChannelScope;
   /** Production / operator notes for this cue. */
   notes?: string;
   /** Shown in the top-right when this cue is selected. */

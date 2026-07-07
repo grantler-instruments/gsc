@@ -45,8 +45,6 @@ export function CueInspectorPanel() {
     );
   }
 
-  const isLightInspector = cue.type === "dmx" || cue.type === "lightFade";
-
   return (
     <>
       <PanelHeader title={showMode ? t("inspector.cueTitleView") : t("inspector.cueTitle")}>
@@ -58,11 +56,10 @@ export function CueInspectorPanel() {
           ...inspectorFieldsSx,
           flex: 1,
           minHeight: 0,
-          overflow: isLightInspector ? "hidden" : "auto",
-          ...(isLightInspector && {
-            display: "flex",
-            flexDirection: "column",
-          }),
+          overflow: "hidden",
+          gap: 0,
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <CueInspectorBody

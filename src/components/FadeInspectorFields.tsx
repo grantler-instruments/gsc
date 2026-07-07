@@ -14,6 +14,7 @@ import {
   isLightFadeCue,
   resolveFadeFromLevel,
 } from "../lib/fade";
+import { formatLightFadeCompactSummary, resolveLightFadeSummary } from "../lib/light-fade-summary";
 import { useActiveCueList, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { Cue, FadeCueType } from "../types/cue";
@@ -59,6 +60,7 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
   const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
   const clampPan = (n: number) => Math.max(-1, Math.min(1, n));
   const isPanFade = fadeType === "panFade";
+  const lightFadeSummary = isLightFade ? resolveLightFadeSummary(fadeCue, cues, fixtures) : null;
 
   if (isLightFade) {
     return (
@@ -111,6 +113,41 @@ export function FadeInspectorFields({ fadeCue }: FadeInspectorFieldsProps) {
             onChange={(fadeDuration) => updateCue(fadeCue.id, { fadeDuration })}
           />
         </Box>
+
+        <Box component="label" sx={inspectorFieldSx}>
+          {t("inspector.lightFadeChannels")}
+          <select
+            value={fadeCue.lightFadeChannels ?? "all"}
+            disabled={readOnly}
+            onChange={(event) =>
+              updateCue(fadeCue.id, {
+                lightFadeChannels:
+                  event.currentTarget.value === "colorIntensity" ? "colorIntensity" : "all",
+              })
+            }
+          >
+            <option value="all">{t("inspector.lightFadeChannelsAll")}</option>
+            <option value="colorIntensity">{t("inspector.lightFadeChannelsColorIntensity")}</option>
+          </select>
+        </Box>
+
+        {lightFadeSummary ? (
+          <Box sx={inspectorFieldSx}>
+            <Typography component="span" sx={inspectorFieldLabelSx}>
+              {t("inspector.lightFadeRange")}
+            </Typography>
+            <Typography component="p" sx={inspectorReadonlySx}>
+              {formatLightFadeCompactSummary(lightFadeSummary)}
+            </Typography>
+            {lightFadeSummary.referenceLabel ? (
+              <Typography component="p" sx={{ ...inspectorReadonlySx, mt: 0.5, fontSize: 12 }}>
+                {t("inspector.lightFadeReference", {
+                  label: lightFadeSummary.referenceLabel,
+                })}
+              </Typography>
+            ) : null}
+          </Box>
+        ) : null}
 
         {target ? (
           <Button

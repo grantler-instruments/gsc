@@ -5,6 +5,8 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
 import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
@@ -15,15 +17,22 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { notifyErrorFromUnknown } from "../lib/notifications";
 import {
-  fetchOflFixtureList,
-  fetchOflManufacturers,
-  filterOflFixtureList,
-  parseOflFixtureJson,
-} from "../lib/ofl/client";
-import { oflFixturePageUrl, oflFixtureRawUrl } from "../lib/ofl/constants";
+  filterOflCatalog,
+  formatOflCatalogEntryDetail,
+  formatOflCatalogEntryLabel,
+  loadOflCatalog,
+} from "../lib/ofl/catalog";
+import { parseOflFixtureJson } from "../lib/ofl/client";
+import {
+  OFL_ALL_CATEGORIES,
+  OFL_ALL_MANUFACTURERS,
+  OFL_FIXTURE_CATEGORIES,
+  oflFixturePageUrl,
+  oflFixtureRawUrl,
+} from "../lib/ofl/constants";
 import { importOflFixtureJson } from "../lib/ofl/import-ofl";
 import type {
-  OflFixtureListEntry,
+  OflCatalogEntry,
   OflFixtureSummary,
   OflManufacturer,
   OflModeSummary,
@@ -44,6 +53,10 @@ interface OflBrowseDialogProps {
   onImported: (payload: OflBrowseImportPayload) => void;
 }
 
+function catalogEntryKey(entry: Pick<OflCatalogEntry, "manufacturerKey" | "fixtureKey">): string {
+  return `${entry.manufacturerKey}/${entry.fixtureKey}`;
+}
+
 export function OflBrowseDialog({
   open,
   existingPaths,
@@ -52,25 +65,34 @@ export function OflBrowseDialog({
 }: OflBrowseDialogProps) {
   const { t } = useTranslation();
   const [loadingCatalog, setLoadingCatalog] = useState(false);
-  const [loadingFixtures, setLoadingFixtures] = useState(false);
   const [loadingFixture, setLoadingFixture] = useState(false);
+  const [enrichProgress, setEnrichProgress] = useState(0);
+  const [enrichTotal, setEnrichTotal] = useState(0);
+  const [categoriesReady, setCategoriesReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [manufacturers, setManufacturers] = useState<OflManufacturer[]>([]);
-  const [manufacturerKey, setManufacturerKey] = useState("");
-  const [fixtureEntries, setFixtureEntries] = useState<OflFixtureListEntry[]>([]);
+  const [catalog, setCatalog] = useState<OflCatalogEntry[]>([]);
+  const [manufacturerKey, setManufacturerKey] = useState(OFL_ALL_MANUFACTURERS);
+  const [category, setCategory] = useState(OFL_ALL_CATEGORIES);
   const [query, setQuery] = useState("");
+  const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
   const [pendingSummary, setPendingSummary] = useState<OflFixtureSummary | null>(null);
   const [pendingRaw, setPendingRaw] = useState<unknown>(null);
   const [modeName, setModeName] = useState("");
 
-  const selectedManufacturer = useMemo(
-    () => manufacturers.find((entry) => entry.key === manufacturerKey) ?? null,
-    [manufacturers, manufacturerKey],
+  const filteredFixtures = useMemo(
+    () =>
+      filterOflCatalog(catalog, {
+        query,
+        manufacturerKey,
+        category: categoriesReady ? category : OFL_ALL_CATEGORIES,
+      }),
+    [catalog, categoriesReady, category, manufacturerKey, query],
   );
 
-  const filteredFixtures = useMemo(
-    () => filterOflFixtureList(fixtureEntries, query),
-    [fixtureEntries, query],
+  const selectedEntry = useMemo(
+    () => catalog.find((entry) => catalogEntryKey(entry) === selectedEntryKey) ?? null,
+    [catalog, selectedEntryKey],
   );
 
   const selectedMode = useMemo(
@@ -84,10 +106,17 @@ export function OflBrowseDialog({
   const resetDialog = useCallback(() => {
     setError(null);
     setQuery("");
+    setManufacturerKey(OFL_ALL_MANUFACTURERS);
+    setCategory(OFL_ALL_CATEGORIES);
+    setSelectedEntryKey(null);
     setPendingSummary(null);
     setPendingRaw(null);
     setModeName("");
-    setFixtureEntries([]);
+    setCatalog([]);
+    setManufacturers([]);
+    setEnrichProgress(0);
+    setEnrichTotal(0);
+    setCategoriesReady(false);
     setLoadingFixture(false);
   }, []);
 
@@ -101,11 +130,29 @@ export function OflBrowseDialog({
     setLoadingCatalog(true);
     setError(null);
 
-    void fetchOflManufacturers()
-      .then((loaded) => {
+    void loadOflCatalog({
+      onListLoaded: (entries) => {
         if (cancelled) return;
-        setManufacturers(loaded);
-        setManufacturerKey(loaded[0]?.key ?? "");
+        setCatalog(entries);
+        setEnrichTotal(entries.length);
+        setLoadingCatalog(false);
+      },
+      onProgress: (loaded, total) => {
+        if (cancelled) return;
+        setEnrichProgress(loaded);
+        setEnrichTotal(total);
+        if (loaded >= total) {
+          setCategoriesReady(true);
+        }
+      },
+    })
+      .then(({ manufacturers: loadedManufacturers, catalog: enrichedCatalog }) => {
+        if (cancelled) return;
+        setManufacturers(loadedManufacturers);
+        setCatalog(enrichedCatalog);
+        setCategoriesReady(true);
+        setEnrichProgress(enrichedCatalog.length);
+        setEnrichTotal(enrichedCatalog.length);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -120,37 +167,8 @@ export function OflBrowseDialog({
     };
   }, [open, resetDialog, t]);
 
-  useEffect(() => {
-    if (!open || !manufacturerKey) return;
-
-    let cancelled = false;
-    setLoadingFixtures(true);
-    setError(null);
-    setPendingSummary(null);
-    setPendingRaw(null);
-    setModeName("");
-
-    void fetchOflFixtureList(manufacturerKey)
-      .then((entries) => {
-        if (cancelled) return;
-        setFixtureEntries(entries);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setFixtureEntries([]);
-        setError(err instanceof Error ? err.message : t("ofl.loadFixturesError"));
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingFixtures(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [open, manufacturerKey, t]);
-
-  const handleSelectFixture = async (entry: OflFixtureListEntry) => {
-    if (!selectedManufacturer) return;
+  const handleSelectFixture = async (entry: OflCatalogEntry) => {
+    setSelectedEntryKey(catalogEntryKey(entry));
     setLoadingFixture(true);
     setError(null);
     try {
@@ -167,7 +185,7 @@ export function OflBrowseDialog({
       const raw = await response.json();
       const summary = parseOflFixtureJson(
         entry.manufacturerKey,
-        selectedManufacturer.name,
+        entry.manufacturerName,
         entry.fixtureKey,
         raw,
       );
@@ -209,8 +227,22 @@ export function OflBrowseDialog({
     }
   };
 
+  const statusMessage = loadingCatalog
+    ? t("ofl.loadingCatalog")
+    : categoriesReady
+      ? t("ofl.catalogStatusReady", {
+          shown: filteredFixtures.length,
+          total: catalog.length,
+        })
+      : t("ofl.catalogStatusLoadingTypes", {
+          shown: filteredFixtures.length,
+          total: catalog.length,
+          loaded: enrichProgress,
+          count: enrichTotal,
+        });
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       <DialogTitle>{t("ofl.title")}</DialogTitle>
       <DialogContent
         sx={{
@@ -218,141 +250,196 @@ export function OflBrowseDialog({
           flexDirection: "column",
           gap: 1.5,
           pt: 1,
-          minHeight: 420,
+          minHeight: 520,
         }}
       >
         <Typography variant="body2" color="text.secondary" sx={{ m: 0 }}>
           {t("ofl.description")}
         </Typography>
 
-        {loadingCatalog ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+        {loadingCatalog && catalog.length === 0 ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
             <CircularProgress size={28} />
           </Box>
         ) : (
           <>
-            <Stack direction="row" sx={{ gap: 1 }}>
-              <Box component="label" sx={{ ...inspectorFieldSx, minWidth: 180 }}>
-                <Typography component="span" sx={inspectorFieldLabelSx}>
-                  {t("ofl.manufacturer")}
-                </Typography>
+            <TextField
+              label={t("ofl.searchFixtures")}
+              size="small"
+              value={query}
+              autoFocus
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t("ofl.searchPlaceholder")}
+            />
+
+            <Stack direction={{ xs: "column", sm: "row" }} sx={{ gap: 1 }}>
+              <FormControl size="small" sx={{ flex: 1 }}>
+                <InputLabel id="ofl-category-label">{t("ofl.fixtureType")}</InputLabel>
                 <Select
-                  size="small"
-                  fullWidth
+                  labelId="ofl-category-label"
+                  label={t("ofl.fixtureType")}
+                  value={category}
+                  disabled={!categoriesReady}
+                  onChange={(event) => setCategory(event.target.value)}
+                >
+                  <MenuItem value={OFL_ALL_CATEGORIES}>{t("ofl.allTypes")}</MenuItem>
+                  {OFL_FIXTURE_CATEGORIES.map((entry) => (
+                    <MenuItem key={entry} value={entry}>
+                      {entry}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl size="small" sx={{ flex: 1 }}>
+                <InputLabel id="ofl-manufacturer-label">{t("ofl.manufacturer")}</InputLabel>
+                <Select
+                  labelId="ofl-manufacturer-label"
+                  label={t("ofl.manufacturer")}
                   value={manufacturerKey}
                   onChange={(event) => setManufacturerKey(event.target.value)}
                 >
+                  <MenuItem value={OFL_ALL_MANUFACTURERS}>{t("ofl.allManufacturers")}</MenuItem>
                   {manufacturers.map((manufacturer) => (
                     <MenuItem key={manufacturer.key} value={manufacturer.key}>
                       {manufacturer.name}
                     </MenuItem>
                   ))}
                 </Select>
-              </Box>
-              <TextField
-                label={t("ofl.searchFixtures")}
-                size="small"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                sx={{ flex: 1 }}
-              />
+              </FormControl>
             </Stack>
 
             <Typography variant="caption" color="text.secondary" sx={{ m: 0 }}>
-              {loadingFixtures
-                ? t("ofl.loadingFixtures")
-                : t("ofl.fixtureCount", { count: filteredFixtures.length })}
+              {statusMessage}
             </Typography>
 
-            <Box
-              sx={{
-                border: 1,
-                borderColor: "divider",
-                borderRadius: 1,
-                overflow: "auto",
-                flex: 1,
-                minHeight: 220,
-                maxHeight: 280,
-              }}
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              sx={{ gap: 1.5, flex: 1, minHeight: 300 }}
             >
-              {!loadingFixtures && filteredFixtures.length === 0 && (
-                <Typography sx={{ p: 2, m: 0, color: "text.secondary", fontSize: 13 }}>
-                  {t("ofl.noMatches")}
-                </Typography>
-              )}
-              {filteredFixtures.map((entry) => {
-                const selected =
-                  pendingSummary?.fixtureKey === entry.fixtureKey &&
-                  pendingSummary.manufacturerKey === entry.manufacturerKey;
-                return (
-                  <Box
-                    key={entry.fixtureKey}
-                    onClick={() => void handleSelectFixture(entry)}
-                    sx={{
-                      px: 1.5,
-                      py: 1,
-                      borderBottom: 1,
-                      borderColor: "divider",
-                      cursor: "pointer",
-                      bgcolor: selected ? "action.selected" : "transparent",
-                      "&:hover": { bgcolor: "action.hover" },
-                    }}
-                  >
-                    <Typography noWrap sx={{ fontSize: 13, m: 0 }}>
-                      {entry.name}
-                    </Typography>
-                    <Typography noWrap sx={{ fontSize: 11, m: 0, color: "text.secondary" }}>
-                      {entry.fixtureKey}
-                    </Typography>
-                  </Box>
-                );
-              })}
-            </Box>
-
-            {pendingSummary && (
-              <>
-                <Typography variant="body2" sx={{ m: 0 }}>
-                  {pendingSummary.manufacturer} {pendingSummary.name}
-                </Typography>
-                <Link
-                  href={oflFixturePageUrl(
-                    pendingSummary.manufacturerKey,
-                    pendingSummary.fixtureKey,
-                  )}
-                  target="_blank"
-                  rel="noreferrer"
-                  variant="caption"
-                >
-                  {t("ofl.viewOnSite")}
-                </Link>
-                <Box component="label" sx={inspectorFieldSx}>
-                  <Typography component="span" sx={inspectorFieldLabelSx}>
-                    {t("fixtures.dmxMode")}
-                  </Typography>
-                  <Select
-                    size="small"
-                    fullWidth
-                    value={modeName}
-                    onChange={(event) => setModeName(event.target.value)}
-                  >
-                    {pendingSummary.modes.map((mode) => (
-                      <MenuItem key={mode.name} value={mode.name}>
-                        {t("ofl.dmxModeLabel", {
-                          name: mode.name,
-                          shortName: mode.shortName ?? mode.name,
-                          count: mode.channelCount,
-                        })}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </Box>
-                {selectedMode && (
-                  <Typography variant="caption" color="text.secondary" sx={{ m: 0 }}>
-                    {selectedMode.channels.map((channel) => channel.key).join(", ")}
+              <Box
+                sx={{
+                  flex: 1,
+                  minWidth: 0,
+                  border: 1,
+                  borderColor: "divider",
+                  borderRadius: 1,
+                  overflow: "auto",
+                  minHeight: 280,
+                }}
+              >
+                {filteredFixtures.length === 0 && (
+                  <Typography sx={{ p: 2, m: 0, color: "text.secondary", fontSize: 13 }}>
+                    {t("ofl.noMatches")}
                   </Typography>
                 )}
-              </>
-            )}
+                {filteredFixtures.map((entry) => {
+                  const selected = catalogEntryKey(entry) === selectedEntryKey;
+                  return (
+                    <Box
+                      key={catalogEntryKey(entry)}
+                      onClick={() => void handleSelectFixture(entry)}
+                      sx={{
+                        px: 1.5,
+                        py: 1,
+                        borderBottom: 1,
+                        borderColor: "divider",
+                        cursor: "pointer",
+                        bgcolor: selected ? "action.selected" : "transparent",
+                        "&:hover": { bgcolor: "action.hover" },
+                      }}
+                    >
+                      <Typography
+                        noWrap
+                        sx={{ fontSize: 13, m: 0, fontWeight: selected ? 600 : 400 }}
+                      >
+                        {formatOflCatalogEntryLabel(entry)}
+                      </Typography>
+                      <Typography noWrap sx={{ fontSize: 11, m: 0, color: "text.secondary" }}>
+                        {formatOflCatalogEntryDetail(entry)}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+              </Box>
+
+              <Box
+                sx={{
+                  width: { xs: "100%", md: 300 },
+                  flexShrink: 0,
+                  border: 1,
+                  borderColor: "divider",
+                  borderRadius: 1,
+                  p: 1.5,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
+                  minHeight: 280,
+                }}
+              >
+                {loadingFixture && !pendingSummary ? (
+                  <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                ) : pendingSummary && selectedEntry ? (
+                  <>
+                    <Typography variant="subtitle2" sx={{ m: 0 }}>
+                      {pendingSummary.manufacturer} {pendingSummary.name}
+                    </Typography>
+                    {pendingSummary.categories && pendingSummary.categories.length > 0 && (
+                      <Typography variant="caption" color="text.secondary" sx={{ m: 0 }}>
+                        {pendingSummary.categories.join(" · ")}
+                      </Typography>
+                    )}
+                    <Link
+                      href={oflFixturePageUrl(
+                        pendingSummary.manufacturerKey,
+                        pendingSummary.fixtureKey,
+                      )}
+                      target="_blank"
+                      rel="noreferrer"
+                      variant="caption"
+                    >
+                      {t("ofl.viewOnSite")}
+                    </Link>
+                    <Box component="label" sx={{ ...inspectorFieldSx, mt: 0.5 }}>
+                      <Typography component="span" sx={inspectorFieldLabelSx}>
+                        {t("fixtures.dmxMode")}
+                      </Typography>
+                      <Select
+                        size="small"
+                        fullWidth
+                        value={modeName}
+                        onChange={(event) => setModeName(event.target.value)}
+                      >
+                        {pendingSummary.modes.map((mode) => (
+                          <MenuItem key={mode.name} value={mode.name}>
+                            {t("ofl.dmxModeLabel", {
+                              name: mode.name,
+                              shortName: mode.shortName ?? mode.name,
+                              count: mode.channelCount,
+                            })}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </Box>
+                    {selectedMode && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ m: 0, lineHeight: 1.4 }}
+                      >
+                        {selectedMode.channels.map((channel) => channel.key).join(", ")}
+                      </Typography>
+                    )}
+                  </>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ m: 0 }}>
+                    {t("ofl.selectFixtureHint")}
+                  </Typography>
+                )}
+              </Box>
+            </Stack>
           </>
         )}
 

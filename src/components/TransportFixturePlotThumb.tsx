@@ -1,7 +1,14 @@
 import Box from "@mui/material/Box";
 import { useMemo } from "react";
 import { normalizeDmxCueData } from "../lib/dmx";
-import { ensureFixturePlot, resolveFixtureVisualState } from "../lib/fixture-plot";
+import {
+  ensureFixturePlot,
+  FIXTURE_PLOT_VIEW_HEIGHT,
+  FIXTURE_PLOT_VIEW_WIDTH,
+  fixturePlotStorageToView,
+  fixturePlotViewBox,
+  resolveFixtureVisualState,
+} from "../lib/fixture-plot";
 import { useProjectStore } from "../stores/project";
 import type { DmxCueData } from "../types/cue";
 import { FixturePlotGlyph } from "./FixturePlotGlyph";
@@ -34,8 +41,8 @@ export function TransportFixturePlotThumb({ dmx }: TransportFixturePlotThumbProp
   return (
     <Box
       component="svg"
-      viewBox="0 0 1 1"
-      preserveAspectRatio="xMidYMid meet"
+      viewBox={fixturePlotViewBox()}
+      preserveAspectRatio="none"
       sx={{
         display: "block",
         width: "100%",
@@ -43,17 +50,24 @@ export function TransportFixturePlotThumb({ dmx }: TransportFixturePlotThumbProp
         color: "primary.main",
       }}
     >
-      <rect x={0} y={0} width={1} height={1} fill="#111" />
+      <rect
+        x={0}
+        y={0}
+        width={FIXTURE_PLOT_VIEW_WIDTH}
+        height={FIXTURE_PLOT_VIEW_HEIGHT}
+        fill="#111"
+      />
       {entries.map((entry) => {
         const fixture = fixtureById.get(entry.fixtureId);
         if (!fixture) return null;
         const values = valuesByFixtureId.get(entry.fixtureId) ?? [];
         const visual = resolveFixtureVisualState(fixture, values, entry);
+        const view = fixturePlotStorageToView(entry.x, entry.y);
         return (
           <FixturePlotGlyph
             key={entry.fixtureId}
-            x={entry.x}
-            y={entry.y}
+            x={view.x}
+            y={view.y}
             size={entry.size}
             fixture={fixture}
             channelValues={values}

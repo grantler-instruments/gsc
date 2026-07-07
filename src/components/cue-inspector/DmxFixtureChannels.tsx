@@ -6,10 +6,12 @@ import {
   type FixtureInspectorGroupId,
   groupFixtureInspectorChannels,
 } from "../../lib/fixture-inspector-groups";
+import { detectFixturePositionAxes } from "../../lib/fixture-position";
 import type { Fixture } from "../../types/fixture";
 import { inspectorGroupCompactSx, inspectorGroupLegendSx, inspectorGroupSx } from "../inspectorSx";
 import { DmxFixtureChannelControl } from "./DmxFixtureChannelControl";
 import { DmxFixtureColorGroup } from "./DmxFixtureColorGroup";
+import { DmxFixturePositionGroup } from "./DmxFixturePositionGroup";
 
 const GROUP_I18N: Record<FixtureInspectorGroupId, string> = {
   intensity: "inspector.dmxGroupIntensity",
@@ -25,6 +27,7 @@ interface DmxFixtureChannelsProps {
   values: number[];
   readOnly: boolean;
   onChannelValuesChange: (updates: ReadonlyArray<{ channelIndex: number; value: number }>) => void;
+  onSaveFixtureHome?: (fixtureId: string, position: { pan: number; tilt: number }) => void;
 }
 
 function DmxFixtureChannelGroup({
@@ -66,12 +69,31 @@ export function DmxFixtureChannels({
   values,
   readOnly,
   onChannelValuesChange,
+  onSaveFixtureHome,
 }: DmxFixtureChannelsProps) {
   const groups = groupFixtureInspectorChannels(fixture);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
       {groups.map((group) => {
+        if (group.id === "position" && detectFixturePositionAxes(fixture, group.channels)) {
+          return (
+            <DmxFixturePositionGroup
+              key={group.id}
+              group={group}
+              fixture={fixture}
+              values={values}
+              readOnly={readOnly}
+              onChannelValuesChange={onChannelValuesChange}
+              onSaveHome={
+                onSaveFixtureHome
+                  ? (position) => onSaveFixtureHome(fixture.id, position)
+                  : undefined
+              }
+            />
+          );
+        }
+
         if (group.id === "color" && detectFixtureColorTriplet(group.channels)) {
           return (
             <DmxFixtureColorGroup

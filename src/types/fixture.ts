@@ -78,6 +78,11 @@ export interface FixtureOflProfile {
   channels: FixtureOflChannel[];
 }
 
+export interface FixtureHomePanTilt {
+  pan: number;
+  tilt: number;
+}
+
 export interface Fixture {
   id: string;
   name: string;
@@ -90,4 +95,6 @@ export interface Fixture {
   channels?: FixtureChannel[];
   /** Optional imported Open Fixture Library profile. */
   ofl?: FixtureOflProfile;
+  /** Saved pan/tilt home position in degrees for moving heads. */
+  homePanTilt?: FixtureHomePanTilt;
 }

@@ -37,10 +37,12 @@ describe("dmx fade", () => {
       fixtures,
     );
 
-    expect(plan?.channels).toEqual([
-      { universe: 1, index: 0, from: 100, to: 200 },
-      { universe: 1, index: 1, from: 50, to: 0 },
-    ]);
+    expect(plan?.entries).toHaveLength(1);
+    expect(plan?.entries[0]).toMatchObject({
+      fixture: fixtures[0],
+      fromValues: [100, 50],
+      toValues: [200, 0],
+    });
   });
 
   it("builds a snapshot fade plan across the full rig", () => {
@@ -55,12 +57,17 @@ describe("dmx fade", () => {
       fixtures,
     );
 
-    expect(plan?.channels).toHaveLength(5);
-    expect(plan?.channels[0]).toMatchObject({ index: 0, from: 255, to: 0 });
-    expect(plan?.channels[4]).toMatchObject({ index: 11, from: 0, to: 0 });
+    expect(plan?.entries).toHaveLength(2);
+    expect(plan?.entries[0]?.fromValues[0]).toBe(255);
+    expect(plan?.entries[0]?.toValues).toEqual([0, 0]);
+    expect(plan?.entries[1]?.fromValues).toEqual([128, 0, 0]);
+    expect(plan?.entries[1]?.toValues).toEqual([0, 0, 0]);
   });
 
   it("samples a fade halfway between from and to", () => {
+    setDmxChannelLevel(1, 1, 0);
+    setDmxChannelLevel(1, 2, 0);
+
     const plan = buildDmxFadePlan(
       {
         mode: "partial",

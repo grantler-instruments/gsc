@@ -16,7 +16,13 @@ interface FixturePlotGlyphProps {
   render: FixtureRenderKind;
   visual: FixtureVisualState;
   selected: boolean;
+  /** Brief pulse when selected from the cue inspector. */
+  pulseInspect?: boolean;
+  /** Whether this fixture has levels in the active DMX cue. */
+  inCue?: boolean;
   editMode: boolean;
+  /** Click/drag to inspect or aim (non-layout mode). */
+  interactive?: boolean;
   disableTooltip?: boolean;
   /** Hide labels/tooltips for tiny transport thumbnails. */
   compact?: boolean;
@@ -100,30 +106,86 @@ export function FixturePlotGlyph({
   render,
   visual,
   selected,
+  pulseInspect = false,
+  inCue = true,
   editMode,
+  interactive = false,
   disableTooltip = false,
   compact = false,
   onPointerDown,
 }: FixturePlotGlyphProps) {
   const radius = size / 2;
   const fill = visual.fill ?? "currentColor";
-  const fillOpacity = render === "abstract" ? 0.12 : Math.max(visual.opacity, 0.04);
+  const dimmed = !inCue;
+  const fillOpacity =
+    render === "abstract"
+      ? 0.12
+      : Math.max(visual.opacity * (dimmed ? 0.35 : 1), dimmed ? 0.02 : 0.04);
   const label = fixture.name;
+  const beam = visual.beam;
+  const beamLength = radius * 1.8 * (beam?.reach ?? 1);
+  const beamX = beam ? Math.sin(beam.directionRadians) * beamLength : 0;
+  const beamY = beam ? -Math.cos(beam.directionRadians) * beamLength : 0;
   const tooltipTitle: ReactNode = (
     <FixturePlotTooltipContent fixture={fixture} channelValues={channelValues} />
   );
 
   return (
     <g transform={`translate(${x}, ${y})`}>
+      {render === "movingHead" && beam && (
+        <line
+          x1={0}
+          y1={0}
+          x2={beamX}
+          y2={beamY}
+          stroke={fill}
+          strokeOpacity={Math.max(visual.opacity, 0.35)}
+          strokeWidth={0.003}
+          strokeLinecap="round"
+          style={{ pointerEvents: "none" }}
+        />
+      )}
+      {pulseInspect && (
+        <circle
+          r={radius * 1.35}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={0.004}
+          opacity={0.9}
+          style={{ pointerEvents: "none" }}
+        >
+          <animate
+            attributeName="r"
+            values={`${radius * 1.15};${radius * 1.55};${radius * 1.15}`}
+            dur="1.2s"
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="opacity"
+            values="0.9;0.2;0.9"
+            dur="1.2s"
+            repeatCount="indefinite"
+          />
+        </circle>
+      )}
       <circle
         r={radius}
         fill={render === "abstract" ? "transparent" : fill}
         fillOpacity={fillOpacity}
         stroke={selected ? "var(--fixture-plot-selected, #90caf9)" : "currentColor"}
-        strokeOpacity={selected ? 1 : 0.35}
+        strokeOpacity={selected ? 1 : dimmed ? 0.2 : 0.35}
         strokeWidth={selected ? 0.004 : 0.002}
+        strokeDasharray={dimmed && !selected ? "0.012 0.008" : undefined}
         style={{ pointerEvents: "none" }}
       />
+      {render === "movingHead" && (
+        <circle
+          r={radius * 0.18}
+          fill={fill}
+          fillOpacity={Math.max(visual.opacity, 0.5)}
+          style={{ pointerEvents: "none" }}
+        />
+      )}
       {render === "abstract" && <AbstractBars channels={visual.channels} radius={radius} />}
       {editMode && (
         <circle
@@ -133,7 +195,18 @@ export function FixturePlotGlyph({
           onPointerDown={onPointerDown}
         />
       )}
-      {!editMode && !compact && (
+      {interactive && (
+        <circle
+          r={radius}
+          fill="transparent"
+          style={{
+            pointerEvents: "all",
+            cursor: render === "movingHead" ? "crosshair" : "pointer",
+          }}
+          onPointerDown={onPointerDown}
+        />
+      )}
+      {!editMode && !interactive && !compact && (
         <foreignObject
           x={-radius}
           y={-radius}

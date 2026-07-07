@@ -323,3 +323,64 @@ export function syncLightFadeDmxFromTarget(
 ): DmxCueData {
   return normalizeDmxCueData(targetDmx, fixtures);
 }
+
+export function readFixtureValuesFromOutput(fixture: Fixture): number[] {
+  return Array.from({ length: fixture.channelCount }, (_, channelIndex) => {
+    const address = fixtureChannelAddress(fixture, channelIndex);
+    if (address < 1 || address > 512) return 0;
+    return getDmxChannelLevel(fixture.universe, address);
+  });
+}
+
+/** Read current DMX output into cue fixture entries (adds missing fixtures). */
+export function grabDmxLevelsFromOutput(
+  data: DmxCueData,
+  fixtures: Fixture[],
+  fixtureIds?: string[],
+): DmxCueData {
+  const ids =
+    fixtureIds ??
+    (data.fixtures.length > 0
+      ? data.fixtures.map((entry) => entry.fixtureId)
+      : fixtures.map((fixture) => fixture.id));
+
+  let next = data;
+  for (const fixtureId of ids) {
+    const fixture = fixtures.find((item) => item.id === fixtureId);
+    if (!fixture) continue;
+    if (!next.fixtures.some((entry) => entry.fixtureId === fixtureId)) {
+      next = addDmxFixtureToCue(next, fixture);
+    }
+    const updates = readFixtureValuesFromOutput(fixture).map((value, channelIndex) => ({
+      channelIndex,
+      value,
+    }));
+    next = updateDmxFixtureChannelValues(next, fixtureId, updates);
+  }
+  return next;
+}
+
+/** Copy fixture levels from another cue into this one. */
+export function copyDmxLevelsFromCue(
+  target: DmxCueData,
+  source: DmxCueData,
+  fixtures: Fixture[],
+  fixtureIds?: string[],
+): DmxCueData {
+  const normalized = normalizeDmxCueData(source, fixtures);
+  const ids = fixtureIds ?? normalized.fixtures.map((entry) => entry.fixtureId);
+
+  let next = target;
+  for (const fixtureId of ids) {
+    const entry = normalized.fixtures.find((item) => item.fixtureId === fixtureId);
+    if (!entry) continue;
+    const fixture = fixtures.find((item) => item.id === fixtureId);
+    if (!fixture) continue;
+    if (!next.fixtures.some((item) => item.fixtureId === fixtureId)) {
+      next = addDmxFixtureToCue(next, fixture);
+    }
+    const updates = entry.values.map((value, channelIndex) => ({ channelIndex, value }));
+    next = updateDmxFixtureChannelValues(next, fixtureId, updates);
+  }
+  return next;
+}

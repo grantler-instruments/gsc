@@ -14,12 +14,11 @@ import {
   isWaitCue,
 } from "../../lib/cues";
 import { formatDmxCue } from "../../lib/dmx";
+import { isLightFadeCue, isLightFadeReady, resolveFadeFromLevel } from "../../lib/fade";
 import {
-  isLightFadeCue,
-  isLightFadeReady,
-  resolveFadeFromLevel,
-  resolveLightFadeEndDmx,
-} from "../../lib/fade";
+  formatLightFadeCompactSummary,
+  resolveLightFadeSummary,
+} from "../../lib/light-fade-summary";
 import { formatLoopLabel } from "../../lib/loop";
 import { formatMidiCue } from "../../lib/midi";
 import { formatOscCue } from "../../lib/osc";
@@ -67,11 +66,11 @@ export function CueRowDetails({
   const lightFadeTargetMissing = isLightFadeCue(cue) && Boolean(cue.fadeTargetId) && !fadeTarget;
   const lightFadeMissing =
     isLightFadeCue(cue) && !lightFadeTargetMissing && !isLightFadeReady(cue, fixtures, allCues);
-  const lightFadeEndDmx =
-    isLightFadeCue(cue) && cue.dmx ? resolveLightFadeEndDmx(cue, allCues, fixtures) : null;
+  const lightFadeSummary =
+    isLightFadeCue(cue) && cue.dmx ? resolveLightFadeSummary(cue, allCues, fixtures) : null;
   const fadeDetail =
-    isFade && isLightFadeCue(cue) && lightFadeEndDmx
-      ? `${formatDmxCue(lightFadeEndDmx, fixtures)} · ${cue.fadeDuration ?? 2}s`
+    isFade && isLightFadeCue(cue) && lightFadeSummary
+      ? formatLightFadeCompactSummary(lightFadeSummary)
       : isFade && fadeTarget
         ? `${resolveFadeFromLevel(cue, fadeTarget).toFixed(2)} → ${cue.fadeTo ?? 0} · ${cue.fadeDuration ?? 2}s`
         : null;

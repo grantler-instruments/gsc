@@ -26,3 +26,14 @@ export interface OflFixtureListEntry {
   fixtureKey: string;
   name: string;
 }
+
+export interface OflCatalogEntry extends OflFixtureListEntry {
+  manufacturerName: string;
+  categories: string[];
+}
+
+export interface OflCatalogFilters {
+  query: string;
+  manufacturerKey: string;
+  category: string;
+}

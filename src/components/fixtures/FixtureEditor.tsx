@@ -30,10 +30,17 @@ export interface FixtureEditorProps {
   fixture: Fixture;
   fixtures: Fixture[];
   readOnly: boolean;
+  embedded?: boolean;
   onUpdate: (patch: Partial<Omit<Fixture, "id">>) => void;
 }
 
-export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: FixtureEditorProps) {
+export function FixtureEditor({
+  fixture,
+  fixtures,
+  readOnly,
+  embedded = false,
+  onUpdate,
+}: FixtureEditorProps) {
   const { t } = useTranslation();
   const conflicts = getFixtureConflicts(fixture, fixtures);
   const outOfRange = !fixtureFitsInUniverse(fixture);
@@ -82,13 +89,17 @@ export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: Fixture
   return (
     <Box
       sx={{
-        borderTop: 1,
-        borderColor: "divider",
-        p: 1.5,
+        ...(embedded
+          ? {}
+          : {
+              borderTop: 1,
+              borderColor: "divider",
+              flexShrink: 0,
+            }),
+        p: embedded ? 0 : 1.5,
         display: "flex",
         flexDirection: "column",
         gap: 1.25,
-        flexShrink: 0,
         overflowY: "visible",
         maxHeight: "none",
       }}

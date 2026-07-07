@@ -1,4 +1,5 @@
 import type { CueList } from "../../lib/cue-lists";
+import type { FixturesProfileImportMode } from "../../lib/fixture-profile";
 import type { AudioBus } from "../../types/audio-bus";
 import type {
   AudioEffect,
@@ -99,6 +100,11 @@ export interface ProjectState {
   removeFixture: (id: string) => void;
   updateFixture: (id: string, patch: Partial<Omit<Fixture, "id">>) => void;
   appendFixtures: (fixtures: Fixture[]) => void;
+  importFixturesProfile: (
+    fixtures: Fixture[],
+    fixturePlot: FixturePlot | undefined,
+    mode: FixturesProfileImportMode,
+  ) => void;
   addAudioBus: (opts?: Partial<Omit<AudioBus, "id">>) => AudioBus;
   removeAudioBus: (id: string) => void;
   updateAudioBus: (id: string, patch: Partial<Omit<AudioBus, "id">>) => void;
@@ -119,6 +125,7 @@ export interface ProjectState {
   ) => void;
   syncFixturePlot: () => void;
   setFixturePlot: (plot: FixturePlot) => void;
+  setFixturePlotBackground: (backgroundAssetPath: string | undefined) => void;
   updateFixturePlotEntry: (
     fixtureId: string,
     patch: Partial<Omit<FixturePlotEntry, "fixtureId">>,

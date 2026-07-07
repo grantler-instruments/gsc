@@ -16,7 +16,11 @@ export function createFixturePlotActions(
   get: ProjectStore["getState"],
 ): Pick<
   ProjectState,
-  "syncFixturePlot" | "updateFixturePlotEntry" | "setFixturePlot" | "moveFixturePlotEntry"
+  | "syncFixturePlot"
+  | "updateFixturePlotEntry"
+  | "setFixturePlot"
+  | "setFixturePlotBackground"
+  | "moveFixturePlotEntry"
 > {
   return {
     syncFixturePlot: () => {
@@ -30,6 +34,19 @@ export function createFixturePlotActions(
     setFixturePlot: (plot: FixturePlot) => {
       const { fixtures } = get();
       set({ fixturePlot: normalizeFixturePlot(plot, fixtures) });
+    },
+
+    setFixturePlotBackground: (backgroundAssetPath: string | undefined) => {
+      const { fixtures, fixturePlot } = get();
+      set({
+        fixturePlot: normalizeFixturePlot(
+          {
+            ...fixturePlot,
+            backgroundAssetPath: backgroundAssetPath?.trim() || undefined,
+          },
+          fixtures,
+        ),
+      });
     },
 
     updateFixturePlotEntry: (
