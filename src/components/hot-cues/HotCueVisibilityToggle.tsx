@@ -9,6 +9,10 @@ export function HotCueVisibilityToggle() {
   const visible = useUiStore((s) => s.hotCuePanelVisible);
   const toggle = useUiStore((s) => s.toggleHotCuePanelVisible);
 
+  // When the panel is already visible, we show the close button in the panel
+  // header instead (see `HotCuePanel`), so the workspace header stays clean.
+  if (visible) return null;
+
   return (
     <IconButton
       size="small"

@@ -1,3 +1,4 @@
+import CloseIcon from "@mui/icons-material/Close";
 import HorizontalSplitIcon from "@mui/icons-material/HorizontalSplit";
 import VerticalSplitIcon from "@mui/icons-material/VerticalSplit";
 import Box from "@mui/material/Box";
@@ -18,12 +19,25 @@ export function HotCuePanel() {
   const { t } = useTranslation();
   const orientation = useUiStore((s) => s.hotCuePanelOrientation);
   const toggleOrientation = useUiStore((s) => s.toggleHotCuePanelOrientation);
+  const setHotCuePanelVisible = useUiStore((s) => s.setHotCuePanelVisible);
   const showMode = useUiStore((s) => s.showMode);
   const hotList = useActiveHotCueList();
   const activeCueListId = useProjectStore((s) => s.activeCueListId);
   const setActiveCueList = useProjectStore((s) => s.setActiveCueList);
 
   const isRight = orientation === "right";
+
+  const closeButton = (
+    <IconButton
+      size="small"
+      onClick={() => setHotCuePanelVisible(false)}
+      title={t("hotCues.hidePanel")}
+      aria-label={t("hotCues.hidePanelAria")}
+      sx={{ color: "text.secondary" }}
+    >
+      <CloseIcon sx={{ fontSize: 16 }} />
+    </IconButton>
+  );
 
   const orientationToggle = (
     <IconButton
@@ -50,7 +64,16 @@ export function HotCuePanel() {
       }
       sx={hotCuePanelShellSx(orientation)}
     >
-      <CueListTabs kind="hot" activeListId={hotList?.id} trailing={orientationToggle} />
+      <CueListTabs
+        kind="hot"
+        activeListId={hotList?.id}
+        trailing={
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            {orientationToggle}
+            {closeButton}
+          </Box>
+        }
+      />
       {hotList ? (
         <Box sx={cueListScrollRegionSx}>
           <HotCueGrid listId={hotList.id} />
