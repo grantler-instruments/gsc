@@ -379,7 +379,7 @@ describe("triggerHotCueAndFocusMain", () => {
 
 describe("focusMainCueList", () => {
   it("does nothing when there is no main list", () => {
-    useProjectStore.setState({ cueLists: [], activeCueListId: null, mainSequenceListId: null });
+    useProjectStore.setState({ cueLists: [] });
     expect(() => focusMainCueList()).not.toThrow();
   });
 });

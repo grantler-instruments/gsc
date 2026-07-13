@@ -107,7 +107,6 @@ describe("runSequence", () => {
   });
 
   it("cancelSequence stops an overlay sequence without affecting main playback", () => {
-    const mainCues = [testCue("a", "A", "audio")];
     const hotCues = [
       testCue("hseq", "Hot Seq", "sequence"),
       testCue("h1", "H1", "audio", { parentId: "hseq" }),
