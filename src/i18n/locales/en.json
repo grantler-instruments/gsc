@@ -67,9 +67,35 @@
     "namePlaceholder": "Untitled show",
     "nameAriaLabel": "Show name",
     "draftHint": " · Draft (save to choose location)",
+    "draftBanner": {
+      "message": "This show isn't saved to a folder on your computer yet. Save it before closing the app.",
+      "saveAs": "Save As…"
+    },
     "savingToHint": " · Saving to {{folder}}",
     "restoringProject": "Restoring project…",
     "loadingAssets": "Loading assets…",
+    "restoreSteps": "Steps",
+    "restoreStep": {
+      "session": "Starting session",
+      "tauriStartup": "Preparing startup",
+      "checkDraft": "Checking pending draft",
+      "scanRecents": "Scanning recent projects",
+      "waitStartupChoice": "Waiting for startup choice",
+      "createDraft": "Creating temporary project",
+      "applyChoice": "Applying startup choice",
+      "loadProject": "Loading project",
+      "readProjectJson": "Reading project.json",
+      "parseSnapshot": "Parsing project data",
+      "collectAssets": "Collecting assets",
+      "loadDiskAssets": "Loading assets from disk",
+      "webRestore": "Restoring browser session",
+      "openIdb": "Opening local database",
+      "loadActiveProject": "Loading active project",
+      "hydrateAssets": "Hydrating assets from cache",
+      "scanStoredProjects": "Scanning stored projects",
+      "loadLegacySession": "Loading legacy session",
+      "initProject": "Initializing empty project"
+    },
     "assetLoadProgress": "{{loaded}} / {{total}} loaded",
     "assetStatusLoaded": "Loaded",
     "assetStatusMissing": "Missing",
@@ -85,7 +111,12 @@
       "editAriaLabel": "Edit show details",
       "location": "Location",
       "locationDraft": "Draft (save to choose location)",
-      "locationWeb": "Browser session (export to save to disk)"
+      "locationWeb": "Browser session (export to save to disk)",
+      "saveProjectPrompt": {
+        "title": "Save show to disk?",
+        "body": "\"{{projectName}}\" isn't saved to a folder yet. Now is a good time to choose where to keep it.",
+        "later": "Not now"
+      }
     }
   },
   "fileMenu": {
@@ -103,6 +134,7 @@
     "deleteStoredProject": "Delete {{projectName}}",
     "openWebEmpty": "No saved projects in this browser yet. Import a {{extension}} file to get started.",
     "save": "Save",
+    "saveAs": "Save As…",
     "saveChooseLocation": "Choose location…",
     "export": "Export…",
     "exportHint": "Download {{extension}} with all assets",
@@ -302,8 +334,14 @@
     "unsavedDraft": "Unsaved draft",
     "restoreDraftHint": "Restore work from your last session",
     "recentProjects": "Recent projects",
+    "removeRecentProject": "Remove {{projectName}} from recent projects",
     "description": "Choose a recent project, browse for a file, or start a new show.",
     "newShow": "New Show"
+  },
+  "discardDraft": {
+    "title": "Discard unsaved draft?",
+    "body": "Opening another project will permanently delete the unsaved draft \"{{projectName}}\". Save it with Save As… first if you want to keep it.",
+    "confirm": "Discard draft"
   },
   "unsaved": {
     "title": "Save changes?",
@@ -583,6 +621,10 @@
     "optionalName": "Optional name",
     "removeChannel": "Remove channel",
     "addChannel": "+ Channel",
+    "channelAddress": "Addr",
+    "channelName": "Name",
+    "channel16Bit": "16-bit",
+    "unnamedChannel": "Channel",
     "singleChannelDimmer": " · single-channel dimmer",
     "extendsPast512": "Fixture extends past channel 512 in this universe.",
     "overlapsWith": "Overlaps with {{names}}.",
@@ -734,6 +776,7 @@
     "dialogExportProject": "Export project",
     "dialogSaveProjectAs": "Save project as",
     "pathExistsError": "\"{{path}}\" already exists and is not empty. Choose another name or location.",
+    "nestedProjectError": "Projects can't be saved inside another project folder. Choose a location outside \"{{path}}\".",
     "selectGscFolder": "Select a .gsc project folder (e.g. MyShow.gsc).",
     "noProjectJson": "No project.json in selected folder",
     "unsupportedVersion": "Unsupported project version"

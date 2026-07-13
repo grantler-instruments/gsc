@@ -67,6 +67,10 @@
     "namePlaceholder": "Spectacle sans titre",
     "nameAriaLabel": "Nom du spectacle",
     "draftHint": " · Brouillon (enregistrer pour choisir l’emplacement)",
+    "draftBanner": {
+      "message": "Ce spectacle n’est pas encore enregistré dans un dossier sur votre ordinateur. Enregistrez-le avant de fermer l’application.",
+      "saveAs": "Enregistrer sous…"
+    },
     "savingToHint": " · Enregistrement dans {{folder}}",
     "restoringProject": "Restauration du projet…",
     "loadingAssets": "Chargement des médias…",
@@ -85,7 +89,12 @@
       "editAriaLabel": "Modifier les détails du spectacle",
       "location": "Emplacement",
       "locationDraft": "Brouillon (enregistrer pour choisir l’emplacement)",
-      "locationWeb": "Session du navigateur (exporter pour enregistrer sur le disque)"
+      "locationWeb": "Session du navigateur (exporter pour enregistrer sur le disque)",
+      "saveProjectPrompt": {
+        "title": "Enregistrer le spectacle sur le disque ?",
+        "body": "« {{projectName}} » n’est pas encore enregistré dans un dossier. C’est le bon moment pour choisir où le conserver.",
+        "later": "Pas maintenant"
+      }
     }
   },
   "fileMenu": {
@@ -103,6 +112,7 @@
     "deleteStoredProject": "Supprimer {{projectName}}",
     "openWebEmpty": "Aucun projet enregistré dans ce navigateur pour l’instant. Importez un fichier {{extension}} pour commencer.",
     "save": "Enregistrer",
+    "saveAs": "Enregistrer sous…",
     "saveChooseLocation": "Choisir l’emplacement…",
     "export": "Exporter…",
     "exportHint": "Télécharger {{extension}} avec tous les médias",
@@ -302,8 +312,14 @@
     "unsavedDraft": "Brouillon non enregistré",
     "restoreDraftHint": "Restaurer le travail de votre dernière session",
     "recentProjects": "Projets récents",
+    "removeRecentProject": "Retirer {{projectName}} des projets récents",
     "description": "Choisissez un projet récent, parcourez un fichier ou démarrez un nouveau spectacle.",
     "newShow": "Nouveau spectacle"
+  },
+  "discardDraft": {
+    "title": "Supprimer le brouillon non enregistré ?",
+    "body": "L’ouverture d’un autre projet supprimera définitivement le brouillon non enregistré « {{projectName}} ». Enregistrez-le d’abord avec Enregistrer sous… si vous souhaitez le conserver.",
+    "confirm": "Supprimer le brouillon"
   },
   "unsaved": {
     "title": "Enregistrer les modifications ?",
@@ -714,6 +730,7 @@
     "dialogExportProject": "Exporter le projet",
     "dialogSaveProjectAs": "Enregistrer le projet sous",
     "pathExistsError": "« {{path}} » existe déjà et n’est pas vide. Choisissez un autre nom ou emplacement.",
+    "nestedProjectError": "Les projets ne peuvent pas être enregistrés dans un autre dossier de projet. Choisissez un emplacement en dehors de « {{path}} ».",
     "selectGscFolder": "Sélectionnez un dossier de projet .gsc (par ex. MyShow.gsc).",
     "noProjectJson": "Aucun project.json dans le dossier sélectionné",
     "unsupportedVersion": "Version de projet non prise en charge"

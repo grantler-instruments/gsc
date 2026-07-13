@@ -5,6 +5,7 @@ import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
 import { normalizeAudioBuses, normalizeCueAudioBus } from "./audio-buses";
 import type { CueList } from "./cue-lists";
+import { initialCueListSelection } from "./cue-selection";
 import { defaultDmxCueData, normalizeDmxCueData } from "./dmx";
 import { normalizeFixturePlot } from "./fixture-plot";
 import { normalizeFixtures } from "./fixtures";
@@ -39,7 +40,15 @@ function normalizeCues(cues: Cue[], fixtures: Fixture[] = [], audioBuses: AudioB
   });
 }
 
-export function snapshotToCueLists(snap: ProjectSnapshot): {
+export type SnapshotToCueListsOptions = {
+  /** When opening a project file, activate the first cuelist and select its first cue. */
+  initialOpen?: boolean;
+};
+
+export function snapshotToCueLists(
+  snap: ProjectSnapshot,
+  options?: SnapshotToCueListsOptions,
+): {
   id: string;
   name: string;
   startDate?: string;
@@ -55,15 +64,24 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   const fixtures = normalizeFixtures(snap.fixtures);
   const fixturePlot = normalizeFixturePlot(snap.fixturePlot, fixtures);
   const audioBuses = normalizeAudioBuses(snap.audioBuses);
-  const cueLists: CueList[] = snap.cueLists.map((list) => ({
-    id: list.id,
-    name: list.name,
-    kind: list.kind ?? "sequence",
-    cues: normalizeCues(list.cues, fixtures, audioBuses),
-    selectedCueIds: [],
-    selectionAnchorId: null,
-  }));
-  const active = cueLists.find((l) => l.id === snap.activeCueListId) ?? cueLists[0];
+  const cueLists: CueList[] = snap.cueLists.map((list, index) => {
+    const cues = normalizeCues(list.cues, fixtures, audioBuses);
+    const selection =
+      options?.initialOpen && index === 0
+        ? initialCueListSelection(cues)
+        : { selectedCueIds: [], selectionAnchorId: null };
+    return {
+      id: list.id,
+      name: list.name,
+      kind: list.kind ?? "sequence",
+      cues,
+      ...selection,
+    };
+  });
+  const active =
+    options?.initialOpen && cueLists[0]
+      ? cueLists[0]
+      : (cueLists.find((l) => l.id === snap.activeCueListId) ?? cueLists[0]);
   return {
     id: snap.id,
     name: snap.name,

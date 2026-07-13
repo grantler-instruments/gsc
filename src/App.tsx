@@ -6,7 +6,9 @@ import { CueInspector } from "./components/CueInspector";
 import { CueList } from "./components/CueList";
 import { DeleteAssetInUseDialog } from "./components/DeleteAssetInUseDialog";
 import { DeleteStoredProjectDialog } from "./components/DeleteStoredProjectDialog";
+import { DiscardDraftDialog } from "./components/DiscardDraftDialog";
 import { DmxPreviewConfirmDialog } from "./components/DmxPreviewConfirmDialog";
+import { DraftProjectBanner } from "./components/DraftProjectBanner";
 import { HotCuePanel } from "./components/hot-cues/HotCuePanel";
 import { LeftSidebar } from "./components/LeftSidebar";
 import { ProjectLoadingScreen } from "./components/ProjectLoadingScreen";
@@ -14,6 +16,7 @@ import { ProjectToolbar } from "./components/ProjectToolbar";
 import { Qlab5ImportConfirmDialogHost } from "./components/Qlab5ImportConfirmDialogHost";
 import { Qlab5ImportReportDialogHost } from "./components/Qlab5ImportReportDialogHost";
 import { RightSidebar } from "./components/RightSidebar";
+import { SaveProjectPromptDialog } from "./components/SaveProjectPromptDialog";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { StartupProjectsDialog } from "./components/StartupProjectsDialog";
 import { TransportBar } from "./components/TransportBar";
@@ -64,6 +67,8 @@ function App() {
         <WebOpenProjectsDialog />
         <DeleteStoredProjectDialog />
         <UnsavedProjectDialog />
+        <SaveProjectPromptDialog />
+        <DiscardDraftDialog />
         <Qlab5ImportConfirmDialogHost />
         <Qlab5ImportReportDialogHost />
         <AppSnackbar />
@@ -83,6 +88,7 @@ function App() {
       }}
     >
       <ProjectToolbar />
+      <DraftProjectBanner />
 
       <Box
         sx={{
@@ -127,6 +133,8 @@ function App() {
       <SettingsDialog />
       <DmxPreviewConfirmDialog />
       <UnsavedProjectDialog />
+      <SaveProjectPromptDialog />
+      <DiscardDraftDialog />
       <StartupProjectsDialog />
       <WebOpenProjectsDialog />
       <DeleteStoredProjectDialog />

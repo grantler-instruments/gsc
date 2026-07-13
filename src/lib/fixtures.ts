@@ -1,5 +1,6 @@
 import { t } from "../i18n/t";
 import type { Fixture, FixtureChannel } from "../types/fixture";
+import { normalizeFixtureChannel, repairFixtureChannelPairs } from "./fixture-channels";
 import { normalizeFixtureOflProfile, oflProfileChannelCount } from "./ofl/profile";
 import { randomId } from "./random-id";
 
@@ -30,9 +31,7 @@ export function normalizeFixtureChannels(
   channelCount: number,
 ): FixtureChannel[] {
   if (channels?.length) {
-    return channels.map((channel) => ({
-      name: channel.name?.trim() || undefined,
-    }));
+    return repairFixtureChannelPairs(channels.map((channel) => normalizeFixtureChannel(channel)));
   }
   return Array.from({ length: clampChannelCount(channelCount) }, () => ({}));
 }
@@ -168,6 +167,17 @@ export function manualFixtureChannels(fixture: Fixture): FixtureChannel[] {
   return fixture.channels ?? [{ name: undefined }];
 }
 
+/** Logical manual channels for the fixture editor (skips fine slots). */
+export function manualFixtureLogicalChannels(fixture: Fixture): Array<{
+  slotIndex: number;
+  channel: FixtureChannel;
+}> {
+  const channels = manualFixtureChannels(fixture);
+  return channels
+    .map((channel, slotIndex) => ({ slotIndex, channel }))
+    .filter(({ channel }) => channel.resolution !== "fine");
+}
+
 export function addManualFixtureChannel(fixture: Fixture): FixtureChannel[] {
   return [...manualFixtureChannels(fixture), {}];
 }
@@ -178,12 +188,83 @@ export function updateManualFixtureChannelName(
   name: string,
 ): FixtureChannel[] {
   return manualFixtureChannels(fixture).map((channel, channelIndex) =>
-    channelIndex === index ? { name: name.trim() || undefined } : channel,
+    channelIndex === index ? { ...channel, name: name.trim() || undefined } : channel,
   );
+}
+
+export function setManualFixtureChannel16Bit(
+  fixture: Fixture,
+  slotIndex: number,
+  enabled: boolean,
+): FixtureChannel[] {
+  const channels = manualFixtureChannels(fixture).map((channel) => ({ ...channel }));
+
+  if (enabled) {
+    channels[slotIndex] = {
+      ...channels[slotIndex],
+      resolution: "16bit",
+    };
+    const next = channels[slotIndex + 1];
+    if (next?.resolution === "fine") {
+      return channels;
+    }
+    if (slotIndex + 1 < channels.length) {
+      channels.splice(slotIndex + 1, 0, { resolution: "fine" });
+    } else {
+      channels.push({ resolution: "fine" });
+    }
+    return repairFixtureChannelPairs(channels);
+  }
+
+  channels[slotIndex] = {
+    ...channels[slotIndex],
+    resolution: undefined,
+  };
+  if (channels[slotIndex + 1]?.resolution === "fine") {
+    channels.splice(slotIndex + 1, 1);
+  }
+  return channels;
 }
 
 export function removeManualFixtureChannel(fixture: Fixture, index: number): FixtureChannel[] {
   const channels = manualFixtureChannels(fixture);
   if (channels.length <= 1) return channels;
+
+  const channel = channels[index];
+  if (!channel) return channels;
+
+  if (channel.resolution === "16bit" && channels[index + 1]?.resolution === "fine") {
+    return channels.filter(
+      (_, channelIndex) => channelIndex !== index && channelIndex !== index + 1,
+    );
+  }
+
+  if (channel.resolution === "fine") {
+    return channels.filter((_, channelIndex) => channelIndex !== index);
+  }
+
   return channels.filter((_, channelIndex) => channelIndex !== index);
+}
+
+export function manualFixtureChannelCountAfterAdd(fixture: Fixture): number {
+  return manualFixtureChannels(fixture).length + 1;
+}
+
+export function manualFixtureChannelCountAfter16BitToggle(
+  fixture: Fixture,
+  slotIndex: number,
+  enabled: boolean,
+): number {
+  const channels = manualFixtureChannels(fixture);
+  if (enabled) {
+    if (channels[slotIndex + 1]?.resolution === "fine") return channels.length;
+    return channels.length + 1;
+  }
+  if (
+    channels[slotIndex]?.resolution === "16bit" &&
+    channels[slotIndex + 1]?.resolution === "fine"
+  ) {
+    return channels.length - 1;
+  }
+  return channels.length;
 }

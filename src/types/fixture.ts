@@ -1,9 +1,14 @@
+/** `fine` marks the LSB slot paired with the preceding `16bit` coarse channel. */
+export type FixtureChannelResolution = "16bit" | "fine";
+
 export interface FixtureChannel {
   name?: string;
+  resolution?: FixtureChannelResolution;
 }
 
 export interface FixtureOflChannel {
   key: string;
+  resolution?: FixtureChannelResolution;
 }
 
 export interface FixtureOflProfile {

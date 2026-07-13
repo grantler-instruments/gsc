@@ -134,7 +134,35 @@ function allProjectCues(): Cue[] {
   return useProjectStore.getState().cueLists.flatMap((list) => list.cues);
 }
 
-/** When a fade cue finishes, advance the sequence (if any) waiting on it. */
+function cuesForRunningSequence(scope: SequenceScope): Cue[] {
+  return scope === "overlay"
+    ? allProjectCues()
+    : (getActiveCueListFromState(useProjectStore.getState())?.cues ?? []);
+}
+
+/** Advance when all playback cues in the current step have stopped. */
+export function notifyStepPlaybackEnded(stoppedCueIds: string[]): void {
+  if (stoppedCueIds.length === 0) return;
+
+  const transport = useTransportStore.getState();
+  const running = transport.runningSequences;
+  if (Object.keys(running).length === 0) return;
+
+  for (const [rootId, seq] of Object.entries(running)) {
+    const cues = cuesForRunningSequence(seq.scope);
+    const playbackIds = playbackCueIdsInStep(seq.stepCueIds, cues);
+    const stoppedPlayback = stoppedCueIds.filter((id) => playbackIds.includes(id));
+    if (stoppedPlayback.length === 0) continue;
+
+    const stillActive = playbackIds.filter((id) => transport.activeCueIds.includes(id));
+    if (stillActive.length > 0) continue;
+
+    clearSequenceTimers(rootId);
+    advanceRunningSequence(rootId, cues);
+  }
+}
+
+/** When a fade cue finishes, advance if the sequence is waiting on it. */
 export function notifyFadeCueComplete(fadeCueId: string, cues: Cue[]): void {
   const running = useTransportStore.getState().runningSequences;
   const owner = Object.values(running).find((seq) => seq.stepCueIds.includes(fadeCueId));
@@ -157,9 +185,6 @@ export function handleSequenceFadeCueCompleted(fadeCueId: string): void {
   const running = useTransportStore.getState().runningSequences;
   const owner = Object.values(running).find((seq) => seq.stepCueIds.includes(fadeCueId));
   if (!owner) return;
-  const cues =
-    owner.scope === "overlay"
-      ? allProjectCues()
-      : (getActiveCueListFromState(useProjectStore.getState())?.cues ?? []);
+  const cues = cuesForRunningSequence(owner.scope);
   notifyFadeCueComplete(fadeCueId, cues);
 }

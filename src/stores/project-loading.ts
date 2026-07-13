@@ -2,28 +2,47 @@ import { create } from "zustand";
 
 export type AssetLoadStatus = "pending" | "loading" | "loaded" | "missing";
 
+export type RestoreStepStatus = "pending" | "active" | "done" | "error";
+
 export interface AssetLoadProgress {
   path: string;
   name: string;
   status: AssetLoadStatus;
 }
 
+export interface RestoreStep {
+  id: string;
+  label: string;
+  detail?: string;
+  status: RestoreStepStatus;
+}
+
 interface ProjectLoadingState {
   active: boolean;
   assetProgress: AssetLoadProgress[];
+  restoreSteps: RestoreStep[];
   setActive: (active: boolean) => void;
   initAssetProgress: (items: Array<{ path: string; name?: string }>) => void;
   setAssetStatus: (path: string, status: AssetLoadStatus) => void;
   clearAssetProgress: () => void;
+  startRestoreStep: (id: string, label: string, detail?: string) => void;
+  finishRestoreStep: (id: string, detail?: string) => void;
+  failRestoreStep: (id: string, detail?: string) => void;
+  clearRestoreSteps: () => void;
 }
 
 function displayName(path: string, name?: string): string {
   return name ?? path.split("/").pop() ?? path;
 }
 
+function markActiveStepsDone(steps: RestoreStep[]): RestoreStep[] {
+  return steps.map((step) => (step.status === "active" ? { ...step, status: "done" } : step));
+}
+
 export const useProjectLoadingStore = create<ProjectLoadingState>((set, get) => ({
   active: false,
   assetProgress: [],
+  restoreSteps: [],
   setActive: (active) => set({ active }),
   initAssetProgress: (items) => {
     const seen = new Set<string>();
@@ -50,6 +69,35 @@ export const useProjectLoadingStore = create<ProjectLoadingState>((set, get) => 
     });
   },
   clearAssetProgress: () => set({ assetProgress: [] }),
+  startRestoreStep: (id, label, detail) =>
+    set((state) => {
+      const steps = markActiveStepsDone(state.restoreSteps);
+      const existingIdx = steps.findIndex((step) => step.id === id);
+      const nextStep: RestoreStep = { id, label, detail, status: "active" };
+      if (existingIdx >= 0) {
+        const next = [...steps];
+        next[existingIdx] = { ...next[existingIdx], ...nextStep };
+        return { restoreSteps: next };
+      }
+      return { restoreSteps: [...steps, nextStep] };
+    }),
+  finishRestoreStep: (id, detail) =>
+    set((state) => ({
+      restoreSteps: state.restoreSteps.map((step) =>
+        step.id === id
+          ? { ...step, status: "done", ...(detail !== undefined ? { detail } : {}) }
+          : step,
+      ),
+    })),
+  failRestoreStep: (id, detail) =>
+    set((state) => ({
+      restoreSteps: state.restoreSteps.map((step) =>
+        step.id === id
+          ? { ...step, status: "error", ...(detail !== undefined ? { detail } : {}) }
+          : step,
+      ),
+    })),
+  clearRestoreSteps: () => set({ restoreSteps: [] }),
 }));
 
 export async function withProjectLoading<T>(fn: () => Promise<T>): Promise<T> {
@@ -59,5 +107,6 @@ export async function withProjectLoading<T>(fn: () => Promise<T>): Promise<T> {
   } finally {
     useProjectLoadingStore.getState().setActive(false);
     useProjectLoadingStore.getState().clearAssetProgress();
+    useProjectLoadingStore.getState().clearRestoreSteps();
   }
 }

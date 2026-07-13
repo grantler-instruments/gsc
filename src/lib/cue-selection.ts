@@ -6,6 +6,17 @@ export function getPrimarySelectedCueId(selectedCueIds: string[]): string | null
   return selectedCueIds[selectedCueIds.length - 1] ?? null;
 }
 
+export function initialCueListSelection(cues: Cue[]): {
+  selectedCueIds: string[];
+  selectionAnchorId: string | null;
+} {
+  const firstId = flattenVisibleCueIds(cues, new Set())[0];
+  if (!firstId) {
+    return { selectedCueIds: [], selectionAnchorId: null };
+  }
+  return { selectedCueIds: [firstId], selectionAnchorId: firstId };
+}
+
 /** Visible cue order in the list (respects collapsed containers). */
 export function flattenVisibleCueIds(cues: Cue[], collapsedGroupIds: Set<string>): string[] {
   const tree = buildCueTree(cues);

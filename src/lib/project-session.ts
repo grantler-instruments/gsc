@@ -23,9 +23,10 @@ import {
   initProjectIdb,
   type PersistedAssetEntry,
 } from "./project-idb";
-import { snapshotToCueLists } from "./project-snapshot";
+import { type SnapshotToCueListsOptions, snapshotToCueLists } from "./project-snapshot";
 import { randomId } from "./random-id";
 import { replaceWithFreshProject } from "./reset-project-runtime";
+import { finishRestoreStep, startRestoreStep } from "./restore-progress";
 import { requestPersistentStorage } from "./storage-persistence";
 import { sessionHasMeaningfulContent } from "./unsaved-project";
 
@@ -152,14 +153,17 @@ export async function persistProjectSessionAsync(): Promise<void> {
   }
 }
 
-async function restoreFromSession(session: ProjectSession): Promise<void> {
+async function restoreFromSession(
+  session: ProjectSession,
+  options?: SnapshotToCueListsOptions,
+): Promise<void> {
   if (session.snapshot.version !== 2) {
     setActiveProjectId(useProjectStore.getState().id);
     return;
   }
 
   vfsClear();
-  const loaded = snapshotToCueLists(session.snapshot);
+  const loaded = snapshotToCueLists(session.snapshot, options);
   const projectId = loaded.id || randomId();
   if (!loaded.id) {
     loaded.id = projectId;
@@ -169,7 +173,9 @@ async function restoreFromSession(session: ProjectSession): Promise<void> {
     useProjectStore.setState(loaded);
   });
 
+  startRestoreStep("hydrate-assets", "project.restoreStep.hydrateAssets");
   await hydrateAllProjectAssets(projectId, session.assets);
+  finishRestoreStep("hydrate-assets");
 }
 
 /** Restore the last autosaved project and hydrate assets from IndexedDB. */
@@ -187,23 +193,34 @@ export function restoreProjectSessionOnce(): Promise<void> {
 }
 
 async function restoreProjectSession(): Promise<void> {
+  startRestoreStep("open-idb", "project.restoreStep.openIdb");
   await initProjectIdb();
+  finishRestoreStep("open-idb");
 
   const activeProjectId = await idbGetActiveProjectId();
   if (activeProjectId) {
+    startRestoreStep(
+      "load-active-project",
+      "project.restoreStep.loadActiveProject",
+      activeProjectId,
+    );
     const record = await idbGetProject(activeProjectId);
     if (record) {
       if (sessionHasMeaningfulContent(record.snapshot, record.assets)) {
         await restoreFromSession({ snapshot: record.snapshot, assets: record.assets });
         await idbTouchProjectOpened(activeProjectId);
+        finishRestoreStep("load-active-project");
         return;
       }
       await removeStoredProjectFromIdb(activeProjectId);
       await updateActiveProjectMetaAfterRemoval(activeProjectId);
     }
+    finishRestoreStep("load-active-project", "empty or missing");
   }
 
+  startRestoreStep("scan-stored-projects", "project.restoreStep.scanStoredProjects");
   const remaining = await listStoredProjects();
+  finishRestoreStep("scan-stored-projects", `${remaining.length} found`);
   if (remaining.length > 0) {
     await openStoredProject(remaining[0].id);
     return;
@@ -211,15 +228,19 @@ async function restoreProjectSession(): Promise<void> {
 
   const legacy = readLegacySession();
   if (legacy && sessionHasMeaningfulContent(legacy.snapshot, legacy.assets)) {
+    startRestoreStep("load-legacy-session", "project.restoreStep.loadLegacySession");
     await restoreFromSession(legacy);
     const projectId = legacy.snapshot.id;
     if (projectId) {
       await idbTouchProjectOpened(projectId);
     }
+    finishRestoreStep("load-legacy-session");
     return;
   }
 
+  startRestoreStep("init-project", "project.restoreStep.initProject");
   setActiveProjectId(useProjectStore.getState().id);
+  finishRestoreStep("init-project");
 }
 
 export async function listStoredProjects(): Promise<IdbProjectSummary[]> {
@@ -250,7 +271,10 @@ export async function openStoredProject(projectId: string): Promise<boolean> {
     await updateActiveProjectMetaAfterRemoval(projectId);
     return false;
   }
-  await restoreFromSession({ snapshot: record.snapshot, assets: record.assets });
+  await restoreFromSession(
+    { snapshot: record.snapshot, assets: record.assets },
+    { initialOpen: true },
+  );
   await idbTouchProjectOpened(projectId);
   await idbSetActiveProjectId(projectId);
   return true;

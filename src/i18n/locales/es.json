@@ -67,6 +67,10 @@
     "namePlaceholder": "Show sin título",
     "nameAriaLabel": "Nombre del show",
     "draftHint": " · Borrador (guardar para elegir ubicación)",
+    "draftBanner": {
+      "message": "Este espectáculo aún no está guardado en una carpeta de su ordenador. Guárdelo antes de cerrar la aplicación.",
+      "saveAs": "Guardar como…"
+    },
     "savingToHint": " · Guardando en {{folder}}",
     "restoringProject": "Restaurando proyecto…",
     "loadingAssets": "Cargando recursos…",
@@ -85,7 +89,12 @@
       "editAriaLabel": "Editar detalles del show",
       "location": "Ubicación",
       "locationDraft": "Borrador (guardar para elegir ubicación)",
-      "locationWeb": "Sesión del navegador (exportar para guardar en disco)"
+      "locationWeb": "Sesión del navegador (exportar para guardar en disco)",
+      "saveProjectPrompt": {
+        "title": "¿Guardar espectáculo en disco?",
+        "body": "«{{projectName}}» aún no está guardado en una carpeta. Es un buen momento para elegir dónde guardarlo.",
+        "later": "Ahora no"
+      }
     }
   },
   "fileMenu": {
@@ -103,6 +112,7 @@
     "deleteStoredProject": "Eliminar {{projectName}}",
     "openWebEmpty": "Aún no hay proyectos guardados en este navegador. Importe un archivo {{extension}} para empezar.",
     "save": "Guardar",
+    "saveAs": "Guardar como…",
     "saveChooseLocation": "Elegir ubicación…",
     "export": "Exportar…",
     "exportHint": "Descargar {{extension}} con todos los assets",
@@ -302,8 +312,14 @@
     "unsavedDraft": "Borrador sin guardar",
     "restoreDraftHint": "Restaurar el trabajo de su última sesión",
     "recentProjects": "Proyectos recientes",
+    "removeRecentProject": "Quitar {{projectName}} de proyectos recientes",
     "description": "Elija un proyecto reciente, examine un archivo o inicie un show nuevo.",
     "newShow": "Show nuevo"
+  },
+  "discardDraft": {
+    "title": "¿Descartar borrador sin guardar?",
+    "body": "Al abrir otro proyecto se eliminará permanentemente el borrador sin guardar «{{projectName}}». Guárdelo con Guardar como… primero si desea conservarlo.",
+    "confirm": "Descartar borrador"
   },
   "unsaved": {
     "title": "¿Guardar cambios?",
@@ -734,6 +750,7 @@
     "dialogExportProject": "Exportar proyecto",
     "dialogSaveProjectAs": "Guardar proyecto como",
     "pathExistsError": "\"{{path}}\" ya existe y no está vacío. Elija otro nombre o ubicación.",
+    "nestedProjectError": "Los proyectos no se pueden guardar dentro de otra carpeta de proyecto. Elija una ubicación fuera de \"{{path}}\".",
     "selectGscFolder": "Seleccione una carpeta de proyecto .gsc (p. ej. MyShow.gsc).",
     "noProjectJson": "No hay project.json en la carpeta seleccionada",
     "unsupportedVersion": "Versión de proyecto no compatible"

@@ -18,6 +18,9 @@ import { dropAudioOnCueList, fixturePath } from "./helpers/drop-audio";
 
 const SHORT_A = "white-noise-short-a.wav";
 const SHORT_B = "white-noise-short-b.wav";
+/** Short clip length from generate-audio-fixtures.mjs. */
+const SHORT_CLIP_SEC = 0.5;
+const STEP_ADVANCE_TIMEOUT_MS = 15_000 + SHORT_CLIP_SEC * 1000;
 
 test.describe.configure({ mode: "serial" });
 
@@ -55,21 +58,11 @@ test("sequence auto-advances through two audio steps @smoke @structure", async (
   await expect(activeCueRow(page, SHORT_A)).toBeVisible({ timeout: 10_000 });
   await expect(containerCueRow(page, "Sequence").getByText("Playing step 1 of 2")).toBeVisible();
 
-  await expect(activeCueRow(page, SHORT_A)).toBeHidden({ timeout: 15_000 });
-  await expect
-    .poll(
-      async () => {
-        const step2Visible = await containerCueRow(page, "Sequence")
-          .getByText("Playing step 2 of 2")
-          .isVisible();
-        const shortBVisible = await activeCueRow(page, SHORT_B).isVisible();
-        return step2Visible && shortBVisible;
-      },
-      { timeout: 15_000, intervals: [50, 100, 200] },
-    )
-    .toBe(true);
+  await expect(activeCueRow(page, SHORT_A)).toBeHidden({ timeout: STEP_ADVANCE_TIMEOUT_MS });
+  await expect(activeCueRow(page, SHORT_B)).toBeVisible({ timeout: STEP_ADVANCE_TIMEOUT_MS });
+  await expect(containerCueRow(page, "Sequence").getByText("Playing step 2 of 2")).toBeVisible();
 
-  await expect(activeCueRow(page, SHORT_B)).toBeHidden({ timeout: 15_000 });
+  await expect(activeCueRow(page, SHORT_B)).toBeHidden({ timeout: STEP_ADVANCE_TIMEOUT_MS });
   await expect(activeCuesEmptyMessage(page)).toBeVisible({ timeout: 10_000 });
 });
 

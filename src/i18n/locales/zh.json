@@ -67,6 +67,10 @@
     "namePlaceholder": "未命名演出",
     "nameAriaLabel": "演出名称",
     "draftHint": " · 草稿（保存以选择位置）",
+    "draftBanner": {
+      "message": "此演出尚未保存到电脑上的文件夹。关闭应用前请先保存。",
+      "saveAs": "另存为…"
+    },
     "savingToHint": " · 保存至 {{folder}}",
     "restoringProject": "正在恢复项目…",
     "loadingAssets": "正在加载资源…",
@@ -85,7 +89,12 @@
       "editAriaLabel": "编辑演出详情",
       "location": "位置",
       "locationDraft": "草稿（保存以选择位置）",
-      "locationWeb": "浏览器会话（导出以保存到磁盘）"
+      "locationWeb": "浏览器会话（导出以保存到磁盘）",
+      "saveProjectPrompt": {
+        "title": "保存演出到磁盘？",
+        "body": "「{{projectName}}」尚未保存到文件夹。现在是选择保存位置的好时机。",
+        "later": "稍后"
+      }
     }
   },
   "fileMenu": {
@@ -103,6 +112,7 @@
     "deleteStoredProject": "删除 {{projectName}}",
     "openWebEmpty": "此浏览器中尚无已保存的项目。导入 {{extension}} 文件以开始。",
     "save": "保存",
+    "saveAs": "另存为…",
     "saveChooseLocation": "选择位置…",
     "export": "导出…",
     "exportHint": "下载包含所有资源的 {{extension}}",
@@ -302,8 +312,14 @@
     "unsavedDraft": "未保存草稿",
     "restoreDraftHint": "恢复上次会话的工作",
     "recentProjects": "最近项目",
+    "removeRecentProject": "从最近项目中移除 {{projectName}}",
     "description": "选择最近项目、浏览文件或开始新演出。",
     "newShow": "新演出"
+  },
+  "discardDraft": {
+    "title": "丢弃未保存的草稿？",
+    "body": "打开其他项目将永久删除未保存的草稿「{{projectName}}」。如需保留，请先使用「另存为…」保存。",
+    "confirm": "丢弃草稿"
   },
   "unsaved": {
     "title": "保存更改？",
@@ -714,6 +730,7 @@
     "dialogExportProject": "导出项目",
     "dialogSaveProjectAs": "项目另存为",
     "pathExistsError": "「{{path}}」已存在且非空。请选择其他名称或位置。",
+    "nestedProjectError": "无法在其他项目文件夹内保存项目。请选择「{{path}}」之外的位置。",
     "selectGscFolder": "选择 .gsc 项目文件夹（例如 MyShow.gsc）。",
     "noProjectJson": "所选文件夹中无 project.json",
     "unsupportedVersion": "不支持的项目版本"
