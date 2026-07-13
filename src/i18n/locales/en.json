@@ -600,6 +600,8 @@
     "optionalName": "Optional name",
     "removeChannel": "Remove channel",
     "addChannel": "+ Channel",
+    "channelAddress": "Addr",
+    "channelName": "Name",
     "channel16Bit": "16-bit",
     "unnamedChannel": "Channel",
     "singleChannelDimmer": " · single-channel dimmer",
