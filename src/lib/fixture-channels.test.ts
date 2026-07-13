@@ -109,7 +109,10 @@ describe("fixture-channels", () => {
       resolution: "16bit",
     });
 
-    sampleDmxFadePlan(plan!, 1);
+    expect(plan).not.toBeNull();
+    if (!plan) throw new Error("Expected fade plan");
+
+    sampleDmxFadePlan(plan, 1);
     expect(getDmxChannelLevel(1, 2)).toBe(156);
     expect(getDmxChannelLevel(1, 3)).toBe(64);
   });

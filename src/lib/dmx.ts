@@ -4,7 +4,6 @@ import type { DmxCueData, DmxCueMode, DmxFixtureValues } from "../types/cue";
 import type { Fixture } from "../types/fixture";
 import {
   clampDmx16BitValue,
-  getDmxFixtureLogicalChannelValue,
   getFixtureChannelMeta,
   is16BitCoarseSlot,
   isFineChannelSlot,
