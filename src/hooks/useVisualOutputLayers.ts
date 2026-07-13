@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { buildOutputState } from "../lib/output-state";
 import { resolveEffectiveOpacity, useFadeStore } from "../stores/fade";
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import { useProjectStore } from "../stores/project";
 import { useTransportStore } from "../stores/transport";
 import type { OutputLayer } from "../types/output";
 
@@ -13,7 +13,15 @@ function clamp01(value: number): number {
 export function useVisualOutputLayers(): OutputLayer[] {
   const activeCueIds = useTransportStore((s) => s.activeCueIds);
   const cueStartedAtMs = useTransportStore((s) => s.cueStartedAtMs);
-  const cues = useProjectStore((s) => getActiveCueListFromState(s).cues);
+  const cueLists = useProjectStore((s) => s.cueLists);
+  const cues = useMemo(
+    () =>
+      cueLists.reduce(
+        (all, list) => all.concat(list.cues),
+        [] as (typeof cueLists)[number]["cues"],
+      ),
+    [cueLists],
+  );
   const frameMs = useFadeStore((s) => s.frameMs);
   const [baseLayers, setBaseLayers] = useState<OutputLayer[]>([]);
 
@@ -28,7 +36,7 @@ export function useVisualOutputLayers(): OutputLayer[] {
     return () => {
       cancelled = true;
     };
-  }, [activeCueIds, cues, cueStartedAtMs]);
+  }, [activeCueIds, cueLists, cueStartedAtMs]);
 
   return useMemo(() => {
     if (frameMs === 0) return baseLayers;

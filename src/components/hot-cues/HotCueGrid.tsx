@@ -152,6 +152,9 @@ export function HotCueGrid({ listId }: { listId?: string }) {
 
       if (!isAssetDrag(e.dataTransfer) && !isExternalFileDrag(e.dataTransfer)) return;
       focusList();
+      // If an asset was dropped onto a specific hot cue, select it so the
+      // inspector (incl. preview) reflects the updated cue immediately.
+      selectCue(cueId);
       void (async () => {
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
@@ -161,7 +164,7 @@ export function HotCueGrid({ listId }: { listId?: string }) {
         }
       })();
     },
-    [canEdit, focusList, list.id, moveCueToList, reorderCueRelative],
+    [canEdit, focusList, list.id, moveCueToList, reorderCueRelative, selectCue],
   );
 
   const onDragOver = useCallback(
