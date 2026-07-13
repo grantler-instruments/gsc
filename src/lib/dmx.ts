@@ -2,6 +2,14 @@ import { t } from "../i18n/t";
 import { bumpDmxOutputRevision } from "../stores/dmx-output";
 import type { DmxCueData, DmxCueMode, DmxFixtureValues } from "../types/cue";
 import type { Fixture } from "../types/fixture";
+import {
+  clampDmx16BitValue,
+  getDmxFixtureLogicalChannelValue,
+  getFixtureChannelMeta,
+  is16BitCoarseSlot,
+  isFineChannelSlot,
+  split16BitValue,
+} from "./fixture-channels";
 import { fixtureChannelAddress } from "./fixtures";
 
 export { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "./dmx-defaults";
@@ -138,12 +146,37 @@ export function formatDmxCue(data: DmxCueData, fixtures: Fixture[]): string {
 }
 
 export function fixtureChannelLabel(fixture: Fixture, channelIndex: number): string | undefined {
-  const manualName = fixture.channels?.[channelIndex]?.name;
-  if (manualName) return manualName;
-  const oflKey = fixture.ofl?.channels[channelIndex]?.key;
-  if (oflKey) return oflKey;
+  if (isFineChannelSlot(fixture, channelIndex)) return undefined;
+  const meta = getFixtureChannelMeta(fixture, channelIndex);
+  if (meta.name) return meta.name;
   return undefined;
 }
+
+export function updateDmxFixtureLogicalChannelValue(
+  data: DmxCueData,
+  fixtureId: string,
+  slotIndex: number,
+  value: number,
+  fixture: Fixture,
+): DmxCueData {
+  if (is16BitCoarseSlot(fixture, slotIndex)) {
+    const { coarse, fine } = split16BitValue(clampDmx16BitValue(value));
+    return {
+      ...data,
+      fixtures: data.fixtures.map((entry) => {
+        if (entry.fixtureId !== fixtureId) return entry;
+        const values = [...entry.values];
+        values[slotIndex] = coarse;
+        values[slotIndex + 1] = fine;
+        return { ...entry, values };
+      }),
+    };
+  }
+
+  return updateDmxFixtureChannelValue(data, fixtureId, slotIndex, value);
+}
+
+export { getDmxFixtureLogicalChannelValue } from "./fixture-channels";
 
 function getUniverseBuffer(universe: number): Uint8Array {
   let buffer = universeBuffers.get(universe);

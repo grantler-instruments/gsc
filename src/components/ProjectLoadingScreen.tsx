@@ -8,8 +8,58 @@ import { useTranslation } from "react-i18next";
 import {
   type AssetLoadProgress,
   type AssetLoadStatus,
+  type RestoreStep,
+  type RestoreStepStatus,
   useProjectLoadingStore,
 } from "../stores/project-loading";
+
+function StepStatusIcon({ status }: { status: RestoreStepStatus }) {
+  switch (status) {
+    case "done":
+      return <CheckCircleOutlineOutlinedIcon sx={{ fontSize: 16, color: "success.main" }} />;
+    case "error":
+      return <ErrorOutlineOutlinedIcon sx={{ fontSize: 16, color: "error.main" }} />;
+    case "active":
+      return <CircularProgress size={14} thickness={5} />;
+    default:
+      return <RadioButtonUncheckedOutlinedIcon sx={{ fontSize: 16, color: "text.disabled" }} />;
+  }
+}
+
+function RestoreStepRow({ step }: { step: RestoreStep }) {
+  return (
+    <Box
+      component="li"
+      sx={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 1,
+        py: 0.5,
+        px: 1,
+        opacity: step.status === "pending" ? 0.7 : 1,
+      }}
+    >
+      <Box sx={{ flexShrink: 0, width: 18, display: "flex", justifyContent: "center", mt: 0.25 }}>
+        <StepStatusIcon status={step.status} />
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography component="span" sx={{ display: "block", fontSize: 13 }}>
+          {step.label}
+        </Typography>
+        {step.detail && (
+          <Typography
+            component="span"
+            noWrap
+            title={step.detail}
+            sx={{ display: "block", fontSize: 11, color: "text.secondary" }}
+          >
+            {step.detail}
+          </Typography>
+        )}
+      </Box>
+    </Box>
+  );
+}
 
 function AssetStatusIcon({ status }: { status: AssetLoadStatus }) {
   switch (status) {
@@ -68,9 +118,11 @@ function AssetProgressRow({ entry }: { entry: AssetLoadProgress }) {
 export function ProjectLoadingScreen({ restoring }: { restoring: boolean }) {
   const { t } = useTranslation();
   const assetProgress = useProjectLoadingStore((s) => s.assetProgress);
+  const restoreSteps = useProjectLoadingStore((s) => s.restoreSteps);
   const message = restoring ? t("project.restoringProject") : t("project.loadingAssets");
   const loadedCount = assetProgress.filter((entry) => entry.status === "loaded").length;
   const hasAssets = assetProgress.length > 0;
+  const hasSteps = restoreSteps.length > 0;
 
   return (
     <Box
@@ -85,12 +137,43 @@ export function ProjectLoadingScreen({ restoring }: { restoring: boolean }) {
         bgcolor: "background.default",
         zIndex: (theme) => theme.zIndex.modal + 1,
         px: 2,
+        overflowY: "auto",
+        py: 3,
       }}
     >
       <CircularProgress size={36} />
       <Typography variant="body2" color="text.secondary">
         {message}
       </Typography>
+      {hasSteps && (
+        <Box sx={{ width: "min(100%, 36rem)" }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: "block", mb: 0.5, px: 1 }}
+          >
+            {t("project.restoreSteps")}
+          </Typography>
+          <Box
+            component="ul"
+            sx={{
+              listStyle: "none",
+              m: 0,
+              p: 0,
+              maxHeight: "min(30vh, 14rem)",
+              overflowY: "auto",
+              border: 1,
+              borderColor: "divider",
+              borderRadius: 1,
+              bgcolor: "background.paper",
+            }}
+          >
+            {restoreSteps.map((step) => (
+              <RestoreStepRow key={step.id} step={step} />
+            ))}
+          </Box>
+        </Box>
+      )}
       {hasAssets && (
         <Typography variant="caption" color="text.secondary">
           {t("project.assetLoadProgress", {

@@ -9,6 +9,12 @@ import {
   normalizeDmxCueData,
   setDmxChannelLevel,
 } from "./dmx";
+import {
+  clampDmx16BitValue,
+  combine16BitValue,
+  iterateFixtureLogicalChannels,
+  split16BitValue,
+} from "./fixture-channels";
 import { fixtureChannelAddress } from "./fixtures";
 
 export interface DmxFadeChannel {
@@ -17,6 +23,8 @@ export interface DmxFadeChannel {
   index: number;
   from: number;
   to: number;
+  /** When set, `from`/`to` are combined 16-bit values written to index and index+1. */
+  resolution?: "16bit";
 }
 
 export interface DmxFadePlan {
@@ -60,14 +68,31 @@ export function buildDmxFadePlan(data: DmxCueData, fixtures: Fixture[]): DmxFade
     const values = targets.get(fixture.id);
     if (!values) continue;
 
-    for (let channelIndex = 0; channelIndex < values.length; channelIndex += 1) {
-      const address = fixtureChannelAddress(fixture, channelIndex);
+    for (const logical of iterateFixtureLogicalChannels(fixture)) {
+      const address = fixtureChannelAddress(fixture, logical.slotIndex);
       if (address < 1 || address > 512) continue;
+
+      if (logical.is16Bit) {
+        const fineAddress = address + 1;
+        if (fineAddress > 512) continue;
+        channels.push({
+          universe: fixture.universe,
+          index: address - 1,
+          from: combine16BitValue(
+            getDmxChannelLevel(fixture.universe, address),
+            getDmxChannelLevel(fixture.universe, fineAddress),
+          ),
+          to: combine16BitValue(values[logical.slotIndex] ?? 0, values[logical.slotIndex + 1] ?? 0),
+          resolution: "16bit",
+        });
+        continue;
+      }
+
       channels.push({
         universe: fixture.universe,
         index: address - 1,
         from: getDmxChannelLevel(fixture.universe, address),
-        to: clampDmxValue(values[channelIndex]),
+        to: clampDmxValue(values[logical.slotIndex] ?? 0),
       });
     }
   }
@@ -80,11 +105,15 @@ export function sampleDmxFadePlan(plan: DmxFadePlan, t: number): DmxUniverseFram
   const universes = new Set<number>();
 
   for (const channel of plan.channels) {
-    setDmxChannelLevel(
-      channel.universe,
-      channel.index + 1,
-      channel.from + (channel.to - channel.from) * clampedT,
-    );
+    const blended = channel.from + (channel.to - channel.from) * clampedT;
+
+    if (channel.resolution === "16bit") {
+      const { coarse, fine } = split16BitValue(clampDmx16BitValue(blended));
+      setDmxChannelLevel(channel.universe, channel.index + 1, coarse);
+      setDmxChannelLevel(channel.universe, channel.index + 2, fine);
+    } else {
+      setDmxChannelLevel(channel.universe, channel.index + 1, blended);
+    }
     universes.add(channel.universe);
   }
 

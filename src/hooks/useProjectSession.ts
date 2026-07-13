@@ -3,6 +3,7 @@ import { t } from "../i18n/t";
 import { notifyWarning } from "../lib/notifications";
 import { projectPersistStateChanged, vfsPersistStateChanged } from "../lib/project-persist";
 import { persistProjectSession, persistProjectSessionAsync } from "../lib/project-session";
+import { clearRestoreSteps, startRestoreStep, withRestoreStep } from "../lib/restore-progress";
 import { getPlatform } from "../platform";
 import { persistPlatformProject, restorePlatformProject } from "../platform/project-storage";
 import { useProjectStore } from "../stores/project";
@@ -52,19 +53,29 @@ export function useProjectSession(): boolean {
     window.addEventListener("pagehide", onPageHide);
 
     void (async () => {
+      clearRestoreSteps();
+      startRestoreStep("session", "project.restoreStep.session");
       try {
         if (getPlatform() === "tauri") {
           const { applyTauriStartupChoice, prepareTauriStartupRestore } = await import(
             "../platform/project-storage.tauri"
           );
-          const choice = await prepareTauriStartupRestore();
+          const choice = await withRestoreStep(
+            "tauri-startup",
+            "project.restoreStep.tauriStartup",
+            () => prepareTauriStartupRestore(),
+          );
           if (cancelled) return;
           setReady(true);
           if (choice) {
-            await applyTauriStartupChoice(choice);
+            await withRestoreStep("apply-choice", "project.restoreStep.applyChoice", () =>
+              applyTauriStartupChoice(choice),
+            );
           }
         } else {
-          await restorePlatformProject();
+          await withRestoreStep("web-restore", "project.restoreStep.webRestore", () =>
+            restorePlatformProject(),
+          );
           if (cancelled) return;
           setReady(true);
         }
@@ -74,6 +85,7 @@ export function useProjectSession(): boolean {
         if (!cancelled) setReady(true);
       }
       if (cancelled) return;
+      useProjectLoadingStore.getState().finishRestoreStep("session");
       unsubs.push(
         useProjectStore.subscribe((state, prev) => {
           if (projectPersistStateChanged(prev, state)) {

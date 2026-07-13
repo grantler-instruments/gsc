@@ -4,9 +4,11 @@ import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { iterateFixtureLogicalChannels } from "../../lib/fixture-channels";
 import {
   addManualFixtureChannel,
   clampStartAddress,
@@ -16,8 +18,11 @@ import {
   fixtureFitsInUniverse,
   formatFixturePatch,
   getFixtureConflicts,
-  manualFixtureChannels,
+  manualFixtureChannelCountAfter16BitToggle,
+  manualFixtureChannelCountAfterAdd,
+  manualFixtureLogicalChannels,
   removeManualFixtureChannel,
+  setManualFixtureChannel16Bit,
   updateManualFixtureChannelName,
 } from "../../lib/fixtures";
 import { loadFixtureOflProfileForMode, loadOflSummaryFromPath } from "../../lib/ofl/load-ofl";
@@ -73,11 +78,15 @@ export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: Fixture
 
   const handleClearOfl = () => {
     if (readOnly) return;
-    const channels = fixture.ofl?.channels.map((channel) => ({ name: channel.key })) ?? [{}];
+    const channels = fixture.ofl?.channels.map((channel) => ({
+      name: channel.key,
+      resolution: channel.resolution,
+    })) ?? [{}];
     onUpdate({ ofl: undefined, channels });
   };
 
-  const manualChannels = manualFixtureChannels(fixture);
+  const manualChannels = manualFixtureLogicalChannels(fixture);
+  const oflLogicalChannels = fixture.ofl ? iterateFixtureLogicalChannels(fixture) : [];
 
   return (
     <Box
@@ -142,7 +151,12 @@ export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: Fixture
             </Select>
           </Box>
           <Typography variant="caption" sx={{ m: 0, color: "text.secondary" }}>
-            {fixture.ofl.channels.map((channel) => channel.key).join(", ")}
+            {oflLogicalChannels
+              .map((logical) => {
+                const label = logical.name ?? t("fixtures.unnamedChannel");
+                return logical.is16Bit ? `${label} (${t("fixtures.channel16Bit")})` : label;
+              })
+              .join(", ")}
           </Typography>
           {!readOnly && (
             <Button
@@ -180,9 +194,9 @@ export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: Fixture
           <Typography component="span" sx={inspectorFieldLabelSx}>
             {t("fixtures.channels")}
           </Typography>
-          {manualChannels.map((channel, index) => (
+          {manualChannels.map(({ slotIndex, channel }) => (
             <Stack
-              key={`${fixture.id}-channel-${fixtureChannelAddress(fixture, index)}`}
+              key={`${fixture.id}-channel-${fixtureChannelAddress(fixture, slotIndex)}`}
               direction="row"
               sx={{ gap: 0.75, alignItems: "center" }}
             >
@@ -195,7 +209,9 @@ export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: Fixture
                   fontVariantNumeric: "tabular-nums",
                 }}
               >
-                {fixtureChannelAddress(fixture, index)}
+                {channel.resolution === "16bit"
+                  ? `${fixtureChannelAddress(fixture, slotIndex)}–${fixtureChannelAddress(fixture, slotIndex + 1)}`
+                  : fixtureChannelAddress(fixture, slotIndex)}
               </Typography>
               <Box component="label" sx={{ ...inspectorFieldSx, flex: 1, mb: 0 }}>
                 <input
@@ -207,20 +223,50 @@ export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: Fixture
                     onUpdate({
                       channels: updateManualFixtureChannelName(
                         fixture,
-                        index,
+                        slotIndex,
                         event.currentTarget.value,
                       ),
                     })
                   }
                 />
               </Box>
+              {!readOnly && (
+                <Stack direction="row" sx={{ alignItems: "center", gap: 0.25, flexShrink: 0 }}>
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontSize: 11 }}>
+                    {t("fixtures.channel16Bit")}
+                  </Typography>
+                  <Switch
+                    size="small"
+                    checked={channel.resolution === "16bit"}
+                    disabled={
+                      !fixtureFitsInUniverse({
+                        ...fixture,
+                        channelCount: manualFixtureChannelCountAfter16BitToggle(
+                          fixture,
+                          slotIndex,
+                          channel.resolution !== "16bit",
+                        ),
+                      }) && channel.resolution !== "16bit"
+                    }
+                    onChange={(event) =>
+                      onUpdate({
+                        channels: setManualFixtureChannel16Bit(
+                          fixture,
+                          slotIndex,
+                          event.target.checked,
+                        ),
+                      })
+                    }
+                  />
+                </Stack>
+              )}
               {!readOnly && manualChannels.length > 1 && (
                 <IconButton
                   size="small"
                   title={t("fixtures.removeChannel")}
                   onClick={() =>
                     onUpdate({
-                      channels: removeManualFixtureChannel(fixture, index),
+                      channels: removeManualFixtureChannel(fixture, slotIndex),
                     })
                   }
                 >
@@ -236,7 +282,7 @@ export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: Fixture
               disabled={
                 !fixtureFitsInUniverse({
                   ...fixture,
-                  channelCount: manualChannels.length + 1,
+                  channelCount: manualFixtureChannelCountAfterAdd(fixture),
                 })
               }
               onClick={() => onUpdate({ channels: addManualFixtureChannel(fixture) })}
@@ -251,11 +297,11 @@ export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: Fixture
       <Typography variant="caption" sx={{ m: 0, color: "text.secondary" }}>
         {formatFixturePatch(fixture)}
         {hasOfl
-          ? ` · ${fixture.ofl?.channels.length ?? 0} mapped channels`
+          ? ` · ${oflLogicalChannels.length} mapped channels`
           : manualChannels.length > 1
             ? ` · channels ${fixture.startAddress}–${fixtureEndAddress(fixture)}`
-            : manualChannels[0]?.name
-              ? ` · ${manualChannels[0].name}`
+            : manualChannels[0]?.channel.name
+              ? ` · ${manualChannels[0].channel.name}`
               : t("fixtures.singleChannelDimmer")}
       </Typography>
 
