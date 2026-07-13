@@ -5,6 +5,7 @@ import { resetTestProject, testCue } from "../test/fixtures/cues";
 import { expandSequenceSteps } from "./cues";
 import {
   advanceRunningSequence,
+  cancelSequence,
   notifyFadeCueComplete,
   notifyStepPlaybackEnded,
   runSequence,
@@ -72,6 +73,24 @@ describe("runSequence", () => {
     expect(running.hot).toMatchObject({ rootId: "hot", scope: "overlay" });
   });
 
+  it("runs two overlay sequences concurrently", () => {
+    const hotA = [
+      testCue("hot-a", "Hot A", "sequence"),
+      testCue("ha1", "HA1", "audio", { parentId: "hot-a" }),
+    ];
+    const hotB = [
+      testCue("hot-b", "Hot B", "sequence"),
+      testCue("hb1", "HB1", "audio", { parentId: "hot-b" }),
+    ];
+
+    runSequence(hotA[0], hotA, { scope: "overlay" });
+    runSequence(hotB[0], hotB, { scope: "overlay" });
+
+    const running = useTransportStore.getState().runningSequences;
+    expect(running["hot-a"]).toMatchObject({ rootId: "hot-a", scope: "overlay" });
+    expect(running["hot-b"]).toMatchObject({ rootId: "hot-b", scope: "overlay" });
+  });
+
   it("main GO cancels another main sequence but leaves overlay sequences", () => {
     const seqA = [testCue("a", "A", "sequence"), testCue("a1", "A1", "audio", { parentId: "a" })];
     const seqB = [testCue("b", "B", "sequence"), testCue("b1", "B1", "audio", { parentId: "b" })];
@@ -85,6 +104,27 @@ describe("runSequence", () => {
     expect(running.a).toBeUndefined();
     expect(running.b).toMatchObject({ rootId: "b", scope: "main" });
     expect(running.h).toMatchObject({ rootId: "h", scope: "overlay" });
+  });
+
+  it("cancelSequence stops an overlay sequence without affecting main playback", () => {
+    const mainCues = [testCue("a", "A", "audio")];
+    const hotCues = [
+      testCue("hseq", "Hot Seq", "sequence"),
+      testCue("h1", "H1", "audio", { parentId: "hseq" }),
+      testCue("h2", "H2", "audio", { parentId: "hseq" }),
+    ];
+
+    useTransportStore.getState().go("a");
+    runSequence(hotCues[0], hotCues, { scope: "overlay" });
+
+    expect(useTransportStore.getState().activeCueIds).toEqual(["a", "h1"]);
+    expect(useTransportStore.getState().runningSequences.hseq).toBeDefined();
+
+    cancelSequence("hseq");
+
+    expect(useTransportStore.getState().runningSequences.hseq).toBeUndefined();
+    expect(useTransportStore.getState().activeCueIds).toEqual(["a", "h1"]);
+    expect(useTransportStore.getState().isPlaying).toBe(true);
   });
 });
 
@@ -214,6 +254,35 @@ describe("notifyStepPlaybackEnded", () => {
     notifyStepPlaybackEnded(["a"]);
 
     expect(useTransportStore.getState().runningSequences.par?.currentStep).toBe(0);
+  });
+
+  it("completing an overlay sequence leaves main playback active", () => {
+    const cues = [
+      testCue("a", "A", "audio", { assetPath: "a.wav" }),
+      testCue("hseq", "Hot Seq", "sequence"),
+      testCue("h1", "H1", "audio", { parentId: "hseq", assetPath: "h1.wav" }),
+    ];
+    resetTestProject(cues);
+    useTransportStore.setState({
+      activeCueIds: ["a"],
+      isPlaying: true,
+      activeCueId: "a",
+      runningSequences: {
+        hseq: {
+          rootId: "hseq",
+          currentStep: 0,
+          stepCount: 1,
+          stepCueIds: ["h1"],
+          stepStartedAtMs: 0,
+          scope: "overlay",
+        },
+      },
+    });
+
+    notifyStepPlaybackEnded(["h1"]);
+
+    expect(useTransportStore.getState().runningSequences.hseq).toBeUndefined();
+    expect(useTransportStore.getState().activeCueIds).toContain("a");
   });
 });
 

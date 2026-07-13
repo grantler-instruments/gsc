@@ -5,7 +5,8 @@ export async function openActiveCuesTab(page: Page): Promise<void> {
 }
 
 export function activeCuesPanel(page: Page) {
-  return page.locator("aside").first().getByRole("tabpanel");
+  const aside = page.locator("aside").first();
+  return aside.getByRole("tabpanel").or(aside.getByRole("region", { name: "Active cues" }));
 }
 
 export function activeCueRow(page: Page, cueName: string) {
