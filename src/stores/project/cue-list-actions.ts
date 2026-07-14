@@ -127,9 +127,11 @@ export function createCueListActions(
       if (index === -1) return;
       const source = cueLists[index];
       const newList = createCueListFrom(uniqueCueListName(source.name, cueLists), source.cues);
+      const isHot = (source.kind ?? "sequence") === "hot";
       set({
         cueLists: [...cueLists.slice(0, index + 1), newList, ...cueLists.slice(index + 1)],
         activeCueListId: newList.id,
+        ...(isHot ? { activeHotCueListId: newList.id } : { mainSequenceListId: newList.id }),
       });
     },
 

@@ -50,5 +50,6 @@ test("reload restores autosaved project state from the browser session", async (
   await expect(
     tablist.getByRole("tab", { name: new RegExp(`^${RECOVERED_LIST_NAME}`) }),
   ).toBeVisible();
+  await tablist.getByRole("tab", { name: new RegExp(`^${RECOVERED_LIST_NAME}`) }).click();
   await expectCueInSequenceList(page, RECOVERED_AUDIO);
 });

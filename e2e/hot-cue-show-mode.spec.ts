@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { activeCueRow, transportGoButton } from "./helpers/active-cues";
 import { gotoApp } from "./helpers/app";
 import { toggleShowMode } from "./helpers/cue-editing";
-import { expectCueInSequenceList, sequenceCueRow } from "./helpers/cue-list-panel";
+import { expectCueInSequenceList, selectSequenceCueRow } from "./helpers/cue-list-panel";
 import { dropAudioOnCueList, dropAudioOnHotCuePanel, fixturePath } from "./helpers/drop-audio";
 import { hotCuePanel } from "./helpers/hot-cues";
 import { waitForAppReady, waitForAutosavedCue } from "./helpers/project-session";
@@ -20,7 +20,7 @@ test("show mode hides hot-cue editing but still allows firing", async ({ page })
 
   await dropAudioOnCueList(page, fixturePath(MAIN_AUDIO), MAIN_AUDIO, "audio/wav");
   await expectCueInSequenceList(page, MAIN_AUDIO);
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await selectSequenceCueRow(page, MAIN_AUDIO);
 
   await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO), HOT_AUDIO, "audio/flac");
   await expect(hotCuePanel(page)).toContainText(HOT_AUDIO);
@@ -32,7 +32,7 @@ test("show mode hides hot-cue editing but still allows firing", async ({ page })
   );
   await expect(hotCuePanel(page).getByRole("button", { name: "+ Cue ▾" })).toHaveCount(0);
 
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await selectSequenceCueRow(page, MAIN_AUDIO);
   await transportGoButton(page).click();
   await hotCuePanel(page).getByRole("button", { name: "GO" }).first().click();
 
@@ -65,7 +65,7 @@ test("reload restores hot cues and they still stack on main playback", async ({ 
 
   await dropAudioOnCueList(page, fixturePath(MAIN_AUDIO), MAIN_AUDIO, "audio/wav");
   await expectCueInSequenceList(page, MAIN_AUDIO);
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await selectSequenceCueRow(page, MAIN_AUDIO);
 
   await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO), HOT_AUDIO, "audio/flac");
   await expect(hotCuePanel(page)).toContainText(HOT_AUDIO);
@@ -80,7 +80,7 @@ test("reload restores hot cues and they still stack on main playback", async ({ 
   await expectCueInSequenceList(page, MAIN_AUDIO);
   await expect(hotCuePanel(page)).toContainText(HOT_AUDIO);
 
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await selectSequenceCueRow(page, MAIN_AUDIO);
   await transportGoButton(page).click();
   await hotCuePanel(page).getByRole("button", { name: "GO" }).first().click();
 

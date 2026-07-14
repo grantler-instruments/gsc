@@ -8,7 +8,7 @@ import {
 import { addCueType } from "./helpers/add-cue";
 import { gotoApp } from "./helpers/app";
 import { dragCueIntoContainer, expandContainerCue } from "./helpers/container-cues";
-import { containerCueRow, sequenceCueRow } from "./helpers/cue-list-panel";
+import { containerCueRow, selectSequenceCueRow, sequenceCueRow } from "./helpers/cue-list-panel";
 import {
   createStopForCue,
   readCueNumber,
@@ -35,7 +35,7 @@ test("sequence fades audio out then stops it @structure", async ({ page }) => {
   await gotoApp(page, { resetStorage: true });
 
   await setupAudioTargetCue(page, fixturePath(PLAYBACK_WAV), PLAYBACK_WAV, "audio/wav");
-  await sequenceCueRow(page, PLAYBACK_WAV).click();
+  await selectSequenceCueRow(page, PLAYBACK_WAV);
   await enableLoopPlayback(page);
   await createVolumeFadeForCue(page, PLAYBACK_WAV);
   await createStopForCue(page, PLAYBACK_WAV);
@@ -53,11 +53,11 @@ test("sequence fades audio out then stops it @structure", async ({ page }) => {
     containerCueRow(page, "Sequence").getByText(/2 cue\(s\) · sequential/),
   ).toBeVisible();
 
-  await sequenceCueRow(page, fadeName).click();
+  await selectSequenceCueRow(page, fadeName);
   await setFadeDuration(page, 2);
 
   await openActiveCuesTab(page);
-  await sequenceCueRow(page, PLAYBACK_WAV).click();
+  await selectSequenceCueRow(page, PLAYBACK_WAV);
   await pressTransportGo(page);
   await expect(activeCueRow(page, PLAYBACK_WAV)).toBeVisible({ timeout: 10_000 });
 

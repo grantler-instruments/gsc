@@ -65,7 +65,8 @@ export function reorderCueLists(
 export function nextCueListName(cueLists: CueList[], kind: CueListKind = "sequence"): string {
   const used = new Set(cueLists.map((l) => l.name));
   const key = kind === "hot" ? "project.generatedHotListName" : "project.generatedListName";
-  let n = cueLists.length + 1;
+  const sameKindCount = cueLists.filter((l) => (l.kind ?? "sequence") === kind).length;
+  let n = sameKindCount + 1;
   let name = t(key, { number: n });
   while (used.has(name)) {
     n += 1;

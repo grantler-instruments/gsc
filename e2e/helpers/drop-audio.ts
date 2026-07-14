@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import {
   fixturePath,
   mimeTypeForFileName,
@@ -8,6 +8,7 @@ import {
   WHITE_NOISE_FIXTURE,
   WHITE_NOISE_NAME,
 } from "../shared/fixtures";
+import { sequenceCueList } from "./cue-list-panel";
 
 export {
   fixturePath,
@@ -56,7 +57,8 @@ export async function dropAudioFile(
   const dataTransfer = await createAudioDataTransfer(page, bytes, options.fileName, mimeType);
 
   if (options.target === "cue-list") {
-    const dropZone = page.locator('[data-gsc-drop-zone="cue-list"]');
+    const dropZone = sequenceCueList(page);
+    await expect(dropZone).toHaveCount(1);
     await dropZone.dispatchEvent("dragover", { dataTransfer });
     await dropZone.dispatchEvent("drop", { dataTransfer });
     return;
