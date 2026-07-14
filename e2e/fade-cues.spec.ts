@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { openActiveCuesTab, pressTransportGo, transportGoButton } from "./helpers/active-cues";
-import { sequenceCueRow } from "./helpers/cue-list-panel";
+import { selectSequenceCueRow, sequenceCueRow } from "./helpers/cue-list-panel";
 import { dropAudioOnCueList, fixturePath } from "./helpers/drop-audio";
 import {
   createPanFadeForCue,
@@ -24,17 +24,17 @@ test("volume fade cue appears in the list and fades volume in Active cues", asyn
   await expect(transportGoButton(page)).toBeVisible();
 
   await dropAudioOnCueList(page, fixturePath(PLAYBACK_WAV), PLAYBACK_WAV, "audio/wav");
-  await sequenceCueRow(page, PLAYBACK_WAV).click();
+  await selectSequenceCueRow(page, PLAYBACK_WAV);
   await enableLoopPlayback(page);
   await createVolumeFadeForCue(page, PLAYBACK_WAV);
 
   const fadeName = fadeCueDisplayName("Volume fade", PLAYBACK_WAV);
   await expect(sequenceCueRow(page, fadeName)).toHaveCount(1);
-  await sequenceCueRow(page, fadeName).click();
+  await selectSequenceCueRow(page, fadeName);
   await setFadeDuration(page, 10);
 
   await openActiveCuesTab(page);
-  await sequenceCueRow(page, PLAYBACK_WAV).click();
+  await selectSequenceCueRow(page, PLAYBACK_WAV);
   await pressTransportGo(page);
   await pressTransportGo(page);
 
@@ -49,18 +49,18 @@ test("pan fade cue appears in the list and fades pan in Active cues", async ({ p
   await expect(transportGoButton(page)).toBeVisible();
 
   await dropAudioOnCueList(page, fixturePath(PLAYBACK_WAV), PLAYBACK_WAV, "audio/wav");
-  await sequenceCueRow(page, PLAYBACK_WAV).click();
+  await selectSequenceCueRow(page, PLAYBACK_WAV);
   await setInspectorPan(page, 1);
   await enableLoopPlayback(page);
   await createPanFadeForCue(page, PLAYBACK_WAV);
 
   const fadeName = fadeCueDisplayName("Pan fade", PLAYBACK_WAV);
   await expect(sequenceCueRow(page, fadeName)).toHaveCount(1);
-  await sequenceCueRow(page, fadeName).click();
+  await selectSequenceCueRow(page, fadeName);
   await setFadeDuration(page, 10);
 
   await openActiveCuesTab(page);
-  await sequenceCueRow(page, PLAYBACK_WAV).click();
+  await selectSequenceCueRow(page, PLAYBACK_WAV);
   await pressTransportGo(page);
   await pressTransportGo(page);
 

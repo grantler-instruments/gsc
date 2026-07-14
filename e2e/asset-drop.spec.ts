@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { IMPORT_AUDIO_FIXTURES } from "./fixtures/playback-formats.mjs";
+import { transportGoButton } from "./helpers/active-cues";
 import { expectCueInSequenceList, sequenceCueListPanel } from "./helpers/cue-list-panel";
 import { dropAudioOnCueList, fixturePath } from "./helpers/drop-audio";
 
@@ -10,7 +11,7 @@ for (const { fileName, mimeType } of IMPORT_AUDIO_FIXTURES) {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("./");
 
-    await expect(page.getByRole("button", { name: "GO" })).toBeVisible();
+    await expect(transportGoButton(page)).toBeVisible();
 
     const assetsPanel = page.locator('[data-gsc-drop-zone="assets"]');
 

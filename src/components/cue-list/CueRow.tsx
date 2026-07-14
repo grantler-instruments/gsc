@@ -25,6 +25,7 @@ import { isLightFadeReady } from "../../lib/fade";
 import { getParallelGroupOrderConflict } from "../../lib/parallel-group-fire";
 import { usePlaybackStore } from "../../stores/playback";
 import { useProjectStore } from "../../stores/project";
+import { isCueInRunningStep } from "../../stores/transport";
 import { useUiStore } from "../../stores/ui";
 import {
   cueAssetSx,
@@ -52,6 +53,7 @@ export interface CueRowProps {
   expanded: boolean;
   selected: boolean;
   primarySelected: boolean;
+  selectionRemembered: boolean;
   active: boolean;
   missingAsset: boolean;
   highlightAsTarget: boolean;
@@ -79,6 +81,7 @@ function cueRowPropsAreEqual(prev: CueRowProps, next: CueRowProps): boolean {
     prev.expanded === next.expanded &&
     prev.selected === next.selected &&
     prev.primarySelected === next.primarySelected &&
+    prev.selectionRemembered === next.selectionRemembered &&
     prev.active === next.active &&
     prev.missingAsset === next.missingAsset &&
     prev.highlightAsTarget === next.highlightAsTarget &&
@@ -93,6 +96,7 @@ export const CueRow = memo(function CueRow({
   expanded,
   selected,
   primarySelected,
+  selectionRemembered,
   active,
   missingAsset,
   highlightAsTarget,
@@ -110,8 +114,9 @@ export const CueRow = memo(function CueRow({
   const tokens = useGscTokens();
   const {
     canEdit,
+    listId,
     allCues,
-    runningSequence,
+    runningSequences,
     onGo,
     onRemove,
     onCreateStop,
@@ -148,7 +153,7 @@ export const CueRow = memo(function CueRow({
     isLightFade && !lightFadeTargetMissing && !isLightFadeReady(cue, fixtures, allCues);
   const assetWarning = getCueAssetWarning(cue);
   const parallelConflict = isParallel ? getParallelGroupOrderConflict(cue, allCues) : null;
-  const isCurrentSequenceStep = runningSequence?.stepCueIds.includes(cue.id) ?? false;
+  const isCurrentSequenceStep = isCueInRunningStep(runningSequences, cue.id);
 
   const hasWarning =
     missingAsset ||
@@ -173,6 +178,7 @@ export const CueRow = memo(function CueRow({
 
   const { dropActive, insertPlace, onDragOver, onDragLeave, onDrop } = useCueRowDrop({
     cue,
+    listId,
     allCues,
     canEdit,
     onCueDrop: (draggedId) => onCueDrop(draggedId, cue.id),
@@ -183,6 +189,7 @@ export const CueRow = memo(function CueRow({
     tokens,
     selected: selected && !primarySelected,
     primarySelected,
+    selectionRemembered,
     active,
     isGroup: isContainer,
     isSequence,
@@ -257,7 +264,7 @@ export const CueRow = memo(function CueRow({
         ref={cueNumberRef}
         component="span"
         data-cue-number=""
-        sx={cueNumberSx(tokens, primarySelected, highlightAsTarget)}
+        sx={cueNumberSx(tokens, primarySelected, highlightAsTarget, selectionRemembered)}
       >
         {cue.number}
       </Box>
@@ -288,7 +295,7 @@ export const CueRow = memo(function CueRow({
           allCues={allCues}
           childCount={childCount}
           active={active}
-          runningSequence={runningSequence}
+          runningSequences={runningSequences}
           playback={playback}
         />
       </Box>

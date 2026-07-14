@@ -12,7 +12,7 @@ export type AddCueMenuType =
 
 export async function openAddCueMenu(page: Page): Promise<void> {
   const panel = sequenceCueListPanel(page);
-  await panel.getByRole("button", { name: "+ Cue ▾" }).click();
+  await panel.locator("footer").getByRole("button", { name: "+ Cue ▾" }).click();
   await expect(page.getByRole("menu")).toBeVisible();
 }
 

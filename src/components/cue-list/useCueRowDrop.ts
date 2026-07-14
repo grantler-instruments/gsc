@@ -4,6 +4,7 @@ import {
   isExternalFileDrag,
   resolveAssetDropPayloads,
 } from "../../lib/asset-drop";
+import { findCueInLists } from "../../lib/cue-lists";
 import { getChildCues, isContainerCue } from "../../lib/cues";
 import { pointerLeftElement } from "../../lib/dom";
 import {
@@ -13,6 +14,7 @@ import {
   setActiveAssetDrag,
   setActiveCueDrag,
 } from "../../lib/drag";
+import { useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
 import {
   type ContainerRowDropMode,
@@ -24,6 +26,7 @@ import { useClearOnDragEnd } from "./useClearOnDragEnd";
 
 interface UseCueRowDropOptions {
   cue: Cue;
+  listId: string;
   allCues: Cue[];
   canEdit: boolean;
   onCueDrop: (cueId: string) => void;
@@ -32,11 +35,13 @@ interface UseCueRowDropOptions {
 
 export function useCueRowDrop({
   cue,
+  listId,
   allCues,
   canEdit,
   onCueDrop,
   onCueReparent,
 }: UseCueRowDropOptions) {
+  const moveCueToList = useProjectStore((s) => s.moveCueToList);
   const [dropActive, setDropActive] = useState(false);
   const [insertPlace, setInsertPlace] = useState<"before" | "after" | null>(null);
   const insertPlaceRef = useRef<ContainerRowDropMode | null>(null);
@@ -62,7 +67,10 @@ export function useCueRowDrop({
       e.stopPropagation();
 
       if (draggingCue && draggedCueId !== cue.id) {
-        const dragged = allCues.find((c) => c.id === draggedCueId);
+        const source = findCueInLists(useProjectStore.getState().cueLists, draggedCueId);
+        const crossList = source?.list.id !== listId;
+        const dragged = allCues.find((c) => c.id === draggedCueId) ?? source?.cue;
+        if (!dragged) return;
         if (dragged && isContainer) {
           const mode = computeContainerRowDropMode(e, null);
           e.dataTransfer.dropEffect = "move";
@@ -77,7 +85,7 @@ export function useCueRowDrop({
           }
           return;
         }
-        if (dragged) {
+        if (dragged && (crossList || dragged.parentId === cue.parentId)) {
           const rect = e.currentTarget.getBoundingClientRect();
           const place = e.clientY < rect.top + rect.height / 2 ? "before" : "after";
           e.dataTransfer.dropEffect = "move";
@@ -95,7 +103,7 @@ export function useCueRowDrop({
         setDropActive(true);
       }
     },
-    [allCues, canEdit, cue.id, isContainer, cue],
+    [allCues, canEdit, cue.id, cue.parentId, isContainer, listId],
   );
 
   const onDragLeave = useCallback((e: React.DragEvent) => {
@@ -119,6 +127,23 @@ export function useCueRowDrop({
 
       const draggedCueId = readCueDragId(e.dataTransfer);
       if (draggedCueId) {
+        const source = findCueInLists(useProjectStore.getState().cueLists, draggedCueId);
+        if (source && source.list.id !== listId) {
+          if (isContainer && draggedCueId !== cue.id) {
+            moveCueToList(draggedCueId, listId, { kind: "into-group", groupId: cue.id });
+          } else {
+            const place = computeInsertPlace(
+              e,
+              cachedMode === "before" || cachedMode === "after" ? cachedMode : null,
+            );
+            if (draggedCueId !== cue.id) {
+              moveCueToList(draggedCueId, listId, { kind: place, cueId: cue.id });
+            }
+          }
+          setActiveCueDrag(null);
+          return;
+        }
+
         if (isContainer && draggedCueId !== cue.id) {
           const mode = computeContainerRowDropMode(e, cachedMode === "into" ? "into" : cachedMode);
           if (mode === "before" || mode === "after") {
@@ -175,13 +200,13 @@ export function useCueRowDrop({
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
           if (!payloads.length) return;
-          applyAssetPayloads(payloads, { kind: "row", cueId: cue.id });
+          applyAssetPayloads(payloads, { kind: "row", listId, cueId: cue.id });
         } finally {
           setActiveAssetDrag(null);
         }
       })();
     },
-    [allCues, canEdit, cue, isContainer, onCueDrop, onCueReparent],
+    [allCues, canEdit, cue.id, isContainer, listId, moveCueToList, onCueDrop, onCueReparent],
   );
 
   return {

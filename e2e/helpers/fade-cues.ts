@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import { activeCueRow } from "./active-cues";
-import { sequenceCueRow } from "./cue-list-panel";
+import { selectSequenceCueRow, sequenceCueRow } from "./cue-list-panel";
 
 export function fadeCueDisplayName(
   fadeLabel: "Volume fade" | "Pan fade",
@@ -10,15 +10,19 @@ export function fadeCueDisplayName(
 }
 
 export async function createVolumeFadeForCue(page: Page, targetName: string): Promise<void> {
+  await selectSequenceCueRow(page, targetName);
   const row = sequenceCueRow(page, targetName);
-  await row.click();
-  await row.getByRole("button", { name: `Create volume fade for ${targetName}` }).click();
+  const button = row.getByRole("button", { name: `Create volume fade for ${targetName}` });
+  await expect(button).toBeVisible();
+  await button.click();
 }
 
 export async function createPanFadeForCue(page: Page, targetName: string): Promise<void> {
+  await selectSequenceCueRow(page, targetName);
   const row = sequenceCueRow(page, targetName);
-  await row.click();
-  await row.getByRole("button", { name: `Create pan fade for ${targetName}` }).click();
+  const button = row.getByRole("button", { name: `Create pan fade for ${targetName}` });
+  await expect(button).toBeVisible();
+  await button.click();
 }
 
 export async function setInspectorPan(page: Page, pan: number): Promise<void> {

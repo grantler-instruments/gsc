@@ -2,7 +2,7 @@ import { getPlatform } from "../platform";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { resolveEffectiveOpacity, resolveEffectiveVolume } from "../stores/fade";
 import { usePlaybackStore } from "../stores/playback";
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
 import { useTransportStore } from "../stores/transport";
 import { useVfsStore } from "../stores/vfs";
@@ -59,8 +59,14 @@ export async function buildOutputState(revision: number): Promise<OutputState> {
   const { activeCueIds, cueStartedAtMs } = useTransportStore.getState();
   const progressByCueId = usePlaybackStore.getState().byCueId;
 
-  const list = getActiveCueListFromState(useProjectStore.getState());
-  const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
+  // Use every cue across all cue lists so hot cues still resolve even when
+  // the main list has edit focus.
+  const cueById = new Map(
+    useProjectStore
+      .getState()
+      .cueLists.reduce<Cue[]>((all, list) => all.concat(list.cues), [])
+      .map((c) => [c.id, c]),
+  );
   const now = Date.now();
 
   const layers: OutputLayer[] = [];
@@ -90,8 +96,12 @@ export async function buildOutputState(revision: number): Promise<OutputState> {
 export function hasUnresolvedVisualOutput(activeCueIds: string[], layers: OutputLayer[]): boolean {
   if (activeCueIds.length === 0 || layers.length > 0) return false;
 
-  const list = getActiveCueListFromState(useProjectStore.getState());
-  const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
+  const cueById = new Map(
+    useProjectStore
+      .getState()
+      .cueLists.reduce<Cue[]>((all, list) => all.concat(list.cues), [])
+      .map((c) => [c.id, c]),
+  );
 
   for (const cueId of activeCueIds) {
     const cue = cueById.get(cueId);

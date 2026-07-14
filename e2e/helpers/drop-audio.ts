@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import {
   fixturePath,
   mimeTypeForFileName,
@@ -8,6 +8,7 @@ import {
   WHITE_NOISE_FIXTURE,
   WHITE_NOISE_NAME,
 } from "../shared/fixtures";
+import { sequenceCueList } from "./cue-list-panel";
 
 export {
   fixturePath,
@@ -56,7 +57,8 @@ export async function dropAudioFile(
   const dataTransfer = await createAudioDataTransfer(page, bytes, options.fileName, mimeType);
 
   if (options.target === "cue-list") {
-    const dropZone = page.locator('[data-gsc-drop-zone="cue-list"]');
+    const dropZone = sequenceCueList(page);
+    await expect(dropZone).toHaveCount(1);
     await dropZone.dispatchEvent("dragover", { dataTransfer });
     await dropZone.dispatchEvent("drop", { dataTransfer });
     return;
@@ -78,6 +80,53 @@ export async function dropAudioFile(
 
   await dropZone.dispatchEvent("dragover", { dataTransfer });
   await dropZone.dispatchEvent("drop", { dataTransfer });
+}
+
+/** Append a hot cue by dropping onto the hot-cue grid (when pads already exist). */
+export async function appendAudioOnHotCuePanel(
+  page: Page,
+  fixturePathArg: string,
+  fileName: string,
+  mimeType?: string,
+): Promise<void> {
+  const bytes = readFileSync(fixturePathArg);
+  const resolvedMimeType = mimeType ?? mimeTypeForFileName(fileName);
+  const dataTransfer = await createAudioDataTransfer(page, bytes, fileName, resolvedMimeType);
+
+  const hotPanel = page.getByRole("complementary", { name: "Hot cues" });
+  await hotPanel.evaluate((panel, dt) => {
+    const grid = [...panel.querySelectorAll("div")].find((el) => {
+      if (!el.querySelector("button")) return false;
+      return window.getComputedStyle(el).display === "grid";
+    });
+    if (!grid) throw new Error("Hot cue grid not found");
+    const init = { bubbles: true, cancelable: true, dataTransfer: dt as DataTransfer };
+    grid.dispatchEvent(new DragEvent("dragover", init));
+    grid.dispatchEvent(new DragEvent("drop", init));
+  }, dataTransfer);
+}
+
+/** Drop audio onto a specific hot-cue pad matched by its current display name. */
+export async function dropAudioOnHotCuePad(
+  page: Page,
+  targetCueName: string,
+  fixturePathArg: string,
+  fileName: string,
+  mimeType?: string,
+): Promise<void> {
+  const bytes = readFileSync(fixturePathArg);
+  const resolvedMimeType = mimeType ?? mimeTypeForFileName(fileName);
+  const dataTransfer = await createAudioDataTransfer(page, bytes, fileName, resolvedMimeType);
+
+  const hotPanel = page.getByRole("complementary", { name: "Hot cues" });
+  const pad = hotPanel
+    .getByText(targetCueName, { exact: true })
+    .locator(
+      "xpath=ancestor::*[count(.//button[normalize-space(.)='GO'])=1 and .//button[normalize-space(.)='GO']][1]",
+    );
+
+  await pad.dispatchEvent("dragover", { dataTransfer });
+  await pad.dispatchEvent("drop", { dataTransfer });
 }
 
 export async function dropAudioOnCueList(

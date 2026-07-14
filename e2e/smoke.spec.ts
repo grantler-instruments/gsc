@@ -3,7 +3,6 @@ import { createPlaywrightDriver } from "./adapters/playwright-driver";
 import {
   activeCueRow,
   activeCuesEmptyMessage,
-  activeCuesPanel,
   openActiveCuesTab,
   pressPanic,
   pressTransportGo,
@@ -90,6 +89,7 @@ test("reload restores autosaved project @smoke", async ({ page }) => {
   await expect(
     tablist.getByRole("tab", { name: new RegExp(`^${RECOVERED_LIST_NAME}`) }),
   ).toBeVisible();
+  await tablist.getByRole("tab", { name: new RegExp(`^${RECOVERED_LIST_NAME}`) }).click();
   await expectCueInSequenceList(page, RECOVERED_AUDIO);
 });
 

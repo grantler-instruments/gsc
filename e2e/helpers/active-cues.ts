@@ -5,16 +5,21 @@ export async function openActiveCuesTab(page: Page): Promise<void> {
 }
 
 export function activeCuesPanel(page: Page) {
-  return page.locator("aside").first().getByRole("tabpanel");
+  const showModePanel = page.locator("aside").getByRole("region", { name: "Active cues" });
+  const editModePanel = page
+    .locator("aside")
+    .filter({ has: page.getByRole("tablist", { name: "Sidebar" }) })
+    .getByRole("tabpanel");
+  return showModePanel.or(editModePanel);
 }
 
 export function activeCueRow(page: Page, cueName: string) {
   return activeCuesPanel(page).getByRole("listitem").filter({ hasText: cueName });
 }
 
-/** Footer transport GO (not hot-cue pad GO). */
+/** Footer transport GO (not hot-cue pad GO or "Go to target" buttons). */
 export function transportGoButton(page: Page) {
-  return page.locator("footer").getByRole("button", { name: "GO" });
+  return page.locator("footer").getByRole("button", { name: "GO", exact: true });
 }
 
 /** Fire the selected cue via the Space shortcut (same as the transport GO button). */

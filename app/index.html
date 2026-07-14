@@ -2,8 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    <!-- Use relative URLs so Tauri devUrl subpaths (e.g. /gsc/) work. -->
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <link rel="apple-touch-icon" href="../pwa-192x192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#1e2229" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -18,6 +19,45 @@
         };
         syncViewport();
         window.addEventListener("resize", syncViewport);
+      })();
+      (() => {
+        const showFatal = (title, detail) => {
+          try {
+            const pre = document.createElement("pre");
+            pre.style.whiteSpace = "pre-wrap";
+            pre.style.fontFamily =
+              'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+            pre.style.fontSize = "12px";
+            pre.style.padding = "12px";
+            pre.style.margin = "12px";
+            pre.style.borderRadius = "8px";
+            pre.style.background = "#111";
+            pre.style.color = "#eee";
+            pre.style.border = "1px solid rgba(255,255,255,0.12)";
+            pre.textContent = `${title}\n\n${detail}`;
+            document.body.innerHTML = "";
+            document.body.style.background = "#0b0d10";
+            document.body.appendChild(pre);
+          } catch {
+            // ignore
+          }
+        };
+        window.addEventListener("error", (e) => {
+          const msg = e?.message ?? "Unknown error";
+          const stack = e?.error?.stack ?? "";
+          showFatal("App crashed (error)", stack ? `${msg}\n\n${stack}` : msg);
+        });
+        window.addEventListener("unhandledrejection", (e) => {
+          const reason = e?.reason;
+          const msg =
+            typeof reason === "string"
+              ? reason
+              : reason?.message
+                ? reason.message
+                : JSON.stringify(reason, null, 2);
+          const stack = reason?.stack ?? "";
+          showFatal("App crashed (unhandled rejection)", stack ? `${msg}\n\n${stack}` : msg);
+        });
       })();
       (() => {
         var c = globalThis.crypto;
@@ -53,6 +93,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/app/main.tsx"></script>
+    <script type="module" src="../src/app/main.tsx"></script>
   </body>
 </html>

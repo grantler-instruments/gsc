@@ -1,0 +1,7 @@
+[[permission]]
+identifier = "gsc-project-open"
+description = "Allow desktop file association / open-with project paths"
+commands.allow = [
+  "take_pending_open_paths",
+]
+

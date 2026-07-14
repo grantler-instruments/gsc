@@ -16,7 +16,7 @@ import { notifyStepPlaybackEnded } from "../lib/sequence-runner";
 import { isWaitCue } from "../lib/wait";
 import type { CuePlaybackProgress } from "../stores/playback";
 import { usePlaybackStore } from "../stores/playback";
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import { useProjectStore } from "../stores/project";
 import { type RunningSequence, useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
 
@@ -26,21 +26,30 @@ interface PlaybackSession {
   bounds: PlaybackBounds;
 }
 
-function runningSequenceHasWaitProgress(runningSequence: RunningSequence | null): boolean {
-  if (!runningSequence) return false;
-  const list = getActiveCueListFromState(useProjectStore.getState());
-  const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
-  return runningSequence.stepCueIds.some((id) => {
-    const cue = cueById.get(id);
-    return cue !== undefined && isWaitCue(cue);
-  });
+/** All cues across every list — playback (incl. hot cues) can span lists. */
+function allProjectCuesById(): Map<string, Cue> {
+  const cues = useProjectStore.getState().cueLists.flatMap((l) => l.cues);
+  return new Map(cues.map((c) => [c.id, c]));
+}
+
+function runningSequencesHaveWaitProgress(
+  runningSequences: Record<string, RunningSequence>,
+): boolean {
+  if (Object.keys(runningSequences).length === 0) return false;
+  const cueById = allProjectCuesById();
+  return Object.values(runningSequences).some((seq) =>
+    seq.stepCueIds.some((id) => {
+      const cue = cueById.get(id);
+      return cue !== undefined && isWaitCue(cue);
+    }),
+  );
 }
 
 function needsProgressUpdates(
   activeCueIds: string[],
-  runningSequence: RunningSequence | null,
+  runningSequences: Record<string, RunningSequence>,
 ): boolean {
-  return activeCueIds.length > 0 || runningSequenceHasWaitProgress(runningSequence);
+  return activeCueIds.length > 0 || runningSequencesHaveWaitProgress(runningSequences);
 }
 
 export function usePlaybackProgress(): void {
@@ -98,8 +107,7 @@ export function usePlaybackProgress(): void {
     const syncSessions = (activeCueIds: string[]) => {
       const now = Date.now();
       const { cueStartedAtMs } = useTransportStore.getState();
-      const list = getActiveCueListFromState(useProjectStore.getState());
-      const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
+      const cueById = allProjectCuesById();
 
       for (const id of activeCueIds) {
         const transportGoAt = cueStartedAtMs[id];
@@ -137,15 +145,14 @@ export function usePlaybackProgress(): void {
     const tick = () => {
       if (!ticking) return;
 
-      const { activeCueIds, runningSequence } = useTransportStore.getState();
-      const list = getActiveCueListFromState(useProjectStore.getState());
-      const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
+      const { activeCueIds, runningSequences } = useTransportStore.getState();
+      const cueById = allProjectCuesById();
       const nowWall = Date.now();
       const nowPerf = performance.now();
       const entries: CuePlaybackProgress[] = [];
       const completedCueIds: string[] = [];
 
-      if (runningSequence) {
+      for (const runningSequence of Object.values(runningSequences)) {
         const stepElapsedSec = (nowPerf - runningSequence.stepStartedAtMs) / 1000;
         for (const cueId of runningSequence.stepCueIds) {
           const cue = cueById.get(cueId);
@@ -207,7 +214,7 @@ export function usePlaybackProgress(): void {
 
       if (entries.length > 0) {
         usePlaybackStore.getState().setProgress(entries);
-      } else if (!needsProgressUpdates(activeCueIds, runningSequence)) {
+      } else if (!needsProgressUpdates(activeCueIds, runningSequences)) {
         usePlaybackStore.getState().clear();
       }
 
@@ -217,7 +224,7 @@ export function usePlaybackProgress(): void {
       }
 
       const transport = useTransportStore.getState();
-      if (needsProgressUpdates(transport.activeCueIds, transport.runningSequence)) {
+      if (needsProgressUpdates(transport.activeCueIds, transport.runningSequences)) {
         rafId = requestAnimationFrame(tick);
       } else {
         stopTickLoop();
@@ -226,10 +233,10 @@ export function usePlaybackProgress(): void {
     };
 
     const ensureTickLoop = () => {
-      const { activeCueIds, runningSequence } = useTransportStore.getState();
+      const { activeCueIds, runningSequences } = useTransportStore.getState();
       syncSessions(activeCueIds);
 
-      if (needsProgressUpdates(activeCueIds, runningSequence)) {
+      if (needsProgressUpdates(activeCueIds, runningSequences)) {
         if (!ticking) {
           ticking = true;
           rafId = requestAnimationFrame(tick);
@@ -247,7 +254,7 @@ export function usePlaybackProgress(): void {
     const unsub = useTransportStore.subscribe((state, prev) => {
       if (
         state.activeCueIds === prev.activeCueIds &&
-        state.runningSequence === prev.runningSequence &&
+        state.runningSequences === prev.runningSequences &&
         state.cueStartedAtMs === prev.cueStartedAtMs
       ) {
         return;

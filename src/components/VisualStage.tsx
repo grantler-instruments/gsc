@@ -164,7 +164,7 @@ function ControlVideoLayer({ layer, onEnded }: VideoLayerProps) {
     } catch {
       /* seek not ready */
     }
-  }, [layer.goAtMs, layer.inTime, layer.sliceSec, layer.loopCount]);
+  }, [layer]);
 
   return (
     <video

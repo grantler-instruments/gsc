@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { transportGoButton } from "./helpers/active-cues";
 import {
   cueListTabOrder,
   dragCueListTab,
@@ -10,7 +11,7 @@ test("creates a new cue list", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("./");
 
-  await expect(page.getByRole("button", { name: "GO" })).toBeVisible();
+  await expect(transportGoButton(page)).toBeVisible();
 
   const tablist = sequenceCueListTabs(page);
   await expect(tablist.getByRole("tab", { name: /^Main/ })).toBeVisible();
@@ -27,7 +28,7 @@ test("renames a cue list", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("./");
 
-  await expect(page.getByRole("button", { name: "GO" })).toBeVisible();
+  await expect(transportGoButton(page)).toBeVisible();
 
   const tablist = sequenceCueListTabs(page);
   await tablist.getByRole("tab", { name: /^Main/ }).dblclick();
@@ -45,7 +46,7 @@ test("deletes a cue list", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("./");
 
-  await expect(page.getByRole("button", { name: "GO" })).toBeVisible();
+  await expect(transportGoButton(page)).toBeVisible();
 
   const tablist = sequenceCueListTabs(page);
   await sequenceCueListPanel(page).getByRole("button", { name: "New cue list" }).click();
@@ -62,7 +63,7 @@ test("reorders cue list tabs via drag and drop", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("./");
 
-  await expect(page.getByRole("button", { name: "GO" })).toBeVisible();
+  await expect(transportGoButton(page)).toBeVisible();
 
   const tablist = sequenceCueListTabs(page);
   const newListButton = sequenceCueListPanel(page).getByRole("button", { name: "New cue list" });
@@ -87,7 +88,7 @@ test("duplicates a cue list from the tab context menu", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("./");
 
-  await expect(page.getByRole("button", { name: "GO" })).toBeVisible();
+  await expect(transportGoButton(page)).toBeVisible();
 
   const tablist = sequenceCueListTabs(page);
   await tablist.getByRole("tab", { name: /^Main/ }).click({ button: "right" });
@@ -103,7 +104,7 @@ test("copies and pastes a cue list from the tab context menu", async ({ page }) 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("./");
 
-  await expect(page.getByRole("button", { name: "GO" })).toBeVisible();
+  await expect(transportGoButton(page)).toBeVisible();
 
   const tablist = sequenceCueListTabs(page);
   await tablist.getByRole("tab", { name: /^Main/ }).click({ button: "right" });

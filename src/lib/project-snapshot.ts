@@ -1,3 +1,4 @@
+import { t } from "../i18n/t";
 import type { AudioBus } from "../types/audio-bus";
 import type { Cue, ProjectSnapshot } from "../types/cue";
 import type { Fixture } from "../types/fixture";
@@ -5,6 +6,7 @@ import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
 import { normalizeAudioBuses, normalizeCueAudioBus } from "./audio-buses";
 import type { CueList } from "./cue-lists";
+import { createCueList } from "./cue-lists";
 import { initialCueListSelection } from "./cue-selection";
 import { defaultDmxCueData, normalizeDmxCueData } from "./dmx";
 import { normalizeFixturePlot } from "./fixture-plot";
@@ -64,7 +66,7 @@ export function snapshotToCueLists(
   const fixtures = normalizeFixtures(snap.fixtures);
   const fixturePlot = normalizeFixturePlot(snap.fixturePlot, fixtures);
   const audioBuses = normalizeAudioBuses(snap.audioBuses);
-  const cueLists: CueList[] = snap.cueLists.map((list, index) => {
+  let cueLists: CueList[] = snap.cueLists.map((list, index) => {
     const cues = normalizeCues(list.cues, fixtures, audioBuses);
     const selection =
       options?.initialOpen && index === 0
@@ -73,10 +75,18 @@ export function snapshotToCueLists(
     return {
       id: list.id,
       name: list.name,
+      kind: list.kind ?? "sequence",
       cues,
       ...selection,
     };
   });
+
+  // Migration: older projects may have no hot cue lists at all. Ensure there's
+  // always at least one so the hot-cue panel starts with an empty list rather
+  // than "no list".
+  if (!cueLists.some((l) => l.kind === "hot")) {
+    cueLists = [...cueLists, createCueList(t("project.defaultHotListName"), "hot")];
+  }
   const active =
     options?.initialOpen && cueLists[0]
       ? cueLists[0]
@@ -121,6 +131,7 @@ export function cueListsToSnapshot(
     cueLists: cueLists.map((list) => ({
       id: list.id,
       name: list.name,
+      kind: list.kind,
       cues: list.cues,
     })),
     midiMappings,
