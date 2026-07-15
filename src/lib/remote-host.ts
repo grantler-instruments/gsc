@@ -1,12 +1,26 @@
 import { remoteBroadcast } from "../platform/remote-server";
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import {
+  getActiveCueListFromState,
+  getMainSequenceListFromState,
+  useProjectStore,
+} from "../stores/project";
 import { patchActiveList } from "../stores/project/helpers";
 import { useTransportStore } from "../stores/transport";
+import type { Cue } from "../types/cue";
 import type { RemoteHostCommand } from "../types/remote";
 import { selectNextCueAfterGo } from "./cue-navigation";
 import { getPrimarySelectedCueId } from "./cue-selection";
 import { serializeRemoteSnapshot } from "./remote-snapshot";
+import {
+  resolveHotGoTargetCue,
+  triggerHotCue,
+  triggerHotCueAndFocusMain,
+} from "./transport-actions";
 import { triggerGo } from "./trigger";
+
+function allHostCues(): Cue[] {
+  return useProjectStore.getState().cueLists.flatMap((l) => l.cues);
+}
 
 /** Update cue selection on the booth host (not sent to remotes). */
 export function setHostCueSelection(id: string | null): void {
@@ -37,7 +51,13 @@ export async function broadcastRemoteSnapshot(): Promise<void> {
 export function handleRemoteHostCommand(command: RemoteHostCommand): void {
   switch (command.action) {
     case "go-selected": {
-      const list = getActiveCueListFromState(useProjectStore.getState());
+      const hotTarget = resolveHotGoTargetCue();
+      if (hotTarget) {
+        triggerHotCueAndFocusMain(hotTarget);
+        break;
+      }
+      const list = getMainSequenceListFromState(useProjectStore.getState());
+      if (!list) break;
       const selectedCueId = getPrimarySelectedCueId(list.selectedCueIds);
       const targetId = selectedCueId ?? list.cues.find((c) => !c.parentId)?.id;
       const target = list.cues.find((c) => c.id === targetId);
@@ -50,6 +70,12 @@ export function handleRemoteHostCommand(command: RemoteHostCommand): void {
       const target = list.cues.find((c) => c.id === command.cue_id);
       if (!target) break;
       triggerGoAndAdvanceHost(target.id);
+      break;
+    }
+    case "hot-go": {
+      const cue = allHostCues().find((c) => c.id === command.cue_id);
+      if (!cue) break;
+      triggerHotCueAndFocusMain(cue);
       break;
     }
     case "select-cue":
@@ -74,6 +100,11 @@ function triggerGoAndAdvanceHost(cueId: string): void {
   const list = getActiveCueListFromState(useProjectStore.getState());
   const cue = list.cues.find((c) => c.id === cueId);
   if (!cue) return;
+  // Hot lists fire as overlays without advancing selection (matches local GO).
+  if (list.kind === "hot") {
+    triggerHotCue(cue);
+    return;
+  }
   const transport = useTransportStore.getState();
   triggerGo(cue, list.cues, {
     go: transport.go,

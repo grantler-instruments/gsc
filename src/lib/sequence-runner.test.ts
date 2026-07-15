@@ -5,6 +5,7 @@ import { resetTestProject, testCue } from "../test/fixtures/cues";
 import { expandSequenceSteps } from "./cues";
 import {
   advanceRunningSequence,
+  cancelSequence,
   cueCompletesViaAudioEngine,
   notifyFadeCueComplete,
   notifyStepPlaybackEnded,
@@ -18,7 +19,7 @@ function resetTransport() {
     activeCueId: null,
     activeCueIds: [],
     cueStartedAtMs: {},
-    runningSequence: null,
+    runningSequences: {},
     masterVolume: 1,
   });
 }
@@ -45,12 +46,86 @@ describe("runSequence", () => {
 
     const result = runSequence(cues[0], cues);
     expect(result).toEqual({ started: true, stepCount: 2 });
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       rootId: "seq",
       currentStep: 0,
       stepCount: 2,
       stepCueIds: ["a"],
+      scope: "main",
     });
+  });
+
+  it("runs an overlay sequence without cancelling a main sequence", () => {
+    const mainCues = [
+      testCue("main", "Main", "sequence"),
+      testCue("m1", "M1", "audio", { parentId: "main" }),
+      testCue("m2", "M2", "audio", { parentId: "main" }),
+    ];
+    const hotCues = [
+      testCue("hot", "Hot", "sequence"),
+      testCue("h1", "H1", "audio", { parentId: "hot" }),
+      testCue("h2", "H2", "audio", { parentId: "hot" }),
+    ];
+
+    runSequence(mainCues[0], mainCues, { scope: "main" });
+    runSequence(hotCues[0], hotCues, { scope: "overlay" });
+
+    const running = useTransportStore.getState().runningSequences;
+    expect(running.main).toMatchObject({ rootId: "main", scope: "main" });
+    expect(running.hot).toMatchObject({ rootId: "hot", scope: "overlay" });
+  });
+
+  it("runs two overlay sequences concurrently", () => {
+    const hotA = [
+      testCue("hot-a", "Hot A", "sequence"),
+      testCue("ha1", "HA1", "audio", { parentId: "hot-a" }),
+    ];
+    const hotB = [
+      testCue("hot-b", "Hot B", "sequence"),
+      testCue("hb1", "HB1", "audio", { parentId: "hot-b" }),
+    ];
+
+    runSequence(hotA[0], hotA, { scope: "overlay" });
+    runSequence(hotB[0], hotB, { scope: "overlay" });
+
+    const running = useTransportStore.getState().runningSequences;
+    expect(running["hot-a"]).toMatchObject({ rootId: "hot-a", scope: "overlay" });
+    expect(running["hot-b"]).toMatchObject({ rootId: "hot-b", scope: "overlay" });
+  });
+
+  it("main GO cancels another main sequence but leaves overlay sequences", () => {
+    const seqA = [testCue("a", "A", "sequence"), testCue("a1", "A1", "audio", { parentId: "a" })];
+    const seqB = [testCue("b", "B", "sequence"), testCue("b1", "B1", "audio", { parentId: "b" })];
+    const hot = [testCue("h", "H", "sequence"), testCue("h1", "H1", "audio", { parentId: "h" })];
+
+    runSequence(hot[0], hot, { scope: "overlay" });
+    runSequence(seqA[0], seqA, { scope: "main" });
+    runSequence(seqB[0], seqB, { scope: "main" });
+
+    const running = useTransportStore.getState().runningSequences;
+    expect(running.a).toBeUndefined();
+    expect(running.b).toMatchObject({ rootId: "b", scope: "main" });
+    expect(running.h).toMatchObject({ rootId: "h", scope: "overlay" });
+  });
+
+  it("cancelSequence stops an overlay sequence without affecting main playback", () => {
+    const hotCues = [
+      testCue("hseq", "Hot Seq", "sequence"),
+      testCue("h1", "H1", "audio", { parentId: "hseq" }),
+      testCue("h2", "H2", "audio", { parentId: "hseq" }),
+    ];
+
+    useTransportStore.getState().go("a");
+    runSequence(hotCues[0], hotCues, { scope: "overlay" });
+
+    expect(useTransportStore.getState().activeCueIds).toEqual(["a", "h1"]);
+    expect(useTransportStore.getState().runningSequences.hseq).toBeDefined();
+
+    cancelSequence("hseq");
+
+    expect(useTransportStore.getState().runningSequences.hseq).toBeUndefined();
+    expect(useTransportStore.getState().activeCueIds).toEqual(["a", "h1"]);
+    expect(useTransportStore.getState().isPlaying).toBe(true);
   });
 });
 
@@ -71,18 +146,21 @@ describe("notifyFadeCueComplete", () => {
     ];
 
     useTransportStore.setState({
-      runningSequence: {
-        rootId: "seq",
-        currentStep: 0,
-        stepCount: 2,
-        stepCueIds: ["fade"],
-        stepStartedAtMs: 0,
+      runningSequences: {
+        seq: {
+          rootId: "seq",
+          currentStep: 0,
+          stepCount: 2,
+          stepCueIds: ["fade"],
+          stepStartedAtMs: 0,
+          scope: "main",
+        },
       },
     });
 
     notifyFadeCueComplete("fade", cues);
 
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       rootId: "seq",
       currentStep: 1,
       stepCueIds: ["a"],
@@ -100,18 +178,21 @@ describe("notifyFadeCueComplete", () => {
     ];
 
     useTransportStore.setState({
-      runningSequence: {
-        rootId: "seq",
-        currentStep: 0,
-        stepCount: 1,
-        stepCueIds: ["fade", "a"],
-        stepStartedAtMs: 0,
+      runningSequences: {
+        seq: {
+          rootId: "seq",
+          currentStep: 0,
+          stepCount: 1,
+          stepCueIds: ["fade", "a"],
+          stepStartedAtMs: 0,
+          scope: "main",
+        },
       },
     });
 
     notifyFadeCueComplete("fade", cues);
 
-    expect(useTransportStore.getState().runningSequence?.currentStep).toBe(0);
+    expect(useTransportStore.getState().runningSequences.seq?.currentStep).toBe(0);
   });
 });
 
@@ -129,18 +210,21 @@ describe("notifyStepPlaybackEnded", () => {
     resetTestProject(cues);
     useTransportStore.setState({
       activeCueIds: [],
-      runningSequence: {
-        rootId: "seq",
-        currentStep: 0,
-        stepCount: 2,
-        stepCueIds: ["a"],
-        stepStartedAtMs: 0,
+      runningSequences: {
+        seq: {
+          rootId: "seq",
+          currentStep: 0,
+          stepCount: 2,
+          stepCueIds: ["a"],
+          stepStartedAtMs: 0,
+          scope: "main",
+        },
       },
     });
 
     notifyStepPlaybackEnded(["a"]);
 
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       rootId: "seq",
       currentStep: 1,
       stepCueIds: ["b"],
@@ -157,18 +241,50 @@ describe("notifyStepPlaybackEnded", () => {
     resetTestProject(cues);
     useTransportStore.setState({
       activeCueIds: ["b"],
-      runningSequence: {
-        rootId: "par",
-        currentStep: 0,
-        stepCount: 1,
-        stepCueIds: ["a", "b"],
-        stepStartedAtMs: 0,
+      runningSequences: {
+        par: {
+          rootId: "par",
+          currentStep: 0,
+          stepCount: 1,
+          stepCueIds: ["a", "b"],
+          stepStartedAtMs: 0,
+          scope: "main",
+        },
       },
     });
 
     notifyStepPlaybackEnded(["a"]);
 
-    expect(useTransportStore.getState().runningSequence?.currentStep).toBe(0);
+    expect(useTransportStore.getState().runningSequences.par?.currentStep).toBe(0);
+  });
+
+  it("completing an overlay sequence leaves main playback active", () => {
+    const cues = [
+      testCue("a", "A", "audio", { assetPath: "a.wav" }),
+      testCue("hseq", "Hot Seq", "sequence"),
+      testCue("h1", "H1", "audio", { parentId: "hseq", assetPath: "h1.wav" }),
+    ];
+    resetTestProject(cues);
+    useTransportStore.setState({
+      activeCueIds: ["a"],
+      isPlaying: true,
+      activeCueId: "a",
+      runningSequences: {
+        hseq: {
+          rootId: "hseq",
+          currentStep: 0,
+          stepCount: 1,
+          stepCueIds: ["h1"],
+          stepStartedAtMs: 0,
+          scope: "overlay",
+        },
+      },
+    });
+
+    notifyStepPlaybackEnded(["h1"]);
+
+    expect(useTransportStore.getState().runningSequences.hseq).toBeUndefined();
+    expect(useTransportStore.getState().activeCueIds).toContain("a");
   });
 });
 
@@ -210,7 +326,7 @@ describe("fade-then-stop sequence", () => {
 
     const result = runSequence(cues[0], cues);
     expect(result).toEqual({ started: true, stepCount: 2 });
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       rootId: "seq",
       currentStep: 0,
       stepCueIds: ["fade"],
@@ -223,7 +339,7 @@ describe("fade-then-stop sequence", () => {
 
     notifyFadeCueComplete("fade", cues);
 
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       rootId: "seq",
       currentStep: 1,
       stepCueIds: ["stop"],
@@ -244,17 +360,20 @@ describe("advanceRunningSequence", () => {
     ];
 
     useTransportStore.setState({
-      runningSequence: {
-        rootId: "seq",
-        currentStep: 0,
-        stepCount: 1,
-        stepCueIds: ["a"],
-        stepStartedAtMs: 0,
+      runningSequences: {
+        seq: {
+          rootId: "seq",
+          currentStep: 0,
+          stepCount: 1,
+          stepCueIds: ["a"],
+          stepStartedAtMs: 0,
+          scope: "main",
+        },
       },
     });
 
-    advanceRunningSequence(cues);
-    expect(useTransportStore.getState().runningSequence).toBeNull();
+    advanceRunningSequence("seq", cues);
+    expect(useTransportStore.getState().runningSequences).toEqual({});
   });
 });
 
@@ -277,19 +396,22 @@ describe("completeSequenceStep idempotency", () => {
     resetTestProject(cues);
     useTransportStore.setState({
       activeCueIds: [],
-      runningSequence: {
-        rootId: "seq",
-        currentStep: 0,
-        stepCount: 2,
-        stepCueIds: ["a"],
-        stepStartedAtMs: 0,
+      runningSequences: {
+        seq: {
+          rootId: "seq",
+          currentStep: 0,
+          stepCount: 2,
+          stepCueIds: ["a"],
+          stepStartedAtMs: 0,
+          scope: "main",
+        },
       },
     });
 
     notifyStepPlaybackEnded(["a"]);
     notifyStepPlaybackEnded(["a"]);
 
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       rootId: "seq",
       currentStep: 1,
       stepCueIds: ["b"],
@@ -309,7 +431,7 @@ describe("completeSequenceStep idempotency", () => {
     useTransportStore.setState({ activeCueIds: [] });
     notifyStepPlaybackEnded(["a"]);
 
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       currentStep: 1,
       stepCueIds: ["w"],
     });
@@ -317,7 +439,7 @@ describe("completeSequenceStep idempotency", () => {
 
     vi.advanceTimersByTime(2000);
 
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       currentStep: 2,
       stepCueIds: ["b"],
     });
@@ -333,12 +455,12 @@ describe("completeSequenceStep idempotency", () => {
     resetTestProject(cues);
     runSequence(cues[0], cues);
 
-    expect(useTransportStore.getState().runningSequence?.currentStep).toBe(0);
+    expect(useTransportStore.getState().runningSequences.seq?.currentStep).toBe(0);
 
     useTransportStore.setState({ activeCueIds: [] });
     notifyStepPlaybackEnded(["a"]);
 
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       currentStep: 1,
       stepCueIds: ["b"],
     });
@@ -346,7 +468,7 @@ describe("completeSequenceStep idempotency", () => {
     // Step-0 fallback timer would fire here on the old runner and re-enter step 1.
     vi.advanceTimersByTime(500);
 
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       currentStep: 1,
       stepCueIds: ["b"],
     });
@@ -367,18 +489,21 @@ describe("nested sequences", () => {
     resetTestProject(cues);
     useTransportStore.setState({
       activeCueIds: [],
-      runningSequence: {
-        rootId: "seq",
-        currentStep: 0,
-        stepCount: 2,
-        stepCueIds: ["a"],
-        stepStartedAtMs: 0,
+      runningSequences: {
+        seq: {
+          rootId: "seq",
+          currentStep: 0,
+          stepCount: 2,
+          stepCueIds: ["a"],
+          stepStartedAtMs: 0,
+          scope: "main",
+        },
       },
     });
 
     tryAdvanceSequenceIfStepPlaybackInactive();
 
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       currentStep: 1,
       stepCueIds: ["b"],
     });
@@ -394,7 +519,7 @@ describe("nested sequences", () => {
     resetTestProject(cues);
 
     runSequence(cues[0], cues);
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       rootId: "seq",
       currentStep: 0,
       stepCueIds: ["a"],
@@ -403,7 +528,7 @@ describe("nested sequences", () => {
     useTransportStore.setState({ activeCueIds: [] });
     notifyStepPlaybackEnded(["a"]);
 
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.seq).toMatchObject({
       currentStep: 1,
       stepCueIds: ["b"],
     });
@@ -421,7 +546,7 @@ describe("nested sequences", () => {
 
     runSequence(cues[0], cues);
 
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.inner).toMatchObject({
       rootId: "inner",
       currentStep: 0,
       stepCueIds: ["a"],
@@ -432,7 +557,7 @@ describe("nested sequences", () => {
     useTransportStore.setState({ activeCueIds: [] });
     notifyStepPlaybackEnded(["a"]);
 
-    expect(useTransportStore.getState().runningSequence).toMatchObject({
+    expect(useTransportStore.getState().runningSequences.inner).toMatchObject({
       rootId: "inner",
       currentStep: 1,
       stepCueIds: ["b"],
@@ -443,7 +568,8 @@ describe("nested sequences", () => {
     useTransportStore.setState({ activeCueIds: [] });
     notifyStepPlaybackEnded(["b"]);
 
-    expect(useTransportStore.getState().runningSequence).toBeNull();
+    expect(useTransportStore.getState().runningSequences.inner).toBeUndefined();
+    expect(useTransportStore.getState().runningSequences.root).toBeUndefined();
     expect(useTransportStore.getState().activeCueIds).toEqual([]);
   });
 
@@ -460,7 +586,8 @@ describe("nested sequences", () => {
     useTransportStore.setState({ activeCueIds: [] });
     notifyStepPlaybackEnded(["a"]);
 
-    expect(useTransportStore.getState().runningSequence).toBeNull();
+    expect(useTransportStore.getState().runningSequences.inner).toBeUndefined();
+    expect(useTransportStore.getState().runningSequences.root).toBeUndefined();
   });
 });
 

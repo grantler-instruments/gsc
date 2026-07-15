@@ -27,6 +27,7 @@ describe("cue list clipboard actions", () => {
     expect(lists[1].cues[0].id).not.toBe(lists[0].cues[0].id);
     expect(lists[1].cues[0].name).toBe("A");
     expect(useProjectStore.getState().activeCueListId).toBe(lists[1].id);
+    expect(useProjectStore.getState().mainSequenceListId).toBe(lists[1].id);
   });
 
   it("copies and pastes a list after the anchor", () => {

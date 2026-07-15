@@ -7,6 +7,7 @@ import { defaultMasterVideoOutputName } from "../../lib/video-buses";
 import type { MidiMapping } from "../../types/midi-mapping";
 
 export const initialList = createCueList(t("project.defaultListName"));
+export const initialHotList = createCueList(t("project.defaultHotListName"), "hot");
 export const initialProjectId = randomId();
 
 setActiveProjectId(initialProjectId);
@@ -14,8 +15,10 @@ setActiveProjectId(initialProjectId);
 export const initialProjectData = {
   id: initialProjectId,
   name: t("project.defaultName"),
-  cueLists: [initialList],
+  cueLists: [initialList, initialHotList],
   activeCueListId: initialList.id,
+  mainSequenceListId: initialList.id,
+  activeHotCueListId: initialHotList.id as string | null,
   midiMappings: [] as MidiMapping[],
   fixtures: [],
   fixturePlot: emptyFixturePlot(),

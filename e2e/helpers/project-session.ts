@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { transportGoButton } from "./active-cues";
 
 const IDB_NAME = "gsc-v1";
 
@@ -7,7 +8,7 @@ export function showNameButton(page: Page) {
 }
 
 export async function waitForAppReady(page: Page): Promise<void> {
-  await expect(page.getByRole("button", { name: "GO" })).toBeVisible({ timeout: 30_000 });
+  await expect(transportGoButton(page)).toBeVisible({ timeout: 30_000 });
 }
 
 export async function renameShow(page: Page, name: string): Promise<void> {

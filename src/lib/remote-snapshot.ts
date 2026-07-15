@@ -17,33 +17,37 @@ function buildFixtureChannelValues(fixtures: Fixtures) {
   );
 }
 
+function cloneRunningSequences(
+  runningSequences: RemoteTransportState["runningSequences"],
+): RemoteTransportState["runningSequences"] {
+  return Object.fromEntries(
+    Object.entries(runningSequences).map(([id, seq]) => [
+      id,
+      { ...seq, stepCueIds: [...seq.stepCueIds] },
+    ]),
+  );
+}
+
 function cloneRemoteTransportState(state: RemoteTransportState): RemoteTransportState {
   return {
     isPlaying: state.isPlaying,
     activeCueId: state.activeCueId,
     activeCueIds: [...state.activeCueIds],
     cueStartedAtMs: { ...state.cueStartedAtMs },
-    runningSequence: state.runningSequence
-      ? {
-          ...state.runningSequence,
-          stepCueIds: [...state.runningSequence.stepCueIds],
-        }
-      : null,
+    runningSequences: cloneRunningSequences(state.runningSequences),
     masterVolume: state.masterVolume,
   };
 }
 
 function buildTransportState(): RemoteTransportState {
-  const { isPlaying, activeCueId, activeCueIds, cueStartedAtMs, runningSequence, masterVolume } =
+  const { isPlaying, activeCueId, activeCueIds, cueStartedAtMs, runningSequences, masterVolume } =
     useTransportStore.getState();
   return cloneRemoteTransportState({
     isPlaying,
     activeCueId,
     activeCueIds,
     cueStartedAtMs,
-    runningSequence: runningSequence
-      ? { ...runningSequence, stepCueIds: runningSequence.stepCueIds }
-      : null,
+    runningSequences,
     masterVolume,
   });
 }

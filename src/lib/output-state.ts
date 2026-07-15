@@ -2,7 +2,7 @@ import { getPlatform } from "../platform";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { resolveEffectiveOpacity, resolveEffectiveVolume } from "../stores/fade";
 import { usePlaybackStore } from "../stores/playback";
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
 import { useTransportStore } from "../stores/transport";
 import { useVfsStore } from "../stores/vfs";
@@ -213,8 +213,12 @@ export function listVideoOutputBusIds(videoBuses: VideoBus[]): string[] {
 export function hasUnresolvedVisualOutput(activeCueIds: string[], layers: OutputLayer[]): boolean {
   if (activeCueIds.length === 0 || layers.length > 0) return false;
 
-  const list = getActiveCueListFromState(useProjectStore.getState());
-  const cueById = new Map(list?.cues.map((c) => [c.id, c]) ?? []);
+  const cueById = new Map(
+    useProjectStore
+      .getState()
+      .cueLists.reduce<Cue[]>((all, list) => all.concat(list.cues), [])
+      .map((c) => [c.id, c]),
+  );
 
   for (const cueId of activeCueIds) {
     const cue = cueById.get(cueId);

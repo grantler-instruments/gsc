@@ -10,10 +10,12 @@ import {
   availableDmxFixtures,
   clampDmxValue,
   fixtureChannelLabel,
+  getDmxFixtureLogicalChannelValue,
   removeDmxFixtureFromCue,
   resolveLightFadeDmx,
-  updateDmxFixtureChannelValue,
+  updateDmxFixtureLogicalChannelValue,
 } from "../../lib/dmx";
+import { DMX_VALUE_16BIT_MAX, iterateFixtureLogicalChannels } from "../../lib/fixture-channels";
 import { fixtureChannelAddress } from "../../lib/fixtures";
 import { useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
@@ -145,11 +147,21 @@ export function DmxInspectorFields({
                 </IconButton>
               )}
             </Stack>
-            {entry.values.map((value, index) => {
-              const channelLabel = fixtureChannelLabel(fixture, index);
+            {iterateFixtureLogicalChannels(fixture).map((logical) => {
+              const value = getDmxFixtureLogicalChannelValue(
+                entry.values,
+                fixture,
+                logical.slotIndex,
+              );
+              const channelLabel = logical.name ?? fixtureChannelLabel(fixture, logical.slotIndex);
+              const max = logical.is16Bit ? DMX_VALUE_16BIT_MAX : 255;
+              const addressLabel = logical.is16Bit
+                ? `${fixtureChannelAddress(fixture, logical.slotIndex)}–${fixtureChannelAddress(fixture, logical.slotIndex + 1)}`
+                : String(fixtureChannelAddress(fixture, logical.slotIndex));
+
               return (
                 <Stack
-                  key={`${entry.fixtureId}-${fixtureChannelAddress(fixture, index)}`}
+                  key={`${entry.fixtureId}-${logical.slotIndex}`}
                   direction="row"
                   sx={{ gap: 0.75, alignItems: "center" }}
                 >
@@ -162,7 +174,7 @@ export function DmxInspectorFields({
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
-                    {fixtureChannelAddress(fixture, index)}
+                    {addressLabel}
                   </Typography>
                   <Typography
                     component="span"
@@ -182,15 +194,16 @@ export function DmxInspectorFields({
                     <SliderNumberField
                       value={value}
                       min={0}
-                      max={255}
+                      max={max}
                       readOnly={readOnly}
                       onChange={(next) =>
                         patchDmx(
-                          updateDmxFixtureChannelValue(
+                          updateDmxFixtureLogicalChannelValue(
                             dmx,
                             entry.fixtureId,
-                            index,
-                            clampDmxValue(next),
+                            logical.slotIndex,
+                            logical.is16Bit ? next : clampDmxValue(next),
+                            fixture,
                           ),
                         )
                       }

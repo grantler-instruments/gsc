@@ -1,10 +1,13 @@
 import { expect, type Page } from "@playwright/test";
 
-/** Main sequence cue list panel (excludes the hot-cue cart). */
+/** Main sequence cue list panel (excludes the hot-cue cart and compact sidebar). */
 export function sequenceCueListPanel(page: Page) {
-  return page.locator("section").filter({
-    has: page.locator('[data-gsc-drop-zone="cue-list"]'),
-  });
+  return page
+    .getByRole("main")
+    .locator("section")
+    .filter({
+      has: page.locator('[data-gsc-drop-zone="cue-list"]'),
+    });
 }
 
 export function sequenceCueListTabs(page: Page) {
@@ -76,6 +79,13 @@ export function sequenceCueRow(page: Page, displayName: string) {
   return sequenceCueList(page).locator("[data-cue-id]", {
     has: page.getByText(displayName, { exact: true }),
   });
+}
+
+/** Select a cue row without hitting inline row action buttons (narrow layout + hot panel). */
+export async function selectSequenceCueRow(page: Page, displayName: string): Promise<void> {
+  const row = sequenceCueRow(page, displayName);
+  await expect(row).toHaveCount(1);
+  await row.locator("[data-cue-number]").click();
 }
 
 /** Wait until a dropped/imported file appears as a cue row in the main list. */

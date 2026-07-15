@@ -13,5 +13,5 @@ export function useRestartCssAnimation(
     el.style.animation = "none";
     void el.offsetHeight;
     el.style.animation = "";
-  }, [active, token]);
+  }, [active, token, ref]);
 }

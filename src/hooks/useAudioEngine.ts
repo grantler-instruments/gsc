@@ -6,7 +6,7 @@ import {
 } from "../lib/sequence-runner";
 import { useFadeStore } from "../stores/fade";
 import { useProjectStore } from "../stores/project";
-import { useTransportStore } from "../stores/transport";
+import { hasRunningSequences, useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
 
 function allProjectCues(state: { cueLists: { cues: Cue[] }[] }): Cue[] {
@@ -54,8 +54,8 @@ export function useAudioEngine(): void {
       const { cueLists, audioBuses } = useProjectStore.getState();
       if (activeCueIds.length === 0) {
         audioEngine.syncMixer(audioBuses, masterVolume);
-        const runningSequence = useTransportStore.getState().runningSequence;
-        if (!runningSequence) {
+        const runningSequences = useTransportStore.getState().runningSequences;
+        if (!hasRunningSequences(runningSequences)) {
           void audioEngine.stopAll();
           return;
         }

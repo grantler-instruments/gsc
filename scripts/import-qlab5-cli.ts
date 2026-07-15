@@ -5,14 +5,13 @@
  *   npx vite-node scripts/import-qlab5-cli.ts <qlab-folder> <output-root>
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { dirname, join } from "node:path";
 import {
   assetRelativePath,
   PROJECT_JSON,
   projectDirNameFromShowName,
 } from "../src/lib/project-paths";
 import { convertQlabWorkspaceToSnapshot } from "../src/lib/qlab5/convert-to-snapshot";
-import { createImportReport } from "../src/lib/qlab5/import-report";
 import { parseQlab5Workspace } from "../src/lib/qlab5/parse-workspace";
 import { resolveAndImportAssets } from "../src/lib/qlab5/resolve-assets";
 import { QLAB5_WORKSPACE_EXTENSION } from "../src/lib/qlab5/types";

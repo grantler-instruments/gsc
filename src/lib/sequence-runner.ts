@@ -1,5 +1,5 @@
 import { getActiveCueListFromState, useProjectStore } from "../stores/project";
-import { useTransportStore } from "../stores/transport";
+import { type SequenceScope, useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
 import { estimateStepDurationMs } from "./cue-duration";
 import { expandSequenceSteps, isFadeCue, isParallelGroup, isSequenceGroup } from "./cues";
@@ -12,9 +12,22 @@ import {
 } from "./sequence-timers";
 import { transportNowMs } from "./transport-clock";
 
+/** Cancel a single running sequence (timers + transport entry). */
+export function cancelSequence(rootId: string): void {
+  clearSequenceTimers(rootId);
+  useTransportStore.getState().clearRunningSequence(rootId);
+}
+
 export function cancelAllSequences(): void {
   clearSequenceTimers();
-  useTransportStore.getState().setRunningSequence(null);
+  useTransportStore.getState().clearAllRunningSequences();
+}
+
+function cancelSequencesByScope(scope: SequenceScope): void {
+  const running = useTransportStore.getState().runningSequences;
+  for (const seq of Object.values(running)) {
+    if (seq.scope === scope) cancelSequence(seq.rootId);
+  }
 }
 
 interface CompleteStepOptions {
@@ -23,6 +36,7 @@ interface CompleteStepOptions {
 }
 
 interface RunSequenceOptions {
+  scope?: SequenceScope;
   parent?: {
     rootId: string;
     stepIndex: number;
@@ -32,20 +46,23 @@ interface RunSequenceOptions {
 function resumeParentSequence(cues: Cue[], parent: { rootId: string; stepIndex: number }): void {
   const parentRoot = cues.find((c) => c.id === parent.rootId);
   if (!parentRoot) {
-    cancelAllSequences();
+    cancelSequence(parent.rootId);
     return;
   }
   const parentSteps = expandSequenceSteps(parent.rootId, cues);
-  clearSequenceTimers();
+  const transport = useTransportStore.getState();
+  const scope = transport.runningSequences[parent.rootId]?.scope ?? "main";
+  clearSequenceTimers(parent.rootId);
   // Do not copy the child's `parent` link — it points at this sequence, not its grandparent.
-  useTransportStore.getState().setRunningSequence({
+  transport.setRunningSequence(parent.rootId, {
     rootId: parent.rootId,
     currentStep: parent.stepIndex,
     stepCount: parentSteps.length,
     stepCueIds: parentSteps[parent.stepIndex] ?? [],
     stepStartedAtMs: transportNowMs(),
+    scope,
   });
-  completeSequenceStep(parentRoot, cues, parentSteps, parent.stepIndex);
+  completeSequenceStep(parentRoot, cues, parentSteps, parent.stepIndex, scope);
 }
 
 function finishSequenceOrAdvance(
@@ -53,19 +70,20 @@ function finishSequenceOrAdvance(
   cues: Cue[],
   steps: string[][],
   stepIndex: number,
+  scope: SequenceScope,
 ): void {
   const nextIndex = stepIndex + 1;
   if (nextIndex >= steps.length) {
-    const parent = useTransportStore.getState().runningSequence?.parent;
+    const parent = useTransportStore.getState().runningSequences[rootCue.id]?.parent;
+    cancelSequence(rootCue.id);
     if (parent) {
       resumeParentSequence(cues, parent);
       return;
     }
-    cancelAllSequences();
     return;
   }
 
-  runSequenceStep(rootCue, cues, steps, nextIndex);
+  runSequenceStep(rootCue, cues, steps, nextIndex, scope);
 }
 
 /** Advance or finish the sequence after the given step completes. Idempotent per step index. */
@@ -74,15 +92,16 @@ function completeSequenceStep(
   cues: Cue[],
   steps: string[][],
   stepIndex: number,
+  scope: SequenceScope,
   options: CompleteStepOptions = {},
 ): void {
   const transport = useTransportStore.getState();
-  const running = transport.runningSequence;
-  if (!running || running.rootId !== rootCue.id || running.currentStep !== stepIndex) {
+  const running = transport.runningSequences[rootCue.id];
+  if (!running || running.currentStep !== stepIndex) {
     return;
   }
 
-  clearSequenceTimers();
+  clearSequenceTimers(rootCue.id);
 
   if (options.forceStopPlayback) {
     const playbackIds = playbackCueIdsInStep(running.stepCueIds, cues);
@@ -94,26 +113,27 @@ function completeSequenceStep(
 
   const nextIndex = stepIndex + 1;
   if (nextIndex >= steps.length) {
-    finishSequenceOrAdvance(rootCue, cues, steps, stepIndex);
+    finishSequenceOrAdvance(rootCue, cues, steps, stepIndex, scope);
     return;
   }
 
-  runSequenceStep(rootCue, cues, steps, nextIndex);
+  runSequenceStep(rootCue, cues, steps, nextIndex, scope, running.parent);
 }
 
-/** Advance the running sequence after the current step finishes. */
-export function advanceRunningSequence(cues: Cue[]): void {
-  const running = useTransportStore.getState().runningSequence;
+/** Advance a specific running sequence after its current step finishes. */
+export function advanceRunningSequence(rootId: string, cues: Cue[]): void {
+  const transport = useTransportStore.getState();
+  const running = transport.runningSequences[rootId];
   if (!running) return;
 
   const rootCue = cues.find((c) => c.id === running.rootId);
   if (!rootCue) {
-    cancelAllSequences();
+    cancelSequence(rootId);
     return;
   }
 
   const steps = expandSequenceSteps(running.rootId, cues);
-  completeSequenceStep(rootCue, cues, steps, running.currentStep);
+  completeSequenceStep(rootCue, cues, steps, running.currentStep, running.scope);
 }
 
 function runSequenceStep(
@@ -121,6 +141,7 @@ function runSequenceStep(
   cues: Cue[],
   steps: string[][],
   index: number,
+  scope: SequenceScope,
   parent?: RunSequenceOptions["parent"],
 ): void {
   const transport = useTransportStore.getState();
@@ -128,15 +149,15 @@ function runSequenceStep(
 
   if (stepCueIds.length === 0) {
     if (index + 1 >= steps.length) {
-      finishSequenceOrAdvance(rootCue, cues, steps, index);
+      finishSequenceOrAdvance(rootCue, cues, steps, index, scope);
       return;
     }
-    runSequenceStep(rootCue, cues, steps, index + 1, parent);
+    runSequenceStep(rootCue, cues, steps, index + 1, scope, parent);
     return;
   }
 
   const stepStartedAtMs = transportNowMs();
-  const runningBefore = useTransportStore.getState().runningSequence;
+  const runningBefore = transport.runningSequences[rootCue.id];
   const preservedParent =
     parent ?? (runningBefore?.rootId === rootCue.id ? runningBefore.parent : undefined);
   const stepRunning = {
@@ -145,12 +166,13 @@ function runSequenceStep(
     stepCount: steps.length,
     stepCueIds,
     stepStartedAtMs,
+    scope,
     ...(preservedParent ? { parent: preservedParent } : {}),
   };
 
   // Set before firing so notifyStepPlaybackEnded is not dropped when a short clip
   // ends during the same turn as fireStepCues (common on CI).
-  transport.setRunningSequence(stepRunning);
+  transport.setRunningSequence(rootCue.id, stepRunning);
 
   fireStepCues(
     stepCueIds,
@@ -162,15 +184,20 @@ function runSequenceStep(
     },
     {
       runSequence: (cue, list) =>
-        runSequence(cue, list, { parent: { rootId: rootCue.id, stepIndex: index } }),
+        runSequence(cue, list, {
+          scope,
+          parent: { rootId: rootCue.id, stepIndex: index },
+        }),
     },
   );
 
-  const nestedRunning = useTransportStore.getState().runningSequence;
-  if (nestedRunning && nestedRunning.rootId !== rootCue.id) {
-    if (!nestedRunning.parent) {
-      transport.setRunningSequence({
-        ...nestedRunning,
+  const postFire = useTransportStore.getState().runningSequences;
+  const childSeqId = stepCueIds.find((id) => postFire[id]?.rootId === id && id !== rootCue.id);
+  if (childSeqId) {
+    const childSeq = postFire[childSeqId];
+    if (childSeq && !childSeq.parent) {
+      transport.setRunningSequence(childSeqId, {
+        ...childSeq,
         parent: { rootId: rootCue.id, stepIndex: index },
       });
     }
@@ -190,21 +217,26 @@ function runSequenceStep(
     return;
   }
 
+  const nestedRunning = useTransportStore.getState().runningSequences[rootCue.id];
   if (
-    nestedRunning?.rootId !== rootCue.id ||
+    !nestedRunning ||
     nestedRunning.currentStep !== index ||
     nestedRunning.stepCueIds !== stepCueIds
   ) {
-    transport.setRunningSequence(stepRunning);
+    transport.setRunningSequence(rootCue.id, stepRunning);
   }
 
   const durationMs = estimateStepDurationMs(stepCueIds, cues);
 
-  scheduleSequenceStep(() => {
-    completeSequenceStep(rootCue, cues, steps, index, { forceStopPlayback: true });
-  }, durationMs);
+  scheduleSequenceStep(
+    rootCue.id,
+    () => {
+      completeSequenceStep(rootCue, cues, steps, index, scope, { forceStopPlayback: true });
+    },
+    durationMs,
+  );
 
-  scheduleSequenceStepWatchdog(() => {
+  scheduleSequenceStepWatchdog(rootCue.id, () => {
     tryAdvanceSequenceIfStepPlaybackInactive();
   });
 }
@@ -214,44 +246,60 @@ export function runSequence(
   cues: Cue[],
   options: RunSequenceOptions = {},
 ): { started: boolean; stepCount: number } {
+  const scope = options.scope ?? "main";
   const steps = expandSequenceSteps(rootCue.id, cues);
   if (steps.length === 0) {
     return { started: false, stepCount: 0 };
   }
 
   if (options.parent) {
-    clearSequenceTimers();
+    clearSequenceTimers(rootCue.id);
+  } else if (scope === "main") {
+    cancelSequencesByScope("main");
   } else {
-    cancelAllSequences();
+    cancelSequence(rootCue.id);
   }
-  runSequenceStep(rootCue, cues, steps, 0, options.parent);
+
+  runSequenceStep(rootCue, cues, steps, 0, scope, options.parent);
   return { started: true, stepCount: steps.length };
 }
 
-/** Called when playback cues in the current step have stopped (audio engine or progress fallback). */
+function allProjectCues(): Cue[] {
+  return useProjectStore.getState().cueLists.flatMap((list) => list.cues);
+}
+
+function cuesForRunningSequence(scope: SequenceScope): Cue[] {
+  return scope === "overlay"
+    ? allProjectCues()
+    : (getActiveCueListFromState(useProjectStore.getState())?.cues ?? []);
+}
+
+/** Advance when all playback cues in the current step have stopped. */
 export function notifyStepPlaybackEnded(stoppedCueIds: string[]): void {
   if (stoppedCueIds.length === 0) return;
 
   const transport = useTransportStore.getState();
-  const running = transport.runningSequence;
-  if (!running) return;
+  const running = transport.runningSequences;
+  if (Object.keys(running).length === 0) return;
 
-  const cues = getActiveCueListFromState(useProjectStore.getState())?.cues ?? [];
-  const playbackIds = playbackCueIdsInStep(running.stepCueIds, cues);
-  const stoppedPlayback = stoppedCueIds.filter((id) => playbackIds.includes(id));
-  if (stoppedPlayback.length === 0) return;
+  for (const [rootId, seq] of Object.entries(running)) {
+    const cues = cuesForRunningSequence(seq.scope);
+    const playbackIds = playbackCueIdsInStep(seq.stepCueIds, cues);
+    const stoppedPlayback = stoppedCueIds.filter((id) => playbackIds.includes(id));
+    if (stoppedPlayback.length === 0) continue;
 
-  const stillActive = playbackIds.filter((id) => transport.activeCueIds.includes(id));
-  if (stillActive.length > 0) return;
+    const stillActive = playbackIds.filter((id) => transport.activeCueIds.includes(id));
+    if (stillActive.length > 0) continue;
 
-  const rootCue = cues.find((c) => c.id === running.rootId);
-  if (!rootCue) {
-    cancelAllSequences();
-    return;
+    const rootCue = cues.find((c) => c.id === seq.rootId);
+    if (!rootCue) {
+      cancelSequence(rootId);
+      continue;
+    }
+
+    const steps = expandSequenceSteps(seq.rootId, cues);
+    completeSequenceStep(rootCue, cues, steps, seq.currentStep, seq.scope);
   }
-
-  const steps = expandSequenceSteps(running.rootId, cues);
-  completeSequenceStep(rootCue, cues, steps, running.currentStep);
 }
 
 /**
@@ -260,45 +308,51 @@ export function notifyStepPlaybackEnded(stoppedCueIds: string[]): void {
  */
 export function tryAdvanceSequenceIfStepPlaybackInactive(): void {
   const transport = useTransportStore.getState();
-  const running = transport.runningSequence;
-  if (!running) return;
+  const running = transport.runningSequences;
+  if (Object.keys(running).length === 0) return;
 
-  const cues = getActiveCueListFromState(useProjectStore.getState())?.cues ?? [];
-  const playbackIds = playbackCueIdsInStep(running.stepCueIds, cues);
-  if (playbackIds.length === 0) return;
+  for (const seq of Object.values(running)) {
+    const cues = cuesForRunningSequence(seq.scope);
+    const playbackIds = playbackCueIdsInStep(seq.stepCueIds, cues);
+    if (playbackIds.length === 0) continue;
 
-  const stillActive = playbackIds.filter((id) => transport.activeCueIds.includes(id));
-  if (stillActive.length > 0) return;
+    const stillActive = playbackIds.filter((id) => transport.activeCueIds.includes(id));
+    if (stillActive.length > 0) continue;
 
-  notifyStepPlaybackEnded(playbackIds);
+    notifyStepPlaybackEnded(playbackIds);
+  }
 }
 
 /** When a fade cue finishes, advance if the sequence is waiting on it. */
 export function notifyFadeCueComplete(fadeCueId: string, cues: Cue[]): void {
-  const running = useTransportStore.getState().runningSequence;
-  if (!running) return;
-  if (!running.stepCueIds.includes(fadeCueId)) return;
+  const running = useTransportStore.getState().runningSequences;
+  const owner = Object.values(running).find((seq) => seq.stepCueIds.includes(fadeCueId));
+  if (!owner) return;
 
   const fadeCue = cues.find((c) => c.id === fadeCueId);
   if (!fadeCue || !isFadeCue(fadeCue)) return;
 
   // Only skip the timer when this step is fade-only (typical fade → stop chain).
-  const stepIsFadeOnly = running.stepCueIds.length === 1 && running.stepCueIds[0] === fadeCueId;
+  const stepIsFadeOnly = owner.stepCueIds.length === 1 && owner.stepCueIds[0] === fadeCueId;
 
   if (stepIsFadeOnly) {
-    const rootCue = cues.find((c) => c.id === running.rootId);
+    const rootCue = cues.find((c) => c.id === owner.rootId);
     if (!rootCue) {
-      cancelAllSequences();
+      cancelSequence(owner.rootId);
       return;
     }
-    const steps = expandSequenceSteps(running.rootId, cues);
-    completeSequenceStep(rootCue, cues, steps, running.currentStep);
+    const steps = expandSequenceSteps(owner.rootId, cues);
+    completeSequenceStep(rootCue, cues, steps, owner.currentStep, owner.scope);
   }
 }
 
 /** Called when a property fade tied to a fade utility cue finishes. */
 export function handleSequenceFadeCueCompleted(fadeCueId: string): void {
-  const cues = getActiveCueListFromState(useProjectStore.getState())?.cues ?? [];
+  // Search all lists: an overlay (hot) sequence's fade cue may live outside the active list.
+  const running = useTransportStore.getState().runningSequences;
+  const owner = Object.values(running).find((seq) => seq.stepCueIds.includes(fadeCueId));
+  if (!owner) return;
+  const cues = cuesForRunningSequence(owner.scope);
   notifyFadeCueComplete(fadeCueId, cues);
 }
 

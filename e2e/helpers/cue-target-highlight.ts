@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { sequenceCueRow } from "./cue-list-panel";
+import { transportGoButton } from "./active-cues";
+import { selectSequenceCueRow, sequenceCueRow } from "./cue-list-panel";
 import { dropAudioOnCueList } from "./drop-audio";
 import { createPanFadeForCue, createVolumeFadeForCue, fadeCueDisplayName } from "./fade-cues";
 
@@ -16,8 +17,8 @@ export function stopCueDisplayName(targetNumber: string, targetName: string): st
 }
 
 export async function createStopForCue(page: Page, targetName: string): Promise<void> {
+  await selectSequenceCueRow(page, targetName);
   const row = sequenceCueRow(page, targetName);
-  await row.click();
   await row.getByRole("button", { name: `Create stop cue for ${targetName}` }).click();
 }
 
@@ -60,11 +61,10 @@ export async function expectCueRowTargetNotHighlighted(row: Locator): Promise<vo
 
 /** Deselect utility cues and move the pointer away from the cue list. */
 export async function clearCueTargetHighlightState(page: Page, targetName: string): Promise<void> {
+  await transportGoButton(page).hover();
   const row = sequenceCueRow(page, targetName);
   await expect(row).toBeVisible();
-  await row.scrollIntoViewIfNeeded();
-  await row.click();
-  await page.getByRole("button", { name: "GO" }).hover();
+  await row.locator("[data-cue-number]").click({ force: true });
 }
 
 export async function expectTargetHighlightsOnHoverAndSelect(

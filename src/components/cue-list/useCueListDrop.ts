@@ -5,11 +5,11 @@ import {
   isExternalFileDrag,
   resolveAssetDropPayloads,
 } from "../../lib/asset-drop";
+import { findCueInLists } from "../../lib/cue-lists";
 import { pointerLeftElement } from "../../lib/dom";
 import {
   isAssetDrag,
   isCueDrag,
-  readCueDragData,
   readCueDragId,
   setActiveAssetDrag,
   setActiveCueDrag,
@@ -17,8 +17,9 @@ import {
 import { useProjectStore } from "../../stores/project";
 import { useClearOnDragEnd } from "./useClearOnDragEnd";
 
-export function useCueListDrop(canEdit: boolean) {
+export function useCueListDrop(canEdit: boolean, listId: string) {
   const moveCueToGroup = useProjectStore((s) => s.moveCueToGroup);
+  const moveCueToList = useProjectStore((s) => s.moveCueToList);
   const [listDropActive, setListDropActive] = useState(false);
 
   const clearListDropActive = useCallback(() => setListDropActive(false), []);
@@ -49,11 +50,12 @@ export function useCueListDrop(canEdit: boolean) {
       e.preventDefault();
       if (!canEdit) return;
 
-      const cuePayload = readCueDragData(e.dataTransfer);
-      const draggedCueId =
-        cuePayload?.cueId ?? (isCueDrag(e.dataTransfer) ? readCueDragId(e.dataTransfer) : null);
+      const draggedCueId = readCueDragId(e.dataTransfer);
       if (draggedCueId) {
-        if (e.target === e.currentTarget) {
+        const source = findCueInLists(useProjectStore.getState().cueLists, draggedCueId);
+        if (source && source.list.id !== listId) {
+          moveCueToList(draggedCueId, listId, { kind: "append" });
+        } else if (e.target === e.currentTarget) {
           moveCueToGroup(draggedCueId, null);
         }
         setActiveCueDrag(null);
@@ -67,13 +69,13 @@ export function useCueListDrop(canEdit: boolean) {
       void (async () => {
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
-          applyAssetPayloads(payloads, { kind: "list" });
+          applyAssetPayloads(payloads, { kind: "list", listId });
         } finally {
           setActiveAssetDrag(null);
         }
       })();
     },
-    [canEdit, moveCueToGroup],
+    [canEdit, listId, moveCueToGroup, moveCueToList],
   );
 
   const onListDropCapture = clearListDropActive;

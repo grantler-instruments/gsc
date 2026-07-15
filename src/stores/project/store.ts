@@ -9,7 +9,11 @@ import { createCueEditorActions } from "./cue-editor-actions";
 import { createCueListActions } from "./cue-list-actions";
 import { createFixtureActions } from "./fixture-actions";
 import { createFixturePlotActions } from "./fixture-plot-actions";
-import { getActiveCueListFromState } from "./helpers";
+import {
+  getActiveCueListFromState,
+  resolveActiveHotListId,
+  resolveMainSequenceListId,
+} from "./helpers";
 import { initialProjectData } from "./initial-state";
 import { createMidiMappingActions } from "./midi-mapping-actions";
 import { createSelectionActions } from "./selection-actions";
@@ -17,7 +21,7 @@ import { createSnapshotActions } from "./snapshot-actions";
 import type { ProjectState } from "./types";
 import { createVideoBusActions } from "./video-bus-actions";
 
-export { getActiveCueListFromState } from "./helpers";
+export { getActiveCueListFromState, getMainSequenceListFromState } from "./helpers";
 
 export const useProjectStore = create<ProjectState>()(
   devtools(
@@ -46,6 +50,22 @@ registerDmxPreviewProjectAccess(() => useProjectStore.getState());
 
 export function useActiveCueList(): CueList {
   return useProjectStore((s) => getActiveCueListFromState(s));
+}
+
+/** The sequence list shown in the main cue panel (independent of edit focus). */
+export function useMainSequenceList(): CueList | null {
+  return useProjectStore((s) => {
+    const id = resolveMainSequenceListId(s);
+    return id ? (s.cueLists.find((l) => l.id === id) ?? null) : null;
+  });
+}
+
+/** The hot list shown in the hot-cue panel, or null when no hot lists exist. */
+export function useActiveHotCueList(): CueList | null {
+  return useProjectStore((s) => {
+    const id = resolveActiveHotListId(s);
+    return id ? (s.cueLists.find((l) => l.id === id) ?? null) : null;
+  });
 }
 
 export function useProjectCues(): Cue[] {

@@ -3,8 +3,12 @@ import { flattenVisibleCueIds, getPrimarySelectedCueId } from "../../lib/cue-sel
 import { getActiveCueListFromState, useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
 
-export function useCueListSelection(cues: Cue[], collapsedGroups: Set<string>) {
-  const selectedCueIds = useProjectStore((s) => getActiveCueListFromState(s).selectedCueIds);
+export function useCueListSelection(cues: Cue[], collapsedGroups: Set<string>, listId?: string) {
+  const selectedCueIds = useProjectStore((s) =>
+    listId
+      ? (s.cueLists.find((l) => l.id === listId)?.selectedCueIds ?? [])
+      : getActiveCueListFromState(s).selectedCueIds,
+  );
   const selectCue = useProjectStore((s) => s.selectCue);
   const toggleSelectCue = useProjectStore((s) => s.toggleSelectCue);
   const selectCueRange = useProjectStore((s) => s.selectCueRange);

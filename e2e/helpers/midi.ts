@@ -6,7 +6,7 @@ import {
   openActiveCuesTab,
 } from "./active-cues";
 import { pressModShortcut } from "./app";
-import { sequenceCueRow } from "./cue-list-panel";
+import { selectSequenceCueRow } from "./cue-list-panel";
 
 export const E2E_MIDI_INPUT_ID = "e2e-midi-in";
 export const E2E_MIDI_INPUT_NAME = "E2E MIDI Input";
@@ -237,7 +237,7 @@ export async function closeSettings(page: Page): Promise<void> {
 }
 
 export async function selectSequenceCue(page: Page, displayName: string): Promise<void> {
-  await sequenceCueRow(page, displayName).click();
+  await selectSequenceCueRow(page, displayName);
 }
 
 /** Selected cue name is shown in the transport bar summary. */

@@ -8,7 +8,7 @@ import {
   transportGoButton,
 } from "./helpers/active-cues";
 import { gotoApp } from "./helpers/app";
-import { sequenceCueRow } from "./helpers/cue-list-panel";
+import { selectSequenceCueRow } from "./helpers/cue-list-panel";
 import {
   createStopForCue,
   setupAudioTargetCue,
@@ -30,7 +30,7 @@ test("stop cue ends active playback", async ({ page }) => {
   await createStopForCue(page, PLAYBACK_WAV);
   const stopRow = await stopCueRowForTarget(page, PLAYBACK_WAV);
 
-  await sequenceCueRow(page, PLAYBACK_WAV).click();
+  await selectSequenceCueRow(page, PLAYBACK_WAV);
   await openActiveCuesTab(page);
   await pressTransportGo(page);
 

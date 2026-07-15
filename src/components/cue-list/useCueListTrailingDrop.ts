@@ -4,6 +4,7 @@ import {
   isExternalFileDrag,
   resolveAssetDropPayloads,
 } from "../../lib/asset-drop";
+import { findCueInLists } from "../../lib/cue-lists";
 import { getLastSiblingOfCue } from "../../lib/cues";
 import { pointerLeftElement } from "../../lib/dom";
 import {
@@ -13,12 +14,14 @@ import {
   setActiveAssetDrag,
   setActiveCueDrag,
 } from "../../lib/drag";
+import { useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
 import { useCueListActions } from "./cueListActionsContext";
 import { useClearOnDragEnd } from "./useClearOnDragEnd";
 
 export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
-  const { onCueReparent, onCueReparentToListEnd } = useCueListActions();
+  const { listId, onCueReparent, onCueReparentToListEnd } = useCueListActions();
+  const moveCueToList = useProjectStore((s) => s.moveCueToList);
   const [dropActive, setDropActive] = useState(false);
 
   const clearDropActive = useCallback(() => setDropActive(false), []);
@@ -38,6 +41,13 @@ export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
       e.stopPropagation();
 
       if (draggingCue) {
+        const source = findCueInLists(useProjectStore.getState().cueLists, draggedCueId);
+        if (source && source.list.id !== listId) {
+          e.dataTransfer.dropEffect = "move";
+          setDropActive(true);
+          return;
+        }
+
         const dragged = allCues.find((c) => c.id === draggedCueId);
         if (dragged?.parentId) {
           e.dataTransfer.dropEffect = "move";
@@ -58,7 +68,7 @@ export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
       e.dataTransfer.dropEffect = "copy";
       setDropActive(true);
     },
-    [allCues, canEdit],
+    [allCues, canEdit, listId],
   );
 
   const onDragLeave = useCallback((e: React.DragEvent) => {
@@ -76,6 +86,13 @@ export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
 
       const draggedCueId = readCueDragId(e.dataTransfer);
       if (draggedCueId) {
+        const source = findCueInLists(useProjectStore.getState().cueLists, draggedCueId);
+        if (source && source.list.id !== listId) {
+          moveCueToList(draggedCueId, listId, { kind: "append" });
+          setActiveCueDrag(null);
+          return;
+        }
+
         const dragged = allCues.find((c) => c.id === draggedCueId);
         if (dragged?.parentId) {
           onCueReparentToListEnd(draggedCueId);
@@ -103,13 +120,13 @@ export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
       void (async () => {
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
-          applyAssetPayloads(payloads, { kind: "list" });
+          applyAssetPayloads(payloads, { kind: "list", listId });
         } finally {
           setActiveAssetDrag(null);
         }
       })();
     },
-    [allCues, canEdit, onCueReparent, onCueReparentToListEnd],
+    [allCues, canEdit, listId, moveCueToList, onCueReparent, onCueReparentToListEnd],
   );
 
   return {

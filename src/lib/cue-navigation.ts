@@ -1,12 +1,14 @@
-import { getActiveCueListFromState, useProjectStore } from "../stores/project";
+import { getMainSequenceListFromState, useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import { flattenVisibleCueIds, getPrimarySelectedCueId, isCueDescendantOf } from "./cue-selection";
 import { isContainerCue } from "./cues";
 import { canEditProject } from "./show-mode";
 
-/** Select next/previous cue in visible list order (respects collapsed groups). */
+/** Select next/previous cue in the main sequence list (keyboard). */
 export function selectAdjacentVisibleCue(direction: 1 | -1): void {
-  const list = getActiveCueListFromState(useProjectStore.getState());
+  const state = useProjectStore.getState();
+  const list = getMainSequenceListFromState(state);
+  if (!list) return;
   const collapsed = new Set(useUiStore.getState().collapsedCueGroupIds);
   const order = flattenVisibleCueIds(list.cues, collapsed);
   if (order.length === 0) return;
@@ -20,15 +22,20 @@ export function selectAdjacentVisibleCue(direction: 1 | -1): void {
     index = Math.max(0, Math.min(order.length - 1, index + direction));
   }
 
-  useProjectStore.getState().selectCue(order[index]);
+  useProjectStore.getState().selectCueInList(list.id, order[index]);
 }
 
 /**
  * After GO, select the next visible cue. Parallel/sequence containers skip
  * their visible children so the cursor lands on the cue after the group.
  */
-export function selectNextCueAfterGo(triggeredCueId: string): void {
-  const list = getActiveCueListFromState(useProjectStore.getState());
+export function selectNextCueAfterGo(triggeredCueId: string, listId?: string): void {
+  const state = useProjectStore.getState();
+  const list =
+    (listId ? state.cueLists.find((l) => l.id === listId) : undefined) ??
+    state.cueLists.find((l) => l.cues.some((c) => c.id === triggeredCueId)) ??
+    getMainSequenceListFromState(state);
+  if (!list) return;
   const collapsed = new Set(useUiStore.getState().collapsedCueGroupIds);
   const order = flattenVisibleCueIds(list.cues, collapsed);
   const cues = list.cues;
@@ -45,35 +52,37 @@ export function selectNextCueAfterGo(triggeredCueId: string): void {
     if (skipDescendantsOf && isCueDescendantOf(cues, skipDescendantsOf, id)) {
       continue;
     }
-    useProjectStore.getState().selectCue(id);
+    useProjectStore.getState().selectCueInList(list.id, id);
     return;
   }
 
-  advanceToNextCueListTab();
+  advanceToNextCueListTab(list.id);
 }
 
-/** Select the next cue (container-aware; mirrors post-GO advance). */
+/** Select the next cue in the main sequence list (container-aware; mirrors post-GO advance). */
 export function selectNextCue(): void {
-  const list = getActiveCueListFromState(useProjectStore.getState());
+  const list = getMainSequenceListFromState(useProjectStore.getState());
+  if (!list) return;
   const collapsed = new Set(useUiStore.getState().collapsedCueGroupIds);
   const order = flattenVisibleCueIds(list.cues, collapsed);
   if (order.length === 0) return;
 
   const current = getPrimarySelectedCueId(list.selectedCueIds);
   if (!current) {
-    useProjectStore.getState().selectCue(order[0]);
+    useProjectStore.getState().selectCueInList(list.id, order[0]);
     return;
   }
 
-  selectNextCueAfterGo(current);
+  selectNextCueAfterGo(current, list.id);
 }
 
 /**
- * Select the previous cue. When approaching a container from outside, land on
- * the shallowest containing group instead of its last visible child.
+ * Select the previous cue in the main sequence list. When approaching a container
+ * from outside, land on the shallowest containing group instead of its last visible child.
  */
 export function selectPreviousCue(): void {
-  const list = getActiveCueListFromState(useProjectStore.getState());
+  const list = getMainSequenceListFromState(useProjectStore.getState());
+  if (!list) return;
   const collapsed = new Set(useUiStore.getState().collapsedCueGroupIds);
   const order = flattenVisibleCueIds(list.cues, collapsed);
   if (order.length === 0) return;
@@ -81,7 +90,7 @@ export function selectPreviousCue(): void {
   const cues = list.cues;
   const current = getPrimarySelectedCueId(list.selectedCueIds);
   if (!current) {
-    useProjectStore.getState().selectCue(order[order.length - 1]);
+    useProjectStore.getState().selectCueInList(list.id, order[order.length - 1]);
     return;
   }
 
@@ -105,32 +114,34 @@ export function selectPreviousCue(): void {
     parentId = parent?.parentId;
   }
 
-  useProjectStore.getState().selectCue(shallowest ?? prevId);
+  useProjectStore.getState().selectCueInList(list.id, shallowest ?? prevId);
 }
 
-/** After the last cue in a list, switch to the next tab and select its first visible cue. */
-function advanceToNextCueListTab(): void {
+/** After the last cue in a list, switch to the next sequence tab and select its first visible cue. */
+function advanceToNextCueListTab(currentListId: string): void {
   const state = useProjectStore.getState();
-  const { cueLists, activeCueListId } = state;
-  const currentIndex = cueLists.findIndex((l) => l.id === activeCueListId);
-  if (currentIndex === -1 || currentIndex >= cueLists.length - 1) return;
+  const sequenceLists = state.cueLists.filter((l) => l.kind !== "hot");
+  const currentIndex = sequenceLists.findIndex((l) => l.id === currentListId);
+  if (currentIndex === -1 || currentIndex >= sequenceLists.length - 1) return;
 
-  const nextList = cueLists[currentIndex + 1];
+  const nextList = sequenceLists[currentIndex + 1];
   state.setActiveCueList(nextList.id);
 
   const collapsed = new Set(useUiStore.getState().collapsedCueGroupIds);
   const nextOrder = flattenVisibleCueIds(nextList.cues, collapsed);
   if (nextOrder.length > 0) {
-    state.selectCue(nextOrder[0]);
+    state.selectCueInList(nextList.id, nextOrder[0]);
   }
 }
 
 /** Delete the primary selected cue and select a neighbor in the list when possible. */
 export function deletePrimarySelectedCue(): void {
   if (!canEditProject()) return;
-  const list = getActiveCueListFromState(useProjectStore.getState());
-  const removeCue = useProjectStore.getState().removeCue;
-  const selectCue = useProjectStore.getState().selectCue;
+  const state = useProjectStore.getState();
+  const list = getMainSequenceListFromState(state);
+  if (!list) return;
+  const removeCueFromList = state.removeCueFromList;
+  const selectCueInList = state.selectCueInList;
   const id = getPrimarySelectedCueId(list.selectedCueIds);
   if (!id) return;
 
@@ -143,9 +154,9 @@ export function deletePrimarySelectedCue(): void {
     nextId = order[index + 1] ?? order[index - 1] ?? null;
   }
 
-  removeCue(id);
+  removeCueFromList(list.id, id);
 
   if (nextId) {
-    selectCue(nextId);
+    selectCueInList(list.id, nextId);
   }
 }

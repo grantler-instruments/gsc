@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createCueList, reorderCueLists, uniqueCueListName } from "./cue-lists";
+import { createCueList, nextCueListName, reorderCueLists, uniqueCueListName } from "./cue-lists";
 
 function lists(...names: string[]) {
   return names.map((name) => ({ ...createCueList(name), id: name }));
@@ -34,6 +34,15 @@ describe("reorderCueLists", () => {
     const input = lists("a", "b", "c");
     reorderCueLists(input, "c", "a", "before");
     expect(input.map((l) => l.id)).toEqual(["a", "b", "c"]);
+  });
+});
+
+describe("nextCueListName", () => {
+  it("numbers sequence lists independently of hot lists", () => {
+    const main = createCueList("Main");
+    const hot = createCueList("Hot Cues", "hot");
+    expect(nextCueListName([main, hot], "sequence")).toBe("List 2");
+    expect(nextCueListName([main, hot], "hot")).toBe("Hot Cues 2");
   });
 });
 

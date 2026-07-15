@@ -12,6 +12,7 @@ import {
 } from "./helpers/cue-editing";
 import {
   expectCueInSequenceList,
+  selectSequenceCueRow,
   sequenceCueListPanel,
   sequenceCueRow,
 } from "./helpers/cue-list-panel";
@@ -32,7 +33,7 @@ test("undo restores a deleted cue", async ({ page }) => {
   await waitForAutosavedCue(page, FIXTURE);
   await waitPastHistoryCoalesce(page);
 
-  await sequenceCueRow(page, FIXTURE).click();
+  await selectSequenceCueRow(page, FIXTURE);
   await deleteSelectedCue(page);
   await expect(sequenceCueRow(page, FIXTURE)).toHaveCount(0);
 
@@ -49,7 +50,7 @@ test("redo re-applies a deleted cue after undo", async ({ page }) => {
   await waitForAutosavedCue(page, FIXTURE);
   await waitPastHistoryCoalesce(page);
 
-  await sequenceCueRow(page, FIXTURE).click();
+  await selectSequenceCueRow(page, FIXTURE);
   await deleteSelectedCue(page);
   await expect(sequenceCueRow(page, FIXTURE)).toHaveCount(0);
 
@@ -67,7 +68,7 @@ test("copy and paste duplicates the selected cue", async ({ page }) => {
   await dropAudioOnCueList(page, fixturePath(FIXTURE), FIXTURE, "audio/wav");
   await expectCueInSequenceList(page, FIXTURE);
 
-  await sequenceCueRow(page, FIXTURE).click();
+  await selectSequenceCueRow(page, FIXTURE);
   await copySelectedCues(page);
   await pasteSelectedCues(page);
 
@@ -82,12 +83,12 @@ test("cut and paste moves the selected cue", async ({ page }) => {
   await expectCueInSequenceList(page, FIXTURE);
   await expectCueInSequenceList(page, OTHER_FIXTURE);
 
-  await sequenceCueRow(page, FIXTURE).click();
+  await selectSequenceCueRow(page, FIXTURE);
   await cutSelectedCues(page);
   await expect(sequenceCueRow(page, FIXTURE)).toHaveCount(0);
   await expectCueInSequenceList(page, OTHER_FIXTURE);
 
-  await sequenceCueRow(page, OTHER_FIXTURE).click();
+  await selectSequenceCueRow(page, OTHER_FIXTURE);
   await pasteSelectedCues(page);
   await expect(sequenceCueRow(page, FIXTURE)).toHaveCount(1);
   await expect(sequenceCueRow(page, OTHER_FIXTURE)).toHaveCount(1);
@@ -99,7 +100,7 @@ test("duplicate creates a copy of the selected cue", async ({ page }) => {
   await dropAudioOnCueList(page, fixturePath(FIXTURE), FIXTURE, "audio/wav");
   await expectCueInSequenceList(page, FIXTURE);
 
-  await sequenceCueRow(page, FIXTURE).click();
+  await selectSequenceCueRow(page, FIXTURE);
   await duplicateSelectedCues(page);
 
   await expect(sequenceCueRow(page, FIXTURE)).toHaveCount(2);

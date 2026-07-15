@@ -6,6 +6,10 @@ import type {
   FixtureRenderKind,
 } from "../types/fixture-plot";
 import { fixtureChannelLabel } from "./dmx";
+import {
+  getDmxFixtureLogicalChannelValue,
+  iterateFixtureLogicalChannels,
+} from "./fixture-channels";
 
 export const DEFAULT_PLOT_ENTRY_SIZE = 0.12;
 export const LEGACY_PLOT_ENTRY_SIZE = 0.08;
@@ -207,9 +211,9 @@ export function fixturePlotTooltipChannels(
   fixture: Fixture,
   values: number[],
 ): FixturePlotTooltipChannel[] {
-  return Array.from({ length: fixture.channelCount }, (_, index) => ({
-    label: fixtureChannelLabel(fixture, index) ?? "Level",
-    value: values[index] ?? 0,
+  return iterateFixtureLogicalChannels(fixture).map((logical) => ({
+    label: logical.name ?? fixtureChannelLabel(fixture, logical.slotIndex) ?? "Level",
+    value: getDmxFixtureLogicalChannelValue(values, fixture, logical.slotIndex),
   }));
 }
 

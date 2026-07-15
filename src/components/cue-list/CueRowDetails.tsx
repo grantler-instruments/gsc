@@ -39,7 +39,7 @@ interface CueRowDetailsProps {
   allCues: Cue[];
   childCount: number;
   active: boolean;
-  runningSequence: RunningSequence | null;
+  runningSequences: Record<string, RunningSequence>;
   playback: CuePlaybackProgress | undefined;
 }
 
@@ -48,7 +48,7 @@ export function CueRowDetails({
   allCues,
   childCount,
   active,
-  runningSequence,
+  runningSequences,
   playback,
 }: CueRowDetailsProps) {
   const { t } = useTranslation();
@@ -75,8 +75,7 @@ export function CueRowDetails({
       : isFade && fadeTarget
         ? `${resolveFadeFromLevel(cue, fadeTarget).toFixed(2)} → ${cue.fadeTo ?? 0} · ${cue.fadeDuration ?? 2}s`
         : null;
-  const sequenceProgress =
-    isSequence && runningSequence?.rootId === cue.id ? runningSequence : null;
+  const sequenceProgress = isSequence ? (runningSequences[cue.id] ?? null) : null;
   const rangeLabel =
     !isContainer && !isUtility && cue.type !== "midi" && cue.type !== "osc" && cue.type !== "dmx"
       ? formatPlaybackRangeLabel(cue.inTime, cue.outTime, cue.type === "image")

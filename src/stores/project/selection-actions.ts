@@ -20,7 +20,12 @@ import { isRemoteClient } from "../../platform/remote-mode";
 import { guardDmxPreviewSelection } from "../../stores/dmx-preview-session";
 import { useUiStore } from "../../stores/ui";
 import type { Cue } from "../../types/cue";
-import { applyRenumber, getActiveCueListFromState, patchActiveList } from "./helpers";
+import {
+  applyRenumber,
+  getActiveCueListFromState,
+  patchActiveList,
+  patchListById,
+} from "./helpers";
 import type { ProjectState } from "./types";
 
 type ProjectStore = StoreApi<ProjectState>;
@@ -53,6 +58,7 @@ export function createSelectionActions(
 ): Pick<
   ProjectState,
   | "selectCue"
+  | "selectCueInList"
   | "toggleSelectCue"
   | "selectCueRange"
   | "groupSelectedCues"
@@ -84,6 +90,27 @@ export function createSelectionActions(
       if (id) {
         reopenCompactInspectorDrawerIfEditing();
       }
+      syncHostSelectionToRemotes();
+    },
+
+    selectCueInList: (listId, id) => {
+      if (isRemoteClient()) {
+        set((s) => ({
+          ...patchListById(s, listId, () => ({
+            selectedCueIds: id ? [id] : [],
+            selectionAnchorId: id,
+          })),
+        }));
+        if (id) sendRemoteCommand({ action: "select-cue", cueId: id });
+        return;
+      }
+      if (!guardDmxPreviewSelection(id)) return;
+      set((s) => ({
+        ...patchListById(s, listId, () => ({
+          selectedCueIds: id ? [id] : [],
+          selectionAnchorId: id,
+        })),
+      }));
       syncHostSelectionToRemotes();
     },
 
