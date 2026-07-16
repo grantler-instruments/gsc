@@ -110,9 +110,9 @@ export interface Cue {
   /** When loop is true and set: how many times to play (minimum 2). Omit for infinite. */
   loopCount?: number;
   volume?: number;
-  /** -1 (full left) to 1 (full right) for audio/video cues. */
+  /** -1 (full left) to 1 (full right) for audio/video/speech cues. */
   pan?: number;
-  /** Internal mix bus; unset routes direct to master. */
+  /** Internal mix bus for audio/video/speech cues; unset routes direct to master. */
   audioBusId?: string;
   /** 1-based device output channels for audio routing; defaults to [1, 2]. */
   outputChannels?: number[];

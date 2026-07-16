@@ -120,7 +120,7 @@ export function busRouteWouldCycle(
 
 /** Keep bus assignments only on routable cues with a valid bus; otherwise master (unset). */
 export function normalizeCueAudioBus(cue: Cue, buses: AudioBus[]): Cue {
-  if (cue.type !== "audio" && cue.type !== "video") {
+  if (cue.type !== "audio" && cue.type !== "video" && cue.type !== "tts") {
     if (!cue.audioBusId) return cue;
     const { audioBusId: _removed, ...rest } = cue;
     return rest;

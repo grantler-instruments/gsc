@@ -106,6 +106,17 @@ describe("normalizeCueAudioBus", () => {
     expect(normalizeCueAudioBus(cue, buses)).toEqual(cue);
   });
 
+  it("keeps a manually assigned bus on speech cues", () => {
+    const cue = {
+      id: "c1",
+      number: "1",
+      name: "Announce",
+      type: "tts" as const,
+      audioBusId: "b1",
+    };
+    expect(normalizeCueAudioBus(cue, buses)).toEqual(cue);
+  });
+
   it("clears stale bus assignments", () => {
     const cue = {
       id: "c1",

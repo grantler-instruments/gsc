@@ -241,6 +241,7 @@ describe("project snapshot round-trip", () => {
     list.cues = [
       testCue("a", "Intro", "audio", { assetPath: "/assets/intro.wav", audioBusId: "b1" }),
       testCue("v", "Clip", "video", { assetPath: "/assets/clip.mp4", audioBusId: "b1" }),
+      testCue("s", "Announce", "tts", { assetPath: "/assets/tts/cue-s.wav", audioBusId: "b1" }),
     ];
     const snap = cueListsToSnapshot("project-1", "My Show", [list], list.id, [], [], undefined, [
       { id: "b1", name: "Music", volume: 1 },
@@ -249,6 +250,7 @@ describe("project snapshot round-trip", () => {
     const loaded = snapshotToCueLists(snap);
     expect(loaded.cueLists[0].cues[0].audioBusId).toBe("b1");
     expect(loaded.cueLists[0].cues[1].audioBusId).toBe("b1");
+    expect(loaded.cueLists[0].cues[2].audioBusId).toBe("b1");
   });
 
   it("re-saving a legacy project without buses still omits audioBuses", () => {
