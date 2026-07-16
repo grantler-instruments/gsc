@@ -147,6 +147,7 @@ jobs:
       # ort-sys has no prebuilt ONNX Runtime for Intel Mac; use Microsoft's last
       # official x86_64 package and dynamic-link (see setup action).
       - name: Setup ONNX Runtime for macOS x86_64
+        id: setup_ort
         if: contains(matrix.args, 'x86_64-apple-darwin')
         uses: ./.github/actions/setup-onnxruntime-macos-x64
 
