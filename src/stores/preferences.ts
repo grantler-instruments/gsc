@@ -48,7 +48,7 @@ interface PreferencesState {
   enttecProPortId: string | null;
   /** MIDI output port for Grantler Instrument Deemex (MIDI mode). */
   deemexMidiPortId: string | null;
-  /** First MIDI channel on Deemex for note-on mapping (1–16, default 13). Use 1 for CC mode. */
+  /** First MIDI channel on Deemex (1–16, default 1 = CC mode). Values 2–16 use note-on mapping. */
   deemexMidiStartChannel: number;
   setLocale: (locale: SupportedLocale) => void;
   setSoundCardId: (soundCardId: string | null) => void;

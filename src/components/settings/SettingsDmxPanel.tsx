@@ -7,6 +7,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import { DEFAULT_DEEMEX_MIDI_START_CHANNEL } from "../../lib/dmx-defaults";
 import { DEEMEX_URL } from "../../lib/support-links";
 import { connectEnttecPro, disconnectEnttecPro } from "../../platform/enttec-pro";
 import { type DmxOutputBackend, usePreferencesStore } from "../../stores/preferences";
@@ -146,7 +147,9 @@ export function SettingsDmxPanel({
               value={deemexMidiStartChannel}
               onChange={(e) => {
                 const next = Number.parseInt(e.target.value, 10);
-                setDeemexMidiStartChannel(Number.isFinite(next) ? next : 13);
+                setDeemexMidiStartChannel(
+                  Number.isFinite(next) ? next : DEFAULT_DEEMEX_MIDI_START_CHANNEL,
+                );
               }}
             />
           </Box>

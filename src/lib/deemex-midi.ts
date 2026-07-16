@@ -1,7 +1,7 @@
 /** Deemex MIDI mode (see grantler-instruments/deemex firmware). */
 
 export const DEEMEX_MIDI_MAX_DMX_CHANNEL = 512;
-export const DEFAULT_DEEMEX_MIDI_START_CHANNEL = 13;
+export const DEFAULT_DEEMEX_MIDI_START_CHANNEL = 1;
 export const DEEMEX_NOTE_ON_MIDI_CHANNELS = 5;
 const CONTROLS_PER_MIDI_CHANNEL = 32;
 const NOTES_PER_MIDI_CHANNEL = 127;
