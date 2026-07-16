@@ -27,8 +27,10 @@ use midi_input::{
 use ndi::NdiService;
 use osc::send_osc;
 use project_open::{
-    handle_cli_open_files, handle_opened_urls, take_pending_open_paths, PendingOpenPaths,
+    handle_cli_open_files, take_pending_open_paths, PendingOpenPaths,
 };
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+use project_open::handle_opened_urls;
 use remote::{
     get_local_ip, get_remote_server_status, remote_broadcast, remote_set_project_root,
     start_remote_server, stop_remote_server, RemoteServerState,

@@ -503,14 +503,12 @@ fn split_sentences(text: &str) -> Vec<String> {
 // Utility Functions
 // ============================================================================
 
-pub fn timer<F, T>(name: &str, f: F) -> Result<T>
+pub fn timer<F, T>(_name: &str, f: F) -> Result<T>
 where
     F: FnOnce() -> Result<T>,
 {
-    let start = std::time::Instant::now();
-    let result = f()?;
-    let elapsed = start.elapsed().as_secs_f64();
-    Ok(result)
+    let _start = std::time::Instant::now();
+    f()
 }
 
 pub fn sanitize_filename(text: &str, max_len: usize) -> String {
