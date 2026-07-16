@@ -297,6 +297,7 @@ describe("isUtilityCue", () => {
 describe("canStopTarget", () => {
   it("allows media, dmx, and container cues", () => {
     expect(canStopTarget(testCue("a", "A", "audio"))).toBe(true);
+    expect(canStopTarget(testCue("t", "T", "tts"))).toBe(true);
     expect(canStopTarget(testCue("v", "V", "video"))).toBe(true);
     expect(canStopTarget(testCue("i", "I", "image"))).toBe(true);
     expect(canStopTarget(testCue("d", "D", "dmx"))).toBe(true);

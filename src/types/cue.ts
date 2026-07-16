@@ -2,6 +2,7 @@ export type CueType =
   | "audio"
   | "video"
   | "image"
+  | "tts"
   | "midi"
   | "osc"
   | "dmx"
@@ -16,9 +17,10 @@ export type CueType =
 
 export type FadeCueType = "volumeFade" | "opacityFade" | "panFade" | "lightFade";
 
-/** Media file cues (not MIDI/OSC). */
+/** Media file cues (not MIDI/OSC/TTS). */
 export type AssetKind = Exclude<
   CueType,
+  | "tts"
   | "midi"
   | "osc"
   | "dmx"
@@ -132,6 +134,16 @@ export interface Cue {
   stopTargetId?: string;
   /** For wait cues: how long to hold before the next sequence step (seconds). */
   waitDurationSec?: number;
+  /** Source text for speech cues. */
+  ttsText?: string;
+  /** Engine voice id (Kokoro e.g. af_heart, or Supertonic e.g. M1). */
+  ttsVoice?: string;
+  /** BCP-like language code for Supertonic (`en`, `de`, `na`, …). Ignored by Kokoro. */
+  ttsLang?: string;
+  /** Speaking rate multiplier for speech synthesis. */
+  ttsSpeed?: number;
+  /** Fingerprint of engine+lang+text+voice+speed when speech was last rendered to assetPath. */
+  ttsGeneratedKey?: string;
 }
 
 /**

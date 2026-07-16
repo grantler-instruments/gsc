@@ -7,6 +7,7 @@ import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import PianoIcon from "@mui/icons-material/Piano";
 import PlaylistPlayIcon from "@mui/icons-material/PlaylistPlay";
+import RecordVoiceOverIcon from "@mui/icons-material/RecordVoiceOver";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import SurroundSoundIcon from "@mui/icons-material/SurroundSound";
 import VideocamIcon from "@mui/icons-material/Videocam";
@@ -23,6 +24,7 @@ const CUE_TYPE_ICONS: Record<CueType, ElementType<SvgIconProps>> = {
   audio: AudiotrackIcon,
   video: VideocamIcon,
   image: ImageIcon,
+  tts: RecordVoiceOverIcon,
   midi: PianoIcon,
   osc: HubIcon,
   dmx: LightbulbOutlinedIcon,

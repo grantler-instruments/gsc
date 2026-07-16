@@ -17,6 +17,7 @@ export function cueShowsPlaybackProgress(cue: Cue): boolean {
   if (isImageInfiniteHold(cue)) return false;
   return (
     cue.type === "audio" ||
+    cue.type === "tts" ||
     cue.type === "video" ||
     cue.type === "image" ||
     cue.type === "midi" ||
@@ -188,5 +189,8 @@ export function computePlaybackProgress(
 }
 
 export function cueNeedsKnownDuration(cue: Cue): boolean {
-  return (cue.type === "audio" || cue.type === "video") && cue.assetPath !== undefined;
+  return (
+    (cue.type === "audio" || cue.type === "video" || cue.type === "tts") &&
+    cue.assetPath !== undefined
+  );
 }

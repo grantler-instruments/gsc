@@ -220,7 +220,8 @@ export const useTransportStore = create<TransportState>()(
           if (!s.activeCueIds.includes(cueId)) return s;
 
           const cue = findActiveCue(cueId);
-          if (!cue || (cue.type !== "audio" && cue.type !== "video")) return s;
+          if (!cue || (cue.type !== "audio" && cue.type !== "video" && cue.type !== "tts"))
+            return s;
 
           const sourceDurationSec = cue.assetPath ? getMediaDurationSec(cue.assetPath) : undefined;
           const goAtMs = goAtMsForSeekPosition(cue, positionSec, sourceDurationSec);

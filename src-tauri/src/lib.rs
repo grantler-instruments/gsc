@@ -1,3 +1,4 @@
+mod kokoro_phonemize;
 mod devices;
 mod dmx;
 mod enttec_pro;
@@ -7,9 +8,12 @@ mod ndi;
 mod osc;
 mod project_open;
 mod remote;
+mod speech_model_cache;
+mod supertonic;
 
 use std::sync::Mutex;
 
+use kokoro_phonemize::kokoro_phonemize;
 use devices::{list_audio_output_devices, list_midi_ports, send_midi};
 use dmx::send_dmx;
 use enttec_pro::{
@@ -23,11 +27,22 @@ use midi_input::{
 use ndi::NdiService;
 use osc::send_osc;
 use project_open::{
-    handle_cli_open_files, handle_opened_urls, take_pending_open_paths, PendingOpenPaths,
+    handle_cli_open_files, take_pending_open_paths, PendingOpenPaths,
 };
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+use project_open::handle_opened_urls;
 use remote::{
     get_local_ip, get_remote_server_status, remote_broadcast, remote_set_project_root,
     start_remote_server, stop_remote_server, RemoteServerState,
+};
+use speech_model_cache::{
+    speech_model_cache_append, speech_model_cache_exists, speech_model_cache_list_dir,
+    speech_model_cache_mkdir, speech_model_cache_read, speech_model_cache_remove_all,
+    speech_model_cache_resolve_path, speech_model_cache_write,
+};
+use supertonic::{
+    supertonic_assets_ready, supertonic_clear_assets, supertonic_ensure_assets, supertonic_list_langs,
+    supertonic_load, supertonic_unload, tts_synthesize, SupertonicState,
 };
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::{Emitter, Manager, RunEvent};
@@ -40,6 +55,7 @@ pub fn run() {
         .manage(NdiService::default())
         .manage(PendingOpenPaths(Mutex::new(Vec::new())))
         .manage(RemoteServerState::default())
+        .manage(SupertonicState::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_keepawake::init())
@@ -72,6 +88,22 @@ pub fn run() {
             stop_remote_server,
             remote_broadcast,
             remote_set_project_root,
+            speech_model_cache_write,
+            speech_model_cache_append,
+            speech_model_cache_read,
+            speech_model_cache_resolve_path,
+            speech_model_cache_exists,
+            speech_model_cache_mkdir,
+            speech_model_cache_list_dir,
+            speech_model_cache_remove_all,
+            kokoro_phonemize,
+            supertonic_assets_ready,
+            supertonic_ensure_assets,
+            supertonic_clear_assets,
+            supertonic_load,
+            supertonic_unload,
+            supertonic_list_langs,
+            tts_synthesize,
         ])
         .setup(|app| {
             handle_cli_open_files(app.handle());

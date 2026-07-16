@@ -133,7 +133,7 @@ export const ActiveCueRow = memo(function ActiveCueRow({
             {formatDmxCue(lightFadeEndDmx, fixtures)}
           </Typography>
         )}
-        {(cue.type === "audio" || cue.type === "video") && cue.assetPath && (
+        {(cue.type === "audio" || cue.type === "tts" || cue.type === "video") && cue.assetPath && (
           <Box
             sx={{ mt: 0.5 }}
             onClick={(e) => e.stopPropagation()}

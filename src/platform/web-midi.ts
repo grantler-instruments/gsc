@@ -23,10 +23,11 @@ export function resolveWebMidiOutput(
   if (portId) {
     const port = access.outputs.get(portId);
     if (port) return port;
-    console.warn(`[midi] Output "${portId}" not found`);
+    console.warn(`[midi] Output "${portId}" not found — device disconnected?`);
+    return undefined;
   }
   const first = access.outputs.values().next().value;
-  if (!portId && first) {
+  if (first) {
     console.warn("[midi] No MIDI output selected — using first available device");
   }
   return first;
@@ -39,10 +40,11 @@ export function resolveWebMidiInput(
   if (portId) {
     const port = access.inputs.get(portId);
     if (port) return port;
-    console.warn(`[midi] Input "${portId}" not found`);
+    console.warn(`[midi] Input "${portId}" not found — device disconnected?`);
+    return undefined;
   }
   const first = access.inputs.values().next().value;
-  if (!portId && first) {
+  if (first) {
     console.warn("[midi] No MIDI input selected — using first available device");
   }
   return first;

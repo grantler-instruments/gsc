@@ -238,7 +238,7 @@ export class AudioEngine {
       for (const id of activeCueIds) {
         const cue = cueById.get(id);
         if (!cue?.assetPath) continue;
-        if (cue.type === "audio") targetAudio.add(id);
+        if (cue.type === "audio" || cue.type === "tts") targetAudio.add(id);
         if (cue.type === "video") targetVideo.add(id);
       }
 
