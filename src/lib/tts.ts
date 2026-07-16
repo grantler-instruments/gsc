@@ -155,6 +155,23 @@ export function isTtsGenerationStale(cue: Cue, engine: TtsEngineId = getTtsEngin
   return cue.ttsGeneratedKey !== getTtsGeneratedKey(cue, engine);
 }
 
+/** True when a speech cue has up-to-date generated audio that can become a normal audio cue. */
+export function canConvertTtsCueToAudio(cue: Cue, engine: TtsEngineId = getTtsEngine()): boolean {
+  return isTtsCue(cue) && Boolean(cue.assetPath) && !isTtsGenerationStale(cue, engine);
+}
+
+/** Patch that turns a speech cue into a normal audio cue, keeping the generated asset. */
+export function ttsCueToAudioPatch(): Partial<Cue> {
+  return {
+    type: "audio",
+    ttsText: undefined,
+    ttsVoice: undefined,
+    ttsLang: undefined,
+    ttsSpeed: undefined,
+    ttsGeneratedKey: undefined,
+  };
+}
+
 export function getTtsCueWarning(cue: Cue): { title: string; detail: string } | null {
   if (!isTtsCue(cue)) return null;
   if (!cue.ttsText?.trim()) {

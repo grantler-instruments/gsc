@@ -1,3 +1,4 @@
+import AudiotrackIcon from "@mui/icons-material/Audiotrack";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import ContentCutOutlinedIcon from "@mui/icons-material/ContentCutOutlined";
 import ControlPointDuplicateOutlinedIcon from "@mui/icons-material/ControlPointDuplicateOutlined";
@@ -21,12 +22,15 @@ interface CueContextMenuProps {
   menu: CueContextMenuState | null;
   canRename: boolean;
   canUngroup: boolean;
+  showConvertTts: boolean;
+  canConvertTts: boolean;
   onClose: () => void;
   onCopy: () => void;
   onCut: () => void;
   onDuplicate: () => void;
   onRename: () => void;
   onUngroup: () => void;
+  onConvertTts: () => void;
 }
 
 function Shortcut({ label }: { label: string }) {
@@ -41,12 +45,15 @@ export function CueContextMenu({
   menu,
   canRename,
   canUngroup,
+  showConvertTts,
+  canConvertTts,
   onClose,
   onCopy,
   onCut,
   onDuplicate,
   onRename,
   onUngroup,
+  onConvertTts,
 }: CueContextMenuProps) {
   const { t } = useTranslation();
 
@@ -116,6 +123,21 @@ export function CueContextMenu({
             <LayersClearOutlinedIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>{t("inspector.ungroupContainer")}</ListItemText>
+        </MenuItem>
+      ) : null}
+      {showConvertTts ? (
+        <MenuItem
+          disabled={!canConvertTts}
+          title={!canConvertTts ? t("tts.convertToAudioHint") : undefined}
+          onClick={() => {
+            onConvertTts();
+            onClose();
+          }}
+        >
+          <ListItemIcon>
+            <AudiotrackIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t("tts.convertToAudio")}</ListItemText>
         </MenuItem>
       ) : null}
     </Menu>

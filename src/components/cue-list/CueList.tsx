@@ -4,6 +4,7 @@ import { useCompactLayout } from "../../hooks/useCompactLayout";
 import { cueListScrollRegionSx, cueWorkspaceMainPanelSx } from "../../layout/responsiveLayout";
 import { getPrimarySelectedCueId } from "../../lib/cue-selection";
 import { buildCueTree } from "../../lib/cues";
+import { ttsCueToAudioPatch } from "../../lib/tts";
 import { useFadeStore } from "../../stores/fade";
 import { useActiveCueList, useProjectStore } from "../../stores/project";
 import { useTransportStore } from "../../stores/transport";
@@ -59,6 +60,7 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
   const cutSelectedCues = useProjectStore((s) => s.cutSelectedCues);
   const duplicateSelectedCues = useProjectStore((s) => s.duplicateSelectedCues);
   const ungroupCue = useProjectStore((s) => s.ungroupCue);
+  const updateCue = useProjectStore((s) => s.updateCue);
 
   const selection = useCueListSelection(cues, collapsedGroups, listId);
   useCueListScrollIntoView(selection.primarySelectedId);
@@ -162,6 +164,8 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
           menu={contextMenu.contextMenu}
           canRename={contextMenu.canRenameFromMenu}
           canUngroup={contextMenu.canUngroupFromMenu}
+          showConvertTts={contextMenu.showConvertTtsFromMenu}
+          canConvertTts={contextMenu.canConvertTtsFromMenu}
           onClose={() => contextMenu.setContextMenu(null)}
           onCopy={copySelectedCues}
           onCut={cutSelectedCues}
@@ -174,6 +178,11 @@ export function CueList({ listId, tabsKind }: CueListProps = {}) {
           onUngroup={() => {
             if (contextMenu.contextMenu) {
               ungroupCue(contextMenu.contextMenu.cueId);
+            }
+          }}
+          onConvertTts={() => {
+            if (contextMenu.contextMenu) {
+              updateCue(contextMenu.contextMenu.cueId, ttsCueToAudioPatch());
             }
           }}
         />

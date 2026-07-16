@@ -457,6 +457,8 @@
     "notGenerated": "Speech not generated",
     "generateHint": "Click Generate to render speech audio for this cue.",
     "downloadModelHint": "Download the speech model in Settings first",
+    "convertToAudio": "Convert to audio cue",
+    "convertToAudioHint": "Generate up-to-date speech before converting.",
     "lang": {
       "en": "English",
       "de": "German",

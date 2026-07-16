@@ -1,5 +1,6 @@
 import { type MouseEvent, useCallback, useState } from "react";
 import { isContainerCue, isUtilityCue } from "../../lib/cues";
+import { canConvertTtsCueToAudio, isTtsCue } from "../../lib/tts";
 import { useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
 import type { CueContextMenuState } from "../CueContextMenu";
@@ -29,10 +30,12 @@ export function useCueListContextMenu(
   );
 
   const contextMenuCue = contextMenu ? cues.find((c) => c.id === contextMenu.cueId) : undefined;
-  const canRenameFromMenu =
-    !!contextMenuCue && selectedCueIds.length === 1 && !isUtilityCue(contextMenuCue);
-  const canUngroupFromMenu =
-    !!contextMenuCue && selectedCueIds.length === 1 && isContainerCue(contextMenuCue);
+  const singleSelection = selectedCueIds.length === 1;
+  const canRenameFromMenu = !!contextMenuCue && singleSelection && !isUtilityCue(contextMenuCue);
+  const canUngroupFromMenu = !!contextMenuCue && singleSelection && isContainerCue(contextMenuCue);
+  const showConvertTtsFromMenu = !!contextMenuCue && singleSelection && isTtsCue(contextMenuCue);
+  const canConvertTtsFromMenu =
+    !!contextMenuCue && showConvertTtsFromMenu && canConvertTtsCueToAudio(contextMenuCue);
 
   return {
     contextMenu,
@@ -40,5 +43,7 @@ export function useCueListContextMenu(
     handleRowContextMenu,
     canRenameFromMenu,
     canUngroupFromMenu,
+    showConvertTtsFromMenu,
+    canConvertTtsFromMenu,
   };
 }

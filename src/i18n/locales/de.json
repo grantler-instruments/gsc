@@ -434,7 +434,9 @@
     "enterTextHint": "Text im Inspektor eingeben und dann Generieren klicken.",
     "notGenerated": "Sprache nicht generiert",
     "generateHint": "Generieren klicken, um Sprach-Audio für diesen Cue zu erzeugen.",
-    "downloadModelHint": "Zuerst das Sprachmodell in den Einstellungen herunterladen"
+    "downloadModelHint": "Zuerst das Sprachmodell in den Einstellungen herunterladen",
+    "convertToAudio": "In Audio-Cue umwandeln",
+    "convertToAudioHint": "Aktuelle Sprache generieren, bevor umgewandelt wird."
   },
   "cueRow": {
     "referenceMissing": "Referenz-Cue fehlt",

@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { clearCachedAudioBuffer } from "../../audio/buffer-cache";
 import { formatAppError, notifyError } from "../../lib/notifications";
 import {
+  canConvertTtsCueToAudio,
   DEFAULT_TTS_SPEED,
   getTtsEngine,
   getTtsGeneratedKey,
@@ -19,6 +20,7 @@ import {
   SUPERTONIC_LANG_OPTIONS,
   TTS_AUTO_GENERATE_DEBOUNCE_MS,
   ttsAssetPath,
+  ttsCueToAudioPatch,
 } from "../../lib/tts";
 import { importGeneratedAudioAsset } from "../../lib/tts-asset";
 import {
@@ -210,6 +212,16 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
               ? t("tts.generatingFallbackWasm", { seconds: generatingSeconds || 1 })
               : t("tts.generatingElapsed", { seconds: generatingSeconds || 1 })
           : t("tts.generate")}
+      </Button>
+
+      <Button
+        variant="outlined"
+        disabled={readOnly || generating || !canConvertTtsCueToAudio(cue)}
+        onClick={() => onChange(ttsCueToAudioPatch())}
+        title={!canConvertTtsCueToAudio(cue) && !readOnly ? t("tts.convertToAudioHint") : undefined}
+        sx={{ alignSelf: "flex-start" }}
+      >
+        {t("tts.convertToAudio")}
       </Button>
 
       {backend === "supertonic" ? (

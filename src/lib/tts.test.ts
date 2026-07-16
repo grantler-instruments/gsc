@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import { testCue } from "../test/fixtures/cues";
 import {
   buildTtsGeneratedKey,
+  canConvertTtsCueToAudio,
   getTtsCueWarning,
   getTtsGeneratedKey,
   isTtsGenerationStale,
   resolveTtsLang,
   resolveTtsVoice,
   ttsAssetPath,
+  ttsCueToAudioPatch,
 } from "./tts";
 
 describe("tts helpers", () => {
@@ -99,5 +101,37 @@ describe("tts helpers", () => {
       ),
     });
     expect(getTtsCueWarning(ready)).toBeNull();
+  });
+
+  it("converts a generated speech cue to an audio cue patch", () => {
+    const ready = testCue("s1", "Speech", "tts", {
+      ttsText: "Hello",
+      ttsVoice: "af_heart",
+      ttsLang: "en",
+      ttsSpeed: 1,
+      assetPath: ttsAssetPath("s1"),
+      ttsGeneratedKey: buildTtsGeneratedKey("Hello", "af_heart", 1, "en", "kokoro"),
+      volume: 0.8,
+    });
+    expect(canConvertTtsCueToAudio(ready, "kokoro")).toBe(true);
+    expect(canConvertTtsCueToAudio({ ...ready, ttsText: "Changed" }, "kokoro")).toBe(false);
+    expect(canConvertTtsCueToAudio(testCue("a1", "Audio", "audio"), "kokoro")).toBe(false);
+
+    const patch = ttsCueToAudioPatch();
+    expect(patch).toEqual({
+      type: "audio",
+      ttsText: undefined,
+      ttsVoice: undefined,
+      ttsLang: undefined,
+      ttsSpeed: undefined,
+      ttsGeneratedKey: undefined,
+    });
+    expect({ ...ready, ...patch }).toMatchObject({
+      type: "audio",
+      assetPath: ttsAssetPath("s1"),
+      volume: 0.8,
+      ttsText: undefined,
+      ttsGeneratedKey: undefined,
+    });
   });
 });
