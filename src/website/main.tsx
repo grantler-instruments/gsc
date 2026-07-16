@@ -1,8 +1,8 @@
-import { CssBaseline, ThemeProvider } from "@mui/material";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "../i18n";
 import { registerPwaServiceWorker } from "../lib/pwa-install";
+import { DirectionalThemeProvider } from "../theme/DirectionalThemeProvider";
 import { websiteTheme } from "./theme";
 import WebsiteApp from "./WebsiteApp";
 
@@ -15,9 +15,8 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <ThemeProvider theme={websiteTheme}>
-      <CssBaseline />
+    <DirectionalThemeProvider baseTheme={websiteTheme}>
       <WebsiteApp />
-    </ThemeProvider>
+    </DirectionalThemeProvider>
   </StrictMode>,
 );

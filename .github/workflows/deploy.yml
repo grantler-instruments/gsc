@@ -1,7 +1,11 @@
 name: Deploy to GitHub Pages
 
+# Push-to-main deploys are gated by the CI workflow's result (no duplicate test
+# run). Manual runs (workflow_dispatch) still run the full gate themselves.
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -16,31 +20,16 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-
-      - name: Typecheck
-        run: npx tsc --noEmit
-
-      - name: Unit tests
-        run: npm test
-
-      - name: Install Playwright
-        run: npm run test:e2e:install -- --with-deps
-
-      - name: E2E tests
-        run: npm run test:e2e
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/test.yml
 
   build:
     needs: test
+    if: >-
+      ${{ always() && (
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+        (github.event_name == 'workflow_dispatch' && needs.test.result == 'success')
+      ) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -85,6 +74,9 @@ jobs:
 
   deploy:
     needs: build
+    # `test` is skipped on workflow_run; without always(), that skip propagates
+    # here even when build succeeded.
+    if: always() && needs.build.result == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

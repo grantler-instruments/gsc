@@ -32,18 +32,72 @@ export const useStartupProjectsPromptStore = create<StartupProjectsPromptState>(
   ),
 );
 
+let pendingStartupChoice: {
+  promise: Promise<StartupProjectsChoice>;
+  resolve: (choice: StartupProjectsChoice) => void;
+  draft: PendingDraftProject | null;
+  recents: RecentProjectEntry[];
+} | null = null;
+
+function showStartupProjectsDialog(options: {
+  draft: PendingDraftProject | null;
+  recents: RecentProjectEntry[];
+  resolve: (choice: StartupProjectsChoice) => void;
+}): void {
+  useStartupProjectsPromptStore.setState({
+    open: true,
+    draft: options.draft,
+    recents: options.recents,
+    resolve: options.resolve,
+  });
+}
+
+/** Re-open the dialog after remount/HMR if a startup choice is still pending. */
+export function ensureStartupProjectsDialogVisible(): void {
+  if (!pendingStartupChoice) return;
+  const { open } = useStartupProjectsPromptStore.getState();
+  if (open) return;
+  showStartupProjectsDialog({
+    draft: pendingStartupChoice.draft,
+    recents: pendingStartupChoice.recents,
+    resolve: pendingStartupChoice.resolve,
+  });
+}
+
 export function requestStartupProjectsChoice(options: {
   draft: PendingDraftProject | null;
   recents: RecentProjectEntry[];
 }): Promise<StartupProjectsChoice> {
-  return new Promise((resolve) => {
-    useStartupProjectsPromptStore.setState({
-      open: true,
+  if (pendingStartupChoice) {
+    pendingStartupChoice.draft = options.draft;
+    pendingStartupChoice.recents = options.recents;
+    showStartupProjectsDialog({
       draft: options.draft,
       recents: options.recents,
-      resolve,
+      resolve: pendingStartupChoice.resolve,
     });
+    return pendingStartupChoice.promise;
+  }
+
+  let resolveChoice!: (choice: StartupProjectsChoice) => void;
+  const promise = new Promise<StartupProjectsChoice>((resolve) => {
+    resolveChoice = resolve;
+  }).finally(() => {
+    pendingStartupChoice = null;
   });
+
+  pendingStartupChoice = {
+    promise,
+    resolve: resolveChoice,
+    draft: options.draft,
+    recents: options.recents,
+  };
+  showStartupProjectsDialog({
+    draft: options.draft,
+    recents: options.recents,
+    resolve: resolveChoice,
+  });
+  return promise;
 }
 
 export function resolveStartupProjectsChoice(choice: StartupProjectsChoice): void {
@@ -55,4 +109,11 @@ export function resolveStartupProjectsChoice(choice: StartupProjectsChoice): voi
     resolve: null,
   });
   resolve?.(choice);
+}
+
+export function refreshStartupProjectsRecents(recents: RecentProjectEntry[]): void {
+  if (pendingStartupChoice) {
+    pendingStartupChoice.recents = recents;
+  }
+  useStartupProjectsPromptStore.setState({ recents });
 }

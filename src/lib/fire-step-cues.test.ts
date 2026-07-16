@@ -16,7 +16,7 @@ function resetTransport() {
     activeCueId: null,
     activeCueIds: [],
     cueStartedAtMs: {},
-    runningSequence: null,
+    runningSequences: {},
     masterVolume: 1,
   });
 }
@@ -152,19 +152,22 @@ describe("fireStepCues", () => {
       testCue("stop", "Stop", "stop", { stopTargetId: "seq" }),
     ];
     useTransportStore.setState({
-      runningSequence: {
-        rootId: "seq",
-        currentStep: 0,
-        stepCount: 1,
-        stepCueIds: ["a"],
-        stepStartedAtMs: 0,
+      runningSequences: {
+        seq: {
+          rootId: "seq",
+          currentStep: 0,
+          stepCount: 1,
+          stepCueIds: ["a"],
+          stepStartedAtMs: 0,
+          scope: "main",
+        },
       },
     });
     const actions = mockActions();
 
     fireStepCues(["stop"], cues, actions);
 
-    expect(useTransportStore.getState().runningSequence).toBeNull();
+    expect(useTransportStore.getState().runningSequences).toEqual({});
     expect(actions.stopMany).toHaveBeenCalledWith(["seq", "a"]);
   });
 });

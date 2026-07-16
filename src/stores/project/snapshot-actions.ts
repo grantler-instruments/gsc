@@ -2,6 +2,7 @@ import type { StoreApi } from "zustand";
 import { setActiveProjectId } from "../../lib/active-project-id";
 import { cueListsToSnapshot, snapshotToCueLists } from "../../lib/project-snapshot";
 import { canEditProject } from "../../lib/show-mode";
+import { resolveActiveHotListId, resolveMainSequenceListId } from "./helpers";
 import type { ProjectState } from "./types";
 
 type ProjectStore = StoreApi<ProjectState>;
@@ -15,7 +16,18 @@ export function createSnapshotActions(
       if (!canEditProject()) return;
       const loaded = snapshotToCueLists(snap);
       setActiveProjectId(loaded.id);
-      set(loaded);
+      set({
+        ...loaded,
+        mainSequenceListId:
+          resolveMainSequenceListId({
+            cueLists: loaded.cueLists,
+            mainSequenceListId: loaded.activeCueListId,
+          }) ?? loaded.activeCueListId,
+        activeHotCueListId: resolveActiveHotListId({
+          cueLists: loaded.cueLists,
+          activeHotCueListId: null,
+        }),
+      });
     },
 
     getSnapshot: () => {
@@ -30,6 +42,7 @@ export function createSnapshotActions(
         midiMappings,
         fixtures,
         fixturePlot,
+        audioBuses,
       } = get();
       return cueListsToSnapshot(
         id,
@@ -39,6 +52,7 @@ export function createSnapshotActions(
         midiMappings,
         fixtures,
         fixturePlot,
+        audioBuses,
         startDate,
         endDate,
         description,

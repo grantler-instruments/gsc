@@ -1,42 +1,56 @@
+import { t } from "../i18n/t";
+import type { AudioBus } from "../types/audio-bus";
 import type { Cue, ProjectSnapshot } from "../types/cue";
 import type { Fixture } from "../types/fixture";
 import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
+import { normalizeAudioBuses, normalizeCueAudioBus } from "./audio-buses";
 import type { CueList } from "./cue-lists";
+import { createCueList } from "./cue-lists";
+import { initialCueListSelection } from "./cue-selection";
 import { defaultDmxCueData, normalizeDmxCueData } from "./dmx";
 import { normalizeFixturePlot } from "./fixture-plot";
 import { normalizeFixtures } from "./fixtures";
 import { defaultMidiCueData } from "./midi";
 import { defaultOscCueData, normalizeOscArgs } from "./osc";
 
-function normalizeCues(cues: Cue[], fixtures: Fixture[] = []): Cue[] {
+function normalizeCues(cues: Cue[], fixtures: Fixture[] = [], audioBuses: AudioBus[] = []): Cue[] {
   return cues.map((c) => {
+    let next = c;
     if (c.type === "midi" && !c.midi) {
-      return { ...c, midi: defaultMidiCueData() };
+      next = { ...next, midi: defaultMidiCueData() };
     }
-    if (c.type === "osc" && !c.osc) {
-      return { ...c, osc: defaultOscCueData() };
+    if (next.type === "osc" && !next.osc) {
+      next = { ...next, osc: defaultOscCueData() };
     }
-    if (c.type === "osc" && c.osc) {
-      return { ...c, osc: { ...c.osc, args: normalizeOscArgs(c.osc.args) } };
+    if (next.type === "osc" && next.osc) {
+      next = { ...next, osc: { ...next.osc, args: normalizeOscArgs(next.osc.args) } };
     }
-    if (c.type === "dmx" && !c.dmx) {
-      return { ...c, dmx: defaultDmxCueData(fixtures) };
+    if (next.type === "dmx" && !next.dmx) {
+      next = { ...next, dmx: defaultDmxCueData(fixtures) };
     }
-    if (c.type === "dmx" && c.dmx) {
-      return { ...c, dmx: normalizeDmxCueData(c.dmx, fixtures) };
+    if (next.type === "dmx" && next.dmx) {
+      next = { ...next, dmx: normalizeDmxCueData(next.dmx, fixtures) };
     }
-    if (c.type === "lightFade" && !c.dmx) {
-      return { ...c, dmx: defaultDmxCueData(fixtures) };
+    if (next.type === "lightFade" && !next.dmx) {
+      next = { ...next, dmx: defaultDmxCueData(fixtures) };
     }
-    if (c.type === "lightFade" && c.dmx) {
-      return { ...c, dmx: normalizeDmxCueData(c.dmx, fixtures) };
+    if (next.type === "lightFade" && next.dmx) {
+      next = { ...next, dmx: normalizeDmxCueData(next.dmx, fixtures) };
     }
-    return c;
+    return normalizeCueAudioBus(next, audioBuses);
   });
 }
 
-export function snapshotToCueLists(snap: ProjectSnapshot): {
+export type SnapshotToCueListsOptions = {
+  /** When opening a project file, activate the first cuelist and select its first cue. */
+  initialOpen?: boolean;
+};
+
+export function snapshotToCueLists(
+  snap: ProjectSnapshot,
+  options?: SnapshotToCueListsOptions,
+): {
   id: string;
   name: string;
   startDate?: string;
@@ -47,17 +61,36 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
   midiMappings: MidiMapping[];
   fixtures: Fixture[];
   fixturePlot: FixturePlot;
+  audioBuses: AudioBus[];
 } {
   const fixtures = normalizeFixtures(snap.fixtures);
   const fixturePlot = normalizeFixturePlot(snap.fixturePlot, fixtures);
-  const cueLists: CueList[] = snap.cueLists.map((list) => ({
-    id: list.id,
-    name: list.name,
-    cues: normalizeCues(list.cues, fixtures),
-    selectedCueIds: [],
-    selectionAnchorId: null,
-  }));
-  const active = cueLists.find((l) => l.id === snap.activeCueListId) ?? cueLists[0];
+  const audioBuses = normalizeAudioBuses(snap.audioBuses);
+  let cueLists: CueList[] = snap.cueLists.map((list, index) => {
+    const cues = normalizeCues(list.cues, fixtures, audioBuses);
+    const selection =
+      options?.initialOpen && index === 0
+        ? initialCueListSelection(cues)
+        : { selectedCueIds: [], selectionAnchorId: null };
+    return {
+      id: list.id,
+      name: list.name,
+      kind: list.kind ?? "sequence",
+      cues,
+      ...selection,
+    };
+  });
+
+  // Migration: older projects may have no hot cue lists at all. Ensure there's
+  // always at least one so the hot-cue panel starts with an empty list rather
+  // than "no list".
+  if (!cueLists.some((l) => l.kind === "hot")) {
+    cueLists = [...cueLists, createCueList(t("project.defaultHotListName"), "hot")];
+  }
+  const active =
+    options?.initialOpen && cueLists[0]
+      ? cueLists[0]
+      : (cueLists.find((l) => l.id === snap.activeCueListId) ?? cueLists[0]);
   return {
     id: snap.id,
     name: snap.name,
@@ -69,6 +102,7 @@ export function snapshotToCueLists(snap: ProjectSnapshot): {
     midiMappings: snap.midiMappings ?? [],
     fixtures,
     fixturePlot,
+    audioBuses,
   };
 }
 
@@ -80,6 +114,7 @@ export function cueListsToSnapshot(
   midiMappings: MidiMapping[] = [],
   fixtures: Fixture[] = [],
   fixturePlot?: FixturePlot,
+  audioBuses: AudioBus[] = [],
   startDate?: string,
   endDate?: string,
   description?: string,
@@ -96,10 +131,12 @@ export function cueListsToSnapshot(
     cueLists: cueLists.map((list) => ({
       id: list.id,
       name: list.name,
+      kind: list.kind,
       cues: list.cues,
     })),
     midiMappings,
     fixtures: normalizedFixtures,
     fixturePlot: normalizeFixturePlot(fixturePlot, normalizedFixtures),
+    ...(audioBuses.length > 0 ? { audioBuses: normalizeAudioBuses(audioBuses) } : {}),
   };
 }

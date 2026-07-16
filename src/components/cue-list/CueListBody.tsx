@@ -1,12 +1,13 @@
 import Box from "@mui/material/Box";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { GSC_LIST_ID } from "../../lib/tauri-drop";
 import { cueListDropActiveSx, cueListEmptySx } from "../../theme/cueStyles";
 import type { GscTokenSet } from "../../theme/tokens";
 import { CueListTrailingDrop } from "./CueListTrailingDrop";
-import { useCueDragActive } from "./useCueDragActive";
 
 interface CueListBodyProps {
+  listId: string;
   canEdit: boolean;
   listDropActive: boolean;
   tokens: GscTokenSet;
@@ -19,6 +20,7 @@ interface CueListBodyProps {
 }
 
 export function CueListBody({
+  listId,
   canEdit,
   listDropActive,
   tokens,
@@ -30,12 +32,12 @@ export function CueListBody({
   children,
 }: CueListBodyProps) {
   const { t } = useTranslation();
-  const cueDragging = useCueDragActive();
 
   return (
     <Box
       component="ul"
       data-gsc-drop-zone="cue-list"
+      {...{ [GSC_LIST_ID]: listId }}
       onDragOver={onListDragOver}
       onDragOverCapture={onListDragOver}
       onDragLeave={onListDragLeave}
@@ -59,7 +61,7 @@ export function CueListBody({
         </Box>
       )}
       {children}
-      {!isEmpty && canEdit && cueDragging && <CueListTrailingDrop canEdit={canEdit} />}
+      {!isEmpty && canEdit && <CueListTrailingDrop canEdit={canEdit} />}
     </Box>
   );
 }

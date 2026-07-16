@@ -51,8 +51,10 @@ const CUE_NAME_TINT = {
   warning: "#e8a87c",
 } as const;
 
+const FALLBACK_CUE_TYPE_COLOR = { color: "#c0c6d0", bgcolor: "#2a2f38" } as const;
+
 export function cueTypeBadgeSx(type: CueType | AssetKind, compact = false): SxProps<Theme> {
-  const palette = CUE_TYPE_COLORS[type];
+  const palette = CUE_TYPE_COLORS[type] ?? FALLBACK_CUE_TYPE_COLOR;
   return {
     display: "inline-flex",
     alignItems: "center",
@@ -83,6 +85,14 @@ function accentRowTint(
   return `color-mix(in srgb, ${tokens.accent} ${accentPercent}%, ${base})`;
 }
 
+/** Return-target row: full accent bar, no focus ring or strong fill. */
+function rememberedRowChrome(tokens: GscTokenSet): { bgcolor: string; boxShadow: string } {
+  return {
+    bgcolor: accentRowTint(tokens, 8),
+    boxShadow: `inset 4px 0 0 ${tokens.accent}`,
+  };
+}
+
 export const CUE_TARGET_ROW_FLASH_SEC = 2;
 export const CUE_TARGET_NUMBER_BLINK_SEC = 2.2;
 
@@ -90,10 +100,70 @@ function cueTargetBorderShadow(tokens: GscTokenSet): string {
   return `inset 3px 0 0 color-mix(in srgb, ${tokens.accent} 55%, transparent)`;
 }
 
+export interface HotCuePadTargetState {
+  tokens: GscTokenSet;
+  pulseAsStopTarget: boolean;
+  staticAsStopTarget: boolean;
+  highlightAsFadeTarget: boolean;
+}
+
+/** Stop/fade target highlight for hot-cue pads (mirrors cue list row cues). */
+export function hotCuePadTargetSx(state: HotCuePadTargetState): SxProps<Theme> {
+  const { tokens } = state;
+
+  return {
+    ...(state.pulseAsStopTarget && {
+      "@keyframes hotCueStopTargetPulse": {
+        "0%, 100%": {
+          boxShadow: "inset 0 0 0 2px rgba(232, 138, 138, 0.35)",
+        },
+        "50%": {
+          boxShadow: "inset 0 0 0 2px rgba(232, 138, 138, 0.7)",
+        },
+      },
+      animation: "hotCueStopTargetPulse 3s ease-in-out infinite",
+      "@media (prefers-reduced-motion: reduce)": {
+        animation: "none",
+        boxShadow: "inset 0 0 0 2px #e88a8a",
+      },
+    }),
+    ...(state.staticAsStopTarget && {
+      boxShadow: "inset 0 0 0 2px rgba(232, 138, 138, 0.65)",
+    }),
+    ...(state.highlightAsFadeTarget && {
+      "@keyframes hotCueFadeTargetFlash": {
+        "0%": {
+          filter: "brightness(1)",
+          bgcolor: "background.paper",
+          boxShadow: "none",
+        },
+        "40%": {
+          filter: "brightness(1.18)",
+          bgcolor: `color-mix(in srgb, ${tokens.accent} 22%, var(--bg-elevated))`,
+          boxShadow: `inset 0 0 0 2px color-mix(in srgb, ${tokens.accent} 70%, transparent)`,
+        },
+        "100%": {
+          filter: "brightness(1)",
+          bgcolor: "background.paper",
+          boxShadow: "none",
+        },
+      },
+      animation: `hotCueFadeTargetFlash ${CUE_TARGET_ROW_FLASH_SEC}s ease-in-out 1`,
+      "@media (prefers-reduced-motion: reduce)": {
+        animation: "none",
+        bgcolor: `color-mix(in srgb, ${tokens.accent} 12%, var(--bg-elevated))`,
+        boxShadow: `inset 0 0 0 2px color-mix(in srgb, ${tokens.accent} 55%, transparent)`,
+      },
+    }),
+  };
+}
+
 export interface CueRowStyleState {
   tokens: GscTokenSet;
   selected: boolean;
   primarySelected: boolean;
+  /** Primary selection in this list while another list has edit focus (return target). */
+  selectionRemembered: boolean;
   active: boolean;
   isGroup: boolean;
   isSequence: boolean;
@@ -119,6 +189,9 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
   if (state.active && state.primarySelected) {
     bgcolor = `color-mix(in srgb, ${tokens.success} 40%, ${accentRowTint(tokens, 20)})`;
     boxShadow = `inset 4px 0 0 ${tokens.accent}, inset 0 0 0 1px color-mix(in srgb, ${tokens.accent} 50%, transparent)`;
+  } else if (state.active && state.selectionRemembered) {
+    bgcolor = tokens.rowActive;
+    boxShadow = `inset 3px 0 0 ${tokens.success}`;
   } else if (state.active && state.selected) {
     bgcolor = `color-mix(in srgb, ${tokens.success} 40%, ${accentRowTint(tokens, 12)})`;
     boxShadow = `inset 4px 0 0 color-mix(in srgb, ${tokens.accent} 75%, transparent), inset 0 0 0 1px color-mix(in srgb, ${tokens.success} 45%, transparent)`;
@@ -128,6 +201,8 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
   } else if (state.primarySelected) {
     bgcolor = accentRowTint(tokens, 22);
     boxShadow = `inset 4px 0 0 ${tokens.accent}, inset 0 0 0 1px color-mix(in srgb, ${tokens.accent} 45%, transparent)`;
+  } else if (state.selectionRemembered) {
+    ({ bgcolor, boxShadow } = rememberedRowChrome(tokens));
   } else if (state.selected) {
     bgcolor = accentRowTint(tokens, 12);
     boxShadow = `inset 3px 0 0 color-mix(in srgb, ${tokens.accent} 70%, transparent)`;
@@ -156,11 +231,15 @@ export function cueRowSx(state: CueRowStyleState): SxProps<Theme> {
     listStyle: "none",
     ...(bgcolor && { bgcolor }),
     ...(boxShadow && { boxShadow }),
-    ...(!isHighlightSelected && {
-      "&:hover": { bgcolor: tokens.bgHover },
-    }),
+    ...(!isHighlightSelected &&
+      !state.selectionRemembered && {
+        "&:hover": { bgcolor: tokens.bgHover },
+      }),
     ...(isHighlightSelected && {
       "&:hover": { filter: "brightness(1.06)" },
+    }),
+    ...(state.selectionRemembered && {
+      "&:hover": { bgcolor: accentRowTint(tokens, 15) },
     }),
     ...(state.isGroup && { fontWeight: 500 }),
     ...(state.isSequenceStep && {
@@ -198,6 +277,7 @@ export function cueNumberSx(
   tokens: GscTokenSet,
   primarySelected = false,
   highlightAsTarget = false,
+  _selectionRemembered = false,
 ): SxProps<Theme> {
   return {
     fontVariantNumeric: "tabular-nums",
@@ -233,7 +313,12 @@ export function cueNumberSx(
 export function cueNameSx(
   state: Pick<
     CueRowStyleState,
-    "primarySelected" | "isVolumeFade" | "isOpacityFade" | "isLightFade" | "hasWarning"
+    | "primarySelected"
+    | "selectionRemembered"
+    | "isVolumeFade"
+    | "isOpacityFade"
+    | "isLightFade"
+    | "hasWarning"
   >,
 ): SxProps<Theme> {
   const cueNameColor = state.isVolumeFade
@@ -256,7 +341,14 @@ export function cueNameSx(
       fontWeight: 600,
       color: cueNameColor ?? "text.primary",
     }),
-    ...(cueNameColor && !state.primarySelected && { color: cueNameColor }),
+    ...(state.selectionRemembered && {
+      fontWeight: 500,
+      color: cueNameColor ?? "text.primary",
+      opacity: 0.88,
+    }),
+    ...(cueNameColor &&
+      !state.primarySelected &&
+      !state.selectionRemembered && { color: cueNameColor }),
   };
 }
 

@@ -159,3 +159,16 @@ export async function saveProjectFile(): Promise<void> {
     notifyWarning(t("notification.exportMissingAssets", { count: missing.length }));
   }
 }
+
+/** Pick a new location and save (desktop) or download a bundle (web). */
+export async function saveProjectAsFile(): Promise<void> {
+  if (!canEditProject()) return;
+  if (getPlatform() === "tauri") {
+    await persistPlatformProject({ saveAs: true });
+    return;
+  }
+  const { missing } = await exportProjectBundle();
+  if (missing.length > 0) {
+    notifyWarning(t("notification.exportMissingAssets", { count: missing.length }));
+  }
+}

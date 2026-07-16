@@ -27,6 +27,7 @@ import {
   saveAllVfsAssetsToDisk,
   virtualPathsFromRelativeFiles,
   writeAssetToDisk,
+  writeBundleFilesToDisk,
 } from "../lib/project-disk";
 import { replaceProjectWithoutHistory } from "../lib/project-history";
 import {
@@ -37,6 +38,7 @@ import {
   projectDirNameFromShowName,
   projectRootFromSavePath,
 } from "../lib/project-paths";
+import { nestedProjectSaveParentToReject, projectSaveRootStrategy } from "../lib/project-save-flow";
 import { collectSessionAssetPaths } from "../lib/project-session";
 import { snapshotToCueLists } from "../lib/project-snapshot";
 import { isQlab5WorkspacePath } from "../lib/qlab5/import-qlab5-project";
@@ -48,11 +50,12 @@ import {
   recordRecentProject,
   removeRecentProject,
 } from "../lib/recent-projects";
+import { finishRestoreStep, startRestoreStep } from "../lib/restore-progress";
 import { hasMeaningfulProjectContent, snapshotHasMeaningfulContent } from "../lib/unsaved-project";
 import { useProjectStore } from "../stores/project";
-import { beginProjectLoadUi, useProjectLoadingStore } from "../stores/project-loading";
+import { useProjectLoadingStore } from "../stores/project-loading";
 import { useProjectLocationStore } from "../stores/project-location";
-import type { PendingDraftProject } from "../stores/startup-projects-prompt";
+import type { PendingDraftProject, StartupProjectsChoice } from "../stores/startup-projects-prompt";
 import { requestStartupProjectsChoice } from "../stores/startup-projects-prompt";
 import type { VfsEntry } from "../stores/vfs";
 import { useVfsStore } from "../stores/vfs";
@@ -93,16 +96,13 @@ async function removeDraftProjectRoot(rootDir: string): Promise<void> {
 
 /** Bind a draft `.gsc` folder in app cache (autosaved until the user picks a location). */
 export async function bindTemporaryProjectRoot(showName?: string): Promise<string> {
-  const endProjectLoadUi = await beginProjectLoadUi();
-  try {
-    const name = showName ?? useProjectStore.getState().name;
-    const rootDir = await createDraftProjectRoot(name);
-    useProjectLocationStore.getState().setRootDir(rootDir, { temporary: true });
-    await saveProjectToFolder(rootDir);
-    return rootDir;
-  } finally {
-    endProjectLoadUi();
-  }
+  const name = showName ?? useProjectStore.getState().name;
+  startRestoreStep("create-draft", "project.restoreStep.createDraft");
+  const rootDir = await createDraftProjectRoot(name);
+  finishRestoreStep("create-draft", rootDir);
+  useProjectLocationStore.getState().setRootDir(rootDir, { temporary: true });
+  await saveProjectToFolder(rootDir);
+  return rootDir;
 }
 
 export async function discardTemporaryProjectRoot(rootDir: string): Promise<void> {
@@ -134,10 +134,11 @@ function showError(err: unknown): void {
   notifyErrorFromUnknown(err);
 }
 
-async function isDirectoryEmpty(dir: string): Promise<boolean> {
-  if (!(await exists(dir))) return true;
-  const entries = await readDir(dir);
-  return entries.filter((e) => !IGNORED_DIR_ENTRIES.has(e.name)).length === 0;
+function rejectIfInsideExistingProject(targetPath: string): boolean {
+  const parentProject = nestedProjectSaveParentToReject(targetPath, isMacPlatform());
+  if (!parentProject) return true;
+  showError(new Error(t("notification.nestedProjectError", { path: parentProject })));
+  return false;
 }
 
 /**
@@ -146,39 +147,29 @@ async function isDirectoryEmpty(dir: string): Promise<boolean> {
 export async function promptTauriProjectFolder(
   title: string,
   defaultName: string,
+  defaultPath?: string,
 ): Promise<string | null> {
   const selected = await save({
     title,
-    defaultPath: projectDirNameFromShowName(defaultName),
+    defaultPath: defaultPath ?? projectDirNameFromShowName(defaultName),
     canCreateDirectories: true,
   });
   if (!selected || typeof selected !== "string") return null;
 
   const rootDir = projectRootFromSavePath(selected);
+  if (!rejectIfInsideExistingProject(rootDir)) return null;
 
-  if (await exists(rootDir)) {
-    if (!(await isDirectoryEmpty(rootDir))) {
-      throw new Error(t("notification.pathExistsError", { path: rootDir }));
-    }
-    return rootDir;
+  if (!(await exists(rootDir))) {
+    await mkdir(rootDir, { recursive: true });
+    await markGscProjectPackage(rootDir);
   }
 
-  await mkdir(rootDir, { recursive: true });
-  await markGscProjectPackage(rootDir);
   return rootDir;
 }
 
 async function writeBundleFilesToFolder(rootDir: string, zipData: Uint8Array): Promise<void> {
   const { files } = projectBundleDiskFiles(zipData);
-  const sep = rootDir.includes("\\") ? "\\" : "/";
-  const base = rootDir.replace(/[/\\]+$/, "");
-
-  for (const { relativePath, data } of files) {
-    const diskPath = `${base}${sep}${relativePath.replace(/\//g, sep)}`;
-    const dir = diskPath.replace(/[/\\][^/\\]+$/, "");
-    await ensureDiskDir(dir);
-    await writeDiskFile(diskPath, data);
-  }
+  await writeBundleFilesToDisk(rootDir, files, writeDiskFile, ensureDiskDir);
 }
 
 async function writeDiskFile(diskPath: string, data: Uint8Array): Promise<void> {
@@ -227,18 +218,8 @@ export async function loadProjectFromFolder(
   rootDir: string,
   options?: { temporary?: boolean },
 ): Promise<void> {
-  const endProjectLoadUi = await beginProjectLoadUi();
-  try {
-    await loadProjectFromFolderInner(rootDir, options);
-  } finally {
-    endProjectLoadUi();
-  }
-}
+  startRestoreStep("load-project", "project.restoreStep.loadProject", rootDir);
 
-async function loadProjectFromFolderInner(
-  rootDir: string,
-  options?: { temporary?: boolean },
-): Promise<void> {
   if (!isGscProjectDirPath(rootDir)) {
     throw new Error(t("notification.selectGscFolder"));
   }
@@ -247,18 +228,22 @@ async function loadProjectFromFolderInner(
   const temporary = options?.temporary ?? false;
 
   const jsonPath = projectJsonDiskPath(rootDir);
+  startRestoreStep("read-project-json", "project.restoreStep.readProjectJson", jsonPath);
   if (!(await exists(jsonPath))) {
     throw new Error(t("notification.noProjectJson"));
   }
 
   const text = await readTextFile(jsonPath);
+  finishRestoreStep("read-project-json");
+
+  startRestoreStep("parse-snapshot", "project.restoreStep.parseSnapshot");
   const snap = JSON.parse(text);
   if (snap.version !== 2) {
     throw new Error(t("notification.unsupportedVersion"));
   }
 
   vfsClear();
-  const loaded = snapshotToCueLists(snap);
+  const loaded = snapshotToCueLists(snap, { initialOpen: true });
   replaceProjectWithoutHistory(() => {
     setActiveProjectId(loaded.id);
     useProjectStore.setState(loaded);
@@ -272,7 +257,9 @@ async function loadProjectFromFolderInner(
     recordRecentProject(rootDir, loaded.name);
   }
   await markGscProjectPackage(rootDir);
+  finishRestoreStep("parse-snapshot");
 
+  startRestoreStep("collect-assets", "project.restoreStep.collectAssets");
   const assetsDir = await join(rootDir, "assets");
   let diskPaths: string[] = [];
   if (await exists(assetsDir)) {
@@ -285,14 +272,20 @@ async function loadProjectFromFolderInner(
     diskPaths.map((p) => ({ path: p })),
   );
   const uniquePaths = [...new Set(paths)];
+  finishRestoreStep("collect-assets", `${uniquePaths.length} assets`);
 
   const { initAssetProgress, setAssetStatus } = useProjectLoadingStore.getState();
   initAssetProgress(uniquePaths.map((path) => ({ path })));
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
 
+  startRestoreStep("load-disk-assets", "project.restoreStep.loadDiskAssets");
   await registerDiskAssetPaths(rootDir, uniquePaths, async (diskPath) => exists(diskPath), {
     onPathStart: (path) => setAssetStatus(path, "loading"),
     onPathComplete: (path, loaded) => setAssetStatus(path, loaded ? "loaded" : "missing"),
   });
+  finishRestoreStep("load-disk-assets");
 
   useVfsStore.setState({ entries: vfsEntriesFromPaths(uniquePaths) });
   prefetchMediaDurations(
@@ -305,6 +298,8 @@ async function loadProjectFromFolderInner(
   if (previousRoot && isTemporaryRoot && previousRoot !== rootDir) {
     await removeDraftProjectRoot(previousRoot);
   }
+
+  finishRestoreStep("load-project");
 }
 
 export async function saveProjectToFolder(rootDir: string): Promise<void> {
@@ -467,9 +462,12 @@ async function promptAndCommitProjectLocation(): Promise<string | null> {
     bindFolderPromise = (async () => {
       const { rootDir: previousRoot, isTemporaryRoot } = useProjectLocationStore.getState();
       const showName = useProjectStore.getState().name;
+      const defaultPath =
+        previousRoot && !isTemporaryRoot ? previousRoot : projectDirNameFromShowName(showName);
       const folder = await promptTauriProjectFolder(
         t("notification.dialogSaveProjectAs"),
         showName,
+        defaultPath,
       );
       if (!folder) return null;
       useProjectLocationStore.getState().setRootDir(folder, { temporary: false });
@@ -489,12 +487,21 @@ async function promptAndCommitProjectLocation(): Promise<string | null> {
 
 async function resolveProjectRootDir(options?: {
   promptForLocation?: boolean;
+  saveAs?: boolean;
 }): Promise<string | null> {
   const { rootDir, isTemporaryRoot } = useProjectLocationStore.getState();
+  const strategy = projectSaveRootStrategy({
+    saveAs: options?.saveAs,
+    promptForLocation: options?.promptForLocation,
+    rootDir,
+    isTemporaryRoot,
+  });
 
-  if (options?.promptForLocation) {
-    if (rootDir && !isTemporaryRoot) return rootDir;
+  if (strategy.type === "prompt-and-commit") {
     return promptAndCommitProjectLocation();
+  }
+  if (strategy.type === "use-existing") {
+    return strategy.rootDir;
   }
 
   if (rootDir) return rootDir;
@@ -583,26 +590,48 @@ export async function listValidRecentProjects(): Promise<RecentProjectEntry[]> {
   return valid;
 }
 
-async function doRestoreLastTauriProject(): Promise<boolean> {
-  // Keep loading active through the startup dialog so the in-app spinner appears
-  // immediately when the user picks an option (avoids the macOS beachball).
-  const endBootLoadUi = await beginProjectLoadUi();
+async function doPrepareTauriStartupRestore(): Promise<StartupProjectsChoice | null> {
+  startRestoreStep("check-draft", "project.restoreStep.checkDraft");
+  const draft = await getPendingDraftInfo();
+  finishRestoreStep("check-draft", draft?.path ?? "none");
+
+  if (!draft) {
+    setActiveProjectId(useProjectStore.getState().id);
+    await bindTemporaryProjectRoot();
+    return null;
+  }
+
+  startRestoreStep("scan-recents", "project.restoreStep.scanRecents");
+  const recents = await listValidRecentProjects();
+  finishRestoreStep("scan-recents", `${recents.length} found`);
+
+  startRestoreStep("wait-startup-choice", "project.restoreStep.waitStartupChoice");
+  const choice = await requestStartupProjectsChoice({ draft, recents });
+  finishRestoreStep("wait-startup-choice", choice.type);
+  return choice;
+}
+
+let prepareStartupRestorePromise: Promise<StartupProjectsChoice | null> | undefined;
+
+/** Prompt for draft/recents on launch; returns a choice only when the user must pick. */
+export function prepareTauriStartupRestore(): Promise<StartupProjectsChoice | null> {
+  if (!prepareStartupRestorePromise) {
+    prepareStartupRestorePromise = doPrepareTauriStartupRestore().finally(() => {
+      prepareStartupRestorePromise = undefined;
+    });
+  }
+  return prepareStartupRestorePromise;
+}
+
+export async function applyTauriStartupChoice(choice: StartupProjectsChoice): Promise<boolean> {
+  const draft = await getPendingDraftInfo();
+
+  if (draft && choice.type !== "restore-draft") {
+    await discardPendingDraft(draft.path);
+  }
+
+  useProjectLoadingStore.getState().setActive(true);
   try {
-    const draft = await getPendingDraftInfo();
-
-    if (!draft) {
-      setActiveProjectId(useProjectStore.getState().id);
-      await bindTemporaryProjectRoot();
-      return false;
-    }
-
-    const recents = await listValidRecentProjects();
-    const choice = await requestStartupProjectsChoice({ draft, recents });
-
-    if (draft && choice.type !== "restore-draft") {
-      await discardPendingDraft(draft.path);
-    }
-
     switch (choice.type) {
       case "restore-draft":
         if (!draft) {
@@ -636,13 +665,22 @@ async function doRestoreLastTauriProject(): Promise<boolean> {
         return false;
     }
   } finally {
-    endBootLoadUi();
+    useProjectLoadingStore.getState().setActive(false);
+    useProjectLoadingStore.getState().clearAssetProgress();
   }
+}
+
+async function doRestoreLastTauriProject(): Promise<boolean> {
+  const choice = await prepareTauriStartupRestore();
+  if (!choice) return false;
+  return applyTauriStartupChoice(choice);
 }
 
 export async function restoreLastTauriProject(): Promise<boolean> {
   if (!restorePromise) {
-    restorePromise = doRestoreLastTauriProject();
+    restorePromise = doRestoreLastTauriProject().finally(() => {
+      restorePromise = undefined;
+    });
   }
   return restorePromise;
 }
@@ -651,18 +689,17 @@ let restorePromise: Promise<boolean> | undefined;
 
 export async function persistTauriProject(options?: {
   promptForLocation?: boolean;
+  saveAs?: boolean;
 }): Promise<void> {
   try {
     const rootDir = await resolveProjectRootDir(options);
     if (!rootDir) return;
+    const { isTemporaryRoot } = useProjectLocationStore.getState();
+    if (!isTemporaryRoot && !rejectIfInsideExistingProject(rootDir)) return;
     await saveProjectToFolder(rootDir);
     syncDraftRootKey();
-  } catch (err) {
-    if (err instanceof Error && err.message.includes("already exists")) {
-      showError(err);
-    } else {
-      notifyWarningDeduped(t("notification.autosaveFailed"));
-    }
+  } catch {
+    notifyWarningDeduped(t("notification.autosaveFailed"));
   }
 }
 
@@ -684,6 +721,8 @@ export async function exportProjectBundleTauri(): Promise<boolean> {
     filters: [{ name: "GSC project bundle", extensions: ["gsc.zip", "zip"] }],
   });
   if (!path) return false;
+
+  if (!rejectIfInsideExistingProject(path)) return false;
 
   await writeFile(path, zip);
   return true;

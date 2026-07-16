@@ -4,9 +4,16 @@ import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { iterateFixtureLogicalChannels } from "../../lib/fixture-channels";
 import {
   addManualFixtureChannel,
   clampStartAddress,
@@ -16,8 +23,11 @@ import {
   fixtureFitsInUniverse,
   formatFixturePatch,
   getFixtureConflicts,
-  manualFixtureChannels,
+  manualFixtureChannelCountAfter16BitToggle,
+  manualFixtureChannelCountAfterAdd,
+  manualFixtureLogicalChannels,
   removeManualFixtureChannel,
+  setManualFixtureChannel16Bit,
   updateManualFixtureChannelName,
 } from "../../lib/fixtures";
 import { loadFixtureOflProfileForMode, loadOflSummaryFromPath } from "../../lib/ofl/load-ofl";
@@ -25,6 +35,52 @@ import { oflProfileChannelCount } from "../../lib/ofl/profile";
 import type { Fixture } from "../../types/fixture";
 import { inspectorFieldLabelSx, inspectorFieldSx } from "../inspectorSx";
 import { FixtureNumberField } from "./FixtureNumberField";
+
+const fixtureChannelTableHeaderSx = {
+  fontSize: 10,
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
+  color: "text.secondary",
+  borderBottom: 1,
+  borderColor: "divider",
+  py: 0.5,
+  px: 0.5,
+} as const;
+
+const fixtureChannelTableCellSx = {
+  borderBottom: 1,
+  borderColor: "divider",
+  py: 0.5,
+  px: 0.5,
+  verticalAlign: "middle",
+} as const;
+
+const fixtureChannelNameInputSx = {
+  width: "100%",
+  minWidth: 0,
+  font: "inherit",
+  fontSize: 13,
+  fontWeight: 400,
+  color: "text.primary",
+  bgcolor: "background.default",
+  border: 1,
+  borderStyle: "solid",
+  borderColor: "divider",
+  borderRadius: 1,
+  py: 0.5,
+  px: 0.75,
+  "&:focus": {
+    outline: "none",
+    borderColor: "primary.main",
+  },
+  "&[readonly]": {
+    color: "text.secondary",
+    bgcolor: "transparent",
+    borderColor: "transparent",
+    px: 0,
+  },
+} as const;
 
 export interface FixtureEditorProps {
   fixture: Fixture;
@@ -73,11 +129,15 @@ export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: Fixture
 
   const handleClearOfl = () => {
     if (readOnly) return;
-    const channels = fixture.ofl?.channels.map((channel) => ({ name: channel.key })) ?? [{}];
+    const channels = fixture.ofl?.channels.map((channel) => ({
+      name: channel.key,
+      resolution: channel.resolution,
+    })) ?? [{}];
     onUpdate({ ofl: undefined, channels });
   };
 
-  const manualChannels = manualFixtureChannels(fixture);
+  const manualChannels = manualFixtureLogicalChannels(fixture);
+  const oflLogicalChannels = fixture.ofl ? iterateFixtureLogicalChannels(fixture) : [];
 
   return (
     <Box
@@ -142,7 +202,12 @@ export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: Fixture
             </Select>
           </Box>
           <Typography variant="caption" sx={{ m: 0, color: "text.secondary" }}>
-            {fixture.ofl.channels.map((channel) => channel.key).join(", ")}
+            {oflLogicalChannels
+              .map((logical) => {
+                const label = logical.name ?? t("fixtures.unnamedChannel");
+                return logical.is16Bit ? `${label} (${t("fixtures.channel16Bit")})` : label;
+              })
+              .join(", ")}
           </Typography>
           {!readOnly && (
             <Button
@@ -180,55 +245,122 @@ export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: Fixture
           <Typography component="span" sx={inspectorFieldLabelSx}>
             {t("fixtures.channels")}
           </Typography>
-          {manualChannels.map((channel, index) => (
-            <Stack
-              key={`${fixture.id}-channel-${fixtureChannelAddress(fixture, index)}`}
-              direction="row"
-              sx={{ gap: 0.75, alignItems: "center" }}
-            >
-              <Typography
-                component="span"
-                sx={{
-                  minWidth: 36,
-                  fontSize: 12,
-                  color: "text.secondary",
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                {fixtureChannelAddress(fixture, index)}
-              </Typography>
-              <Box component="label" sx={{ ...inspectorFieldSx, flex: 1, mb: 0 }}>
-                <input
-                  type="text"
-                  value={channel.name ?? ""}
-                  readOnly={readOnly}
-                  placeholder={t("fixtures.optionalName")}
-                  onChange={(event) =>
-                    onUpdate({
-                      channels: updateManualFixtureChannelName(
-                        fixture,
-                        index,
-                        event.currentTarget.value,
-                      ),
-                    })
-                  }
-                />
-              </Box>
-              {!readOnly && manualChannels.length > 1 && (
-                <IconButton
-                  size="small"
-                  title={t("fixtures.removeChannel")}
-                  onClick={() =>
-                    onUpdate({
-                      channels: removeManualFixtureChannel(fixture, index),
-                    })
-                  }
+          <Table
+            size="small"
+            sx={{
+              tableLayout: "fixed",
+              width: "100%",
+              "& .MuiTableCell-root:last-of-type": { pr: 0 },
+            }}
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ ...fixtureChannelTableHeaderSx, width: 44 }}>
+                  {t("fixtures.channelAddress")}
+                </TableCell>
+                <TableCell sx={fixtureChannelTableHeaderSx}>{t("fixtures.channelName")}</TableCell>
+                <TableCell
+                  sx={{ ...fixtureChannelTableHeaderSx, width: 44, textAlign: "center", px: 0 }}
                 >
-                  ×
-                </IconButton>
-              )}
-            </Stack>
-          ))}
+                  {t("fixtures.channel16Bit")}
+                </TableCell>
+                {!readOnly && manualChannels.length > 1 && (
+                  <TableCell sx={{ ...fixtureChannelTableHeaderSx, width: 28, px: 0 }} />
+                )}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {manualChannels.map(({ slotIndex, channel }) => (
+                <TableRow
+                  key={`${fixture.id}-channel-${fixtureChannelAddress(fixture, slotIndex)}`}
+                >
+                  <TableCell
+                    sx={{ ...fixtureChannelTableCellSx, fontVariantNumeric: "tabular-nums" }}
+                  >
+                    <Typography
+                      component="span"
+                      sx={{ fontSize: 12, color: "text.secondary", whiteSpace: "nowrap" }}
+                    >
+                      {channel.resolution === "16bit"
+                        ? `${fixtureChannelAddress(fixture, slotIndex)}–${fixtureChannelAddress(fixture, slotIndex + 1)}`
+                        : fixtureChannelAddress(fixture, slotIndex)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={fixtureChannelTableCellSx}>
+                    <Box
+                      component="input"
+                      type="text"
+                      value={channel.name ?? ""}
+                      readOnly={readOnly}
+                      placeholder={t("fixtures.optionalName")}
+                      sx={fixtureChannelNameInputSx}
+                      onChange={(event) =>
+                        onUpdate({
+                          channels: updateManualFixtureChannelName(
+                            fixture,
+                            slotIndex,
+                            event.currentTarget.value,
+                          ),
+                        })
+                      }
+                    />
+                  </TableCell>
+                  <TableCell sx={{ ...fixtureChannelTableCellSx, textAlign: "center", px: 0 }}>
+                    {readOnly ? (
+                      <Typography
+                        component="span"
+                        sx={{ fontSize: 11, color: "text.secondary" }}
+                        title={t("fixtures.channel16Bit")}
+                      >
+                        {channel.resolution === "16bit" ? "●" : ""}
+                      </Typography>
+                    ) : (
+                      <Switch
+                        size="small"
+                        checked={channel.resolution === "16bit"}
+                        title={t("fixtures.channel16Bit")}
+                        disabled={
+                          !fixtureFitsInUniverse({
+                            ...fixture,
+                            channelCount: manualFixtureChannelCountAfter16BitToggle(
+                              fixture,
+                              slotIndex,
+                              channel.resolution !== "16bit",
+                            ),
+                          }) && channel.resolution !== "16bit"
+                        }
+                        onChange={(event) =>
+                          onUpdate({
+                            channels: setManualFixtureChannel16Bit(
+                              fixture,
+                              slotIndex,
+                              event.target.checked,
+                            ),
+                          })
+                        }
+                        sx={{ m: 0 }}
+                      />
+                    )}
+                  </TableCell>
+                  {!readOnly && manualChannels.length > 1 && (
+                    <TableCell sx={{ ...fixtureChannelTableCellSx, width: 28, px: 0 }}>
+                      <IconButton
+                        size="small"
+                        title={t("fixtures.removeChannel")}
+                        onClick={() =>
+                          onUpdate({
+                            channels: removeManualFixtureChannel(fixture, slotIndex),
+                          })
+                        }
+                      >
+                        ×
+                      </IconButton>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
           {!readOnly && (
             <Button
               size="small"
@@ -236,7 +368,7 @@ export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: Fixture
               disabled={
                 !fixtureFitsInUniverse({
                   ...fixture,
-                  channelCount: manualChannels.length + 1,
+                  channelCount: manualFixtureChannelCountAfterAdd(fixture),
                 })
               }
               onClick={() => onUpdate({ channels: addManualFixtureChannel(fixture) })}
@@ -251,11 +383,11 @@ export function FixtureEditor({ fixture, fixtures, readOnly, onUpdate }: Fixture
       <Typography variant="caption" sx={{ m: 0, color: "text.secondary" }}>
         {formatFixturePatch(fixture)}
         {hasOfl
-          ? ` · ${fixture.ofl?.channels.length ?? 0} mapped channels`
+          ? ` · ${oflLogicalChannels.length} mapped channels`
           : manualChannels.length > 1
             ? ` · channels ${fixture.startAddress}–${fixtureEndAddress(fixture)}`
-            : manualChannels[0]?.name
-              ? ` · ${manualChannels[0].name}`
+            : manualChannels[0]?.channel.name
+              ? ` · ${manualChannels[0].channel.name}`
               : t("fixtures.singleChannelDimmer")}
       </Typography>
 

@@ -54,6 +54,8 @@ Example: `smoke-go-plays-audio` runs from:
 - Web: `e2e/smoke.spec.ts` (Playwright)
 - Desktop: `e2e-desktop/specs/smoke-go.e2e.ts` (WebdriverIO)
 
+`output-scratch-video.e2e.ts` covers Tauri disk-mode output (scratch project + native output window).
+
 ## Adding tests
 
 1. Add or extend a scenario in `e2e/shared/scenarios/`.

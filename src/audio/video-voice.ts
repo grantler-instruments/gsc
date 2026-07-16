@@ -26,6 +26,7 @@ export interface VideoVoice {
   panner: StereoPannerNode;
   goAtMs: number;
   loopIteration: number;
+  audioBusId?: string;
 }
 
 export type VideoVoiceEndedHandler = (cueId: string) => void;
@@ -33,9 +34,9 @@ export type VideoVoiceEndedHandler = (cueId: string) => void;
 export function startVideoVoice(
   cue: Cue,
   ctx: AudioContext,
-  masterVolume: number,
   goAtMs: number,
   onEnded: VideoVoiceEndedHandler,
+  connectPanner: (panner: StereoPannerNode) => string | undefined,
 ): VideoVoice | null {
   const objectUrl = cue.assetPath ? vfsGetObjectUrl(cue.assetPath) : undefined;
   if (!objectUrl) return null;
@@ -49,15 +50,14 @@ export function startVideoVoice(
 
   const source = ctx.createMediaElementSource(video);
   const gain = ctx.createGain();
-  gain.gain.value =
-    clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) * clamp01(masterVolume);
+  gain.gain.value = clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1));
 
   const panner = ctx.createStereoPanner();
   panner.pan.value = clampPan(resolveEffectivePan(cue.id, cue.pan ?? 0));
 
   source.connect(gain);
   gain.connect(panner);
-  panner.connect(ctx.destination);
+  const audioBusId = connectPanner(panner);
 
   const voice: VideoVoice = {
     cueId: cue.id,
@@ -67,10 +67,12 @@ export function startVideoVoice(
     panner,
     goAtMs,
     loopIteration: 0,
+    audioBusId,
   };
 
   const loopPlayCount = getLoopPlayCount(cue);
   const looping = isVideoLooping(cue);
+  let loopWrapped = false;
 
   const seekToClock = () => {
     if (!Number.isFinite(video.duration)) return;
@@ -103,23 +105,28 @@ export function startVideoVoice(
 
     if (!looping) return;
 
-    if (shouldWrapVideoAtSliceEnd(video.currentTime, endSec)) {
-      if (loopPlayCount === "inf") {
-        video.currentTime = videoTargetTime(cue, video.duration, goAtMs);
-        if (video.paused) {
-          void video.play().catch(() => {});
-        }
-        return;
-      }
-
-      voice.loopIteration += 1;
-      if (voice.loopIteration >= loopPlayCount) {
-        video.pause();
-        onEnded(cue.id);
-        return;
-      }
-      video.currentTime = offsetSec;
+    if (!shouldWrapVideoAtSliceEnd(video.currentTime, endSec)) {
+      loopWrapped = false;
+      return;
     }
+    if (loopWrapped) return;
+    loopWrapped = true;
+
+    if (loopPlayCount === "inf") {
+      video.currentTime = videoTargetTime(cue, video.duration, goAtMs);
+      if (video.paused) {
+        void video.play().catch(() => {});
+      }
+      return;
+    }
+
+    voice.loopIteration += 1;
+    if (voice.loopIteration >= loopPlayCount) {
+      video.pause();
+      onEnded(cue.id);
+      return;
+    }
+    video.currentTime = offsetSec;
   };
 
   const handleTimeUpdate = () => {
@@ -141,6 +148,9 @@ export function startVideoVoice(
       onEnded(cue.id);
       return;
     }
+
+    if (loopWrapped) return;
+    loopWrapped = true;
 
     voice.loopIteration += 1;
     if (voice.loopIteration >= loopPlayCount) {
@@ -176,9 +186,8 @@ export function seekVideoVoice(voice: VideoVoice, cue: Cue, goAtMs: number): voi
   }
 }
 
-export function updateVideoVoiceLevels(voice: VideoVoice, cue: Cue, masterVolume: number): void {
-  voice.gain.gain.value =
-    clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1)) * clamp01(masterVolume);
+export function updateVideoVoiceLevels(voice: VideoVoice, cue: Cue): void {
+  voice.gain.gain.value = clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1));
   voice.panner.pan.value = clampPan(resolveEffectivePan(cue.id, cue.pan ?? 0));
 }
 

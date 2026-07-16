@@ -2117,7 +2117,7 @@ dependencies = [
 
 [[package]]
 name = "gsc"
-version = "0.0.14"
+version = "0.0.25"
 dependencies = [
  "axum",
  "cpal",

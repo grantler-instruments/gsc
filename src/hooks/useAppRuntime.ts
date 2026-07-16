@@ -3,6 +3,7 @@ import { useAudioEngine } from "./useAudioEngine";
 import { useCueDmxPreview } from "./useCueDmxPreview";
 import { useDmxEngine } from "./useDmxEngine";
 import { useDmxFadeEngine } from "./useDmxFadeEngine";
+import { useDraftSaveReminder } from "./useDraftSaveReminder";
 import { useEnttecProConnection } from "./useEnttecProConnection";
 import { useFadeAnimation } from "./useFadeAnimation";
 import { useMidiEngine } from "./useMidiEngine";
@@ -42,6 +43,7 @@ export function useAppRuntime(): boolean {
   usePreventBrowserFileDrop();
   useTauriAppMenu();
   useTauriOpenProject(sessionReady);
+  useDraftSaveReminder();
   useEnttecProConnection();
   useRemoteHost(sessionReady);
   useSpeechModelWarmup(sessionReady);

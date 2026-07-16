@@ -18,6 +18,7 @@ import { GscLogo } from "../brand/GscLogo";
 import { CueTypeBadge } from "../components/CueTypeIcon";
 import { GITHUB_RELEASES_URL, GITHUB_REPO_URL } from "../lib/support-links";
 import { featureCategoryKeys } from "./features";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useCaseKeys } from "./useCases";
 
 /**
@@ -59,6 +60,7 @@ export default function WebsiteApp() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600, ml: 1.5 }}>
             {t("common.brand.gsc")}
           </Typography>
+          <LanguageSwitcher />
         </Toolbar>
       </AppBar>
 

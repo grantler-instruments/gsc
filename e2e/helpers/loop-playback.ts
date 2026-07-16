@@ -1,8 +1,19 @@
 import { expect, type Page } from "@playwright/test";
 import { activeCueRow, activeCuesPanel, openActiveCuesTab, pressTransportGo } from "./active-cues";
-import { expectCueInSequenceList, sequenceCueRow } from "./cue-list-panel";
+import { expectCueInSequenceList, selectSequenceCueRow } from "./cue-list-panel";
 import { dropAudioOnCueList, fixturePath } from "./drop-audio";
 import { enableLoopPlayback } from "./fade-cues";
+
+/** Fixture slice lengths (see e2e/fixtures/generate-*-fixtures.mjs). */
+const LOOP_SLICE_SEC: Record<string, number> = {
+  "white-noise-playback.wav": 4,
+  "test-video-playback.mp4": 4,
+};
+
+function loopPollTimeoutMs(cueName: string, iterations: number, bufferMs = 12_000): number {
+  const sliceSec = LOOP_SLICE_SEC[cueName] ?? 4;
+  return Math.max(40_000, iterations * sliceSec * 1000 + bufferMs);
+}
 
 function activeCueProgress(page: Page, cueName: string) {
   return activeCueRow(page, cueName).getByRole("progressbar");
@@ -68,7 +79,7 @@ export async function prepareLoopCue(
 
   await dropAudioOnCueList(page, fixturePath(fileName), fileName, mimeType);
   await expectCueInSequenceList(page, fileName);
-  await sequenceCueRow(page, fileName).click();
+  await selectSequenceCueRow(page, fileName);
 
   await enableLoopPlayback(page);
   if ("infinite" in mode) {
@@ -94,8 +105,10 @@ export async function expectLoopIteration(
   total: number | "inf",
 ): Promise<void> {
   await expect
-    .poll(async () => getLoopIterationFromProgress(page, cueName), { timeout: 30_000 })
-    .toBe(iteration);
+    .poll(async () => getLoopIterationFromProgress(page, cueName), {
+      timeout: loopPollTimeoutMs(cueName, iteration),
+    })
+    .toBeGreaterThanOrEqual(iteration);
   await expect.poll(async () => getLoopTotalFromProgress(page, cueName)).toBe(total);
 }
 

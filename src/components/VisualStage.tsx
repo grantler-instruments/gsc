@@ -23,15 +23,17 @@ interface VideoLayerProps {
   onEnded?: (cueId: string) => void;
 }
 
-/** Visible muted video — audio plays via Web Audio in the control window only. */
-function VideoLayer({ layer, onEnded }: VideoLayerProps) {
+/** Control preview — keeps transport clock in sync and reports end-of-playback. */
+function ControlVideoLayer({ layer, onEnded }: VideoLayerProps) {
   const ref = useRef<HTMLVideoElement>(null);
   const layerRef = useRef(layer);
   const loopIterationRef = useRef(0);
+  const loopWrappedRef = useRef(false);
   layerRef.current = layer;
 
   useEffect(() => {
     loopIterationRef.current = 0;
+    loopWrappedRef.current = false;
 
     const video = ref.current;
     if (!video) return;
@@ -40,7 +42,6 @@ function VideoLayer({ layer, onEnded }: VideoLayerProps) {
     video.muted = true;
     video.playsInline = true;
     video.preload = "auto";
-    video.style.opacity = String(layer.opacity);
 
     const seekToClock = () => {
       const current = layerRef.current;
@@ -70,7 +71,12 @@ function VideoLayer({ layer, onEnded }: VideoLayerProps) {
       if (!Number.isFinite(video.duration) || !isOutputLayerLooping(current)) return;
 
       const endSec = sliceEndSec(current.inTime, current.sliceSec);
-      if (!shouldWrapVideoAtSliceEnd(video.currentTime, endSec)) return;
+      if (!shouldWrapVideoAtSliceEnd(video.currentTime, endSec)) {
+        loopWrappedRef.current = false;
+        return;
+      }
+      if (loopWrappedRef.current) return;
+      loopWrappedRef.current = true;
 
       if (current.loopCount === "inf") {
         seekToClock();
@@ -145,34 +151,26 @@ function VideoLayer({ layer, onEnded }: VideoLayerProps) {
       video.removeAttribute("src");
       video.load();
     };
-  }, [layer.objectUrl, onEnded, layer.opacity]);
+  }, [layer.objectUrl, onEnded]);
 
   useEffect(() => {
     const video = ref.current;
     if (!video || video.readyState < 1 || !Number.isFinite(video.duration)) return;
 
     loopIterationRef.current = 0;
+    loopWrappedRef.current = false;
     try {
-      video.currentTime = outputLayerTargetTime(layer);
+      video.currentTime = outputLayerTargetTime(layerRef.current);
     } catch {
       /* seek not ready */
     }
-  }, [layer.goAtMs, layer.inTime, layer.sliceSec, layer.loopCount]);
-
-  useEffect(() => {
-    const video = ref.current;
-    if (!video) return;
-    video.style.opacity = String(clamp01(layer.opacity));
-  }, [layer.opacity]);
+  }, [layer]);
 
   return (
     <video
       ref={ref}
       style={{
-        width: "100%",
-        height: "100%",
-        objectFit: "contain",
-        display: "block",
+        ...(visualLayerSx as CSSProperties),
         opacity: clamp01(layer.opacity),
       }}
       playsInline
@@ -181,11 +179,7 @@ function VideoLayer({ layer, onEnded }: VideoLayerProps) {
   );
 }
 
-interface ImageLayerProps {
-  layer: OutputLayer;
-}
-
-function ImageLayer({ layer }: ImageLayerProps) {
+function ImageLayer({ layer }: { layer: OutputLayer }) {
   return (
     <img
       src={layer.objectUrl}
@@ -198,33 +192,27 @@ function ImageLayer({ layer }: ImageLayerProps) {
   );
 }
 
-export type VisualStageRole = "control" | "output";
-
 interface VisualStageProps {
   layers: OutputLayer[];
-  stageRole: VisualStageRole;
   className?: string;
   sx?: SxProps<Theme>;
 }
 
-/** Composites active video/image layers (picture only — audio via Web Audio in control app). */
-export function VisualStage({ layers, stageRole, className, sx }: VisualStageProps) {
+/** Composites active video/image layers in the control preview. */
+export function VisualStage({ layers, className, sx }: VisualStageProps) {
   const { t } = useTranslation();
   const stopCue = useTransportStore((s) => s.stopCue);
 
   const handleEnded = useCallback(
     (cueId: string) => {
-      if (stageRole === "control") {
-        stopCue(cueId);
-      }
+      stopCue(cueId);
     },
-    [stageRole, stopCue],
+    [stopCue],
   );
 
   return (
     <Box
       className={className}
-      data-gsc-output-stage={stageRole === "output" ? "" : undefined}
       sx={{
         position: "relative",
         width: "100%",
@@ -235,7 +223,7 @@ export function VisualStage({ layers, stageRole, className, sx }: VisualStagePro
         ...sx,
       }}
     >
-      {layers.length === 0 && stageRole === "control" && (
+      {layers.length === 0 && (
         <Typography component="span" sx={visualStageEmptySx}>
           {t("output.noActiveVisualCues")}
         </Typography>
@@ -243,7 +231,7 @@ export function VisualStage({ layers, stageRole, className, sx }: VisualStagePro
       {layers.map((layer, index) => (
         <Box key={layer.cueId} sx={{ ...visualLayerWrapSx, zIndex: index + 1 }}>
           {layer.type === "video" ? (
-            <VideoLayer layer={layer} onEnded={stageRole === "control" ? handleEnded : undefined} />
+            <ControlVideoLayer layer={layer} onEnded={handleEnded} />
           ) : (
             <ImageLayer layer={layer} />
           )}

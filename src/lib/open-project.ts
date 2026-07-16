@@ -12,7 +12,7 @@ import { snapshotToCueLists } from "./project-snapshot";
 export async function openProjectSnapshot(snap: ProjectSnapshot): Promise<void> {
   vfsClear();
   useProjectLocationStore.getState().setRootDir(null);
-  const loaded = snapshotToCueLists(snap);
+  const loaded = snapshotToCueLists(snap, { initialOpen: true });
   replaceProjectWithoutHistory(() => {
     setActiveProjectId(loaded.id);
     useProjectStore.setState(loaded);

@@ -1,8 +1,12 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
+import { clampAudioMixerHeight, DEFAULT_AUDIO_MIXER_HEIGHT } from "../lib/audio-mixer-layout";
 import type { MidiAction } from "../types/midi-mapping";
 import type { RightSidebarTabId } from "../types/right-sidebar";
 import type { SidebarTabId } from "../types/sidebar";
+
+/** Where the hot-cue panel sits relative to the main cue list. */
+export type HotCuePanelOrientation = "right" | "bottom";
 
 interface UiState {
   sidebarTab: SidebarTabId;
@@ -25,8 +29,16 @@ interface UiState {
   compactInspectorDrawerOpen: boolean;
   /** Compact inspector drawer stays closed until the user selects a cue. */
   compactInspectorDrawerDismissed: boolean;
+  /** Where the hot-cue panel sits relative to the main cue list (desktop). */
+  hotCuePanelOrientation: HotCuePanelOrientation;
+  /** When false, the hot-cue panel is hidden in the cue workspace. */
+  hotCuePanelVisible: boolean;
   /** Asset row under the pointer in the assets panel (session only). */
   hoveredAssetPath: string | null;
+  /** Audio mixer dock above the transport bar. */
+  audioMixerOpen: boolean;
+  /** Height of the audio mixer dock in pixels. */
+  audioMixerHeight: number;
   setSidebarTab: (tab: SidebarTabId) => void;
   setRightSidebarTab: (tab: RightSidebarTabId) => void;
   setDarkMode: (dark: boolean) => void;
@@ -40,7 +52,14 @@ interface UiState {
   toggleFixturePlotExpanded: () => void;
   setCompactInspectorDrawerOpen: (open: boolean) => void;
   setCompactInspectorDrawerDismissed: (dismissed: boolean) => void;
+  setHotCuePanelOrientation: (orientation: HotCuePanelOrientation) => void;
+  toggleHotCuePanelOrientation: () => void;
+  setHotCuePanelVisible: (visible: boolean) => void;
+  toggleHotCuePanelVisible: () => void;
   setHoveredAssetPath: (path: string | null) => void;
+  setAudioMixerOpen: (open: boolean) => void;
+  setAudioMixerHeight: (height: number) => void;
+  toggleAudioMixer: () => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -59,7 +78,11 @@ export const useUiStore = create<UiState>()(
         fixturePlotExpanded: false,
         compactInspectorDrawerOpen: false,
         compactInspectorDrawerDismissed: true,
+        hotCuePanelOrientation: "right",
+        hotCuePanelVisible: true,
         hoveredAssetPath: null,
+        audioMixerOpen: false,
+        audioMixerHeight: DEFAULT_AUDIO_MIXER_HEIGHT,
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
         setRightSidebarTab: (rightSidebarTab) => set({ rightSidebarTab }),
         setDarkMode: (darkMode) => set({ darkMode }),
@@ -97,7 +120,18 @@ export const useUiStore = create<UiState>()(
           set({ compactInspectorDrawerOpen }),
         setCompactInspectorDrawerDismissed: (compactInspectorDrawerDismissed) =>
           set({ compactInspectorDrawerDismissed }),
+        setHotCuePanelOrientation: (hotCuePanelOrientation) => set({ hotCuePanelOrientation }),
+        toggleHotCuePanelOrientation: () =>
+          set((s) => ({
+            hotCuePanelOrientation: s.hotCuePanelOrientation === "right" ? "bottom" : "right",
+          })),
+        setHotCuePanelVisible: (hotCuePanelVisible) => set({ hotCuePanelVisible }),
+        toggleHotCuePanelVisible: () => set((s) => ({ hotCuePanelVisible: !s.hotCuePanelVisible })),
         setHoveredAssetPath: (hoveredAssetPath) => set({ hoveredAssetPath }),
+        setAudioMixerOpen: (audioMixerOpen) => set({ audioMixerOpen }),
+        setAudioMixerHeight: (audioMixerHeight) =>
+          set({ audioMixerHeight: clampAudioMixerHeight(audioMixerHeight) }),
+        toggleAudioMixer: () => set((s) => ({ audioMixerOpen: !s.audioMixerOpen })),
       }),
       {
         name: "gsc-ui",
@@ -105,7 +139,20 @@ export const useUiStore = create<UiState>()(
           sidebarTab: s.sidebarTab,
           rightSidebarTab: s.rightSidebarTab,
           darkMode: s.darkMode,
+          hotCuePanelOrientation: s.hotCuePanelOrientation,
+          hotCuePanelVisible: s.hotCuePanelVisible,
+          audioMixerHeight: s.audioMixerHeight,
         }),
+        merge: (persisted, current) => {
+          const saved = persisted as Partial<UiState> | undefined;
+          return {
+            ...current,
+            ...saved,
+            audioMixerHeight: clampAudioMixerHeight(
+              saved?.audioMixerHeight ?? current.audioMixerHeight,
+            ),
+          };
+        },
       },
     ),
     { name: "UiStore" },

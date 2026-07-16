@@ -5,6 +5,7 @@ import {
   canGroupSelectedCues,
   flattenVisibleCueIds,
   getPrimarySelectedCueId,
+  initialCueListSelection,
   isCueDescendantOf,
   ungroupContainerCue,
 } from "./cue-selection";
@@ -16,6 +17,23 @@ describe("getPrimarySelectedCueId", () => {
 
   it("returns the last selected cue id", () => {
     expect(getPrimarySelectedCueId(["a", "b", "c"])).toBe("c");
+  });
+});
+
+describe("initialCueListSelection", () => {
+  it("selects the first visible cue", () => {
+    const cues = [testCue("a", "Intro", "audio"), testCue("b", "Outro", "audio")];
+    expect(initialCueListSelection(cues)).toEqual({
+      selectedCueIds: ["a"],
+      selectionAnchorId: "a",
+    });
+  });
+
+  it("returns empty selection when the list has no cues", () => {
+    expect(initialCueListSelection([])).toEqual({
+      selectedCueIds: [],
+      selectionAnchorId: null,
+    });
   });
 });
 

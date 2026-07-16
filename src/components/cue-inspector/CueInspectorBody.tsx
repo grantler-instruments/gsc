@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { getCueAssetWarning } from "../../lib/cue-asset";
+import { cueNeedsAsset } from "../../lib/cue-asset";
 import { isContainerCue, isFadeCue, isStopCue, isWaitCue } from "../../lib/cues";
 import { getTtsCueWarning, isTtsCue } from "../../lib/tts";
 import type { Cue, MidiCueData, OscCueData } from "../../types/cue";
@@ -37,7 +37,7 @@ export function CueInspectorBody({
   dmxDisabled,
   onUpdate,
 }: CueInspectorBodyProps) {
-  const assetWarning = isTtsCue(cue) ? getTtsCueWarning(cue) : getCueAssetWarning(cue);
+  const ttsWarning = isTtsCue(cue) ? getTtsCueWarning(cue) : null;
 
   const patchMidi = (midiPatch: Partial<MidiCueData>) => {
     if (readOnly || cue.type !== "midi" || !cue.midi) return;
@@ -103,11 +103,11 @@ export function CueInspectorBody({
         onTriggerNoteChange={(triggerNote) => onUpdate({ triggerNote })}
       />
 
-      {assetWarning && !isTtsCue(cue) ? <CueAssetAssign cue={cue} readOnly={readOnly} /> : null}
+      {cueNeedsAsset(cue) && <CueAssetAssign cue={cue} readOnly={readOnly} />}
 
-      {isTtsCue(cue) && assetWarning ? (
+      {ttsWarning ? (
         <Typography variant="body2" color="warning.main" sx={{ m: 0 }}>
-          {assetWarning.detail}
+          {ttsWarning.detail}
         </Typography>
       ) : null}
 

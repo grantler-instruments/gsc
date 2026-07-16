@@ -70,6 +70,7 @@ export const ActiveCueRow = memo(function ActiveCueRow({
   return (
     <Box
       component="li"
+      data-cue-name={cue.name}
       onClick={onSelect}
       sx={{
         display: "flex",

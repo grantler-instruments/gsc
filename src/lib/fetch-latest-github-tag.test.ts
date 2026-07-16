@@ -18,6 +18,34 @@ describe("fetchLatestGitHubTag", () => {
     await expect(fetchLatestGitHubTag()).resolves.toBe("0.0.8");
   });
 
+  it("ignores experimental and pre-release tags", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { name: "experimental" },
+          { name: "0.0.18-experimental.4" },
+          { name: "0.0.8" },
+        ],
+      }),
+    );
+
+    await expect(fetchLatestGitHubTag()).resolves.toBe("0.0.8");
+  });
+
+  it("returns null when only non-release tags exist", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [{ name: "experimental" }, { name: "0.0.18-experimental.4" }],
+      }),
+    );
+
+    await expect(fetchLatestGitHubTag()).resolves.toBeNull();
+  });
+
   it("returns null when the request fails", async () => {
     vi.stubGlobal(
       "fetch",

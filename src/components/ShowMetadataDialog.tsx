@@ -8,9 +8,15 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { saveProjectAsFile } from "../lib/project-file-actions";
+import {
+  runAfterShowMetadataSave,
+  shouldPromptSaveProjectAfterMetadata,
+} from "../lib/project-save-flow";
 import { getPlatform } from "../platform";
 import { useProjectStore } from "../stores/project";
 import { useProjectLocationStore } from "../stores/project-location";
+import { requestSaveProjectNowChoice } from "../stores/save-project-prompt";
 import { inspectorFieldLabelSx, inspectorReadonlySx } from "./inspectorSx";
 
 interface ShowMetadataDialogProps {
@@ -59,6 +65,16 @@ export function ShowMetadataDialog({ open, onClose }: ShowMetadataDialogProps) {
       description: description.trim() || undefined,
     });
     onClose();
+
+    void runAfterShowMetadataSave({
+      shouldPrompt: shouldPromptSaveProjectAfterMetadata({
+        platform: getPlatform(),
+        isTemporaryRoot,
+      }),
+      projectName: trimmedName,
+      requestSaveProjectNow: requestSaveProjectNowChoice,
+      saveProjectAs: saveProjectAsFile,
+    });
   };
 
   return (

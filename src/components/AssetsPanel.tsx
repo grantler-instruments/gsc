@@ -20,10 +20,12 @@ import {
   countActiveAssetFilters,
   createDefaultAssetKindFilter,
   filterAndSortAssets,
+  findAssetCueUsages,
   MEDIA_ASSET_KINDS,
 } from "../lib/cue-asset";
 import { pointerLeftElement } from "../lib/dom";
 import { isAssetDrag, setActiveAssetDrag, setAssetDragData } from "../lib/drag";
+import { requestDeleteAssetInUseChoice } from "../stores/delete-asset-prompt";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import type { VfsEntry } from "../stores/vfs";
@@ -50,6 +52,7 @@ export function AssetsPanel() {
   const importFromFileList = useVfsStore((s) => s.importFromFileList);
   const removeEntry = useVfsStore((s) => s.removeEntry);
   const addCue = useProjectStore((s) => s.addCue);
+  const removeCuesUsingAsset = useProjectStore((s) => s.removeCuesUsingAsset);
   const setHoveredAssetPath = useUiStore((s) => s.setHoveredAssetPath);
   const inputRef = useRef<HTMLInputElement>(null);
   const [dropActive, setDropActive] = useState(false);
@@ -68,6 +71,22 @@ export function AssetsPanel() {
     setSearchQuery("");
     setEnabledKinds(createDefaultAssetKindFilter());
   }, []);
+
+  const handleRemoveAsset = useCallback(
+    async (entry: VfsEntry) => {
+      const usages = findAssetCueUsages(useProjectStore.getState().cueLists, entry.path);
+      if (usages.length === 0) {
+        removeEntry(entry.path);
+        return;
+      }
+      const choice = await requestDeleteAssetInUseChoice(entry.name, usages);
+      if (choice === "deleteCues") {
+        removeCuesUsingAsset(entry.path);
+        removeEntry(entry.path);
+      }
+    },
+    [removeEntry, removeCuesUsingAsset],
+  );
 
   const onDrop = useCallback(
     async (e: React.DragEvent) => {
@@ -248,7 +267,7 @@ export function AssetsPanel() {
                 assetPath: entry.path,
               })
             }
-            onRemove={() => removeEntry(entry.path)}
+            onRemove={() => handleRemoveAsset(entry)}
           />
         ))}
       </Box>
@@ -264,7 +283,7 @@ export function AssetsPanel() {
             borderTop: 1,
             borderColor: "divider",
             flexShrink: 0,
-            bgcolor: "background.default",
+            bgcolor: "background.paper",
           }}
         >
           <Button

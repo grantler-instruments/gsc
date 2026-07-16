@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareSemver, normalizeSemver } from "./compare-semver";
+import { compareSemver, isStableSemver, normalizeSemver } from "./compare-semver";
 
 describe("normalizeSemver", () => {
   it("strips a leading v", () => {
@@ -20,5 +20,18 @@ describe("compareSemver", () => {
 
   it("treats equal versions as zero", () => {
     expect(compareSemver("0.0.7", "v0.0.7")).toBe(0);
+  });
+});
+
+describe("isStableSemver", () => {
+  it("accepts plain release tags", () => {
+    expect(isStableSemver("0.0.18")).toBe(true);
+    expect(isStableSemver("v1.2.3")).toBe(true);
+  });
+
+  it("rejects channel and pre-release tags", () => {
+    expect(isStableSemver("experimental")).toBe(false);
+    expect(isStableSemver("0.0.18-experimental.4")).toBe(false);
+    expect(isStableSemver("1.2")).toBe(false);
   });
 });

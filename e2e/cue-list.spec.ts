@@ -1,11 +1,17 @@
 import { expect, test } from "@playwright/test";
-import { sequenceCueListPanel, sequenceCueListTabs } from "./helpers/cue-list-panel";
+import { transportGoButton } from "./helpers/active-cues";
+import {
+  cueListTabOrder,
+  dragCueListTab,
+  sequenceCueListPanel,
+  sequenceCueListTabs,
+} from "./helpers/cue-list-panel";
 
 test("creates a new cue list", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("./");
 
-  await expect(page.getByRole("button", { name: "GO" })).toBeVisible();
+  await expect(transportGoButton(page)).toBeVisible();
 
   const tablist = sequenceCueListTabs(page);
   await expect(tablist.getByRole("tab", { name: /^Main/ })).toBeVisible();
@@ -22,7 +28,7 @@ test("renames a cue list", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("./");
 
-  await expect(page.getByRole("button", { name: "GO" })).toBeVisible();
+  await expect(transportGoButton(page)).toBeVisible();
 
   const tablist = sequenceCueListTabs(page);
   await tablist.getByRole("tab", { name: /^Main/ }).dblclick();
@@ -40,7 +46,7 @@ test("deletes a cue list", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("./");
 
-  await expect(page.getByRole("button", { name: "GO" })).toBeVisible();
+  await expect(transportGoButton(page)).toBeVisible();
 
   const tablist = sequenceCueListTabs(page);
   await sequenceCueListPanel(page).getByRole("button", { name: "New cue list" }).click();
@@ -51,4 +57,62 @@ test("deletes a cue list", async ({ page }) => {
   await expect(tablist.getByRole("tab")).toHaveCount(1);
   await expect(tablist.getByRole("tab", { name: /^Main/ })).toBeVisible();
   await expect(tablist.getByRole("tab", { name: /^List 2/ })).toHaveCount(0);
+});
+
+test("reorders cue list tabs via drag and drop", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("./");
+
+  await expect(transportGoButton(page)).toBeVisible();
+
+  const tablist = sequenceCueListTabs(page);
+  const newListButton = sequenceCueListPanel(page).getByRole("button", { name: "New cue list" });
+  await newListButton.click();
+  await newListButton.click();
+  await expect(tablist.getByRole("tab")).toHaveCount(3);
+
+  expect(await cueListTabOrder(page, ["Main", "List 2", "List 3"])).toEqual([
+    "Main",
+    "List 2",
+    "List 3",
+  ]);
+
+  await dragCueListTab(page, "List 3", "Main", "before");
+
+  await expect
+    .poll(() => cueListTabOrder(page, ["Main", "List 2", "List 3"]))
+    .toEqual(["List 3", "Main", "List 2"]);
+});
+
+test("duplicates a cue list from the tab context menu", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("./");
+
+  await expect(transportGoButton(page)).toBeVisible();
+
+  const tablist = sequenceCueListTabs(page);
+  await tablist.getByRole("tab", { name: /^Main/ }).click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Duplicate" }).click();
+
+  const copyTab = tablist.getByRole("tab", { name: /^Main copy/ });
+  await expect(copyTab).toBeVisible();
+  await expect(copyTab).toHaveAttribute("aria-selected", "true");
+  await expect(tablist.getByRole("tab")).toHaveCount(2);
+});
+
+test("copies and pastes a cue list from the tab context menu", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("./");
+
+  await expect(transportGoButton(page)).toBeVisible();
+
+  const tablist = sequenceCueListTabs(page);
+  await tablist.getByRole("tab", { name: /^Main/ }).click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Copy" }).click();
+
+  await tablist.getByRole("tab", { name: /^Main/ }).click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Paste" }).click();
+
+  await expect(tablist.getByRole("tab", { name: /^Main copy/ })).toBeVisible();
+  await expect(tablist.getByRole("tab")).toHaveCount(2);
 });

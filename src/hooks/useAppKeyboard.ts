@@ -1,14 +1,17 @@
 import { useEffect } from "react";
 import { deletePrimarySelectedCue, selectAdjacentVisibleCue } from "../lib/cue-navigation";
-import { isEditableKeyboardTarget } from "../lib/keyboard";
+import { hasTextSelection, isEditableKeyboardTarget } from "../lib/keyboard";
 import { startNewProject } from "../lib/new-project";
 import { openSettings } from "../lib/open-settings";
-import { openProjectFile, saveProjectFile } from "../lib/project-file-actions";
+import { openProjectFile, saveProjectAsFile } from "../lib/project-file-actions";
 import { redoProjectEdit, undoProjectEdit } from "../lib/project-history";
+import { saveKeyboardAction } from "../lib/project-save-flow";
 import { canEditProject } from "../lib/show-mode";
 import { triggerGoSelected } from "../lib/transport-actions";
+import { getPlatform } from "../platform";
 import { toggleWindowFullscreen } from "../platform/window-fullscreen";
 import { useProjectStore } from "../stores/project";
+import { useProjectLocationStore } from "../stores/project-location";
 import { useTransportStore } from "../stores/transport";
 import { useUiStore } from "../stores/ui";
 
@@ -41,9 +44,19 @@ export function useAppKeyboard(): void {
         return;
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s" && !e.shiftKey && !e.altKey) {
+      if (
+        saveKeyboardAction({
+          key: e.key,
+          metaOrCtrl: e.metaKey || e.ctrlKey,
+          shift: e.shiftKey,
+          alt: e.altKey,
+          canEdit: canEditProject(),
+          platform: getPlatform(),
+          isTemporaryRoot: useProjectLocationStore.getState().isTemporaryRoot,
+        }) === "save-as"
+      ) {
         e.preventDefault();
-        if (canEditProject()) void saveProjectFile();
+        void saveProjectAsFile();
         return;
       }
 
@@ -110,6 +123,7 @@ export function useAppKeyboard(): void {
       }
 
       if (
+        !hasTextSelection() &&
         canEditProject() &&
         (e.metaKey || e.ctrlKey) &&
         e.key.toLowerCase() === "c" &&
@@ -122,6 +136,7 @@ export function useAppKeyboard(): void {
       }
 
       if (
+        !hasTextSelection() &&
         canEditProject() &&
         (e.metaKey || e.ctrlKey) &&
         e.key.toLowerCase() === "x" &&
@@ -134,6 +149,7 @@ export function useAppKeyboard(): void {
       }
 
       if (
+        !hasTextSelection() &&
         canEditProject() &&
         (e.metaKey || e.ctrlKey) &&
         e.key.toLowerCase() === "v" &&

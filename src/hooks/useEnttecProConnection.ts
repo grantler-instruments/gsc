@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { getPlatform } from "../platform";
 import { connectEnttecPro, disconnectEnttecPro } from "../platform/enttec-pro";
-import { usePreferencesStore } from "../stores/preferences";
+import { isSerialDmxBackend, usePreferencesStore } from "../stores/preferences";
 
 /** Keeps the Enttec Pro serial connection aligned with settings (desktop only). */
 export function useEnttecProConnection(): void {
@@ -14,7 +14,7 @@ export function useEnttecProConnection(): void {
     let cancelled = false;
 
     void (async () => {
-      if (backend !== "enttec-pro" || !portId) {
+      if (!isSerialDmxBackend(backend) || !portId) {
         await disconnectEnttecPro();
         return;
       }

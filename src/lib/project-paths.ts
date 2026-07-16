@@ -16,14 +16,49 @@ export function sanitizeShowName(name: string): string {
   return name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "") || "Untitled_Show";
 }
 
+const REVERSE_DNS_PREFIXES = new Set(["com", "org", "net", "io", "dev", "app"]);
+
+function looksLikeBundleIdentifier(name: string): boolean {
+  const lower = name.toLowerCase();
+  if (!lower.endsWith(PROJECT_DIR_EXTENSION)) return false;
+  const base = lower.slice(0, -PROJECT_DIR_EXTENSION.length);
+  const dot = base.indexOf(".");
+  if (dot < 0) return false;
+  return REVERSE_DNS_PREFIXES.has(base.slice(0, dot));
+}
+
 export function isGscProjectDirName(name: string): boolean {
-  return name.toLowerCase().endsWith(PROJECT_DIR_EXTENSION);
+  if (!name.toLowerCase().endsWith(PROJECT_DIR_EXTENSION)) return false;
+  return !looksLikeBundleIdentifier(name);
 }
 
 export function isGscProjectDirPath(path: string): boolean {
   const parts = path.replace(/\\/g, "/").split("/").filter(Boolean);
   const leaf = parts[parts.length - 1] ?? "";
   return isGscProjectDirName(leaf);
+}
+
+/** True when the target path sits inside a parent `.gsc` project directory. */
+export function isInsideGscProjectDir(targetPath: string): boolean {
+  return enclosingGscProjectDirPath(targetPath) !== null;
+}
+
+/** Parent `.gsc` project directory containing the target path, if any. */
+export function enclosingGscProjectDirPath(targetPath: string): string | null {
+  const normalized = targetPath.replace(/\\/g, "/").replace(/\/+$/, "");
+  const isAbsolute = normalized.startsWith("/");
+  const sep = targetPath.includes("\\") ? "\\" : "/";
+  const parts = normalized.split("/").filter(Boolean);
+  if (parts.length < 2) return null;
+
+  for (let i = parts.length - 1; i >= 1; i--) {
+    const parentName = parts[i - 1];
+    if (parentName !== undefined && isGscProjectDirName(parentName)) {
+      const joined = parts.slice(0, i).join(sep);
+      return isAbsolute ? `${sep}${joined}` : joined;
+    }
+  }
+  return null;
 }
 
 /** Default folder name for a new desktop project (always ends with `.gsc`). */

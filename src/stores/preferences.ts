@@ -1,7 +1,12 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { type SupportedLocale, setAppLocale } from "../i18n";
-import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx-defaults";
+import { clampDeemexMidiStartChannel } from "../lib/deemex-midi";
+import {
+  DEFAULT_ART_NET_HOST,
+  DEFAULT_ART_NET_PORT,
+  DEFAULT_DEEMEX_MIDI_START_CHANNEL,
+} from "../lib/dmx-defaults";
 import { DEFAULT_MIDI_DEBOUNCE_MS } from "../lib/midi-defaults";
 import { getPlatform, type PlatformKind } from "../platform";
 import {
@@ -11,14 +16,18 @@ import {
   DEFAULT_NDI_SOURCE_NAME,
 } from "../types/ndi";
 
-export type DmxOutputBackend = "artnet" | "enttec-pro";
+export type DmxOutputBackend = "artnet" | "enttec-pro" | "deemex";
 
-/** Art-Net is desktop-only; web always uses Enttec Pro via Web Serial. */
+export function isSerialDmxBackend(backend: DmxOutputBackend): boolean {
+  return backend === "enttec-pro";
+}
+
+/** Art-Net is desktop-only; web uses serial backends via Web Serial. */
 export function resolveDmxOutputBackend(
   backend: DmxOutputBackend,
   platform: PlatformKind = getPlatform(),
 ): DmxOutputBackend {
-  if (platform === "web") return "enttec-pro";
+  if (platform === "web" && backend === "artnet") return "enttec-pro";
   return backend;
 }
 
@@ -37,6 +46,10 @@ interface PreferencesState {
   artNetPort: number;
   /** Tauri serial port path for Enttec Pro. */
   enttecProPortId: string | null;
+  /** MIDI output port for Grantler Instrument Deemex (MIDI mode). */
+  deemexMidiPortId: string | null;
+  /** First MIDI channel on Deemex (1–16, default 1 = CC mode). Values 2–16 use note-on mapping. */
+  deemexMidiStartChannel: number;
   setLocale: (locale: SupportedLocale) => void;
   setSoundCardId: (soundCardId: string | null) => void;
   setMidiInterfaceId: (midiInterfaceId: string | null) => void;
@@ -46,6 +59,8 @@ interface PreferencesState {
   setArtNetHost: (artNetHost: string) => void;
   setArtNetPort: (artNetPort: number) => void;
   setEnttecProPortId: (enttecProPortId: string | null) => void;
+  setDeemexMidiPortId: (deemexMidiPortId: string | null) => void;
+  setDeemexMidiStartChannel: (deemexMidiStartChannel: number) => void;
   ndiOutputEnabled: boolean;
   ndiSourceName: string;
   ndiOutputWidth: number;
@@ -91,6 +106,8 @@ export const usePreferencesStore = create<PreferencesState>()(
         artNetHost: DEFAULT_ART_NET_HOST,
         artNetPort: DEFAULT_ART_NET_PORT,
         enttecProPortId: null,
+        deemexMidiPortId: null,
+        deemexMidiStartChannel: DEFAULT_DEEMEX_MIDI_START_CHANNEL,
         ndiOutputEnabled: false,
         ndiSourceName: DEFAULT_NDI_SOURCE_NAME,
         ndiOutputWidth: DEFAULT_NDI_OUTPUT_WIDTH,
@@ -115,6 +132,9 @@ export const usePreferencesStore = create<PreferencesState>()(
         setArtNetHost: (artNetHost) => set({ artNetHost }),
         setArtNetPort: (artNetPort) => set({ artNetPort }),
         setEnttecProPortId: (enttecProPortId) => set({ enttecProPortId }),
+        setDeemexMidiPortId: (deemexMidiPortId) => set({ deemexMidiPortId }),
+        setDeemexMidiStartChannel: (deemexMidiStartChannel) =>
+          set({ deemexMidiStartChannel: clampDeemexMidiStartChannel(deemexMidiStartChannel) }),
         setNdiOutputEnabled: (ndiOutputEnabled) => set({ ndiOutputEnabled }),
         setNdiSourceName: (ndiSourceName) => set({ ndiSourceName }),
         setNdiOutputWidth: (ndiOutputWidth) => set({ ndiOutputWidth }),
@@ -143,6 +163,8 @@ export const usePreferencesStore = create<PreferencesState>()(
           artNetHost: s.artNetHost,
           artNetPort: s.artNetPort,
           enttecProPortId: s.enttecProPortId,
+          deemexMidiPortId: s.deemexMidiPortId,
+          deemexMidiStartChannel: s.deemexMidiStartChannel,
           ndiOutputEnabled: s.ndiOutputEnabled,
           ndiSourceName: s.ndiSourceName,
           ndiOutputWidth: s.ndiOutputWidth,

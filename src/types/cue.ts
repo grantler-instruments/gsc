@@ -83,6 +83,7 @@ export interface DmxCueData {
   fixtures: DmxFixtureValues[];
 }
 
+import type { AudioBus } from "./audio-bus";
 import type { Fixture } from "./fixture";
 import type { FixturePlot } from "./fixture-plot";
 import type { MidiMapping } from "./midi-mapping";
@@ -111,6 +112,8 @@ export interface Cue {
   volume?: number;
   /** -1 (full left) to 1 (full right) for audio/video cues. */
   pan?: number;
+  /** Internal mix bus; unset routes direct to master. */
+  audioBusId?: string;
   /** 1-based device output channels for audio routing; defaults to [1, 2]. */
   outputChannels?: number[];
   /** 0–1 for image/video cues. */
@@ -141,9 +144,17 @@ export interface Cue {
   ttsGeneratedKey?: string;
 }
 
+/**
+ * "sequence" = ordered, linear cue list (the default).
+ * "hot" = non-linear bank of hot cues fired on demand as an overlay.
+ */
+export type CueListKind = "sequence" | "hot";
+
 export interface CueListSnapshot {
   id: string;
   name: string;
+  /** Defaults to "sequence" when absent (older projects). */
+  kind?: CueListKind;
   cues: Cue[];
 }
 
@@ -168,4 +179,6 @@ export interface ProjectSnapshot {
   fixtures?: Fixture[];
   /** Spatial layout for the fixture plot visualizer. */
   fixturePlot?: FixturePlot;
+  /** Internal audio mix buses; empty means flat routing to master. */
+  audioBuses?: AudioBus[];
 }

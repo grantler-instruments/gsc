@@ -257,14 +257,16 @@ export function isCueActive(
   cue: Cue,
   cues: Cue[],
   activeCueIds: string[],
-  runningSequence: { rootId: string; stepCueIds: string[] } | null,
+  runningSequences: Readonly<Record<string, { rootId: string; stepCueIds: string[] }>>,
   dmxFadesByFadeCueId: Readonly<Record<string, unknown>> = {},
 ): boolean {
   if (cue.id in dmxFadesByFadeCueId) return true;
   if (activeCueIds.includes(cue.id)) return true;
 
-  if (runningSequence?.rootId === cue.id) return true;
-  if (runningSequence?.stepCueIds.includes(cue.id)) return true;
+  for (const seq of Object.values(runningSequences)) {
+    if (seq.rootId === cue.id) return true;
+    if (seq.stepCueIds.includes(cue.id)) return true;
+  }
 
   if (isParallelGroup(cue)) {
     const goIds = resolveParallelGoIds(cue, cues);

@@ -7,7 +7,12 @@ import {
   startNewProject,
   toggleShowMode,
 } from "./helpers/cue-editing";
-import { expectCueInSequenceList, sequenceCueList, sequenceCueRow } from "./helpers/cue-list-panel";
+import {
+  expectCueInSequenceList,
+  sequenceCueList,
+  sequenceCueListPanel,
+  sequenceCueRow,
+} from "./helpers/cue-list-panel";
 import { dropAudioOnCueList, fixturePath } from "./helpers/drop-audio";
 import { fileMenuButton } from "./helpers/project-file-menu";
 import { renameShow, showNameButton, waitForAutosavedCue } from "./helpers/project-session";
@@ -15,6 +20,10 @@ import { renameShow, showNameButton, waitForAutosavedCue } from "./helpers/proje
 const FIXTURE = "white-noise-playback.wav";
 const SAVED_SHOW_NAME = "Saved Before New";
 const DEFAULT_SHOW_NAME = "Untitled Show";
+
+function mainAddCueButton(page: import("@playwright/test").Page) {
+  return sequenceCueListPanel(page).locator("footer").getByRole("button", { name: "+ Cue ▾" });
+}
 
 async function dismissFileMenuHint(page: import("@playwright/test").Page): Promise<void> {
   const close = page.getByRole("alert").getByRole("button", { name: "Close" });
@@ -34,7 +43,7 @@ test("show mode disables editing controls", async ({ page }) => {
 
   const showModeToggle = page.getByRole("button", { name: /Edit mode/i });
   await expect(showModeToggle).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByRole("button", { name: "+ Cue ▾" })).toBeVisible();
+  await expect(mainAddCueButton(page)).toBeVisible();
 
   await toggleShowMode(page);
 
@@ -43,7 +52,7 @@ test("show mode disables editing controls", async ({ page }) => {
     "true",
   );
   await expect(showNameButton(page)).toBeDisabled();
-  await expect(page.getByRole("button", { name: "+ Cue ▾" })).toHaveCount(0);
+  await expect(mainAddCueButton(page)).toHaveCount(0);
 
   await fileMenuButton(page).click();
   await expect(page.getByRole("menuitem", { name: /^Open/ })).toHaveAttribute(
@@ -58,7 +67,7 @@ test("show mode disables editing controls", async ({ page }) => {
     "false",
   );
   await expect(showNameButton(page)).toBeEnabled();
-  await expect(page.getByRole("button", { name: "+ Cue ▾" })).toBeVisible();
+  await expect(mainAddCueButton(page)).toBeVisible();
 });
 
 test("show mode blocks cue editing shortcuts", async ({ page }) => {

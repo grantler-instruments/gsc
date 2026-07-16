@@ -263,25 +263,25 @@ describe("isCueActive", () => {
   ];
 
   it("detects directly active cues", () => {
-    expect(isCueActive(cues[1], cues, ["a"], null)).toBe(true);
-    expect(isCueActive(cues[2], cues, ["a"], null)).toBe(false);
+    expect(isCueActive(cues[1], cues, ["a"], {})).toBe(true);
+    expect(isCueActive(cues[2], cues, ["a"], {})).toBe(false);
   });
 
   it("detects running sequence root and step cues", () => {
-    const running = { rootId: "seq", stepCueIds: ["w"] };
+    const running = { seq: { rootId: "seq", stepCueIds: ["w"] } };
     expect(isCueActive(cues[3], cues, [], running)).toBe(true);
     expect(isCueActive(cues[4], cues, [], running)).toBe(true);
   });
 
   it("treats parallel groups as active when all leaf children are active", () => {
-    expect(isCueActive(cues[0], cues, ["a", "b"], null)).toBe(true);
-    expect(isCueActive(cues[0], cues, ["a"], null)).toBe(false);
+    expect(isCueActive(cues[0], cues, ["a", "b"], {})).toBe(true);
+    expect(isCueActive(cues[0], cues, ["a"], {})).toBe(false);
   });
 
   it("detects running light fade cues", () => {
     const fade = testCue("fade", "Fade", "lightFade");
-    expect(isCueActive(fade, [fade], [], null, { fade: {} })).toBe(true);
-    expect(isCueActive(fade, [fade], [], null, {})).toBe(false);
+    expect(isCueActive(fade, [fade], [], {}, { fade: {} })).toBe(true);
+    expect(isCueActive(fade, [fade], [], {}, {})).toBe(false);
   });
 });
 
