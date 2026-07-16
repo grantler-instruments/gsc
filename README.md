@@ -191,9 +191,16 @@ The **fixture plot** (sidebar and expanded above the cue list) mirrors the booth
 
 Remote control is **desktop-only**; the web app does not host remote sessions.
 
+## Desktop release CI notes
+
+Tag pushes (`x.y.z`) and the experimental branch build desktop artifacts via [`.github/workflows/release.yml`](.github/workflows/release.yml) / [`.github/workflows/experimental.yml`](.github/workflows/experimental.yml) and [`tauri-apps/tauri-action`](https://github.com/tauri-apps/tauri-action).
+
+- **Linux** release runners use **Ubuntu 24.04** (glibc new enough for the ONNX Runtime static libs pulled in by Supertonic TTS / `ort`).
+- **Intel Mac** (`x86_64-apple-darwin`): `ort` no longer ships prebuilt ONNX Runtime for this target. CI downloads Microsoft’s `onnxruntime-osx-x86_64-1.23.2`, dynamically links it, and bundles `libonnxruntime` into `Contents/Frameworks` inside the `.app` (see [`.github/actions/setup-onnxruntime-macos-x64`](.github/actions/setup-onnxruntime-macos-x64) and [`scripts/ci/bundle-onnxruntime-macos.sh`](scripts/ci/bundle-onnxruntime-macos.sh)).
+
 ## macOS releases (signing & notarization)
 
-Tag pushes (`x.y.z`) build desktop artifacts via [`.github/workflows/release.yml`](.github/workflows/release.yml) and [`tauri-apps/tauri-action`](https://github.com/tauri-apps/tauri-action). On macOS, the workflow signs and notarizes through Tauri’s bundler ([docs](https://v2.tauri.app/distribute/sign/macos/)).
+On macOS, the release workflow signs and notarizes through Tauri’s bundler ([docs](https://v2.tauri.app/distribute/sign/macos/)). Intel Mac builds re-sign and re-notarize after embedding ONNX Runtime so Gatekeeper checks still pass.
 
 Add these **repository secrets** (Settings → Secrets and variables → Actions):
 

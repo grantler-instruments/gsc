@@ -93,7 +93,7 @@ jobs:
             args: --target aarch64-apple-darwin
           - platform: macos-latest
             args: --target x86_64-apple-darwin
-          - platform: ubuntu-22.04
+          - platform: ubuntu-24.04
             args: ""
           - platform: windows-latest
             args: ""
@@ -113,7 +113,7 @@ jobs:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Install Linux dependencies
-        if: matrix.platform == 'ubuntu-22.04'
+        if: matrix.platform == 'ubuntu-24.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -144,6 +144,12 @@ jobs:
         if: matrix.platform == 'windows-latest'
         run: choco install imagemagick --yes
 
+      # ort-sys has no prebuilt ONNX Runtime for Intel Mac; use Microsoft's last
+      # official x86_64 package and dynamic-link (see setup action).
+      - name: Setup ONNX Runtime for macOS x86_64
+        if: contains(matrix.args, 'x86_64-apple-darwin')
+        uses: ./.github/actions/setup-onnxruntime-macos-x64
+
       - name: Build and upload experimental release assets
         uses: tauri-apps/tauri-action@v0
         env:
@@ -161,3 +167,12 @@ jobs:
           releaseDraft: false
           prerelease: true
           args: ${{ matrix.args }}
+
+      # Intel Mac: embed libonnxruntime (unsigned experimental builds; no re-sign).
+      - name: Bundle ONNX Runtime into Intel Mac app
+        if: contains(matrix.args, 'x86_64-apple-darwin')
+        env:
+          UPLOAD_ASSETS: "true"
+          RELEASE_TAG: experimental
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/ci/bundle-onnxruntime-macos.sh

@@ -1,0 +1,23 @@
+name: Setup ONNX Runtime (macOS x86_64)
+description: >
+  Download Microsoft ONNX Runtime for Intel Mac and export ORT_LIB_LOCATION /
+  ORT_PREFER_DYNAMIC_LINK so ort-sys can link (pyke no longer ships this target).
+runs:
+  using: composite
+  steps:
+    - name: Download ONNX Runtime for macOS x86_64
+      shell: bash
+      run: |
+        set -euo pipefail
+        ORT_VERSION="1.23.2"
+        echo "Downloading ONNX Runtime ${ORT_VERSION} for macOS x86_64..."
+        curl -fsSL -o /tmp/onnxruntime.tgz \
+          "https://github.com/microsoft/onnxruntime/releases/download/v${ORT_VERSION}/onnxruntime-osx-x86_64-${ORT_VERSION}.tgz"
+        mkdir -p "$RUNNER_TEMP/onnxruntime"
+        tar xzf /tmp/onnxruntime.tgz -C "$RUNNER_TEMP/onnxruntime" --strip-components=1
+        echo "ORT_LIB_LOCATION=$RUNNER_TEMP/onnxruntime/lib" >> "$GITHUB_ENV"
+        echo "ORT_PREFER_DYNAMIC_LINK=1" >> "$GITHUB_ENV"
+        # Ensure the app binary looks for the dylib in Contents/Frameworks at runtime.
+        echo "RUSTFLAGS=-C link-arg=-Wl,-rpath,@executable_path/../Frameworks" >> "$GITHUB_ENV"
+        echo "=== ONNX Runtime ${ORT_VERSION} for macOS x86_64 ==="
+        ls -la "$RUNNER_TEMP/onnxruntime/lib/"
