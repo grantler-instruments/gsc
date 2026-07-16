@@ -31,8 +31,8 @@ export async function syncSpeechModelReadyFromDisk(
 ): Promise<boolean> {
   if (getPlatform() !== "tauri") return getPreferencesSpeechModelReady();
 
-  const { isSpeechModelInstalledOnDisk } = await import("../platform/speech-model-cache.tauri");
-  const installed = await isSpeechModelInstalledOnDisk();
+  const { invoke } = await import("@tauri-apps/api/core");
+  const installed = await invoke<boolean>("supertonic_assets_ready");
   setSpeechModelReady(installed);
   return installed;
 }
@@ -46,8 +46,8 @@ export async function markSpeechModelInstalled(): Promise<void> {
 
 export async function isSpeechModelInstalled(): Promise<boolean> {
   if (getPlatform() === "tauri") {
-    const { isSpeechModelInstalledOnDisk } = await import("../platform/speech-model-cache.tauri");
-    return isSpeechModelInstalledOnDisk();
+    const { invoke } = await import("@tauri-apps/api/core");
+    return invoke<boolean>("supertonic_assets_ready");
   }
   return getPreferencesSpeechModelReady();
 }

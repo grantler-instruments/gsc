@@ -23,7 +23,7 @@ import { defaultOscCueData } from "../../lib/osc";
 import { runWithoutHistory } from "../../lib/project-history";
 import { randomId } from "../../lib/random-id";
 import { canEditProject } from "../../lib/show-mode";
-import { DEFAULT_TTS_SPEED, DEFAULT_TTS_VOICE } from "../../lib/tts";
+import { DEFAULT_TTS_LANG, DEFAULT_TTS_SPEED, getDefaultTtsVoice } from "../../lib/tts";
 import type { Cue } from "../../types/cue";
 import {
   applyRenumber,
@@ -76,7 +76,8 @@ function createCueFromOpts(opts: NewCueOpts, fixtures: ProjectState["fixtures"])
     outTime: undefined,
     waitDurationSec: type === "wait" ? 1 : undefined,
     ttsText: type === "tts" ? "" : undefined,
-    ttsVoice: type === "tts" ? DEFAULT_TTS_VOICE : undefined,
+    ttsVoice: type === "tts" ? getDefaultTtsVoice() : undefined,
+    ttsLang: type === "tts" ? DEFAULT_TTS_LANG : undefined,
     ttsSpeed: type === "tts" ? DEFAULT_TTS_SPEED : undefined,
     ...(type === "lightFade" ? defaultFadeCueFields("lightFade") : {}),
   };

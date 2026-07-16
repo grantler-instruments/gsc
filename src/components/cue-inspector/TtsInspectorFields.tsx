@@ -3,26 +3,29 @@ import CircularProgress from "@mui/material/CircularProgress";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { clearCachedAudioBuffer } from "../../audio/buffer-cache";
-import {
-  generateSpeechWav,
-  getLoadedKokoroDevice,
-  type SpeechGeneratePhase,
-} from "../../lib/kokoro-engine";
 import { formatAppError, notifyError } from "../../lib/notifications";
 import {
   DEFAULT_TTS_SPEED,
-  DEFAULT_TTS_VOICE,
+  getTtsEngine,
   getTtsGeneratedKey,
+  getTtsVoiceOptions,
   isTtsCue,
   isTtsGenerationStale,
+  resolveTtsLang,
+  resolveTtsVoice,
+  SUPERTONIC_LANG_OPTIONS,
   TTS_AUTO_GENERATE_DEBOUNCE_MS,
-  TTS_VOICE_OPTIONS,
   ttsAssetPath,
 } from "../../lib/tts";
 import { importGeneratedAudioAsset } from "../../lib/tts-asset";
+import {
+  generateSpeechWav,
+  getActiveSpeechBackendLabel,
+  type SpeechGeneratePhase,
+} from "../../lib/tts-engine";
 import { useSpeechModelStore } from "../../stores/speech-model";
 import type { Cue } from "../../types/cue";
 import { SliderNumberField } from "../SliderNumberField";
@@ -41,10 +44,15 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [lastGenerateMs, setLastGenerateMs] = useState<number | null>(null);
 
+  const engine = getTtsEngine();
+  const voiceOptions = useMemo(() => getTtsVoiceOptions(engine), [engine]);
+  const voice = resolveTtsVoice(cue.ttsVoice, engine);
+  const lang = resolveTtsLang(cue.ttsLang, engine);
+
   const isTts = isTtsCue(cue);
   const stale = isTts && isTtsGenerationStale(cue);
 
-  const inferenceDevice = getLoadedKokoroDevice();
+  const backend = getActiveSpeechBackendLabel();
   const speechModelLoading = useSpeechModelStore(
     (s) => s.status === "loading" && !s.userDownloadActive,
   );
@@ -72,11 +80,13 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
     setGeneratePhase(null);
     const started = performance.now();
     try {
-      const voice = cue.ttsVoice ?? DEFAULT_TTS_VOICE;
+      const resolvedVoice = resolveTtsVoice(cue.ttsVoice, engine);
+      const resolvedLang = resolveTtsLang(cue.ttsLang, engine);
       const speed = cue.ttsSpeed ?? DEFAULT_TTS_SPEED;
       const blob = await generateSpeechWav({
         text,
-        voice,
+        voice: resolvedVoice,
+        lang: resolvedLang,
         speed,
         onPhase: setGeneratePhase,
       });
@@ -88,10 +98,13 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
       clearCachedAudioBuffer(path);
       onChange({
         assetPath: path,
+        ttsVoice: resolvedVoice,
+        ttsLang: resolvedLang,
         ttsGeneratedKey: getTtsGeneratedKey({
           ...cue,
           ttsText: text,
-          ttsVoice: voice,
+          ttsVoice: resolvedVoice,
+          ttsLang: resolvedLang,
           ttsSpeed: speed,
         }),
       });
@@ -103,7 +116,7 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
     } finally {
       setGenerating(false);
     }
-  }, [cue, readOnly, onChange, t]);
+  }, [cue, readOnly, onChange, t, engine]);
 
   useEffect(() => {
     if (!isTts || readOnly || generating || !cue.ttsText?.trim() || !stale) return;
@@ -133,19 +146,40 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
         sx={{ mb: 1 }}
       />
 
+      {engine === "supertonic" ? (
+        <TextField
+          select
+          label={t("tts.language")}
+          size="small"
+          fullWidth
+          value={lang}
+          disabled={readOnly}
+          onChange={(e) => onChange({ ttsLang: e.target.value })}
+          sx={{ mb: 1 }}
+        >
+          {SUPERTONIC_LANG_OPTIONS.map((code) => (
+            <MenuItem key={code} value={code}>
+              {code === "na"
+                ? t("tts.languageAgnostic")
+                : t(`tts.lang.${code}`, { defaultValue: code })}
+            </MenuItem>
+          ))}
+        </TextField>
+      ) : null}
+
       <TextField
         select
         label={t("tts.voice")}
         size="small"
         fullWidth
-        value={cue.ttsVoice ?? DEFAULT_TTS_VOICE}
+        value={voice}
         disabled={readOnly}
         onChange={(e) => onChange({ ttsVoice: e.target.value })}
         sx={{ mb: 1 }}
       >
-        {TTS_VOICE_OPTIONS.map((voice) => (
-          <MenuItem key={voice} value={voice}>
-            {voice}
+        {voiceOptions.map((voiceId) => (
+          <MenuItem key={voiceId} value={voiceId}>
+            {voiceId}
           </MenuItem>
         ))}
       </TextField>
@@ -169,7 +203,7 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
         sx={{ alignSelf: "flex-start" }}
       >
         {generating
-          ? speechModelLoading || !inferenceDevice
+          ? speechModelLoading || generatePhase === "loading-model" || !backend
             ? t("tts.generatingLoadingModel", { seconds: generatingSeconds || 1 })
             : generatePhase === "fallback-wasm"
               ? t("tts.generatingFallbackWasm", { seconds: generatingSeconds || 1 })
@@ -177,17 +211,25 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
           : t("tts.generate")}
       </Button>
 
-      {inferenceDevice ? (
+      {backend === "supertonic" ? (
         <Typography variant="caption" color="text.secondary">
-          {inferenceDevice === "webgpu"
-            ? t("tts.inferenceBackendWebGpu")
-            : t("tts.inferenceBackendWasm")}
+          {t("tts.inferenceBackendSupertonic")}
+        </Typography>
+      ) : backend ? (
+        <Typography variant="caption" color="text.secondary">
+          {backend === "webgpu" ? t("tts.inferenceBackendWebGpu") : t("tts.inferenceBackendWasm")}
         </Typography>
       ) : null}
 
-      {generating && inferenceDevice === "wasm" && generatePhase === "synthesizing" ? (
+      {generating && backend === "wasm" && generatePhase === "synthesizing" ? (
         <Typography variant="caption" color="text.secondary">
           {t("tts.generatingWasmHint")}
+        </Typography>
+      ) : null}
+
+      {engine === "kokoro" ? (
+        <Typography variant="caption" color="text.secondary">
+          {t("tts.webEnglishOnlyHint")}
         </Typography>
       ) : null}
 

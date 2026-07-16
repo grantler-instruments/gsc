@@ -136,11 +136,13 @@ export interface Cue {
   waitDurationSec?: number;
   /** Source text for speech cues. */
   ttsText?: string;
-  /** Kokoro voice id (e.g. af_heart). */
+  /** Engine voice id (Kokoro e.g. af_heart, or Supertonic e.g. M1). */
   ttsVoice?: string;
+  /** BCP-like language code for Supertonic (`en`, `de`, `na`, …). Ignored by Kokoro. */
+  ttsLang?: string;
   /** Speaking rate multiplier for speech synthesis. */
   ttsSpeed?: number;
-  /** Fingerprint of text+voice+speed when speech was last rendered to assetPath. */
+  /** Fingerprint of engine+lang+text+voice+speed when speech was last rendered to assetPath. */
   ttsGeneratedKey?: string;
 }
 

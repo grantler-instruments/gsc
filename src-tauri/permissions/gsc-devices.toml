@@ -36,4 +36,11 @@ commands.allow = [
   "speech_model_cache_list_dir",
   "speech_model_cache_remove_all",
   "kokoro_phonemize",
+  "supertonic_assets_ready",
+  "supertonic_ensure_assets",
+  "supertonic_clear_assets",
+  "supertonic_load",
+  "supertonic_unload",
+  "supertonic_list_langs",
+  "tts_synthesize",
 ]

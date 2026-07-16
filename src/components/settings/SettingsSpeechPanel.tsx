@@ -5,12 +5,14 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { getPlatform } from "../../platform";
 import { usePreferencesStore } from "../../stores/preferences";
 import { useSpeechModelStore } from "../../stores/speech-model";
 import { inspectorFieldsSx } from "../inspectorSx";
 
 export function SettingsSpeechPanel() {
   const { t } = useTranslation();
+  const isDesktop = getPlatform() === "tauri";
   const speechModelReady = usePreferencesStore((s) => s.speechModelReady);
   const status = useSpeechModelStore((s) => s.status);
   const progress = useSpeechModelStore((s) => s.progress);
@@ -37,7 +39,7 @@ export function SettingsSpeechPanel() {
   return (
     <Stack sx={inspectorFieldsSx} spacing={2}>
       <Typography variant="body2" color="text.secondary">
-        {t("settings.speechDescription")}
+        {isDesktop ? t("settings.speechDescriptionDesktop") : t("settings.speechDescription")}
       </Typography>
 
       {ready ? (

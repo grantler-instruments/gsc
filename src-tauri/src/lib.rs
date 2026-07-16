@@ -9,6 +9,7 @@ mod osc;
 mod project_open;
 mod remote;
 mod speech_model_cache;
+mod supertonic;
 
 use std::sync::Mutex;
 
@@ -37,6 +38,10 @@ use speech_model_cache::{
     speech_model_cache_mkdir, speech_model_cache_read, speech_model_cache_remove_all,
     speech_model_cache_resolve_path, speech_model_cache_write,
 };
+use supertonic::{
+    supertonic_assets_ready, supertonic_clear_assets, supertonic_ensure_assets, supertonic_list_langs,
+    supertonic_load, supertonic_unload, tts_synthesize, SupertonicState,
+};
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::{Emitter, Manager, RunEvent};
 
@@ -48,6 +53,7 @@ pub fn run() {
         .manage(NdiService::default())
         .manage(PendingOpenPaths(Mutex::new(Vec::new())))
         .manage(RemoteServerState::default())
+        .manage(SupertonicState::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_keepawake::init())
@@ -89,6 +95,13 @@ pub fn run() {
             speech_model_cache_list_dir,
             speech_model_cache_remove_all,
             kokoro_phonemize,
+            supertonic_assets_ready,
+            supertonic_ensure_assets,
+            supertonic_clear_assets,
+            supertonic_load,
+            supertonic_unload,
+            supertonic_list_langs,
+            tts_synthesize,
         ])
         .setup(|app| {
             handle_cli_open_files(app.handle());
