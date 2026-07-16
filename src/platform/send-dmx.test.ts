@@ -12,7 +12,11 @@ vi.mock("./send-dmx.tauri", () => ({
 vi.mock("./enttec-pro", () => ({
   sendEnttecProUniverses: vi.fn(),
 }));
+vi.mock("./deemex-midi", () => ({
+  sendDeemexMidiUniverses: vi.fn(),
+}));
 
+import { sendDeemexMidiUniverses } from "./deemex-midi";
 import { sendEnttecProUniverses } from "./enttec-pro";
 import { sendDmxUniverses } from "./send-dmx";
 import { sendDmxUniversesTauri } from "./send-dmx.tauri";
@@ -22,6 +26,7 @@ describe("sendDmxUniverses", () => {
     platform = "tauri";
     vi.mocked(sendDmxUniversesTauri).mockClear();
     vi.mocked(sendEnttecProUniverses).mockClear();
+    vi.mocked(sendDeemexMidiUniverses).mockClear();
     usePreferencesStore.setState({
       dmxOutputBackend: "artnet",
       artNetHost: "10.0.0.5",
@@ -72,7 +77,19 @@ describe("sendDmxUniverses", () => {
     expect(sendDmxUniversesTauri).not.toHaveBeenCalled();
   });
 
-  it("forces Enttec Pro on web even when Art-Net is selected", async () => {
+  it("routes to Deemex via MIDI when configured", async () => {
+    usePreferencesStore.setState({ dmxOutputBackend: "deemex" });
+    const frames = [{ universe: 1, data: new Uint8Array([200]) }];
+
+    await sendDmxUniverses(frames);
+
+    expect(sendDeemexMidiUniverses).toHaveBeenCalledOnce();
+    expect(sendDeemexMidiUniverses).toHaveBeenCalledWith(frames);
+    expect(sendEnttecProUniverses).not.toHaveBeenCalled();
+    expect(sendDmxUniversesTauri).not.toHaveBeenCalled();
+  });
+
+  it("forces Enttec Pro on web when Art-Net is selected", async () => {
     platform = "web";
     usePreferencesStore.setState({ dmxOutputBackend: "artnet" });
     const frames = [{ universe: 1, data: new Uint8Array([64]) }];
@@ -80,6 +97,18 @@ describe("sendDmxUniverses", () => {
     await sendDmxUniverses(frames);
 
     expect(sendEnttecProUniverses).toHaveBeenCalledOnce();
+    expect(sendDmxUniversesTauri).not.toHaveBeenCalled();
+  });
+
+  it("keeps Deemex on web when configured", async () => {
+    platform = "web";
+    usePreferencesStore.setState({ dmxOutputBackend: "deemex" });
+    const frames = [{ universe: 1, data: new Uint8Array([32]) }];
+
+    await sendDmxUniverses(frames);
+
+    expect(sendDeemexMidiUniverses).toHaveBeenCalledOnce();
+    expect(sendEnttecProUniverses).not.toHaveBeenCalled();
     expect(sendDmxUniversesTauri).not.toHaveBeenCalled();
   });
 });

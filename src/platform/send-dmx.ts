@@ -1,6 +1,10 @@
 import type { DmxUniverseFrame } from "../lib/dmx";
 import { DEFAULT_ART_NET_HOST, DEFAULT_ART_NET_PORT } from "../lib/dmx-defaults";
-import { resolveDmxOutputBackend, usePreferencesStore } from "../stores/preferences";
+import {
+  isSerialDmxBackend,
+  resolveDmxOutputBackend,
+  usePreferencesStore,
+} from "../stores/preferences";
 import { getPlatform } from "./index";
 
 export async function sendDmxUniverses(
@@ -13,7 +17,13 @@ export async function sendDmxUniverses(
   const prefs = usePreferencesStore.getState();
   const backend = resolveDmxOutputBackend(prefs.dmxOutputBackend, getPlatform());
 
-  if (backend === "enttec-pro") {
+  if (backend === "deemex") {
+    const { sendDeemexMidiUniverses } = await import("./deemex-midi");
+    await sendDeemexMidiUniverses(frames);
+    return;
+  }
+
+  if (isSerialDmxBackend(backend)) {
     const { sendEnttecProUniverses } = await import("./enttec-pro");
     await sendEnttecProUniverses(frames);
     return;

@@ -97,6 +97,7 @@ export function SettingsDialog() {
             <SettingsDmxPanel
               isTauri={isTauri}
               serialPorts={devices.serialPorts}
+              midiOutDevices={devices.midiOutDevices}
               enttecConnected={devices.enttecConnected}
               setEnttecConnected={devices.setEnttecConnected}
               webSerialAvailable={devices.webSerialAvailable}
