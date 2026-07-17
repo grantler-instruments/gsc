@@ -27,13 +27,42 @@ echo "Bundling ONNX Runtime into: $APP"
 FRAMEWORKS_DIR="$APP/Contents/Frameworks"
 mkdir -p "$FRAMEWORKS_DIR"
 cp -a "${ORT_LIB_LOCATION}"/libonnxruntime*.dylib "$FRAMEWORKS_DIR/"
-chmod +x "$FRAMEWORKS_DIR"/libonnxruntime*.dylib
+# Copy real dylib + any versioned siblings; skip broken symlinks if present.
+chmod +x "$FRAMEWORKS_DIR"/libonnxruntime*.dylib 2>/dev/null || true
 
-APP_BIN="$APP/Contents/MacOS/Grantler Stage Control"
-if [[ ! -f "$APP_BIN" ]]; then
-  echo "Could not locate app binary at $APP_BIN" >&2
+# Tauri names the .app from productName, but the Mach-O is usually the Cargo
+# package name (e.g. "gsc"), not "Grantler Stage Control".
+MACOS_DIR="$APP/Contents/MacOS"
+if [[ ! -d "$MACOS_DIR" ]]; then
+  echo "Missing Contents/MacOS in $APP" >&2
+  ls -la "$APP/Contents" >&2 || true
   exit 1
 fi
+echo "Contents/MacOS:"
+ls -la "$MACOS_DIR"
+
+APP_BIN=""
+# Prefer CFBundleExecutable from Info.plist when present.
+if [[ -f "$APP/Contents/Info.plist" ]]; then
+  EXEC_NAME=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP/Contents/Info.plist" 2>/dev/null || true)
+  if [[ -n "${EXEC_NAME:-}" && -f "$MACOS_DIR/$EXEC_NAME" ]]; then
+    APP_BIN="$MACOS_DIR/$EXEC_NAME"
+  fi
+fi
+# Fallback: first executable Mach-O in MacOS/ (ignore helpers if any).
+if [[ -z "$APP_BIN" ]]; then
+  while IFS= read -r candidate; do
+    if [[ -f "$candidate" && -x "$candidate" ]]; then
+      APP_BIN="$candidate"
+      break
+    fi
+  done < <(find "$MACOS_DIR" -maxdepth 1 -type f -perm -111 | sort)
+fi
+if [[ -z "$APP_BIN" || ! -f "$APP_BIN" ]]; then
+  echo "Could not locate app binary under $MACOS_DIR" >&2
+  exit 1
+fi
+echo "Using app binary: $APP_BIN"
 
 # Add rpath if missing (idempotent). Signed binaries must be unsigned first.
 if ! otool -l "$APP_BIN" | grep -q '@executable_path/../Frameworks'; then
