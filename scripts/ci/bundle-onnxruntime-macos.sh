@@ -137,15 +137,15 @@ shopt -s nullglob
 DMGS=("$BUNDLE_ROOT"/dmg/*.dmg "$BUNDLE_ROOT"/*.dmg)
 MACOS_TARS=("$BUNDLE_ROOT"/macos/*.tar.gz "$BUNDLE_ROOT"/*.app.tar.gz)
 
-for tar in "${MACOS_TARS[@]}"; do
-  if [[ -f "$tar" ]]; then
-    echo "Updating $tar"
+for tar_path in "${MACOS_TARS[@]}"; do
+  if [[ -f "$tar_path" ]]; then
+    # Resolve absolute path before packaging: we create the archive from a
+    # temp dir, and a relative $tar_path would resolve under that temp dir.
+    TAR_ABS="$(cd "$(dirname "$tar_path")" && pwd)/$(basename "$tar_path")"
+    echo "Updating $TAR_ABS"
     TMP_TAR_DIR=$(mktemp -d)
     cp -R "$APP" "$TMP_TAR_DIR/"
-    (
-      cd "$TMP_TAR_DIR"
-      tar czf "$tar" "Grantler Stage Control.app"
-    )
+    tar czf "$TAR_ABS" -C "$TMP_TAR_DIR" "Grantler Stage Control.app"
     rm -rf "$TMP_TAR_DIR"
   fi
 done
