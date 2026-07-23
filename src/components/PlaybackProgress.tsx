@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import type { PlaybackProgressSnapshot } from "../lib/playback-slice";
+import { getRemainingPlaybackSec, type PlaybackProgressSnapshot } from "../lib/playback-slice";
 import { formatPlaybackClock } from "../lib/time";
 import type { CuePlaybackProgress } from "../stores/playback";
 
@@ -22,6 +22,9 @@ export function PlaybackProgress({
   const fillPct = Math.max(0, Math.min(100, progress.progress * 100));
   const ariaPct = Math.round(fillPct);
   const timeLabel = `${formatPlaybackClock(progress.positionSec)} / ${formatPlaybackClock(progress.endSec)}`;
+  const remainingSec = getRemainingPlaybackSec(progress);
+  const remainingLabel =
+    remainingSec === undefined ? null : `−${formatPlaybackClock(remainingSec)}`;
   const loopLabel =
     progress.loopTotal !== undefined && progress.loopIteration !== undefined
       ? progress.loopTotal === "inf"
@@ -79,6 +82,21 @@ export function PlaybackProgress({
       >
         {timeLabel}
       </Typography>
+      {remainingLabel && (
+        <Typography
+          component="span"
+          sx={{
+            flexShrink: 0,
+            minWidth: "8ch",
+            fontSize: 10,
+            fontVariantNumeric: "tabular-nums",
+            color: tone === "wait" ? "warning.main" : "text.secondary",
+            textAlign: "right",
+          }}
+        >
+          {remainingLabel}
+        </Typography>
+      )}
       {loopLabel && (
         <Typography
           component="span"

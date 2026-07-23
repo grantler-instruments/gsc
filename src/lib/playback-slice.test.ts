@@ -7,6 +7,7 @@ import {
   cueNeedsKnownDuration,
   cueShowsPlaybackProgress,
   getPlaybackSliceSec,
+  getRemainingPlaybackSec,
   isFinitePlaybackComplete,
   isImageInfiniteHold,
 } from "./playback-slice";
@@ -100,6 +101,58 @@ describe("computePlaybackProgressWithBounds", () => {
     const secondPass = computePlaybackProgressWithBounds(twice, 15);
     expect(secondPass.loopIteration).toBe(2);
     expect(secondPass.loopTotal).toBe(2);
+  });
+});
+
+describe("getRemainingPlaybackSec", () => {
+  it("returns remaining duration for a normal finite run", () => {
+    expect(
+      getRemainingPlaybackSec({
+        positionSec: 12,
+        endSec: 30,
+        progress: 0.4,
+        looping: false,
+        elapsedSec: 12,
+        sliceSec: 30,
+      }),
+    ).toBe(18);
+  });
+
+  it("counts down across finite loop iterations", () => {
+    expect(
+      getRemainingPlaybackSec({
+        positionSec: 5,
+        endSec: 10,
+        progress: 0.75,
+        looping: false,
+        loopIteration: 2,
+        loopTotal: 2,
+        elapsedSec: 15,
+        sliceSec: 10,
+      }),
+    ).toBe(5);
+  });
+
+  it("clamps completed playback at zero and hides infinite loops", () => {
+    expect(
+      getRemainingPlaybackSec({
+        positionSec: 10,
+        endSec: 10,
+        progress: 1,
+        looping: false,
+        elapsedSec: 12,
+        sliceSec: 10,
+      }),
+    ).toBe(0);
+    expect(
+      getRemainingPlaybackSec({
+        positionSec: 5,
+        endSec: 10,
+        progress: 0.5,
+        looping: true,
+        loopTotal: "inf",
+      }),
+    ).toBeUndefined();
   });
 });
 

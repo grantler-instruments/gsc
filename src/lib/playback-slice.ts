@@ -129,6 +129,23 @@ export interface PlaybackProgressSnapshot {
   loopTotal?: number | "inf";
 }
 
+/**
+ * Remaining duration for a finite playback run. Snapshots without elapsed and
+ * slice data (such as legacy progress sources) fall back to their playhead.
+ */
+export function getRemainingPlaybackSec(
+  progress: PlaybackProgressSnapshot & { elapsedSec?: number; sliceSec?: number },
+): number | undefined {
+  if (progress.loopTotal === "inf" || progress.looping) return undefined;
+
+  if (progress.elapsedSec !== undefined && progress.sliceSec !== undefined) {
+    const totalSec = progress.sliceSec * (progress.loopTotal ?? 1);
+    return Math.max(0, totalSec - progress.elapsedSec);
+  }
+
+  return Math.max(0, progress.endSec - progress.positionSec);
+}
+
 export function computePlaybackProgressWithBounds(
   bounds: PlaybackBounds,
   elapsedSec: number,

@@ -68,6 +68,19 @@ export function computeDmxFadeProgressSnapshot(
   };
 }
 
+export function computePropertyFadeProgressSnapshot(
+  fade: ActivePropertyFade,
+  nowMs: number,
+): PlaybackProgressSnapshot {
+  const elapsedSec = Math.max(0, (nowMs - fade.startedAtMs) / 1000);
+  return {
+    positionSec: elapsedSec,
+    endSec: fade.durationSec,
+    progress: fade.durationSec > 0 ? Math.max(0, Math.min(1, elapsedSec / fade.durationSec)) : 1,
+    looping: false,
+  };
+}
+
 export function isFadeComplete(fade: ActivePropertyFade, nowMs: number): boolean {
   return (nowMs - fade.startedAtMs) / 1000 >= fade.durationSec;
 }

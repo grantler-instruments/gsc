@@ -1,6 +1,7 @@
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { useDmxFadeCueProgress } from "../../hooks/useDmxFadeCueProgress";
+import { usePropertyFadeCueProgress } from "../../hooks/usePropertyFadeCueProgress";
 import { getCueAssetWarning } from "../../lib/cue-asset";
 import {
   getFadeTarget,
@@ -84,6 +85,7 @@ export function CueRowDetails({
   const assetWarning = getCueAssetWarning(cue);
   const parallelConflict = isParallel ? getParallelGroupOrderConflict(cue, allCues) : null;
   const lightFadeProgress = useDmxFadeCueProgress(cue.id);
+  const propertyFadeProgress = usePropertyFadeCueProgress(cue.id);
 
   return (
     <>
@@ -176,6 +178,9 @@ export function CueRowDetails({
       )}
       {isLightFadeCue(cue) && lightFadeProgress && (
         <PlaybackProgress progress={lightFadeProgress} compact />
+      )}
+      {isFade && propertyFadeProgress && (
+        <PlaybackProgress progress={propertyFadeProgress} compact />
       )}
     </>
   );
