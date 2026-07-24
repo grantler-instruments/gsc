@@ -10,6 +10,7 @@ mod project_open;
 mod remote;
 mod speech_model_cache;
 mod supertonic;
+mod system_stats;
 
 use std::sync::Mutex;
 
@@ -44,6 +45,7 @@ use supertonic::{
     supertonic_assets_ready, supertonic_clear_assets, supertonic_ensure_assets, supertonic_list_langs,
     supertonic_load, supertonic_unload, tts_synthesize, SupertonicState,
 };
+use system_stats::{get_process_stats, SystemStatsState};
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::{Emitter, Manager, RunEvent};
 
@@ -56,6 +58,7 @@ pub fn run() {
         .manage(PendingOpenPaths(Mutex::new(Vec::new())))
         .manage(RemoteServerState::default())
         .manage(SupertonicState::default())
+        .manage(SystemStatsState::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_keepawake::init())
@@ -104,6 +107,7 @@ pub fn run() {
             supertonic_unload,
             supertonic_list_langs,
             tts_synthesize,
+            get_process_stats,
         ])
         .setup(|app| {
             handle_cli_open_files(app.handle());

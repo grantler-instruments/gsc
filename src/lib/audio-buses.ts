@@ -2,11 +2,8 @@ import { t } from "../i18n/t";
 import type { AudioBus } from "../types/audio-bus";
 import type { Cue } from "../types/cue";
 import { normalizeAudioEffects } from "./audio-effects";
+import { clamp01 } from "./clamp";
 import { randomId } from "./random-id";
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
 
 export function clampBusPan(value: number): number {
   return Math.max(-1, Math.min(1, value));

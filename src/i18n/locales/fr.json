@@ -211,7 +211,12 @@
     "storageWarning": "Le stockage se remplit. Exportez une sauvegarde depuis le menu Fichier avant d’importer de grands médias.",
     "storageCritical": "Le stockage est presque plein. Exportez une sauvegarde maintenant pour ne pas perdre votre spectacle.",
     "storagePersisted": "Stockage persistant accordé — votre spectacle a moins de risque d’être effacé par le navigateur.",
-    "storageNotPersisted": "Accordez le stockage persistant en important ou en modifiant un projet pour que le navigateur conserve les données de votre spectacle."
+    "storageNotPersisted": "Accordez le stockage persistant en important ou en modifiant un projet pour que le navigateur conserve les données de votre spectacle.",
+    "performanceHud": "Afficher le HUD de performance",
+    "performanceHudHint": "Affiche FPS, CPU et mémoire à côté du menu GSC. CPU et mémoire nécessitent l’app bureau.",
+    "performanceHudFpsTooltip": "Fréquence d’images de l’interface (images par seconde)",
+    "performanceHudCpuTooltip": "Utilisation CPU de cette application",
+    "performanceHudRamTooltip": "Mémoire utilisée par cette application (RAM)"
   },
   "remote": {
     "title": "Contrôle à distance",

@@ -1,6 +1,9 @@
 import type { Cue } from "../types/cue";
 import type { OutputLayer } from "../types/output";
 import { getLoopPlayCount } from "./loop";
+import { transportNowMs } from "./transport-clock";
+
+export { driftSecWithinSlice } from "./playback-drift";
 
 export function videoPlaybackWindow(cue: Cue, mediaDuration: number) {
   const inT = Math.max(0, cue.inTime ?? 0);
@@ -24,7 +27,7 @@ export function isOutputLayerLooping(layer: OutputLayer): boolean {
   return layer.loopCount !== 1;
 }
 
-export function elapsedVideoSec(goAtMs: number, nowMs = Date.now()): number {
+export function elapsedVideoSec(goAtMs: number, nowMs = transportNowMs()): number {
   return Math.max(0, (nowMs - goAtMs) / 1000);
 }
 
@@ -32,7 +35,7 @@ export function videoTargetTime(
   cue: Cue,
   mediaDuration: number,
   goAtMs: number,
-  nowMs = Date.now(),
+  nowMs = transportNowMs(),
 ): number {
   const { offsetSec, durationSec } = videoPlaybackWindow(cue, mediaDuration);
   const loopPlayCount = getLoopPlayCount(cue);
@@ -49,7 +52,7 @@ export function videoTargetTime(
   return offsetSec + inSlice;
 }
 
-export function outputLayerTargetTime(layer: OutputLayer, nowMs = Date.now()): number {
+export function outputLayerTargetTime(layer: OutputLayer, nowMs = transportNowMs()): number {
   const elapsed = elapsedVideoSec(layer.goAtMs, nowMs);
 
   if (layer.loopCount === "inf") {
@@ -67,7 +70,7 @@ export function isVideoPlaybackComplete(
   cue: Cue,
   mediaDuration: number,
   goAtMs: number,
-  nowMs = Date.now(),
+  nowMs = transportNowMs(),
 ): boolean {
   const loopPlayCount = getLoopPlayCount(cue);
   if (loopPlayCount === "inf") return false;
@@ -75,7 +78,10 @@ export function isVideoPlaybackComplete(
   return elapsedVideoSec(goAtMs, nowMs) >= durationSec * loopPlayCount;
 }
 
-export function isOutputLayerPlaybackComplete(layer: OutputLayer, nowMs = Date.now()): boolean {
+export function isOutputLayerPlaybackComplete(
+  layer: OutputLayer,
+  nowMs = transportNowMs(),
+): boolean {
   if (layer.loopCount === "inf") return false;
   const elapsed = elapsedVideoSec(layer.goAtMs, nowMs);
   return elapsed >= layer.sliceSec * layer.loopCount;

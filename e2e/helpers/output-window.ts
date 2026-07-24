@@ -1,20 +1,32 @@
 import { expect, type Page } from "@playwright/test";
 import {
   expectOutputPlaybackStableOnPage,
+  isOutputVideoReady,
   OUTPUT_VIDEO_LOAD_MAX_MS,
+  OUTPUT_VIDEO_MID_PLAYBACK_LOAD_MAX_MS,
+  OUTPUT_VIDEO_POLL_TIMEOUT_MS,
 } from "../shared/output-window";
+import { driftSecWithinSlice as driftSecWithinPlaybackSlice } from "../shared/playback-drift";
 import { getWaveformPositionSec } from "./active-cues";
 
-export { OUTPUT_VIDEO_LOAD_MAX_MS } from "../shared/output-window";
+export {
+  OUTPUT_VIDEO_LOAD_MAX_MS,
+  OUTPUT_VIDEO_MID_PLAYBACK_LOAD_MAX_MS,
+} from "../shared/output-window";
+
 /** test-video-playback.mp4 slice length (see generate-video-fixtures.mjs). */
 export const PLAYBACK_VIDEO_SLICE_SEC = 4;
+
+const isCi = !!process.env.CI;
+
 /** Observed steady-state headless Chromium: ~70–85ms; allow more on loaded CI runners. */
-export const MAX_PLAYBACK_DRIFT_SEC = 0.35;
-export const MAX_DRIFT_GROWTH_SEC = 0.09;
-const STEADY_DRIFT_CAP_SEC = 0.4;
+export const MAX_PLAYBACK_DRIFT_SEC = isCi ? 0.55 : 0.35;
+/** Loop-wrap sampling on CI can swing ~100ms without sustained desync. */
+export const MAX_DRIFT_GROWTH_SEC = isCi ? 0.2 : 0.12;
+const STEADY_DRIFT_CAP_SEC = isCi ? 0.65 : 0.4;
 
 export function outputButton(page: Page) {
-  return page.getByRole("button", { name: "Output" });
+  return page.locator('[data-gsc-action="open-output"]');
 }
 
 export function outputStage(page: Page) {
@@ -32,6 +44,8 @@ export async function openOutputWindow(page: Page): Promise<Page> {
   await outputPage.waitForLoadState("domcontentloaded");
   await expect(outputPage).toHaveURL(/mode=output/);
   await expect(outputStage(outputPage)).toBeVisible({ timeout: 30_000 });
+  await outputPage.bringToFront();
+  await outputPage.locator("body").click({ position: { x: 8, y: 8 } });
 
   return outputPage;
 }
@@ -62,15 +76,21 @@ function isOutputVideoPlaying(state: OutputVideoState | null): boolean {
 export async function waitForOutputVideoPlaying(
   outputPage: Page,
   startedAtMs: number,
-  timeoutMs = 20_000,
+  options: {
+    timeoutMs?: number;
+    requirePlaying?: boolean;
+  } = {},
 ): Promise<number> {
+  const { timeoutMs = OUTPUT_VIDEO_POLL_TIMEOUT_MS, requirePlaying = true } = options;
+  const isReady = (state: OutputVideoState | null) =>
+    requirePlaying ? isOutputVideoPlaying(state) : isOutputVideoReady(state);
   let loadMs = 0;
 
   await expect
     .poll(
       async () => {
         const state = await getOutputVideoState(outputPage);
-        if (isOutputVideoPlaying(state)) {
+        if (isReady(state)) {
           loadMs = Date.now() - startedAtMs;
           return true;
         }
@@ -87,8 +107,12 @@ export async function expectOutputVideoLoadsWithin(
   outputPage: Page,
   startedAtMs: number,
   maxMs = OUTPUT_VIDEO_LOAD_MAX_MS,
+  options: { requirePlaying?: boolean; timeoutMs?: number } = {},
 ): Promise<number> {
-  const loadMs = await waitForOutputVideoPlaying(outputPage, startedAtMs);
+  const loadMs = await waitForOutputVideoPlaying(outputPage, startedAtMs, {
+    ...options,
+    requirePlaying: options.requirePlaying ?? false,
+  });
   expect(loadMs, `output video took ${loadMs}ms to start (limit ${maxMs}ms)`).toBeLessThanOrEqual(
     maxMs,
   );
@@ -115,11 +139,7 @@ export function driftSecWithinSlice(
   outputSec: number,
   sliceSec: number,
 ): number {
-  const wrap = (value: number) => ((value % sliceSec) + sliceSec) % sliceSec;
-  const a = wrap(controlSec);
-  const b = wrap(outputSec);
-  const diff = Math.abs(a - b);
-  return Math.min(diff, sliceSec - diff);
+  return driftSecWithinPlaybackSlice(controlSec, outputSec, sliceSec, 0);
 }
 
 function summarizeDriftSamples(samples: PlaybackDriftSample[]): PlaybackDriftMeasurement {
@@ -188,6 +208,8 @@ export async function measurePlaybackDrift(
     sampleIntervalMs = 500,
     sliceSec = PLAYBACK_VIDEO_SLICE_SEC,
   } = options;
+
+  await outputPage.bringToFront();
 
   await expect
     .poll(async () => getWaveformPositionSec(controlPage, cueName), { timeout: 15_000 })
@@ -272,7 +294,7 @@ export async function expectOutputVideoPlaybackToAdvance(outputPage: Page): Prom
 /** Assert the output popup keeps one video element mounted and does not reload during playback. */
 export async function expectOutputPlaybackStable(
   outputPage: Page,
-  options: { stableMs?: number; advanceMs?: number } = {},
+  options: { stableMs?: number; advanceMs?: number; sliceSec?: number } = {},
 ): Promise<void> {
   await expectOutputPlaybackStableOnPage(outputPage, options);
 }

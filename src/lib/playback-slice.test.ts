@@ -8,6 +8,7 @@ import {
   cueShowsPlaybackProgress,
   getPlaybackSliceSec,
   getRemainingPlaybackSec,
+  isEngineManagedPlaybackCue,
   isFinitePlaybackComplete,
   isImageInfiniteHold,
 } from "./playback-slice";
@@ -197,5 +198,13 @@ describe("cueNeedsKnownDuration", () => {
     expect(cueNeedsKnownDuration(testCue("a", "A", "audio", { assetPath: "a.wav" }))).toBe(true);
     expect(cueNeedsKnownDuration(testCue("a", "A", "audio"))).toBe(false);
     expect(cueNeedsKnownDuration(testCue("i", "I", "image"))).toBe(false);
+  });
+});
+
+describe("isEngineManagedPlaybackCue", () => {
+  it("is true for audio and video only", () => {
+    expect(isEngineManagedPlaybackCue(testCue("a", "A", "audio"))).toBe(true);
+    expect(isEngineManagedPlaybackCue(testCue("v", "V", "video"))).toBe(true);
+    expect(isEngineManagedPlaybackCue(testCue("i", "I", "image"))).toBe(false);
   });
 });

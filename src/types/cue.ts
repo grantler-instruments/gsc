@@ -87,6 +87,10 @@ import type { AudioBus } from "./audio-bus";
 import type { Fixture } from "./fixture";
 import type { FixturePlot } from "./fixture-plot";
 import type { MidiMapping } from "./midi-mapping";
+import type { VideoBus } from "./video-bus";
+import type { VideoEffect } from "./video-effect";
+import type { VideoOutput } from "./video-output";
+import type { VideoOutputFrame } from "./video-output-frame";
 
 export interface Cue {
   id: string;
@@ -114,6 +118,8 @@ export interface Cue {
   pan?: number;
   /** Internal mix bus for audio/video/speech cues; unset routes direct to master. */
   audioBusId?: string;
+  /** Visual program bus; unset routes to the master program. */
+  videoBusId?: string;
   /** 1-based device output channels for audio routing; defaults to [1, 2]. */
   outputChannels?: number[];
   /** 0–1 for image/video cues. */
@@ -183,4 +189,19 @@ export interface ProjectSnapshot {
   fixturePlot?: FixturePlot;
   /** Internal audio mix buses; empty means flat routing to master. */
   audioBuses?: AudioBus[];
+  /** Visual program buses; empty means all visuals go to the master program. */
+  videoBuses?: VideoBus[];
+  /** Physical/logical destinations that display a program bus. */
+  videoOutputs?: VideoOutput[];
+  /** Display name for the master program; defaults to "Main". */
+  masterVideoOutputName?: string;
+  /** 0–1 master dimmer on the master program. */
+  masterVideoOutputOpacity?: number;
+  /** Insert effects on the master program. */
+  masterVideoOutputEffects?: VideoEffect[];
+  /**
+   * @deprecated Legacy master destination frame; migrated onto the default master VideoOutput.
+   * Read on load only.
+   */
+  masterVideoOutputFrame?: VideoOutputFrame;
 }

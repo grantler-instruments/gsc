@@ -223,7 +223,12 @@
     "storageWarning": "Der Speicher wird knapp. Exportieren Sie ein Backup über das Dateimenü, bevor Sie große Medien importieren.",
     "storageCritical": "Der Speicher ist fast voll. Exportieren Sie jetzt ein Backup, um Datenverlust zu vermeiden.",
     "storagePersisted": "Dauerhafter Speicher gewährt — Ihre Show wird seltener vom Browser gelöscht.",
-    "storageNotPersisted": "Dauerhaften Speicher erhalten Sie durch Import oder Bearbeitung eines Projekts."
+    "storageNotPersisted": "Dauerhaften Speicher erhalten Sie durch Import oder Bearbeitung eines Projekts.",
+    "performanceHud": "Performance-HUD anzeigen",
+    "performanceHudHint": "Zeigt FPS, CPU und Speicher neben dem GSC-Menü. CPU und Speicher erfordern die Desktop-App.",
+    "performanceHudFpsTooltip": "UI-Bildrate (Bilder pro Sekunde)",
+    "performanceHudCpuTooltip": "CPU-Auslastung dieser App",
+    "performanceHudRamTooltip": "Speicherverbrauch dieser App (RAM)"
   },
   "remote": {
     "title": "Fernsteuerung",

@@ -43,4 +43,5 @@ commands.allow = [
   "supertonic_unload",
   "supertonic_list_langs",
   "tts_synthesize",
+  "get_process_stats",
 ]

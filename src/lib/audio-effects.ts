@@ -17,11 +17,8 @@ import {
   REVERB_DECAY_MAX_SEC,
   REVERB_DECAY_MIN_SEC,
 } from "../types/audio-effect";
+import { clamp01 } from "./clamp";
 import { randomId } from "./random-id";
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
 
 export function clampEqGainDb(value: number): number {
   return Math.max(EQ_GAIN_MIN_DB, Math.min(EQ_GAIN_MAX_DB, value));

@@ -211,7 +211,12 @@
     "storageWarning": "El almacenamiento se está llenando. Exporte una copia de seguridad desde el menú de archivos antes de importar medios grandes.",
     "storageCritical": "El almacenamiento está casi lleno. Exporte una copia de seguridad ahora para evitar perder su show.",
     "storagePersisted": "Almacenamiento persistente concedido — el navegador borrará sus datos con menos frecuencia.",
-    "storageNotPersisted": "Obtenga almacenamiento persistente importando o editando un proyecto para que el navegador conserve sus datos."
+    "storageNotPersisted": "Obtenga almacenamiento persistente importando o editando un proyecto para que el navegador conserve sus datos.",
+    "performanceHud": "Mostrar HUD de rendimiento",
+    "performanceHudHint": "Muestra FPS, CPU y memoria junto al menú GSC. CPU y memoria requieren la app de escritorio.",
+    "performanceHudFpsTooltip": "Frecuencia de fotogramas de la interfaz (fotogramas por segundo)",
+    "performanceHudCpuTooltip": "Uso de CPU de esta aplicación",
+    "performanceHudRamTooltip": "Memoria usada por esta aplicación (RAM)"
   },
   "remote": {
     "title": "Control remoto",

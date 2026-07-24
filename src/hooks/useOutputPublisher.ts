@@ -51,17 +51,21 @@ function isDiskAssetMode(): boolean {
   return isDiskAssetModeForPlatform(getPlatform(), useProjectLocationStore.getState().rootDir);
 }
 
+function outputStateKey(outputId: string): string {
+  return outputId;
+}
+
 interface PublishOptions {
   forceAssets?: boolean;
   forceState?: boolean;
 }
 
-/** Publishes visual output state to the output window (BroadcastChannel on web, Tauri events on desktop). */
+/** Publishes visual output state to output windows (BroadcastChannel on web, Tauri events on desktop). */
 export function useOutputPublisher(): void {
   const channelRef = useRef<ReturnType<typeof createOutputChannel> | null>(null);
   const revisionRef = useRef(0);
   const postedAssetsRef = useRef(new Set<string>());
-  const lastStateRef = useRef<OutputState | null>(null);
+  const lastStateByOutputRef = useRef(new Map<string, OutputState>());
 
   useEffect(() => {
     const channel = createOutputChannel();
@@ -79,6 +83,10 @@ export function useOutputPublisher(): void {
     let deferAttempts = 0;
     const maxDeferAttempts = 20;
 
+    const getTargets = (): string[] => {
+      return useProjectStore.getState().videoOutputs.map((output) => output.id);
+    };
+
     const schedulePublish = (options?: PublishOptions) => {
       if (disposed) return;
       if (options?.forceAssets) {
@@ -92,6 +100,53 @@ export function useOutputPublisher(): void {
         rafId = 0;
         runPublish(options);
       });
+    };
+
+    const publishStateToChannel = async (
+      state: OutputState,
+      forceAssets: boolean,
+      forceState: boolean,
+    ) => {
+      const key = outputStateKey(state.outputId);
+      const prevState = lastStateByOutputRef.current.get(key) ?? null;
+      const stateUnchanged = prevState !== null && outputStatesEqual(prevState, state);
+      const diskAssetMode = isDiskAssetMode();
+
+      if (stateUnchanged && !forceAssets && !forceState) {
+        return;
+      }
+
+      if (shouldPostAssetOverChannel(diskAssetMode, getPlatform())) {
+        await Promise.all(
+          state.layers.map(async (layer) => {
+            const blob = await resolveAssetBlob(layer.assetPath);
+            if (!blob) return;
+
+            const assetKey = outputAssetKey(state.projectId, layer.assetPath);
+            await cacheAsset(state.projectId, layer.assetPath, blob);
+            const alreadyPosted = postedAssetsRef.current.has(assetKey);
+            if (!shouldPostCachedAssetOverChannel(alreadyPosted, forceAssets)) {
+              return;
+            }
+
+            postOutputAsset(channel, state.projectId, layer.assetPath, blob);
+            postedAssetsRef.current.add(assetKey);
+          }),
+        );
+      } else if (getPlatform() === "tauri" && state.layers.length > 0) {
+        for (const layer of state.layers) {
+          const blob = await resolveAssetBlob(layer.assetPath);
+          if (!blob) continue;
+          await cacheAsset(state.projectId, layer.assetPath, blob);
+          const { syncImportedAssetToDisk } = await import("../platform/project-storage.tauri");
+          await syncImportedAssetToDisk(layer.assetPath, blob);
+        }
+      }
+
+      if (!stateUnchanged || forceState) {
+        postOutputState(channel, state);
+        lastStateByOutputRef.current.set(key, state);
+      }
     };
 
     const runPublish = (options?: PublishOptions) => {
@@ -112,20 +167,23 @@ export function useOutputPublisher(): void {
       void (async () => {
         try {
           revisionRef.current += 1;
-          const state = await buildOutputState(revisionRef.current);
+          const revision = revisionRef.current;
+          const targets = getTargets();
           const { activeCueIds } = useTransportStore.getState();
-          const prevState = lastStateRef.current;
-          const stateUnchanged = prevState !== null && outputStatesEqual(prevState, state);
-          const diskAssetMode = isDiskAssetMode();
 
-          if (shouldDeferEmptyOutputPublish(activeCueIds, state.layers)) {
+          const states = await Promise.all(
+            targets.map((outputId) => buildOutputState(revision, outputId)),
+          );
+
+          const primaryState = states[0];
+          if (primaryState && shouldDeferEmptyOutputPublish(activeCueIds, primaryState.layers)) {
             if (deferAttempts < maxDeferAttempts) {
               deferAttempts += 1;
               if (retryTimeoutId !== 0) window.clearTimeout(retryTimeoutId);
               retryTimeoutId = window.setTimeout(() => {
                 retryTimeoutId = 0;
                 schedulePublish({
-                  forceAssets: !diskAssetMode,
+                  forceAssets: !isDiskAssetMode(),
                   forceState,
                 });
               }, 50);
@@ -136,51 +194,19 @@ export function useOutputPublisher(): void {
           }
 
           const isInitialEmpty =
-            lastStateRef.current === null && state.layers.length === 0 && activeCueIds.length === 0;
+            lastStateByOutputRef.current.size === 0 &&
+            states.every((state) => state.layers.length === 0) &&
+            activeCueIds.length === 0;
 
           if (isInitialEmpty && !forceState) {
-            lastStateRef.current = state;
+            for (const state of states) {
+              lastStateByOutputRef.current.set(outputStateKey(state.outputId), state);
+            }
             return;
           }
 
-          if (stateUnchanged && !forceAssets && !forceState) {
-            return;
-          }
-
-          if (!stateUnchanged || forceAssets || forceState) {
-            if (shouldPostAssetOverChannel(diskAssetMode, getPlatform())) {
-              await Promise.all(
-                state.layers.map(async (layer) => {
-                  const blob = await resolveAssetBlob(layer.assetPath);
-                  if (!blob) return;
-
-                  const key = outputAssetKey(state.projectId, layer.assetPath);
-                  await cacheAsset(state.projectId, layer.assetPath, blob);
-                  const alreadyPosted = postedAssetsRef.current.has(key);
-                  if (!shouldPostCachedAssetOverChannel(alreadyPosted, forceAssets)) {
-                    return;
-                  }
-
-                  postOutputAsset(channel, state.projectId, layer.assetPath, blob);
-                  postedAssetsRef.current.add(key);
-                }),
-              );
-            } else if (getPlatform() === "tauri" && state.layers.length > 0) {
-              for (const layer of state.layers) {
-                const blob = await resolveAssetBlob(layer.assetPath);
-                if (!blob) continue;
-                await cacheAsset(state.projectId, layer.assetPath, blob);
-                const { syncImportedAssetToDisk } = await import(
-                  "../platform/project-storage.tauri"
-                );
-                await syncImportedAssetToDisk(layer.assetPath, blob);
-              }
-            }
-
-            if (!stateUnchanged || forceState) {
-              postOutputState(channel, state);
-              lastStateRef.current = state;
-            }
+          for (const state of states) {
+            await publishStateToChannel(state, forceAssets, forceState);
           }
         } finally {
           inFlight = false;
@@ -246,12 +272,22 @@ export function useOutputPublisher(): void {
     const unsubProject = useProjectStore.subscribe((s, prev) => {
       if (s.id !== prev.id) {
         postedAssetsRef.current.clear();
-        lastStateRef.current = null;
+        lastStateByOutputRef.current.clear();
       }
 
       const list = getActiveCueListFromState(s);
       const prevList = getActiveCueListFromState(prev);
-      if (list?.cues !== prevList?.cues) {
+      const cuesChanged = list?.cues !== prevList?.cues;
+      const routingChanged =
+        s.cueLists !== prev.cueLists ||
+        s.activeCueListId !== prev.activeCueListId ||
+        s.masterVideoOutputName !== prev.masterVideoOutputName ||
+        s.masterVideoOutputOpacity !== prev.masterVideoOutputOpacity ||
+        s.masterVideoOutputEffects !== prev.masterVideoOutputEffects ||
+        s.videoBuses !== prev.videoBuses ||
+        s.videoOutputs !== prev.videoOutputs;
+
+      if (routingChanged || cuesChanged) {
         schedulePublish();
       }
     });

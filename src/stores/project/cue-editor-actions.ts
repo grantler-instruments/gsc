@@ -24,6 +24,7 @@ import { runWithoutHistory } from "../../lib/project-history";
 import { randomId } from "../../lib/random-id";
 import { canEditProject } from "../../lib/show-mode";
 import { DEFAULT_TTS_LANG, DEFAULT_TTS_SPEED, getDefaultTtsVoice } from "../../lib/tts";
+import { normalizeCueVideoBus } from "../../lib/video-buses";
 import type { Cue } from "../../types/cue";
 import {
   applyRenumber,
@@ -31,6 +32,7 @@ import {
   firstCueOrStub,
   getActiveCueListFromState,
   isMediaCueType,
+  mergeCuePatch,
   patchActiveList,
   patchListById,
 } from "./helpers";
@@ -300,7 +302,12 @@ export function createCueEditorActions(
           ...patchActiveList(s, (list) => ({
             cues: applyRenumber(
               list.cues.map((c) =>
-                c.id === id ? normalizeCueAudioBus({ ...c, ...patch }, s.audioBuses) : c,
+                c.id === id
+                  ? normalizeCueVideoBus(
+                      normalizeCueAudioBus(mergeCuePatch(c, patch), s.audioBuses),
+                      s.videoBuses,
+                    )
+                  : c,
               ),
             ),
           })),

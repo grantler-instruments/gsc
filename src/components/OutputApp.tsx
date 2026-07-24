@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
 import GlobalStyles from "@mui/material/GlobalStyles";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppViewport } from "../hooks/useAppViewport";
 import { useNdiFramePublisher } from "../hooks/useNdiFramePublisher";
@@ -9,18 +9,23 @@ import { useOutputWindowLifecycle } from "../hooks/useOutputWindowLifecycle";
 import { useResolvedOutputLayers } from "../hooks/useResolvedOutputLayers";
 import { storeOutputAssetBlob } from "../lib/output-asset-bridge";
 import { createOutputChannel, isOutputMessage, postRequestState } from "../lib/output-channel";
-import { isOutputStateFadeOnly, outputStatesEqual } from "../lib/output-layer-sync";
-import { applyOutputLayerOpacities } from "../lib/output-opacity";
+import { isOutputStateVisualMixOnly, outputStatesEqual } from "../lib/output-layer-sync";
+import { applyOutputBusConfig, applyOutputLayerOpacities } from "../lib/output-opacity";
+import { normalizeVideoOutputFrame } from "../lib/video-output-frame";
+import { getCurrentOutputId } from "../platform/output-window";
 import type { OutputState } from "../types/output";
+import { MASTER_VIDEO_OUTPUT_ID } from "../types/video-output";
 import { OutputImperativeStage } from "./OutputImperativeStage";
 
 /** Full-screen output window — subscribes to cross-window state. */
 export function OutputApp() {
   const { t } = useTranslation();
+  const outputId = useMemo(() => getCurrentOutputId(), []);
   const [state, setState] = useState<OutputState>({
     revision: 0,
     projectId: "",
     projectRootDir: null,
+    outputId,
     activeCueIds: [],
     layers: [],
   });
@@ -34,7 +39,9 @@ export function OutputApp() {
   useOutputWindowKeyboard();
 
   useEffect(() => {
-    document.title = t("common.brand.outputWindowTitle");
+    document.title = state.outputName
+      ? t("videoOutput.windowTitleNamed", { name: state.outputName })
+      : t("common.brand.outputWindowTitle");
     const html = document.documentElement;
     const { body } = document;
     html.style.background = "#000";
@@ -50,7 +57,7 @@ export function OutputApp() {
       body.style.margin = "";
       body.style.overflow = "";
     };
-  }, [t]);
+  }, [state.outputName, t]);
 
   useEffect(() => {
     const channel = createOutputChannel();
@@ -68,12 +75,19 @@ export function OutputApp() {
       if (event.data.type !== "state") return;
 
       const next = event.data.payload;
+      if (next.outputId !== outputId) return;
+
       const prev = stateRef.current;
 
       if (outputStatesEqual(prev, next)) return;
 
-      if (isOutputStateFadeOnly(prev, next)) {
+      if (isOutputStateVisualMixOnly(prev, next)) {
         applyOutputLayerOpacities(next.layers);
+        applyOutputBusConfig({
+          effects: next.busEffects ?? [],
+          opacity: next.busOpacity ?? 1,
+          outputFrame: normalizeVideoOutputFrame(next.outputFrame),
+        });
         return;
       }
 
@@ -81,14 +95,14 @@ export function OutputApp() {
     };
 
     void channel.ready.then(() => {
-      if (!cancelled) postRequestState(channel);
+      if (!cancelled) postRequestState(channel, outputId);
     });
 
     return () => {
       cancelled = true;
       channel.close();
     };
-  }, []);
+  }, [outputId]);
 
   return (
     <>
@@ -108,8 +122,15 @@ export function OutputApp() {
           bgcolor: "#000",
           overflow: "hidden",
         }}
+        data-gsc-output-id={outputId}
+        data-gsc-master-output={outputId === MASTER_VIDEO_OUTPUT_ID ? "true" : undefined}
       >
-        <OutputImperativeStage layers={layers} />
+        <OutputImperativeStage
+          layers={layers}
+          busEffects={state.busEffects}
+          busOpacity={state.busOpacity}
+          outputFrame={state.outputFrame}
+        />
       </Box>
     </>
   );

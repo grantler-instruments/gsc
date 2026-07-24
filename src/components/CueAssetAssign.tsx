@@ -1,4 +1,5 @@
 import CloseIcon from "@mui/icons-material/Close";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -29,6 +30,7 @@ import { useVfsStore } from "../stores/vfs";
 import { cueListDropActiveSx } from "../theme/cueStyles";
 import { useGscTokens } from "../theme/useGscTokens";
 import type { AssetKind, Cue } from "../types/cue";
+import { AssetMetadataDialog } from "./AssetMetadataDialog";
 import { AudioRecorderDialog } from "./AudioRecorderDialog";
 import { CueTypeBadge } from "./CueTypeIcon";
 import { inspectorFieldLabelSx, inspectorGroupHintSx, inspectorHintSx } from "./inspectorSx";
@@ -47,6 +49,7 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [dropActive, setDropActive] = useState(false);
   const [recordOpen, setRecordOpen] = useState(false);
+  const [metadataAssetPath, setMetadataAssetPath] = useState<string | null>(null);
   const [fileInputKey, setFileInputKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -250,6 +253,14 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
               </Typography>
             ) : null}
           </Box>
+          <IconButton
+            size="small"
+            title={t("assets.metadata.view")}
+            aria-label={t("assets.metadata.view")}
+            onClick={() => setMetadataAssetPath(cue.assetPath ?? null)}
+          >
+            <InfoOutlinedIcon fontSize="small" />
+          </IconButton>
           {!readOnly && (
             <IconButton size="small" title={t("assets.clearAsset")} onClick={clearAsset}>
               <CloseIcon fontSize="small" />
@@ -339,6 +350,10 @@ export function CueAssetAssign({ cue, readOnly = false }: CueAssetAssignProps) {
         cueName={cue.name}
         onClose={() => setRecordOpen(false)}
         onSave={onSaveRecording}
+      />
+      <AssetMetadataDialog
+        assetPath={metadataAssetPath}
+        onClose={() => setMetadataAssetPath(null)}
       />
 
       {assetMenu}
