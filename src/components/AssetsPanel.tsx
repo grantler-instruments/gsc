@@ -1,4 +1,5 @@
 import FilterListIcon from "@mui/icons-material/FilterList";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
@@ -33,6 +34,7 @@ import { useVfsStore } from "../stores/vfs";
 import { cueListDropActiveSx } from "../theme/cueStyles";
 import { useGscTokens } from "../theme/useGscTokens";
 import type { AssetKind } from "../types/cue";
+import { AssetMetadataDialog } from "./AssetMetadataDialog";
 import { CueTypeBadge } from "./CueTypeIcon";
 
 const emptyListSx = {
@@ -59,6 +61,7 @@ export function AssetsPanel() {
   const [searchQuery, setSearchQuery] = useState("");
   const [enabledKinds, setEnabledKinds] = useState(createDefaultAssetKindFilter);
   const [sort, setSort] = useState<AssetListSort>("name-asc");
+  const [metadataAssetPath, setMetadataAssetPath] = useState<string | null>(null);
 
   const visibleEntries = useMemo(
     () => filterAndSortAssets(entries, { query: searchQuery, enabledKinds, sort }),
@@ -268,6 +271,7 @@ export function AssetsPanel() {
               })
             }
             onRemove={() => handleRemoveAsset(entry)}
+            onShowMetadata={() => setMetadataAssetPath(entry.path)}
           />
         ))}
       </Box>
@@ -306,6 +310,10 @@ export function AssetsPanel() {
         webkitdirectory=""
         directory=""
         onChange={onFileInput}
+      />
+      <AssetMetadataDialog
+        assetPath={metadataAssetPath}
+        onClose={() => setMetadataAssetPath(null)}
       />
     </Box>
   );
@@ -415,6 +423,7 @@ function AssetRow({
   onHoverChange,
   onAddCue,
   onRemove,
+  onShowMetadata,
 }: {
   entry: VfsEntry;
   canEdit: boolean;
@@ -422,6 +431,7 @@ function AssetRow({
   onHoverChange: (path: string | null) => void;
   onAddCue: () => void;
   onRemove: () => void;
+  onShowMetadata: () => void;
 }) {
   const { t } = useTranslation();
   const unavailable = !entry.loaded;
@@ -475,6 +485,17 @@ function AssetRow({
           </Typography>
         )}
       </Box>
+      <IconButton
+        size="small"
+        title={t("assets.metadata.view")}
+        aria-label={t("assets.metadata.view")}
+        onClick={(e) => {
+          e.stopPropagation();
+          onShowMetadata();
+        }}
+      >
+        <InfoOutlinedIcon fontSize="small" />
+      </IconButton>
       {canEdit && (
         <Stack direction="row" sx={{ gap: 0.25, flexShrink: 0 }}>
           <IconButton

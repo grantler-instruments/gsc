@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { clearCachedAudioBuffer } from "../audio/buffer-cache";
+import { clearAssetTechnicalMetadata } from "../lib/asset-technical-metadata";
 import { clearMediaDuration } from "../lib/media-duration";
 import { getPlatform } from "../platform";
 import { filesFromDataTransfer } from "../platform/files.web";
@@ -82,6 +83,7 @@ export const useVfsStore = create<VfsState>()(
       removeEntry: (path) => {
         vfsRemove(path);
         clearCachedAudioBuffer(path);
+        clearAssetTechnicalMetadata(path);
         clearMediaDuration(path);
         if (getPlatform() === "tauri") {
           void import("../platform/project-storage.tauri").then(({ removeAssetFromDisk }) =>
