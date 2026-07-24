@@ -12,10 +12,6 @@ interface VisualMonitorProps {
   variant?: "default" | "sidebar";
 }
 
-function previewDestinationKey(busId: string | undefined): string {
-  return busId ?? "master";
-}
-
 /** Live multiview preview — one monitor tile per output window. */
 export function VisualMonitor({ variant = "default" }: VisualMonitorProps) {
   const { t } = useTranslation();
@@ -63,7 +59,7 @@ export function VisualMonitor({ variant = "default" }: VisualMonitorProps) {
       >
         {destinations.map((destination) => (
           <Box
-            key={previewDestinationKey(destination.busId)}
+            key={destination.outputId}
             sx={{
               minWidth: 0,
               flex: sidebar ? "0 0 auto" : "1 1 160px",
@@ -84,7 +80,7 @@ export function VisualMonitor({ variant = "default" }: VisualMonitorProps) {
                 whiteSpace: "nowrap",
               }}
             >
-              {destination.busName}
+              {destination.outputName}
             </Typography>
             <Box
               sx={{

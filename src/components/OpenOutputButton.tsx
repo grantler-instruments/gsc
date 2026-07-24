@@ -7,38 +7,34 @@ import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { openOutputWindow, openVideoBusOutputWindow } from "../platform/output-window";
+import { openOutputWindow } from "../platform/output-window";
 import { useProjectStore } from "../stores/project";
 import { isVisualCueType } from "../stores/project/helpers";
+import { MASTER_VIDEO_OUTPUT_ID } from "../types/video-output";
 
 export function OpenOutputButton() {
   const { t } = useTranslation();
   const hasVisualCues = useProjectStore((s) =>
     s.cueLists.some((list) => list.cues.some((cue) => isVisualCueType(cue.type))),
   );
-  const videoBuses = useProjectStore((s) => s.videoBuses);
-  const masterVideoOutputName = useProjectStore((s) => s.masterVideoOutputName);
+  const videoOutputs = useProjectStore((s) => s.videoOutputs);
   const [error, setError] = useState<string | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   const menuOpen = Boolean(menuAnchor);
-  const hasBusMenu = videoBuses.length > 0;
+  const hasOutputMenu = videoOutputs.length > 1;
 
-  const openTargets = useMemo(
-    () => [{ id: undefined as string | undefined, name: masterVideoOutputName }, ...videoBuses],
-    [masterVideoOutputName, videoBuses],
+  const primaryOutput = useMemo(
+    () => videoOutputs.find((output) => output.id === MASTER_VIDEO_OUTPUT_ID) ?? videoOutputs[0],
+    [videoOutputs],
   );
 
   const openTarget = useCallback(
-    async (busId?: string, busName?: string) => {
+    async (outputId: string, outputName: string) => {
       setError(null);
       setMenuAnchor(null);
       try {
-        if (busId) {
-          await openVideoBusOutputWindow(busId, busName ?? "");
-        } else {
-          await openOutputWindow({ busName: busName ?? masterVideoOutputName });
-        }
+        await openOutputWindow({ outputId, outputName });
       } catch (err) {
         const message = err instanceof Error ? err.message : "";
         setError(
@@ -46,14 +42,15 @@ export function OpenOutputButton() {
         );
       }
     },
-    [masterVideoOutputName, t],
+    [t],
   );
 
   const handlePrimaryOpen = useCallback(async () => {
-    await openTarget(undefined);
-  }, [openTarget]);
+    if (!primaryOutput) return;
+    await openTarget(primaryOutput.id, primaryOutput.name);
+  }, [openTarget, primaryOutput]);
 
-  if (!hasVisualCues) {
+  if (!hasVisualCues || !primaryOutput) {
     return null;
   }
 
@@ -69,7 +66,7 @@ export function OpenOutputButton() {
         >
           {t("output.button")}
         </Button>
-        {hasBusMenu && (
+        {hasOutputMenu && (
           <Button
             size="small"
             aria-label={t("videoOutput.chooseOutput")}
@@ -83,14 +80,11 @@ export function OpenOutputButton() {
         )}
       </ButtonGroup>
 
-      {hasBusMenu && (
+      {hasOutputMenu && (
         <Menu anchorEl={menuAnchor} open={menuOpen} onClose={() => setMenuAnchor(null)}>
-          {openTargets.map((target) => (
-            <MenuItem
-              key={target.id ?? "master"}
-              onClick={() => void openTarget(target.id, target.name)}
-            >
-              {target.name}
+          {videoOutputs.map((output) => (
+            <MenuItem key={output.id} onClick={() => void openTarget(output.id, output.name)}>
+              {output.name}
             </MenuItem>
           ))}
         </Menu>

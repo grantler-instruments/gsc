@@ -276,7 +276,7 @@ describe("project snapshot round-trip", () => {
     expect(resaved.cueLists[0].cues).toEqual(list.cues);
   });
 
-  it("preserves video buses through snapshot", () => {
+  it("preserves video buses through snapshot and migrates paired outputs", () => {
     const list = createCueList("Main");
     const snap = cueListsToSnapshot(
       "project-1",
@@ -295,6 +295,60 @@ describe("project snapshot round-trip", () => {
 
     const loaded = snapshotToCueLists(snap);
     expect(loaded.videoBuses).toEqual([{ id: "v1", name: "Lobby", opacity: 0.8 }]);
+    expect(loaded.videoOutputs).toEqual([
+      { id: "master", name: "Main", kind: "window" },
+      { id: "v1", name: "Lobby", kind: "window", busId: "v1" },
+    ]);
+  });
+
+  it("migrates legacy bus outputFrame onto the paired destination", () => {
+    const list = createCueList("Main");
+    const busFrame = {
+      crop: { x: 0.1, y: 0, w: 0.8, h: 1 },
+      dest: { x: 0, y: 0, w: 1, h: 1 },
+    };
+    const masterFrame = {
+      crop: { x: 0, y: 0, w: 1, h: 1 },
+      dest: { x: 0.05, y: 0.05, w: 0.9, h: 0.9 },
+    };
+    const snap = {
+      ...cueListsToSnapshot("project-1", "My Show", [list], list.id),
+      videoBuses: [
+        {
+          id: "v1",
+          name: "Lobby",
+          opacity: 1,
+          outputFrame: busFrame,
+        },
+      ],
+      masterVideoOutputFrame: masterFrame,
+    };
+
+    const loaded = snapshotToCueLists(snap as unknown as Parameters<typeof snapshotToCueLists>[0]);
+    expect(loaded.videoBuses[0]).not.toHaveProperty("outputFrame");
+    expect(loaded.videoOutputs[0]?.outputFrame).toBeTruthy();
+    expect(loaded.videoOutputs[1]?.id).toBe("v1");
+    expect(loaded.videoOutputs[1]?.outputFrame).toBeTruthy();
+    expect(
+      cueListsToSnapshot(
+        loaded.id,
+        loaded.name,
+        loaded.cueLists,
+        loaded.activeCueListId,
+        loaded.midiMappings,
+        loaded.fixtures,
+        loaded.fixturePlot,
+        loaded.audioBuses,
+        loaded.startDate,
+        loaded.endDate,
+        loaded.description,
+        loaded.videoBuses,
+        loaded.masterVideoOutputName,
+        loaded.masterVideoOutputOpacity,
+        loaded.masterVideoOutputEffects,
+        loaded.videoOutputs,
+      ),
+    ).not.toHaveProperty("masterVideoOutputFrame");
   });
 
   it("loads legacy snapshots without videoBuses as empty buses", () => {

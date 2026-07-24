@@ -15,10 +15,10 @@ export function useVisualOutputPreviews(): OutputPreviewDestination[] {
   const byCueId = usePlaybackStore((s) => s.byCueId);
   const frameMs = useFadeStore((s) => s.frameMs);
   const videoBuses = useProjectStore((s) => s.videoBuses);
+  const videoOutputs = useProjectStore((s) => s.videoOutputs);
   const masterVideoOutputName = useProjectStore((s) => s.masterVideoOutputName);
   const masterVideoOutputOpacity = useProjectStore((s) => s.masterVideoOutputOpacity);
   const masterVideoOutputEffects = useProjectStore((s) => s.masterVideoOutputEffects);
-  const masterVideoOutputFrame = useProjectStore((s) => s.masterVideoOutputFrame);
   const vfsLoadedKey = useVfsStore((s) =>
     s.entries.map((entry) => `${entry.path}:${entry.loaded}`).join("|"),
   );
@@ -30,10 +30,10 @@ export function useVisualOutputPreviews(): OutputPreviewDestination[] {
     void byCueId;
     void frameMs;
     void videoBuses;
+    void videoOutputs;
     void masterVideoOutputName;
     void masterVideoOutputOpacity;
     void masterVideoOutputEffects;
-    void masterVideoOutputFrame;
     void vfsLoadedKey;
 
     let cancelled = false;
@@ -69,10 +69,10 @@ export function useVisualOutputPreviews(): OutputPreviewDestination[] {
     byCueId,
     frameMs,
     videoBuses,
+    videoOutputs,
     masterVideoOutputName,
     masterVideoOutputOpacity,
     masterVideoOutputEffects,
-    masterVideoOutputFrame,
     vfsLoadedKey,
   ]);
 

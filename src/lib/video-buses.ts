@@ -4,7 +4,6 @@ import type { VideoBus } from "../types/video-bus";
 import { clamp01 } from "./clamp";
 import { randomId } from "./random-id";
 import { normalizeVideoEffects } from "./video-effects";
-import { normalizeVideoOutputFrame, serializeVideoOutputFrame } from "./video-output-frame";
 
 export function defaultMasterVideoOutputName(): string {
   return t("videoOutput.defaultMainName");
@@ -23,22 +22,20 @@ export function serializeMasterVideoOutputName(name: string): string | undefined
 
 export function defaultVideoBusName(buses: VideoBus[]): string {
   let index = buses.length + 1;
-  while (buses.some((bus) => bus.name === t("videoOutput.defaultName", { number: index }))) {
+  while (buses.some((bus) => bus.name === t("videoOutput.defaultBusName", { number: index }))) {
     index += 1;
   }
-  return t("videoOutput.defaultName", { number: index });
+  return t("videoOutput.defaultBusName", { number: index });
 }
 
 function normalizeVideoBusFields(raw: Partial<VideoBus> & Pick<VideoBus, "id">): VideoBus {
   const effects = normalizeVideoEffects(raw.effects);
-  const outputFrame = serializeVideoOutputFrame(normalizeVideoOutputFrame(raw.outputFrame));
   return {
     id: raw.id,
-    name: raw.name?.trim() || "Untitled output",
+    name: raw.name?.trim() || "Untitled bus",
     opacity: clamp01(raw.opacity ?? 1),
     ...(raw.muted ? { muted: true } : {}),
     ...(effects.length > 0 ? { effects } : {}),
-    ...(outputFrame ? { outputFrame } : {}),
   };
 }
 
@@ -46,7 +43,9 @@ export function normalizeVideoBus(raw: Partial<VideoBus> & Pick<VideoBus, "id">)
   return normalizeVideoBusFields(raw);
 }
 
-export function normalizeVideoBuses(buses: VideoBus[] | undefined): VideoBus[] {
+export function normalizeVideoBuses(
+  buses: Array<Partial<VideoBus> & Pick<VideoBus, "id">> | undefined,
+): VideoBus[] {
   if (!buses?.length) return [];
   return buses.map((bus) => normalizeVideoBusFields(bus));
 }
@@ -60,6 +59,7 @@ export function createVideoBus(
     name: overrides.name ?? defaultVideoBusName(buses),
     opacity: overrides.opacity ?? 1,
     muted: overrides.muted,
+    effects: overrides.effects,
   });
 }
 
@@ -68,7 +68,7 @@ export function findVideoBus(buses: VideoBus[], id: string | undefined): VideoBu
   return buses.find((bus) => bus.id === id);
 }
 
-/** Resolve where a visual cue should appear; undefined means master output. */
+/** Resolve where a visual cue should appear; undefined means master program. */
 export function resolveCueVideoBusId(
   cue: Pick<Cue, "videoBusId">,
   buses: VideoBus[],

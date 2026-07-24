@@ -23,7 +23,7 @@ import type { FixturePlot, FixturePlotEntry } from "../../types/fixture-plot";
 import type { MidiMapping } from "../../types/midi-mapping";
 import type { VideoBus } from "../../types/video-bus";
 import type { VideoEffect, VideoEffectParams, VideoEffectType } from "../../types/video-effect";
-import type { VideoOutputFrame } from "../../types/video-output-frame";
+import type { VideoOutput } from "../../types/video-output";
 
 export interface ProjectState {
   id: string;
@@ -43,10 +43,10 @@ export interface ProjectState {
   fixturePlot: FixturePlot;
   audioBuses: AudioBus[];
   videoBuses: VideoBus[];
+  videoOutputs: VideoOutput[];
   masterVideoOutputName: string;
   masterVideoOutputOpacity: number;
   masterVideoOutputEffects?: VideoEffect[];
-  masterVideoOutputFrame?: VideoOutputFrame;
   addCue: (opts: {
     name: string;
     type: CueType;
@@ -155,9 +155,11 @@ export interface ProjectState {
     targetId: string,
     place: "before" | "after",
   ) => void;
+  addVideoOutput: (opts?: Partial<Omit<VideoOutput, "id">>) => VideoOutput;
+  removeVideoOutput: (id: string) => void;
+  updateVideoOutput: (id: string, patch: Partial<Omit<VideoOutput, "id">>) => void;
   updateMasterVideoOutputName: (name: string) => void;
   updateMasterVideoOutputOpacity: (opacity: number) => void;
-  updateMasterVideoOutputFrame: (frame: VideoOutputFrame) => void;
   addMasterVideoOutputEffect: (type: VideoEffectType) => VideoEffect | null;
   updateMasterVideoOutputEffect: (
     effectId: string,

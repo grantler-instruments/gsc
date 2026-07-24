@@ -51,8 +51,8 @@ function isDiskAssetMode(): boolean {
   return isDiskAssetModeForPlatform(getPlatform(), useProjectLocationStore.getState().rootDir);
 }
 
-function busStateKey(busId: string | undefined): string {
-  return busId ?? "master";
+function outputStateKey(outputId: string): string {
+  return outputId;
 }
 
 interface PublishOptions {
@@ -65,7 +65,7 @@ export function useOutputPublisher(): void {
   const channelRef = useRef<ReturnType<typeof createOutputChannel> | null>(null);
   const revisionRef = useRef(0);
   const postedAssetsRef = useRef(new Set<string>());
-  const lastStateByBusRef = useRef(new Map<string, OutputState>());
+  const lastStateByOutputRef = useRef(new Map<string, OutputState>());
 
   useEffect(() => {
     const channel = createOutputChannel();
@@ -83,9 +83,8 @@ export function useOutputPublisher(): void {
     let deferAttempts = 0;
     const maxDeferAttempts = 20;
 
-    const getTargets = (): Array<string | undefined> => {
-      const videoBuses = useProjectStore.getState().videoBuses;
-      return [undefined, ...videoBuses.map((bus) => bus.id)];
+    const getTargets = (): string[] => {
+      return useProjectStore.getState().videoOutputs.map((output) => output.id);
     };
 
     const schedulePublish = (options?: PublishOptions) => {
@@ -108,8 +107,8 @@ export function useOutputPublisher(): void {
       forceAssets: boolean,
       forceState: boolean,
     ) => {
-      const key = busStateKey(state.busId);
-      const prevState = lastStateByBusRef.current.get(key) ?? null;
+      const key = outputStateKey(state.outputId);
+      const prevState = lastStateByOutputRef.current.get(key) ?? null;
       const stateUnchanged = prevState !== null && outputStatesEqual(prevState, state);
       const diskAssetMode = isDiskAssetMode();
 
@@ -146,7 +145,7 @@ export function useOutputPublisher(): void {
 
       if (!stateUnchanged || forceState) {
         postOutputState(channel, state);
-        lastStateByBusRef.current.set(key, state);
+        lastStateByOutputRef.current.set(key, state);
       }
     };
 
@@ -173,11 +172,11 @@ export function useOutputPublisher(): void {
           const { activeCueIds } = useTransportStore.getState();
 
           const states = await Promise.all(
-            targets.map((busId) => buildOutputState(revision, busId)),
+            targets.map((outputId) => buildOutputState(revision, outputId)),
           );
 
-          const masterState = states[0];
-          if (masterState && shouldDeferEmptyOutputPublish(activeCueIds, masterState.layers)) {
+          const primaryState = states[0];
+          if (primaryState && shouldDeferEmptyOutputPublish(activeCueIds, primaryState.layers)) {
             if (deferAttempts < maxDeferAttempts) {
               deferAttempts += 1;
               if (retryTimeoutId !== 0) window.clearTimeout(retryTimeoutId);
@@ -195,13 +194,13 @@ export function useOutputPublisher(): void {
           }
 
           const isInitialEmpty =
-            lastStateByBusRef.current.size === 0 &&
+            lastStateByOutputRef.current.size === 0 &&
             states.every((state) => state.layers.length === 0) &&
             activeCueIds.length === 0;
 
           if (isInitialEmpty && !forceState) {
             for (const state of states) {
-              lastStateByBusRef.current.set(busStateKey(state.busId), state);
+              lastStateByOutputRef.current.set(outputStateKey(state.outputId), state);
             }
             return;
           }
@@ -273,7 +272,7 @@ export function useOutputPublisher(): void {
     const unsubProject = useProjectStore.subscribe((s, prev) => {
       if (s.id !== prev.id) {
         postedAssetsRef.current.clear();
-        lastStateByBusRef.current.clear();
+        lastStateByOutputRef.current.clear();
       }
 
       const list = getActiveCueListFromState(s);
@@ -285,8 +284,8 @@ export function useOutputPublisher(): void {
         s.masterVideoOutputName !== prev.masterVideoOutputName ||
         s.masterVideoOutputOpacity !== prev.masterVideoOutputOpacity ||
         s.masterVideoOutputEffects !== prev.masterVideoOutputEffects ||
-        s.masterVideoOutputFrame !== prev.masterVideoOutputFrame ||
-        s.videoBuses !== prev.videoBuses;
+        s.videoBuses !== prev.videoBuses ||
+        s.videoOutputs !== prev.videoOutputs;
 
       if (routingChanged || cuesChanged) {
         schedulePublish();

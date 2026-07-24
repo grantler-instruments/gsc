@@ -31,6 +31,7 @@ export const useProjectStore = create<ProjectState>()(
       fixtures: [...initialProjectData.fixtures],
       audioBuses: [...initialProjectData.audioBuses],
       videoBuses: [...initialProjectData.videoBuses],
+      videoOutputs: [...initialProjectData.videoOutputs],
       fixturePlot: { ...initialProjectData.fixturePlot, entries: [] },
       ...createCueEditorActions(set, get),
       ...createSelectionActions(set, get),

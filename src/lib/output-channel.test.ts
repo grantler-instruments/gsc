@@ -50,6 +50,7 @@ const emptyState = {
   revision: 1,
   projectId: "show",
   projectRootDir: null as string | null,
+  outputId: "master",
   activeCueIds: [] as string[],
   layers: [],
 };
@@ -175,6 +176,7 @@ describe("output-channel", () => {
           revision: 7,
           projectId: "show",
           projectRootDir: "C:\\Shows\\Demo.gsc",
+          outputId: "master",
           activeCueIds: ["video-1"],
           layers: [],
         },

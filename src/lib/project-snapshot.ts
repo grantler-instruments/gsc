@@ -6,7 +6,7 @@ import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
 import type { VideoBus } from "../types/video-bus";
 import type { VideoEffect } from "../types/video-effect";
-import type { VideoOutputFrame } from "../types/video-output-frame";
+import type { VideoOutput } from "../types/video-output";
 import { normalizeAudioBuses, normalizeCueAudioBus } from "./audio-buses";
 import type { CueList } from "./cue-lists";
 import { createCueList } from "./cue-lists";
@@ -24,7 +24,7 @@ import {
   serializeMasterVideoOutputName,
 } from "./video-buses";
 import { normalizeVideoEffects } from "./video-effects";
-import { normalizeVideoOutputFrame, serializeVideoOutputFrame } from "./video-output-frame";
+import { migrateVideoOutputsFromBuses, normalizeVideoOutputs } from "./video-outputs";
 
 function normalizeCues(
   cues: Cue[],
@@ -80,19 +80,24 @@ export function snapshotToCueLists(
   fixturePlot: FixturePlot;
   audioBuses: AudioBus[];
   videoBuses: VideoBus[];
+  videoOutputs: VideoOutput[];
   masterVideoOutputName: string;
   masterVideoOutputOpacity: number;
   masterVideoOutputEffects?: VideoEffect[];
-  masterVideoOutputFrame?: VideoOutputFrame;
 } {
   const fixtures = normalizeFixtures(snap.fixtures);
   const fixturePlot = normalizeFixturePlot(snap.fixturePlot, fixtures);
   const audioBuses = normalizeAudioBuses(snap.audioBuses);
-  const videoBuses = normalizeVideoBuses(snap.videoBuses);
-  const masterVideoOutputEffects = normalizeVideoEffects(snap.masterVideoOutputEffects);
-  const masterVideoOutputFrame = serializeVideoOutputFrame(
-    normalizeVideoOutputFrame(snap.masterVideoOutputFrame),
+  const masterVideoOutputName = normalizeMasterVideoOutputName(snap.masterVideoOutputName);
+  const { buses: videoBuses, outputs: videoOutputs } = migrateVideoOutputsFromBuses(
+    snap.videoBuses,
+    masterVideoOutputName,
+    snap.masterVideoOutputFrame,
+    snap.videoOutputs,
   );
+  // Re-normalize outputs against final buses (stale busId cleared).
+  const normalizedOutputs = normalizeVideoOutputs(videoOutputs, videoBuses);
+  const masterVideoOutputEffects = normalizeVideoEffects(snap.masterVideoOutputEffects);
   let cueLists: CueList[] = snap.cueLists.map((list, index) => {
     const cues = normalizeCues(list.cues, fixtures, audioBuses, videoBuses);
     const selection =
@@ -131,10 +136,10 @@ export function snapshotToCueLists(
     fixturePlot,
     audioBuses,
     videoBuses,
-    masterVideoOutputName: normalizeMasterVideoOutputName(snap.masterVideoOutputName),
+    videoOutputs: normalizedOutputs,
+    masterVideoOutputName,
     masterVideoOutputOpacity: masterVideoOutputEffectiveOpacity(snap.masterVideoOutputOpacity),
     ...(masterVideoOutputEffects.length > 0 ? { masterVideoOutputEffects } : {}),
-    ...(masterVideoOutputFrame ? { masterVideoOutputFrame } : {}),
   };
 }
 
@@ -154,16 +159,15 @@ export function cueListsToSnapshot(
   masterVideoOutputName?: string,
   masterVideoOutputOpacity?: number,
   masterVideoOutputEffects?: VideoEffect[],
-  masterVideoOutputFrame?: VideoOutputFrame,
+  videoOutputs: VideoOutput[] = [],
 ): ProjectSnapshot {
   const normalizedFixtures = normalizeFixtures(fixtures);
   const normalizedMasterName = normalizeMasterVideoOutputName(masterVideoOutputName);
   const serializedMasterName = serializeMasterVideoOutputName(normalizedMasterName);
   const normalizedMasterOpacity = masterVideoOutputEffectiveOpacity(masterVideoOutputOpacity);
   const normalizedMasterEffects = normalizeVideoEffects(masterVideoOutputEffects);
-  const serializedMasterFrame = serializeVideoOutputFrame(
-    normalizeVideoOutputFrame(masterVideoOutputFrame),
-  );
+  const normalizedBuses = normalizeVideoBuses(videoBuses);
+  const normalizedOutputs = normalizeVideoOutputs(videoOutputs, normalizedBuses);
   return {
     version: 2,
     id,
@@ -182,12 +186,12 @@ export function cueListsToSnapshot(
     fixtures: normalizedFixtures,
     fixturePlot: normalizeFixturePlot(fixturePlot, normalizedFixtures),
     ...(audioBuses.length > 0 ? { audioBuses: normalizeAudioBuses(audioBuses) } : {}),
-    ...(videoBuses.length > 0 ? { videoBuses: normalizeVideoBuses(videoBuses) } : {}),
+    ...(normalizedBuses.length > 0 ? { videoBuses: normalizedBuses } : {}),
+    ...(normalizedOutputs.length > 0 ? { videoOutputs: normalizedOutputs } : {}),
     ...(serializedMasterName ? { masterVideoOutputName: serializedMasterName } : {}),
     ...(normalizedMasterOpacity < 1 ? { masterVideoOutputOpacity: normalizedMasterOpacity } : {}),
     ...(normalizedMasterEffects.length > 0
       ? { masterVideoOutputEffects: normalizedMasterEffects }
       : {}),
-    ...(serializedMasterFrame ? { masterVideoOutputFrame: serializedMasterFrame } : {}),
   };
 }

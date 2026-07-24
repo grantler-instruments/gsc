@@ -1,4 +1,5 @@
 import type { VideoEffect } from "./video-effect";
+import { MASTER_VIDEO_OUTPUT_ID } from "./video-output";
 import type { VideoOutputFrame } from "./video-output-frame";
 
 /** Visual layer snapshot sent to the output window. */
@@ -24,9 +25,13 @@ export interface OutputLayer {
 export interface OutputState {
   revision: number;
   projectId: string;
-  /** Undefined = master output window; otherwise the assigned video bus id. */
+  /** Destination output id. */
+  outputId: string;
+  /** Program bus this destination displays; undefined = master program. */
   busId?: string;
-  /** Display name for bus output windows. */
+  /** Display name for the destination window. */
+  outputName?: string;
+  /** Display name for the program being shown. */
   busName?: string;
   /** Tauri: lets the output webview read assets from disk instead of BroadcastChannel blobs. */
   projectRootDir: string | null;
@@ -43,9 +48,11 @@ export interface OutputState {
 
 /** One destination in the in-app multiview preview. */
 export interface OutputPreviewDestination {
-  /** Undefined = master output. */
+  outputId: string;
+  /** Program bus this destination displays; undefined = master program. */
   busId?: string;
   busName: string;
+  outputName: string;
   layers: OutputLayer[];
   /** Bus insert effects — same pipeline as the output window compositor. */
   busEffects?: VideoEffect[];
@@ -62,19 +69,26 @@ export interface MultiviewPreviewState {
 
 export type OutputMessage =
   | { type: "state"; payload: OutputState }
-  | { type: "request-state"; busId?: string }
+  | { type: "request-state"; outputId?: string /** @deprecated legacy alias */; busId?: string }
   | { type: "asset"; payload: { projectId: string; assetPath: string; blob: Blob } };
 
 export const OUTPUT_CHANNEL_NAME = "gsc-output";
 
 /** BroadcastChannel name for a visual output destination. */
-export function outputChannelName(busId?: string): string {
-  return busId ? `${OUTPUT_CHANNEL_NAME}-bus-${busId}` : OUTPUT_CHANNEL_NAME;
+export function outputChannelName(outputId?: string): string {
+  return outputId ? `${OUTPUT_CHANNEL_NAME}-out-${outputId}` : OUTPUT_CHANNEL_NAME;
 }
 
-/** Read the optional video bus id from an output window URL. */
-export function getOutputBusIdFromUrl(search?: string): string | undefined {
+/** Read the output id from an output window URL (`?output=` or legacy `?bus=`). */
+export function getOutputIdFromUrl(search?: string): string {
   const query = search ?? (typeof window !== "undefined" ? window.location.search : "");
-  const busId = new URLSearchParams(query).get("bus");
-  return busId || undefined;
+  const params = new URLSearchParams(query);
+  const outputId = params.get("output") || params.get("bus");
+  return outputId || MASTER_VIDEO_OUTPUT_ID;
+}
+
+/** @deprecated Use getOutputIdFromUrl. */
+export function getOutputBusIdFromUrl(search?: string): string | undefined {
+  const id = getOutputIdFromUrl(search);
+  return id === MASTER_VIDEO_OUTPUT_ID ? undefined : id;
 }

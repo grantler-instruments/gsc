@@ -15,6 +15,12 @@ import {
   reorderVideoEffects,
 } from "../../lib/video-effects";
 import { normalizeVideoOutputFrame, serializeVideoOutputFrame } from "../../lib/video-output-frame";
+import {
+  createVideoOutput,
+  ensureMasterWindowOutput,
+  normalizeVideoOutput,
+  normalizeVideoOutputs,
+} from "../../lib/video-outputs";
 import type { VideoEffect } from "../../types/video-effect";
 import type { ProjectState } from "./types";
 
@@ -55,9 +61,11 @@ export function createVideoBusActions(
   | "addVideoBus"
   | "removeVideoBus"
   | "updateVideoBus"
+  | "addVideoOutput"
+  | "removeVideoOutput"
+  | "updateVideoOutput"
   | "updateMasterVideoOutputName"
   | "updateMasterVideoOutputOpacity"
-  | "updateMasterVideoOutputFrame"
   | "addVideoBusEffect"
   | "updateVideoBusEffect"
   | "removeVideoBusEffect"
@@ -69,14 +77,36 @@ export function createVideoBusActions(
 > {
   return {
     addVideoBus: (overrides = {}) => {
-      const bus = createVideoBus(get().videoBuses, overrides);
-      set((state) => ({ videoBuses: [...state.videoBuses, bus] }));
+      const buses = get().videoBuses;
+      const bus = createVideoBus(buses, overrides);
+      const nextBuses = [...buses, bus];
+      const existingOutputs = get().videoOutputs;
+      const pairedId = existingOutputs.some((entry) => entry.id === bus.id) ? undefined : bus.id;
+      const output = normalizeVideoOutput(
+        {
+          id: pairedId ?? createVideoOutput(existingOutputs, nextBuses).id,
+          name: bus.name,
+          kind: "window",
+          busId: bus.id,
+        },
+        nextBuses,
+      );
+      set((state) => ({
+        videoBuses: [...state.videoBuses, bus],
+        videoOutputs: [...state.videoOutputs, output],
+      }));
       return bus;
     },
 
     removeVideoBus: (id) =>
       set((state) => ({
         videoBuses: normalizeVideoBuses(state.videoBuses.filter((bus) => bus.id !== id)),
+        videoOutputs: normalizeVideoOutputs(
+          state.videoOutputs.map((output) =>
+            output.busId === id ? { ...output, busId: undefined } : output,
+          ),
+          state.videoBuses.filter((bus) => bus.id !== id),
+        ),
         cueLists: state.cueLists.map((list) => ({
           ...list,
           cues: list.cues.map((cue) =>
@@ -90,14 +120,43 @@ export function createVideoBusActions(
         videoBuses: normalizeVideoBuses(
           state.videoBuses.map((bus) => {
             if (bus.id !== id) return bus;
-            const next = { ...bus, ...patch, id: bus.id };
+            return normalizeVideoBus({ ...bus, ...patch, id: bus.id });
+          }),
+        ),
+      })),
+
+    addVideoOutput: (overrides = {}) => {
+      const output = createVideoOutput(get().videoOutputs, get().videoBuses, overrides);
+      set((state) => ({ videoOutputs: [...state.videoOutputs, output] }));
+      return output;
+    },
+
+    removeVideoOutput: (id) =>
+      set((state) => {
+        const remaining = state.videoOutputs.filter((output) => output.id !== id);
+        return {
+          videoOutputs: ensureMasterWindowOutput(
+            remaining,
+            state.videoBuses,
+            state.masterVideoOutputName,
+          ),
+        };
+      }),
+
+    updateVideoOutput: (id, patch) =>
+      set((state) => ({
+        videoOutputs: normalizeVideoOutputs(
+          state.videoOutputs.map((output) => {
+            if (output.id !== id) return output;
+            const next = { ...output, ...patch, id: output.id };
             if (patch.outputFrame !== undefined) {
               next.outputFrame = serializeVideoOutputFrame(
                 normalizeVideoOutputFrame(patch.outputFrame),
               );
             }
-            return normalizeVideoBus(next);
+            return normalizeVideoOutput(next, state.videoBuses);
           }),
+          state.videoBuses,
         ),
       })),
 
@@ -106,11 +165,6 @@ export function createVideoBusActions(
 
     updateMasterVideoOutputOpacity: (opacity) =>
       set({ masterVideoOutputOpacity: clamp01(opacity) }),
-
-    updateMasterVideoOutputFrame: (frame) =>
-      set({
-        masterVideoOutputFrame: serializeVideoOutputFrame(normalizeVideoOutputFrame(frame)),
-      }),
 
     addVideoBusEffect: (busId, type) => {
       const bus = get().videoBuses.find((entry) => entry.id === busId);

@@ -5,7 +5,7 @@ import type { FixturePlot } from "../types/fixture-plot";
 import type { MidiMapping } from "../types/midi-mapping";
 import type { VideoBus } from "../types/video-bus";
 import type { VideoEffect } from "../types/video-effect";
-import type { VideoOutputFrame } from "../types/video-output-frame";
+import type { VideoOutput } from "../types/video-output";
 import type { CueList } from "./cue-lists";
 
 /** Fields that are written by getSnapshot() / persistPlatformProject(). */
@@ -22,10 +22,10 @@ export interface ProjectPersistSlice {
   fixturePlot: FixturePlot;
   audioBuses: AudioBus[];
   videoBuses: VideoBus[];
+  videoOutputs: VideoOutput[];
   masterVideoOutputName: string;
   masterVideoOutputOpacity: number;
   masterVideoOutputEffects?: VideoEffect[];
-  masterVideoOutputFrame?: VideoOutputFrame;
 }
 
 /** True when persisted project data changed (ignores cue selection state). */
@@ -45,10 +45,10 @@ export function projectPersistStateChanged(
     prev.fixturePlot !== next.fixturePlot ||
     prev.audioBuses !== next.audioBuses ||
     prev.videoBuses !== next.videoBuses ||
+    prev.videoOutputs !== next.videoOutputs ||
     prev.masterVideoOutputName !== next.masterVideoOutputName ||
     prev.masterVideoOutputOpacity !== next.masterVideoOutputOpacity ||
-    prev.masterVideoOutputEffects !== next.masterVideoOutputEffects ||
-    prev.masterVideoOutputFrame !== next.masterVideoOutputFrame
+    prev.masterVideoOutputEffects !== next.masterVideoOutputEffects
   ) {
     return true;
   }

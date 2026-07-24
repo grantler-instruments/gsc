@@ -12,20 +12,21 @@ import { createOutputChannel, isOutputMessage, postRequestState } from "../lib/o
 import { isOutputStateVisualMixOnly, outputStatesEqual } from "../lib/output-layer-sync";
 import { applyOutputBusConfig, applyOutputLayerOpacities } from "../lib/output-opacity";
 import { normalizeVideoOutputFrame } from "../lib/video-output-frame";
-import { getCurrentOutputBusId } from "../platform/output-window";
+import { getCurrentOutputId } from "../platform/output-window";
 import type { OutputState } from "../types/output";
+import { MASTER_VIDEO_OUTPUT_ID } from "../types/video-output";
 import { OutputImperativeStage } from "./OutputImperativeStage";
 
 /** Full-screen output window — subscribes to cross-window state. */
 export function OutputApp() {
   const { t } = useTranslation();
-  const busId = useMemo(() => getCurrentOutputBusId(), []);
+  const outputId = useMemo(() => getCurrentOutputId(), []);
   const [state, setState] = useState<OutputState>({
     revision: 0,
     projectId: "",
     projectRootDir: null,
+    outputId,
     activeCueIds: [],
-    ...(busId ? { busId } : {}),
     layers: [],
   });
   const stateRef = useRef(state);
@@ -38,8 +39,8 @@ export function OutputApp() {
   useOutputWindowKeyboard();
 
   useEffect(() => {
-    document.title = state.busName
-      ? t("videoOutput.windowTitleNamed", { name: state.busName })
+    document.title = state.outputName
+      ? t("videoOutput.windowTitleNamed", { name: state.outputName })
       : t("common.brand.outputWindowTitle");
     const html = document.documentElement;
     const { body } = document;
@@ -56,7 +57,7 @@ export function OutputApp() {
       body.style.margin = "";
       body.style.overflow = "";
     };
-  }, [state.busName, t]);
+  }, [state.outputName, t]);
 
   useEffect(() => {
     const channel = createOutputChannel();
@@ -74,7 +75,7 @@ export function OutputApp() {
       if (event.data.type !== "state") return;
 
       const next = event.data.payload;
-      if ((next.busId ?? undefined) !== busId) return;
+      if (next.outputId !== outputId) return;
 
       const prev = stateRef.current;
 
@@ -94,14 +95,14 @@ export function OutputApp() {
     };
 
     void channel.ready.then(() => {
-      if (!cancelled) postRequestState(channel, busId);
+      if (!cancelled) postRequestState(channel, outputId);
     });
 
     return () => {
       cancelled = true;
       channel.close();
     };
-  }, [busId]);
+  }, [outputId]);
 
   return (
     <>
@@ -121,6 +122,8 @@ export function OutputApp() {
           bgcolor: "#000",
           overflow: "hidden",
         }}
+        data-gsc-output-id={outputId}
+        data-gsc-master-output={outputId === MASTER_VIDEO_OUTPUT_ID ? "true" : undefined}
       >
         <OutputImperativeStage
           layers={layers}

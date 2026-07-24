@@ -1,5 +1,6 @@
 import { t } from "../i18n/t";
-import { getOutputBusIdFromUrl } from "../types/output";
+import { getOutputIdFromUrl } from "../types/output";
+import { MASTER_VIDEO_OUTPUT_ID } from "../types/video-output";
 import { getPlatform } from "./index";
 
 const OUTPUT_LABEL = "output";
@@ -7,37 +8,45 @@ const OUTPUT_WINDOW_NAME = "gsc-output";
 const WEB_WATCH_MS = 1000;
 
 export interface OpenOutputWindowOptions {
+  outputId?: string;
+  outputName?: string;
+  /** @deprecated Use outputId. */
   busId?: string;
+  /** @deprecated Use outputName. */
   busName?: string;
   focus?: boolean;
 }
 
-function outputUrl(busId?: string): string {
+function resolveOutputId(options: OpenOutputWindowOptions): string {
+  return options.outputId ?? options.busId ?? MASTER_VIDEO_OUTPUT_ID;
+}
+
+function outputUrl(outputId: string): string {
   const base = `${window.location.origin}${window.location.pathname}`;
   const url = new URL(base);
   url.searchParams.set("mode", "output");
-  if (busId) {
-    url.searchParams.set("bus", busId);
-  }
+  url.searchParams.set("output", outputId);
   return url.toString();
 }
 
-function outputWindowName(busId?: string): string {
-  return busId ? `${OUTPUT_WINDOW_NAME}-${busId}` : OUTPUT_WINDOW_NAME;
+function outputWindowName(outputId: string): string {
+  return outputId === MASTER_VIDEO_OUTPUT_ID
+    ? OUTPUT_WINDOW_NAME
+    : `${OUTPUT_WINDOW_NAME}-${outputId}`;
 }
 
-function outputWindowLabel(busId?: string): string {
-  return busId ? `${OUTPUT_LABEL}-${busId}` : OUTPUT_LABEL;
+function outputWindowLabel(outputId: string): string {
+  return outputId === MASTER_VIDEO_OUTPUT_ID ? OUTPUT_LABEL : `${OUTPUT_LABEL}-${outputId}`;
 }
 
-function outputWindowTitle(busName?: string): string {
-  if (busName) {
-    return t("videoOutput.windowTitleNamed", { name: busName });
+function outputWindowTitle(outputName?: string): string {
+  if (outputName) {
+    return t("videoOutput.windowTitleNamed", { name: outputName });
   }
   return t("common.brand.outputWindowTitle");
 }
 
-const webOutputWindows = new Map<string | undefined, Window | null>();
+const webOutputWindows = new Map<string, Window | null>();
 let masterKeepAlive = false;
 let webWatchInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -53,17 +62,18 @@ function startWebMasterOutputWindowWatchdog(): void {
   if (webWatchInterval !== null) return;
   webWatchInterval = setInterval(() => {
     if (!masterKeepAlive) return;
-    const master = webOutputWindows.get(undefined);
+    const master = webOutputWindows.get(MASTER_VIDEO_OUTPUT_ID);
     if (master && !master.closed) return;
-    void openWebOutputWindow({ busId: undefined, focus: false });
+    void openWebOutputWindow({ outputId: MASTER_VIDEO_OUTPUT_ID, focus: false });
   }, WEB_WATCH_MS);
 }
 
 async function openWebOutputWindow({
-  busId,
+  outputId = MASTER_VIDEO_OUTPUT_ID,
   focus = true,
 }: OpenOutputWindowOptions): Promise<void> {
-  const existing = webOutputWindows.get(busId);
+  const id = resolveOutputId({ outputId });
+  const existing = webOutputWindows.get(id);
   if (existing && !existing.closed) {
     if (focus) {
       existing.focus();
@@ -71,17 +81,17 @@ async function openWebOutputWindow({
     return;
   }
 
-  const opened = window.open(outputUrl(busId), outputWindowName(busId), "noopener,noreferrer");
+  const opened = window.open(outputUrl(id), outputWindowName(id), "noopener,noreferrer");
   if (!opened) {
     throw new Error(t("output.popupBlocked"));
   }
 
-  webOutputWindows.set(busId, opened);
+  webOutputWindows.set(id, opened);
 }
 
-async function openTauriOutputWindow(busId?: string, busName?: string): Promise<void> {
+async function openTauriOutputWindow(outputId: string, outputName?: string): Promise<void> {
   const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
-  const label = outputWindowLabel(busId);
+  const label = outputWindowLabel(outputId);
   const existing = await WebviewWindow.getByLabel(label);
   if (existing) {
     await existing.show();
@@ -90,8 +100,8 @@ async function openTauriOutputWindow(busId?: string, busName?: string): Promise<
   }
 
   new WebviewWindow(label, {
-    url: outputUrl(busId),
-    title: outputWindowTitle(busName),
+    url: outputUrl(outputId),
+    title: outputWindowTitle(outputName),
     decorations: true,
     fullscreen: false,
     width: 1280,
@@ -101,15 +111,17 @@ async function openTauriOutputWindow(busId?: string, busName?: string): Promise<
   });
 }
 
-/** Opens or focuses an audience output window for the master or a video bus. */
+/** Opens or focuses an audience output window for a video output destination. */
 export async function openOutputWindow(options: OpenOutputWindowOptions = {}): Promise<void> {
-  const { busId, busName, focus = true } = options;
+  const outputId = resolveOutputId(options);
+  const outputName = options.outputName ?? options.busName;
+  const { focus = true } = options;
   if (getPlatform() === "tauri") {
-    await openTauriOutputWindow(busId, busName);
+    await openTauriOutputWindow(outputId, outputName);
   } else {
-    await openWebOutputWindow({ busId, focus });
+    await openWebOutputWindow({ outputId, focus });
   }
-  if (!busId) {
+  if (outputId === MASTER_VIDEO_OUTPUT_ID) {
     markMasterOutputWindowInitialized();
   }
 }
@@ -119,20 +131,31 @@ export function isOutputMode(): boolean {
   return new URLSearchParams(window.location.search).get("mode") === "output";
 }
 
-export function getCurrentOutputBusId(): string | undefined {
-  if (typeof window === "undefined") return undefined;
-  return getOutputBusIdFromUrl(window.location.search);
+export function getCurrentOutputId(): string {
+  if (typeof window === "undefined") return MASTER_VIDEO_OUTPUT_ID;
+  return getOutputIdFromUrl(window.location.search);
 }
 
-/** Opens or focuses an output window, using the bus name for the window title when provided. */
+/** @deprecated Use getCurrentOutputId. */
+export function getCurrentOutputBusId(): string | undefined {
+  const id = getCurrentOutputId();
+  return id === MASTER_VIDEO_OUTPUT_ID ? undefined : id;
+}
+
+/** Opens or focuses an output window by destination id. */
+export async function openVideoOutputWindow(
+  outputId: string,
+  outputName: string,
+  focus = true,
+): Promise<void> {
+  await openOutputWindow({ outputId, outputName, focus });
+}
+
+/** @deprecated Use openVideoOutputWindow. */
 export async function openVideoBusOutputWindow(
   busId: string,
   busName: string,
   focus = true,
 ): Promise<void> {
-  if (getPlatform() === "tauri") {
-    await openTauriOutputWindow(busId, busName);
-    return;
-  }
-  await openWebOutputWindow({ busId, focus });
+  await openVideoOutputWindow(busId, busName, focus);
 }

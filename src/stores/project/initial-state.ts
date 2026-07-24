@@ -4,6 +4,7 @@ import { createCueList } from "../../lib/cue-lists";
 import { emptyFixturePlot } from "../../lib/fixture-plot";
 import { randomId } from "../../lib/random-id";
 import { defaultMasterVideoOutputName } from "../../lib/video-buses";
+import { ensureMasterWindowOutput } from "../../lib/video-outputs";
 import type { MidiMapping } from "../../types/midi-mapping";
 
 export const initialList = createCueList(t("project.defaultListName"));
@@ -11,6 +12,8 @@ export const initialHotList = createCueList(t("project.defaultHotListName"), "ho
 export const initialProjectId = randomId();
 
 setActiveProjectId(initialProjectId);
+
+const masterVideoOutputName = defaultMasterVideoOutputName();
 
 export const initialProjectData = {
   id: initialProjectId,
@@ -24,6 +27,7 @@ export const initialProjectData = {
   fixturePlot: emptyFixturePlot(),
   audioBuses: [],
   videoBuses: [],
-  masterVideoOutputName: defaultMasterVideoOutputName(),
+  videoOutputs: ensureMasterWindowOutput([], [], masterVideoOutputName),
+  masterVideoOutputName,
   masterVideoOutputOpacity: 1,
 };

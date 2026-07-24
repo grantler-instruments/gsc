@@ -24,6 +24,7 @@ function projectState(overrides: Partial<ProjectPersistSlice> = {}): ProjectPers
     fixturePlot: emptyFixturePlot(),
     audioBuses: [],
     videoBuses: [],
+    videoOutputs: [],
     masterVideoOutputName: "Main",
     masterVideoOutputOpacity: 1,
     ...overrides,
@@ -108,6 +109,15 @@ describe("projectPersistStateChanged", () => {
     const prev = projectState();
     const next = projectState({
       videoBuses: [{ id: "v1", name: "Lobby", opacity: 1 }],
+    });
+
+    expect(projectPersistStateChanged(prev, next)).toBe(true);
+  });
+
+  it("returns true when video outputs change", () => {
+    const prev = projectState();
+    const next = projectState({
+      videoOutputs: [{ id: "o1", name: "Projector", kind: "window" }],
     });
 
     expect(projectPersistStateChanged(prev, next)).toBe(true);
