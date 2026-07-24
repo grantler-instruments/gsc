@@ -47,3 +47,4 @@ unicode-normalization = "0.1"
 regex = "1.10"
 anyhow = "1.0"
 ureq = { version = "2.12", default-features = false, features = ["tls"] }
+sysinfo = "0.33"

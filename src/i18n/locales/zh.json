@@ -211,7 +211,12 @@
     "storageWarning": "存储空间即将用尽。导入大型媒体前请从文件菜单导出备份。",
     "storageCritical": "存储空间几乎已满。请立即导出备份，以免丢失节目数据。",
     "storagePersisted": "已获得持久存储 — 浏览器更不容易清除您的节目数据。",
-    "storageNotPersisted": "通过导入或编辑项目来获取持久存储，以便浏览器保留您的节目数据。"
+    "storageNotPersisted": "通过导入或编辑项目来获取持久存储，以便浏览器保留您的节目数据。",
+    "performanceHud": "显示性能 HUD",
+    "performanceHudHint": "在 GSC 菜单旁显示 FPS、CPU 与内存。CPU 与内存需使用桌面应用。",
+    "performanceHudFpsTooltip": "界面帧率（每秒帧数）",
+    "performanceHudCpuTooltip": "此应用的 CPU 占用",
+    "performanceHudRamTooltip": "此应用的内存占用（RAM）"
   },
   "remote": {
     "title": "远程控制",
