@@ -59,9 +59,10 @@ export function OutputApp() {
   }, [state.busName, t]);
 
   useEffect(() => {
-    const channel = createOutputChannel(busId);
+    const channel = createOutputChannel();
+    let cancelled = false;
 
-    channel.onmessage = (event: MessageEvent) => {
+    channel.onmessage = (event) => {
       if (!isOutputMessage(event.data)) return;
 
       if (event.data.type === "asset") {
@@ -92,9 +93,12 @@ export function OutputApp() {
       setState(next);
     };
 
-    postRequestState(channel, busId);
+    void channel.ready.then(() => {
+      if (!cancelled) postRequestState(channel, busId);
+    });
 
     return () => {
+      cancelled = true;
       channel.close();
     };
   }, [busId]);

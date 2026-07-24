@@ -11,6 +11,7 @@ import { inspectorFieldLabelSx, inspectorFieldSx, inspectorHintSx } from "../ins
 import { LoopFields } from "../LoopFields";
 import { PlaybackRangeFields } from "../PlaybackRangeFields";
 import { SliderNumberField } from "../SliderNumberField";
+import { AudioBusSelect } from "./AudioBusSelect";
 
 interface MediaInspectorFieldsProps {
   cue: Cue;
@@ -80,7 +81,6 @@ function VideoOutputFields({
 
 export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspectorFieldsProps) {
   const { t } = useTranslation();
-  const audioBuses = useProjectStore((s) => s.audioBuses);
   const videoBuses = useProjectStore((s) => s.videoBuses);
   const masterVideoOutputName = useProjectStore((s) => s.masterVideoOutputName);
   const isMedia = cue.type === "audio" || cue.type === "video" || cue.type === "image";
@@ -133,29 +133,11 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
             onChange={(pan) => onChange({ pan })}
             inputWidth={48}
           />
-          <Box sx={inspectorFieldSx}>
-            <Typography component="label" sx={inspectorFieldLabelSx}>
-              {t("inspector.audioBus")}
-            </Typography>
-            <Select
-              size="small"
-              fullWidth
-              value={cue.audioBusId ?? ""}
-              disabled={readOnly}
-              displayEmpty
-              onChange={(event) => {
-                const value = event.target.value;
-                onChange(value ? { audioBusId: value } : { audioBusId: undefined });
-              }}
-            >
-              <MenuItem value="">{t("inspector.audioBusDirect")}</MenuItem>
-              {audioBuses.map((bus) => (
-                <MenuItem key={bus.id} value={bus.id}>
-                  {bus.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
+          <AudioBusSelect
+            value={cue.audioBusId}
+            readOnly={readOnly}
+            onChange={(audioBusId) => onChange({ audioBusId })}
+          />
         </>
       )}
     </>

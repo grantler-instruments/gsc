@@ -29,6 +29,7 @@ export function canStopTarget(cue: Cue): boolean {
   if (isUtilityCue(cue)) return false;
   return (
     cue.type === "audio" ||
+    cue.type === "tts" ||
     cue.type === "video" ||
     cue.type === "image" ||
     cue.type === "dmx" ||

@@ -4,6 +4,7 @@ import Typography from "@mui/material/Typography";
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDmxFadeCueProgress } from "../../hooks/useDmxFadeCueProgress";
+import { usePropertyFadeCueProgress } from "../../hooks/usePropertyFadeCueProgress";
 import { formatDmxCue } from "../../lib/dmx";
 import {
   canOpacityFadeTarget,
@@ -57,6 +58,7 @@ export const ActiveCueRow = memo(function ActiveCueRow({
   const fadeProperty = useFadeStore((s) => s.fadesByTargetId[cue.id]?.property);
   const fadeFrameMs = useFadeStore((s) => (cue.id in s.fadesByTargetId ? s.frameMs : 0));
   const lightFadeProgress = useDmxFadeCueProgress(cue.id);
+  const propertyFadeProgress = usePropertyFadeCueProgress(cue.id);
 
   const fixtures = useProjectStore((s) => s.fixtures);
   const allCues = useMemo(() => cueLists.flatMap((list) => list.cues), [cueLists]);
@@ -133,7 +135,7 @@ export const ActiveCueRow = memo(function ActiveCueRow({
             {formatDmxCue(lightFadeEndDmx, fixtures)}
           </Typography>
         )}
-        {(cue.type === "audio" || cue.type === "video") && cue.assetPath && (
+        {(cue.type === "audio" || cue.type === "tts" || cue.type === "video") && cue.assetPath && (
           <Box
             sx={{ mt: 0.5 }}
             onClick={(e) => e.stopPropagation()}
@@ -159,6 +161,7 @@ export const ActiveCueRow = memo(function ActiveCueRow({
         )}
         {playback && cueShowsPlaybackProgress(cue) && <PlaybackProgress progress={playback} />}
         {lightFadeProgress && <PlaybackProgress progress={lightFadeProgress} />}
+        {propertyFadeProgress && <PlaybackProgress progress={propertyFadeProgress} />}
         {canVolumeFadeTarget(cue) && (
           <ActiveCueLevelControl
             label={t("activeCues.volumeShort")}

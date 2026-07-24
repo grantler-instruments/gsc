@@ -1,9 +1,8 @@
 import { useEffect, useRef } from "react";
 import { cacheAsset } from "../lib/asset-cache";
 import {
-  closeOutputChannels,
+  createOutputChannel,
   isOutputMessage,
-  listOutputPublishChannels,
   postOutputAsset,
   postOutputState,
 } from "../lib/output-channel";
@@ -61,23 +60,17 @@ interface PublishOptions {
   forceState?: boolean;
 }
 
-/** Publishes visual output state to output windows via BroadcastChannel. */
+/** Publishes visual output state to output windows (BroadcastChannel on web, Tauri events on desktop). */
 export function useOutputPublisher(): void {
-  const channelsRef = useRef<BroadcastChannel[]>([]);
+  const channelRef = useRef<ReturnType<typeof createOutputChannel> | null>(null);
   const revisionRef = useRef(0);
   const postedAssetsRef = useRef(new Set<string>());
   const lastStateByBusRef = useRef(new Map<string, OutputState>());
 
   useEffect(() => {
-    const syncChannels = () => {
-      closeOutputChannels(channelsRef.current);
-      channelsRef.current = listOutputPublishChannels(
-        useProjectStore.getState().videoBuses.map((bus) => bus.id),
-      );
-      return channelsRef.current;
-    };
-
-    let channels = syncChannels();
+    const channel = createOutputChannel();
+    channelRef.current = channel;
+    let disposed = false;
 
     let rafId = 0;
     let retryTimeoutId = 0;
@@ -96,6 +89,7 @@ export function useOutputPublisher(): void {
     };
 
     const schedulePublish = (options?: PublishOptions) => {
+      if (disposed) return;
       if (options?.forceAssets) {
         forceAssetsNext = true;
       }
@@ -110,7 +104,6 @@ export function useOutputPublisher(): void {
     };
 
     const publishStateToChannel = async (
-      channel: BroadcastChannel,
       state: OutputState,
       forceAssets: boolean,
       forceState: boolean,
@@ -124,7 +117,7 @@ export function useOutputPublisher(): void {
         return;
       }
 
-      if (shouldPostAssetOverChannel(diskAssetMode)) {
+      if (shouldPostAssetOverChannel(diskAssetMode, getPlatform())) {
         await Promise.all(
           state.layers.map(async (layer) => {
             const blob = await resolveAssetBlob(layer.assetPath);
@@ -141,7 +134,7 @@ export function useOutputPublisher(): void {
             postedAssetsRef.current.add(assetKey);
           }),
         );
-      } else if (state.layers.length > 0) {
+      } else if (getPlatform() === "tauri" && state.layers.length > 0) {
         for (const layer of state.layers) {
           const blob = await resolveAssetBlob(layer.assetPath);
           if (!blob) continue;
@@ -213,12 +206,8 @@ export function useOutputPublisher(): void {
             return;
           }
 
-          for (let index = 0; index < states.length; index++) {
-            const channel = channels[index];
-            const state = states[index];
-            if (channel && state) {
-              await publishStateToChannel(channel, state, forceAssets, forceState);
-            }
+          for (const state of states) {
+            await publishStateToChannel(state, forceAssets, forceState);
           }
         } finally {
           inFlight = false;
@@ -232,23 +221,20 @@ export function useOutputPublisher(): void {
       })();
     };
 
-    const attachChannelHandlers = () => {
-      for (const channel of channels) {
-        channel.onmessage = (event: MessageEvent) => {
-          if (!isOutputMessage(event.data)) return;
-          if (event.data.type === "request-state") {
-            const diskAssetMode = isDiskAssetMode();
-            if (shouldClearPostedAssetsOnRequestState(diskAssetMode)) {
-              postedAssetsRef.current.clear();
-            }
-            schedulePublish(publishOptionsForRequestState(diskAssetMode));
-          }
-        };
+    channel.onmessage = (event) => {
+      if (!isOutputMessage(event.data)) return;
+      if (event.data.type === "request-state") {
+        const diskAssetMode = isDiskAssetMode();
+        if (shouldClearPostedAssetsOnRequestState(diskAssetMode)) {
+          postedAssetsRef.current.clear();
+        }
+        schedulePublish(publishOptionsForRequestState(diskAssetMode));
       }
     };
 
-    attachChannelHandlers();
-    schedulePublish();
+    void channel.ready.then(() => {
+      if (!disposed) schedulePublish();
+    });
 
     const unsubTransport = useTransportStore.subscribe((state, prev) => {
       if (
@@ -303,23 +289,20 @@ export function useOutputPublisher(): void {
         s.videoBuses !== prev.videoBuses;
 
       if (routingChanged || cuesChanged) {
-        if (s.videoBuses !== prev.videoBuses) {
-          channels = syncChannels();
-          attachChannelHandlers();
-        }
         schedulePublish();
       }
     });
 
     return () => {
+      disposed = true;
       if (rafId !== 0) cancelAnimationFrame(rafId);
       if (retryTimeoutId !== 0) window.clearTimeout(retryTimeoutId);
       unsubTransport();
       unsubPlayback();
       unsubFade();
       unsubProject();
-      closeOutputChannels(channelsRef.current);
-      channelsRef.current = [];
+      channel.close();
+      channelRef.current = null;
     };
   }, []);
 }

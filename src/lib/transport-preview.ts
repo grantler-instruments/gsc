@@ -72,7 +72,7 @@ export function resolveTransportPreview(
 
   const mediaCue = borrowed.cue;
 
-  if (mediaCue.type === "audio" && mediaCue.assetPath) {
+  if ((mediaCue.type === "audio" || mediaCue.type === "tts") && mediaCue.assetPath) {
     return { kind: "waveform", cue: mediaCue, crossedOut: borrowed.crossedOut };
   }
 

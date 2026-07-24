@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { resolveEffectiveVolume, useFadeStore } from "../stores/fade";
+import {
+  computePropertyFadeProgressSnapshot,
+  resolveEffectiveVolume,
+  useFadeStore,
+} from "../stores/fade";
 import { useTransportStore } from "../stores/transport";
 import { activeCues, resetTestProject, testCue } from "../test/fixtures/cues";
 
@@ -48,5 +52,26 @@ describe("property fade completion", () => {
 
     expect(useFadeStore.getState().runtimeLevelsByTargetId.v).toBeUndefined();
     expect(resolveEffectiveVolume("v", 1)).toBe(1);
+  });
+});
+
+describe("computePropertyFadeProgressSnapshot", () => {
+  it("reports elapsed fade progress and caps it at completion", () => {
+    const fade = {
+      targetId: "v",
+      property: "volume" as const,
+      from: 1,
+      to: 0,
+      startedAtMs: 1000,
+      durationSec: 4,
+    };
+
+    expect(computePropertyFadeProgressSnapshot(fade, 2500)).toMatchObject({
+      positionSec: 1.5,
+      endSec: 4,
+      progress: 0.375,
+      looping: false,
+    });
+    expect(computePropertyFadeProgressSnapshot(fade, 6000).progress).toBe(1);
   });
 });

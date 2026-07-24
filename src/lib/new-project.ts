@@ -5,6 +5,7 @@ import {
   persistPlatformProject,
 } from "../platform/project-storage";
 import { useProjectStore } from "../stores/project";
+import { beginProjectLoadUi } from "../stores/project-loading";
 import { useProjectLocationStore } from "../stores/project-location";
 import { requestUnsavedProjectChoice } from "../stores/unsaved-project-prompt";
 import { saveProjectFile } from "./project-file-actions";
@@ -36,10 +37,15 @@ export async function startNewProject(): Promise<void> {
   replaceWithFreshProject();
 
   if (getPlatform() === "tauri") {
-    if (wasTemporary && previousRoot) {
-      await discardTemporaryProjectRoot(previousRoot);
+    const endProjectLoadUi = await beginProjectLoadUi();
+    try {
+      if (wasTemporary && previousRoot) {
+        await discardTemporaryProjectRoot(previousRoot);
+      }
+      await bindTemporaryProjectRoot();
+    } finally {
+      endProjectLoadUi();
     }
-    await bindTemporaryProjectRoot();
   } else {
     localStorage.removeItem(TAURI_LAST_ROOT_KEY);
   }

@@ -26,6 +26,8 @@
     "fs:allow-remove",
     "fs:allow-write-file",
     "fs:allow-write-text-file",
+    "fs:allow-rename",
+    "fs:allow-copy-file",
     "fs:allow-home-read-recursive",
     "fs:allow-home-write-recursive",
     "fs:allow-document-read-recursive",
@@ -34,6 +36,10 @@
     "fs:allow-desktop-write-recursive",
     "fs:allow-download-read-recursive",
     "fs:allow-download-write-recursive",
+    "fs:allow-app-read-recursive",
+    "fs:allow-app-write-recursive",
+    "fs:allow-appcache-read-recursive",
+    "fs:allow-appcache-write-recursive",
     {
       "identifier": "fs:scope",
       "allow": [

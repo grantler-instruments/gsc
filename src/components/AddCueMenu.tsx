@@ -11,6 +11,7 @@ import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getCueTypeLabel } from "../i18n/cueTypeLabels";
 import { getPlatform } from "../platform";
+import { usePreferencesStore } from "../stores/preferences";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import { ADD_CUE_ICON_COLORS } from "../theme/cueStyles";
@@ -22,6 +23,7 @@ type AddCueMenuType = Extract<
   | "audio"
   | "video"
   | "image"
+  | "tts"
   | "midi"
   | "osc"
   | "dmx"
@@ -36,7 +38,7 @@ type AddCueMenuType = Extract<
 >;
 
 const ADD_CUE_SECTIONS: { subheaderKey?: string; types: readonly AddCueMenuType[] }[] = [
-  { types: ["audio", "video", "image", "midi", "osc", "dmx"] },
+  { types: ["audio", "video", "image", "tts", "midi", "osc", "dmx"] },
   { subheaderKey: "cueMenu.sectionGroup", types: ["sequence", "group"] },
   {
     subheaderKey: "cueMenu.sectionUtility",
@@ -48,6 +50,7 @@ const DEFAULT_CUE_NAME_KEYS: Partial<Record<AddCueMenuType, string>> = {
   audio: "cueMenu.defaultAudio",
   video: "cueMenu.defaultVideo",
   image: "cueMenu.defaultImage",
+  tts: "cueMenu.defaultTts",
   midi: "cueMenu.defaultMidi",
   osc: "cueMenu.defaultOsc",
   dmx: "cueMenu.defaultDmx",
@@ -66,6 +69,7 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
   const addSequenceCue = useProjectStore((s) => s.addSequenceCue);
   const addFadeCue = useProjectStore((s) => s.addFadeCue);
   const showMode = useUiStore((s) => s.showMode);
+  const speechModelReady = usePreferencesStore((s) => s.speechModelReady);
   const isTauri = getPlatform() === "tauri";
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -139,19 +143,21 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
             {section.types.map((type) => {
               const disabledOnWeb =
                 (type === "osc" || type === "dmx" || type === "lightFade") && !isTauri;
+              const disabledWithoutSpeechModel = type === "tts" && !speechModelReady;
+              const disabled = disabledOnWeb || disabledWithoutSpeechModel;
               return (
                 <MenuItem
                   key={type}
-                  disabled={disabledOnWeb}
+                  disabled={disabled}
                   onClick={() => handleAddCue(type)}
-                  sx={disabledOnWeb ? { opacity: 0.72 } : undefined}
+                  sx={disabled ? { opacity: 0.72 } : undefined}
                 >
                   <ListItemIcon
                     sx={{
                       minWidth: 28,
                       color: ADD_CUE_ICON_COLORS[type] ?? "inherit",
                       "& .MuiSvgIcon-root": { fontSize: 20, opacity: 0.9 },
-                      ...(disabledOnWeb && { opacity: 0.45 }),
+                      ...(disabled && { opacity: 0.45 }),
                     }}
                   >
                     <CueTypeIcon type={type} />
@@ -164,6 +170,25 @@ export function AddCueMenu({ dropUp = false, fullWidth = false }: AddCueMenuProp
                       <Box
                         component="span"
                         aria-label={t("common.state.notAvailableOnWeb")}
+                        sx={{
+                          ml: 1.5,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          flexShrink: 0,
+                          pointerEvents: "auto",
+                          cursor: "help",
+                          color: "text.disabled",
+                        }}
+                      >
+                        <PublicOffIcon sx={{ fontSize: 18 }} />
+                      </Box>
+                    </Tooltip>
+                  ) : null}
+                  {disabledWithoutSpeechModel ? (
+                    <Tooltip title={t("tts.downloadModelHint")} placement="right" arrow>
+                      <Box
+                        component="span"
+                        aria-label={t("tts.downloadModelHint")}
                         sx={{
                           ml: 1.5,
                           display: "inline-flex",

@@ -100,13 +100,36 @@ export const useProjectLoadingStore = create<ProjectLoadingState>((set, get) => 
   clearRestoreSteps: () => set({ restoreSteps: [] }),
 }));
 
+/** Let React paint ProjectLoadingScreen before heavy project work (avoids macOS beachball). */
+export async function waitForLoadingScreenPaint(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+}
+
+/** Show the in-app loading screen; call the returned function when load finishes. */
+export async function beginProjectLoadUi(): Promise<() => void> {
+  const store = useProjectLoadingStore.getState();
+  const nested = store.active;
+  if (!nested) {
+    store.setActive(true);
+    await waitForLoadingScreenPaint();
+  }
+  return () => {
+    if (!nested) {
+      const end = useProjectLoadingStore.getState();
+      end.setActive(false);
+      end.clearAssetProgress();
+      end.clearRestoreSteps();
+    }
+  };
+}
+
 export async function withProjectLoading<T>(fn: () => Promise<T>): Promise<T> {
-  useProjectLoadingStore.getState().setActive(true);
+  const end = await beginProjectLoadUi();
   try {
     return await fn();
   } finally {
-    useProjectLoadingStore.getState().setActive(false);
-    useProjectLoadingStore.getState().clearAssetProgress();
-    useProjectLoadingStore.getState().clearRestoreSteps();
+    end();
   }
 }

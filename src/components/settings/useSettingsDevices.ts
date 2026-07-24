@@ -32,7 +32,7 @@ export function useSettingsDevices(open: boolean, isTauri: boolean) {
 
   useEffect(() => {
     if (!open || isTauri) return;
-    if (dmxOutputBackend !== "enttec-pro") {
+    if (dmxOutputBackend === "artnet") {
       setDmxOutputBackend("enttec-pro");
     }
   }, [open, isTauri, dmxOutputBackend, setDmxOutputBackend]);

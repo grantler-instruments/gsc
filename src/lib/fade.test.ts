@@ -71,6 +71,7 @@ describe("isValidFadeTarget", () => {
 describe("canVolumeFadeTarget / canOpacityFadeTarget", () => {
   it("matches media types", () => {
     expect(canVolumeFadeTarget(testCue("a", "A", "audio"))).toBe(true);
+    expect(canVolumeFadeTarget(testCue("t", "T", "tts"))).toBe(true);
     expect(canPanFadeTarget(testCue("v", "V", "video"))).toBe(true);
     expect(canOpacityFadeTarget(testCue("i", "I", "image"))).toBe(true);
     expect(canVolumeFadeTarget(testCue("m", "M", "midi"))).toBe(false);

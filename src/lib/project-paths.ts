@@ -1,6 +1,12 @@
 import { normalizePath } from "../vfs/engine";
 
 export const PROJECT_JSON = "project.json";
+/** Last-good snapshot kept beside the primary file on desktop saves. */
+export const PROJECT_JSON_BAK = "project.json.bak";
+/** Staging file for atomic primary writes. */
+export const PROJECT_JSON_TMP = "project.json.tmp";
+/** Staging file for atomic bak updates. */
+export const PROJECT_JSON_BAK_TMP = "project.json.bak.tmp";
 export const ASSETS_DIR = "assets";
 export const VFS_ASSETS_ROOT = "/assets";
 /** Desktop project package directory (folder named `ShowName.gsc`). */

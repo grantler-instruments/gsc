@@ -1,10 +1,10 @@
 import { useProjectLocationStore } from "../stores/project-location";
 import { normalizePath, vfsGet, vfsPut, vfsRegisterDiskPaths } from "../vfs/engine";
 import type { ProjectBundleDiskFile } from "./project-bundle";
+import { projectJsonPaths } from "./project-json-persist";
 import {
   assetRelativePath,
   isAssetsRelativePath,
-  PROJECT_JSON,
   virtualPathFromRelativeAssetFile,
 } from "./project-paths";
 
@@ -105,8 +105,11 @@ export async function writeBundleFilesToDisk(
 }
 
 export function projectJsonDiskPath(rootDir: string): string {
-  const sep = rootDir.includes("\\") ? "\\" : "/";
-  return `${rootDir.replace(/[/\\]+$/, "")}${sep}${PROJECT_JSON}`;
+  return projectJsonPaths(rootDir).primary;
+}
+
+export function projectJsonBakDiskPath(rootDir: string): string {
+  return projectJsonPaths(rootDir).bak;
 }
 
 /** List asset files under assets/ on disk (returns virtual paths). */

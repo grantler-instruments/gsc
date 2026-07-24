@@ -17,6 +17,7 @@ export function cueShowsPlaybackProgress(cue: Cue): boolean {
   if (isImageInfiniteHold(cue)) return false;
   return (
     cue.type === "audio" ||
+    cue.type === "tts" ||
     cue.type === "video" ||
     cue.type === "image" ||
     cue.type === "midi" ||
@@ -133,6 +134,23 @@ export interface PlaybackProgressSnapshot {
   loopTotal?: number | "inf";
 }
 
+/**
+ * Remaining duration for a finite playback run. Snapshots without elapsed and
+ * slice data (such as legacy progress sources) fall back to their playhead.
+ */
+export function getRemainingPlaybackSec(
+  progress: PlaybackProgressSnapshot & { elapsedSec?: number; sliceSec?: number },
+): number | undefined {
+  if (progress.loopTotal === "inf" || progress.looping) return undefined;
+
+  if (progress.elapsedSec !== undefined && progress.sliceSec !== undefined) {
+    const totalSec = progress.sliceSec * (progress.loopTotal ?? 1);
+    return Math.max(0, totalSec - progress.elapsedSec);
+  }
+
+  return Math.max(0, progress.endSec - progress.positionSec);
+}
+
 export function computePlaybackProgressWithBounds(
   bounds: PlaybackBounds,
   elapsedSec: number,
@@ -193,5 +211,8 @@ export function computePlaybackProgress(
 }
 
 export function cueNeedsKnownDuration(cue: Cue): boolean {
-  return (cue.type === "audio" || cue.type === "video") && cue.assetPath !== undefined;
+  return (
+    (cue.type === "audio" || cue.type === "video" || cue.type === "tts") &&
+    cue.assetPath !== undefined
+  );
 }

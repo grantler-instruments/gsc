@@ -100,12 +100,26 @@ async function waitUntil(
   throw new Error(options?.timeoutMsg ?? "waitUntil timed out");
 }
 
+async function dismissDiscardDraftDialogIfPresent(browser: WdioBrowser): Promise<void> {
+  try {
+    const discard = await findByRole(browser, "button", "Discard draft");
+    if (await discard.isDisplayed()) {
+      await discard.click();
+      await browser.pause(500);
+    }
+  } catch {
+    /* no discard confirmation */
+  }
+}
+
 async function dismissStartupDialogIfPresent(browser: WdioBrowser): Promise<void> {
   try {
     const newShow = await findByRole(browser, "button", "New Show");
     if (await newShow.isDisplayed()) {
       await newShow.click();
       await browser.pause(500);
+      // Smoke (and other prior sessions) leave a draft on disk; New Show then asks to discard it.
+      await dismissDiscardDraftDialogIfPresent(browser);
     }
   } catch {
     /* no startup dialog */

@@ -17,6 +17,7 @@ import { SettingsAudioPanel } from "./SettingsAudioPanel";
 import { SettingsDmxPanel } from "./SettingsDmxPanel";
 import { SettingsGeneralPanel } from "./SettingsGeneralPanel";
 import { SettingsMidiPanel } from "./SettingsMidiPanel";
+import { SettingsSpeechPanel } from "./SettingsSpeechPanel";
 import { SettingsVideoPanel } from "./SettingsVideoPanel";
 import { CATEGORY_LABEL_KEYS, SETTINGS_CATEGORIES, type SettingsCategory } from "./types";
 import { useSettingsDevices } from "./useSettingsDevices";
@@ -91,12 +92,15 @@ export function SettingsDialog() {
             <SettingsAudioPanel isTauri={isTauri} audioDevices={devices.audioDevices} />
           ) : null}
 
+          {category === "speech" ? <SettingsSpeechPanel /> : null}
+
           {category === "video" ? <SettingsVideoPanel isTauri={isTauri} /> : null}
 
           {category === "dmx" ? (
             <SettingsDmxPanel
               isTauri={isTauri}
               serialPorts={devices.serialPorts}
+              midiOutDevices={devices.midiOutDevices}
               enttecConnected={devices.enttecConnected}
               setEnttecConnected={devices.setEnttecConnected}
               webSerialAvailable={devices.webSerialAvailable}

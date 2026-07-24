@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
 
@@ -20,7 +20,8 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@brand/*": ["./src/brand/*"]
+      "@brand/*": ["./src/brand/*"],
+      "phonemizer-original": ["./node_modules/phonemizer/types/phonemizer.d.ts"]
     }
   },
   "include": ["src"],

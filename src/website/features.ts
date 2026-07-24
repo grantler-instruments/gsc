@@ -18,6 +18,7 @@ export const featureCategoryKeys: FeatureCategoryKey[] = [
     key: "categoryCueTypes",
     features: [
       { key: "featureAudioTitle", descKey: "featureAudioDesc", cueType: "audio" },
+      { key: "featureTtsTitle", descKey: "featureTtsDesc", cueType: "tts" },
       { key: "featureVideoTitle", descKey: "featureVideoDesc", cueType: "video" },
       { key: "featureImageTitle", descKey: "featureImageDesc", cueType: "image" },
       { key: "featureMidiTitle", descKey: "featureMidiDesc", cueType: "midi" },
