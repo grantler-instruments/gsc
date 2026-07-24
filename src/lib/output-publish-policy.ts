@@ -26,8 +26,16 @@ export function publishOptionsForActiveCueChange(diskAssetMode: boolean): Output
   return { forceAssets: !diskAssetMode, forceState: true };
 }
 
-/** Large video blobs must not cross BroadcastChannel when disk mode is available. */
-export function shouldPostAssetOverChannel(diskAssetMode: boolean): boolean {
+/**
+ * Large video blobs must not cross the output bus when disk mode is available.
+ * Tauri always uses disk (or fails closed) — Blobs cannot ride the event bus, and
+ * BroadcastChannel is unreliable across WebView2 windows on Windows.
+ */
+export function shouldPostAssetOverChannel(
+  diskAssetMode: boolean,
+  platform: OutputPublishPlatform = "web",
+): boolean {
+  if (platform === "tauri") return false;
   return !diskAssetMode;
 }
 

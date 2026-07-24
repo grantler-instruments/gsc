@@ -36,6 +36,11 @@ describe("output-publish-policy", () => {
     expect(shouldPostAssetOverChannel(false)).toBe(true);
   });
 
+  it("never posts assets over the bus on Tauri", () => {
+    expect(shouldPostAssetOverChannel(false, "tauri")).toBe(false);
+    expect(shouldPostAssetOverChannel(true, "tauri")).toBe(false);
+  });
+
   it("matches active cue publish options to request-state policy", () => {
     expect(publishOptionsForActiveCueChange(true)).toEqual(publishOptionsForRequestState(true));
     expect(publishOptionsForActiveCueChange(false)).toEqual(publishOptionsForRequestState(false));

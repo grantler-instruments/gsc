@@ -56,9 +56,9 @@ interface PublishOptions {
   forceState?: boolean;
 }
 
-/** Publishes visual output state to the output window via BroadcastChannel. */
+/** Publishes visual output state to the output window (BroadcastChannel on web, Tauri events on desktop). */
 export function useOutputPublisher(): void {
-  const channelRef = useRef<BroadcastChannel | null>(null);
+  const channelRef = useRef<ReturnType<typeof createOutputChannel> | null>(null);
   const revisionRef = useRef(0);
   const postedAssetsRef = useRef(new Set<string>());
   const lastStateRef = useRef<OutputState | null>(null);
@@ -66,6 +66,7 @@ export function useOutputPublisher(): void {
   useEffect(() => {
     const channel = createOutputChannel();
     channelRef.current = channel;
+    let disposed = false;
 
     let rafId = 0;
     let retryTimeoutId = 0;
@@ -79,6 +80,7 @@ export function useOutputPublisher(): void {
     const maxDeferAttempts = 20;
 
     const schedulePublish = (options?: PublishOptions) => {
+      if (disposed) return;
       if (options?.forceAssets) {
         forceAssetsNext = true;
       }
@@ -146,7 +148,7 @@ export function useOutputPublisher(): void {
           }
 
           if (!stateUnchanged || forceAssets || forceState) {
-            if (shouldPostAssetOverChannel(diskAssetMode)) {
+            if (shouldPostAssetOverChannel(diskAssetMode, getPlatform())) {
               await Promise.all(
                 state.layers.map(async (layer) => {
                   const blob = await resolveAssetBlob(layer.assetPath);
@@ -163,7 +165,7 @@ export function useOutputPublisher(): void {
                   postedAssetsRef.current.add(key);
                 }),
               );
-            } else if (state.layers.length > 0) {
+            } else if (getPlatform() === "tauri" && state.layers.length > 0) {
               for (const layer of state.layers) {
                 const blob = await resolveAssetBlob(layer.assetPath);
                 if (!blob) continue;
@@ -192,7 +194,7 @@ export function useOutputPublisher(): void {
       })();
     };
 
-    channel.onmessage = (event: MessageEvent) => {
+    channel.onmessage = (event) => {
       if (!isOutputMessage(event.data)) return;
       if (event.data.type === "request-state") {
         const diskAssetMode = isDiskAssetMode();
@@ -203,7 +205,9 @@ export function useOutputPublisher(): void {
       }
     };
 
-    schedulePublish();
+    void channel.ready.then(() => {
+      if (!disposed) schedulePublish();
+    });
 
     const unsubTransport = useTransportStore.subscribe((state, prev) => {
       if (
@@ -253,6 +257,7 @@ export function useOutputPublisher(): void {
     });
 
     return () => {
+      disposed = true;
       if (rafId !== 0) cancelAnimationFrame(rafId);
       if (retryTimeoutId !== 0) window.clearTimeout(retryTimeoutId);
       unsubTransport();
