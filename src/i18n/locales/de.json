@@ -781,7 +781,8 @@
     "nestedProjectError": "Projekte können nicht in einem anderen Projektordner gespeichert werden. Wählen Sie einen Speicherort außerhalb von \"{{path}}\".",
     "selectGscFolder": ".gsc-Projektordner wählen (z. B. MyShow.gsc).",
     "noProjectJson": "Kein project.json im gewählten Ordner",
-    "unsupportedVersion": "Nicht unterstützte Projektversion"
+    "unsupportedVersion": "Nicht unterstützte Projektversion",
+    "restoredFromProjectJsonBackup": "project.json war beschädigt; aus dem letzten Backup wiederhergestellt."
   },
   "website": {
     "tagline": "Cue-basierte Bühnensteuerung. Im Browser oder als Desktop-App.",

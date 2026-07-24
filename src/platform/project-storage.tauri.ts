@@ -1,12 +1,14 @@
 import { appCacheDir, join } from "@tauri-apps/api/path";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import {
+  copyFile,
   exists,
   mkdir,
   readDir,
   readFile,
   readTextFile,
   remove,
+  rename,
   writeFile,
   writeTextFile,
 } from "@tauri-apps/plugin-fs";
@@ -30,6 +32,12 @@ import {
   writeBundleFilesToDisk,
 } from "../lib/project-disk";
 import { replaceProjectWithoutHistory } from "../lib/project-history";
+import {
+  type ProjectJsonFsOps,
+  projectJsonOrBakExists,
+  readProjectJsonWithBackup,
+  writeProjectJsonSafely,
+} from "../lib/project-json-persist";
 import {
   BUNDLE_EXTENSION,
   isGscProjectDirPath,
@@ -182,6 +190,15 @@ async function ensureDiskDir(dir: string): Promise<void> {
   }
 }
 
+const projectJsonFs: ProjectJsonFsOps = {
+  exists,
+  copyFile,
+  rename,
+  writeTextFile,
+  readTextFile,
+  remove,
+};
+
 async function collectRelativeFiles(dir: string, prefix = ""): Promise<string[]> {
   const entries = await readDir(dir);
   const files: string[] = [];
@@ -229,17 +246,24 @@ export async function loadProjectFromFolder(
 
   const jsonPath = projectJsonDiskPath(rootDir);
   startRestoreStep("read-project-json", "project.restoreStep.readProjectJson", jsonPath);
-  if (!(await exists(jsonPath))) {
-    throw new Error(t("notification.noProjectJson"));
+  const loadedJson = await readProjectJsonWithBackup(rootDir, projectJsonFs);
+  if (!loadedJson) {
+    if (!(await projectJsonOrBakExists(rootDir, exists))) {
+      throw new Error(t("notification.noProjectJson"));
+    }
+    throw new Error(t("notification.unsupportedVersion"));
   }
-
-  const text = await readTextFile(jsonPath);
   finishRestoreStep("read-project-json");
 
   startRestoreStep("parse-snapshot", "project.restoreStep.parseSnapshot");
-  const snap = JSON.parse(text);
-  if (snap.version !== 2) {
-    throw new Error(t("notification.unsupportedVersion"));
+  const snap = loadedJson.snap;
+  if (loadedJson.source === "backup") {
+    notifyWarning(t("notification.restoredFromProjectJsonBackup"));
+    // Drop a corrupt primary so the rewrite does not promote it into .bak.
+    if (await exists(jsonPath)) {
+      await remove(jsonPath);
+    }
+    await writeProjectJsonSafely(rootDir, loadedJson.text, projectJsonFs);
   }
 
   vfsClear();
@@ -310,8 +334,7 @@ export async function saveProjectToFolder(rootDir: string): Promise<void> {
 
   await saveAllVfsAssetsToDisk(rootDir, paths, writeDiskFile, ensureDiskDir);
 
-  const jsonPath = projectJsonDiskPath(rootDir);
-  await writeTextFile(jsonPath, JSON.stringify(snapshot, null, 2));
+  await writeProjectJsonSafely(rootDir, JSON.stringify(snapshot, null, 2), projectJsonFs);
   await markGscProjectPackage(rootDir);
 }
 
@@ -509,13 +532,11 @@ async function resolveProjectRootDir(options?: {
 }
 
 async function draftHasRestorableContent(rootDir: string): Promise<boolean> {
-  const jsonPath = projectJsonDiskPath(rootDir);
-  if (!(await exists(jsonPath))) return false;
+  const loadedJson = await readProjectJsonWithBackup(rootDir, projectJsonFs);
+  if (!loadedJson) return false;
 
   try {
-    const snap = JSON.parse(await readTextFile(jsonPath));
-    if (snap.version !== 2) return false;
-    if (snapshotHasMeaningfulContent(snap)) return true;
+    if (snapshotHasMeaningfulContent(loadedJson.snap)) return true;
 
     const assetsDir = await join(rootDir, "assets");
     if (!(await exists(assetsDir))) return false;
@@ -530,7 +551,7 @@ async function getPendingDraftInfo(): Promise<PendingDraftProject | null> {
   const draftRoot = localStorage.getItem(DRAFT_ROOT_KEY);
   if (!draftRoot) return null;
 
-  if (!(await exists(projectJsonDiskPath(draftRoot)))) {
+  if (!(await projectJsonOrBakExists(draftRoot, exists))) {
     localStorage.removeItem(DRAFT_ROOT_KEY);
     await removeDraftProjectRoot(draftRoot);
     return null;
@@ -544,9 +565,10 @@ async function getPendingDraftInfo(): Promise<PendingDraftProject | null> {
 
   let projectName = t("project.defaultName");
   try {
-    const snap = JSON.parse(await readTextFile(projectJsonDiskPath(draftRoot)));
-    if (typeof snap.name === "string" && snap.name.trim()) {
-      projectName = snap.name;
+    const loadedJson = await readProjectJsonWithBackup(draftRoot, projectJsonFs);
+    const name = loadedJson?.snap.name;
+    if (typeof name === "string" && name.trim()) {
+      projectName = name;
     }
   } catch {
     /* use default name */
@@ -564,12 +586,13 @@ async function ensureRecentsMigratedFromLastRoot(): Promise<void> {
   if (readRecentProjects().length > 0) return;
 
   const lastRoot = localStorage.getItem(LAST_ROOT_KEY);
-  if (!lastRoot || !(await exists(projectJsonDiskPath(lastRoot)))) return;
+  if (!lastRoot || !(await projectJsonOrBakExists(lastRoot, exists))) return;
 
   try {
-    const snap = JSON.parse(await readTextFile(projectJsonDiskPath(lastRoot)));
+    const loadedJson = await readProjectJsonWithBackup(lastRoot, projectJsonFs);
+    const snapName = loadedJson?.snap.name;
     const name =
-      typeof snap.name === "string" && snap.name.trim() ? snap.name : t("project.defaultName");
+      typeof snapName === "string" && snapName.trim() ? snapName : t("project.defaultName");
     recordRecentProject(lastRoot, name);
   } catch {
     recordRecentProject(lastRoot, t("project.defaultName"));
@@ -581,7 +604,7 @@ export async function listValidRecentProjects(): Promise<RecentProjectEntry[]> {
 
   const valid: RecentProjectEntry[] = [];
   for (const entry of readRecentProjects()) {
-    if (await exists(projectJsonDiskPath(entry.path))) {
+    if (await projectJsonOrBakExists(entry.path, exists)) {
       valid.push(entry);
     } else {
       removeRecentProject(entry.path);

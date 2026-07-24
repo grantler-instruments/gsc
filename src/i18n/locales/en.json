@@ -860,7 +860,8 @@
     "nestedProjectError": "Projects can't be saved inside another project folder. Choose a location outside \"{{path}}\".",
     "selectGscFolder": "Select a .gsc project folder (e.g. MyShow.gsc).",
     "noProjectJson": "No project.json in selected folder",
-    "unsupportedVersion": "Unsupported project version"
+    "unsupportedVersion": "Unsupported project version",
+    "restoredFromProjectJsonBackup": "project.json was damaged; restored from the last backup."
   },
   "website": {
     "tagline": "Cue-based stage control software. Run it in the browser or install the desktop app.",

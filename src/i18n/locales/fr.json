@@ -738,7 +738,8 @@
     "nestedProjectError": "Les projets ne peuvent pas être enregistrés dans un autre dossier de projet. Choisissez un emplacement en dehors de « {{path}} ».",
     "selectGscFolder": "Sélectionnez un dossier de projet .gsc (par ex. MyShow.gsc).",
     "noProjectJson": "Aucun project.json dans le dossier sélectionné",
-    "unsupportedVersion": "Version de projet non prise en charge"
+    "unsupportedVersion": "Version de projet non prise en charge",
+    "restoredFromProjectJsonBackup": "project.json était endommagé ; restauration depuis la dernière sauvegarde."
   },
   "website": {
     "tagline": "Logiciel de conduite de spectacle basé sur les tops. Lancez-le dans le navigateur ou installez l’application de bureau.",

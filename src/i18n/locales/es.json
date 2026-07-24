@@ -758,7 +758,8 @@
     "nestedProjectError": "Los proyectos no se pueden guardar dentro de otra carpeta de proyecto. Elija una ubicación fuera de \"{{path}}\".",
     "selectGscFolder": "Seleccione una carpeta de proyecto .gsc (p. ej. MyShow.gsc).",
     "noProjectJson": "No hay project.json en la carpeta seleccionada",
-    "unsupportedVersion": "Versión de proyecto no compatible"
+    "unsupportedVersion": "Versión de proyecto no compatible",
+    "restoredFromProjectJsonBackup": "project.json estaba dañado; se restauró desde la última copia de seguridad."
   },
   "website": {
     "tagline": "Software de control escénico basado en cues. Ejecútelo en el navegador o instale la app de escritorio.",

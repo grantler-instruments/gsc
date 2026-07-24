@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getLoadedKokoroTts, loadKokoroTts } from "../lib/kokoro-engine";
+import { isSpeechModelInstalled } from "../lib/speech-model-cache";
 import { getPlatform } from "../platform";
 import { usePreferencesStore } from "./preferences";
-import { useSpeechModelStore } from "./speech-model";
+import { isSpeechModelAvailable, useSpeechModelStore } from "./speech-model";
 
 vi.mock("../platform", () => ({
   getPlatform: vi.fn(() => "tauri"),
@@ -42,6 +44,87 @@ function resetSpeechModelStore() {
   });
   usePreferencesStore.setState({ speechModelReady: false });
 }
+
+describe("speech-model store when model is not downloaded", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetSpeechModelStore();
+    invoke.mockReset();
+    listen.mockReset();
+    listen.mockResolvedValue(vi.fn());
+    vi.mocked(isSpeechModelInstalled).mockResolvedValue(false);
+    vi.mocked(getLoadedKokoroTts).mockReturnValue(null);
+  });
+
+  it("reports the model as unavailable until downloaded", () => {
+    expect(isSpeechModelAvailable()).toBe(false);
+    expect(useSpeechModelStore.getState().status).toBe("idle");
+  });
+
+  it("warmUpIfReady is a no-op on desktop when not ready", async () => {
+    vi.mocked(getPlatform).mockReturnValue("tauri");
+
+    await useSpeechModelStore.getState().warmUpIfReady();
+
+    expect(invoke).not.toHaveBeenCalled();
+    expect(usePreferencesStore.getState().speechModelReady).toBe(false);
+    expect(useSpeechModelStore.getState()).toMatchObject({
+      status: "idle",
+      progress: null,
+      error: null,
+    });
+  });
+
+  it("warmUpIfReady is a no-op on web when not ready", async () => {
+    vi.mocked(getPlatform).mockReturnValue("web");
+
+    await useSpeechModelStore.getState().warmUpIfReady();
+
+    expect(loadKokoroTts).not.toHaveBeenCalled();
+    expect(isSpeechModelInstalled).not.toHaveBeenCalled();
+    expect(usePreferencesStore.getState().speechModelReady).toBe(false);
+    expect(useSpeechModelStore.getState().status).toBe("idle");
+  });
+
+  it("clears a stale ready flag on desktop when assets are missing on disk", async () => {
+    vi.mocked(getPlatform).mockReturnValue("tauri");
+    usePreferencesStore.setState({ speechModelReady: true });
+    invoke.mockImplementation(async (cmd: string) => {
+      if (cmd === "supertonic_assets_ready") return false;
+      throw new Error(`unexpected ${cmd}`);
+    });
+
+    await useSpeechModelStore.getState().warmUpIfReady();
+
+    expect(invoke).toHaveBeenCalledWith("supertonic_assets_ready");
+    expect(invoke).not.toHaveBeenCalledWith("supertonic_load");
+    expect(usePreferencesStore.getState().speechModelReady).toBe(false);
+    expect(isSpeechModelAvailable()).toBe(false);
+    expect(useSpeechModelStore.getState()).toMatchObject({
+      status: "idle",
+      progress: null,
+      error: null,
+    });
+  });
+
+  it("clears a stale ready flag on web when the model is not installed", async () => {
+    vi.mocked(getPlatform).mockReturnValue("web");
+    usePreferencesStore.setState({ speechModelReady: true });
+    vi.mocked(isSpeechModelInstalled).mockResolvedValue(false);
+
+    await useSpeechModelStore.getState().warmUpIfReady();
+
+    expect(isSpeechModelInstalled).toHaveBeenCalled();
+    expect(loadKokoroTts).not.toHaveBeenCalled();
+    expect(usePreferencesStore.getState().speechModelReady).toBe(false);
+    expect(isSpeechModelAvailable()).toBe(false);
+    expect(useSpeechModelStore.getState()).toMatchObject({
+      status: "idle",
+      progress: null,
+      error: null,
+    });
+  });
+});
 
 describe("speech-model store (desktop / Supertonic)", () => {
   beforeEach(() => {

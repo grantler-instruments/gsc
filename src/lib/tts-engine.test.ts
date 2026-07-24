@@ -82,4 +82,18 @@ describe("tts-engine", () => {
     vi.mocked(getPlatform).mockReturnValue("tauri");
     expect(getActiveSpeechBackendLabel()).toBe("supertonic");
   });
+
+  it("surfaces the not-installed error when the desktop model is missing", async () => {
+    vi.mocked(getPlatform).mockReturnValue("tauri");
+    invoke.mockRejectedValue(
+      new Error("Speech model is not installed. Download it in Settings → Speech first."),
+    );
+
+    await expect(generateSpeechWav({ text: "Hello", voice: "M1", lang: "en" })).rejects.toThrow(
+      "Speech model is not installed. Download it in Settings → Speech first.",
+    );
+
+    expect(invoke).toHaveBeenCalledWith("supertonic_load");
+    expect(generateKokoroSpeechWav).not.toHaveBeenCalled();
+  });
 });

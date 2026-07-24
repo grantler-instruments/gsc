@@ -738,7 +738,8 @@
     "nestedProjectError": "Projetos não podem ser salvos dentro de outra pasta de projeto. Escolha um local fora de “{{path}}”.",
     "selectGscFolder": "Selecione uma pasta de projeto .gsc (por ex. MyShow.gsc).",
     "noProjectJson": "Nenhum project.json na pasta selecionada",
-    "unsupportedVersion": "Versão de projeto não suportada"
+    "unsupportedVersion": "Versão de projeto não suportada",
+    "restoredFromProjectJsonBackup": "project.json estava danificado; restaurado a partir do último backup."
   },
   "website": {
     "tagline": "Software de controle de espetáculos baseado em deixas. Use no navegador ou instale o aplicativo para desktop.",

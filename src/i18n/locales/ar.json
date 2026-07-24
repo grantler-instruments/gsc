@@ -738,7 +738,8 @@
     "nestedProjectError": "لا يمكن حفظ المشاريع داخل مجلد مشروع آخر. اختر موقعًا خارج «{{path}}».",
     "selectGscFolder": "حدّد مجلد مشروع ‎.gsc (مثل MyShow.gsc).",
     "noProjectJson": "لا يوجد project.json في المجلد المحدد",
-    "unsupportedVersion": "إصدار مشروع غير مدعوم"
+    "unsupportedVersion": "إصدار مشروع غير مدعوم",
+    "restoredFromProjectJsonBackup": "كان project.json تالفًا؛ تمت الاستعادة من آخر نسخة احتياطية."
   },
   "website": {
     "tagline": "برنامج تحكّم في العروض قائم على الإشارات. شغّله في المتصفح أو ثبّت تطبيق سطح المكتب.",

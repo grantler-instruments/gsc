@@ -738,7 +738,8 @@
     "nestedProjectError": "无法在其他项目文件夹内保存项目。请选择「{{path}}」之外的位置。",
     "selectGscFolder": "选择 .gsc 项目文件夹（例如 MyShow.gsc）。",
     "noProjectJson": "所选文件夹中无 project.json",
-    "unsupportedVersion": "不支持的项目版本"
+    "unsupportedVersion": "不支持的项目版本",
+    "restoredFromProjectJsonBackup": "project.json 已损坏；已从上次备份恢复。"
   },
   "website": {
     "tagline": "基于提示的舞台控制软件。在浏览器中运行或安装桌面应用。",
