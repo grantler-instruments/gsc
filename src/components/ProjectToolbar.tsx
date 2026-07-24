@@ -5,6 +5,7 @@ import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
 import { BrandFileMenu } from "./BrandFileMenu";
 import { OpenOutputButton } from "./OpenOutputButton";
+import { PerformanceHud } from "./PerformanceHud";
 import { ShowMetadataDialog } from "./ShowMetadataDialog";
 import { ShowModeToggle } from "./ShowModeToggle";
 
@@ -31,6 +32,7 @@ export function ProjectToolbar() {
       }}
     >
       <BrandFileMenu />
+      <PerformanceHud />
 
       <Box
         component="button"

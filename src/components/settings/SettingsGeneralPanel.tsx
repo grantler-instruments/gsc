@@ -1,7 +1,9 @@
 import Box from "@mui/material/Box";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { LOCALE_LABELS, SUPPORTED_LOCALES, type SupportedLocale } from "../../i18n";
@@ -26,6 +28,8 @@ export function SettingsGeneralPanel({
   const { t } = useTranslation();
   const locale = usePreferencesStore((s) => s.locale);
   const setLocale = usePreferencesStore((s) => s.setLocale);
+  const performanceHudEnabled = usePreferencesStore((s) => s.performanceHudEnabled);
+  const setPerformanceHudEnabled = usePreferencesStore((s) => s.setPerformanceHudEnabled);
 
   return (
     <Stack sx={inspectorFieldsSx}>
@@ -46,6 +50,20 @@ export function SettingsGeneralPanel({
             </MenuItem>
           ))}
         </Select>
+      </Box>
+      <Box sx={inspectorFieldSx}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={performanceHudEnabled}
+              onChange={(_, checked) => setPerformanceHudEnabled(checked)}
+            />
+          }
+          label={t("settings.performanceHud")}
+        />
+        <Typography variant="caption" color="text.secondary">
+          {t("settings.performanceHudHint")}
+        </Typography>
       </Box>
       {!isTauri ? (
         <Box sx={inspectorFieldSx}>

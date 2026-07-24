@@ -245,7 +245,12 @@
     "storageWarning": "Storage is getting full. Export a backup from the file menu before importing large media.",
     "storageCritical": "Storage is nearly full. Export a backup now to avoid losing your show.",
     "storagePersisted": "Persistent storage granted — your show is less likely to be cleared by the browser.",
-    "storageNotPersisted": "Grant persistent storage by importing or editing a project so the browser keeps your show data."
+    "storageNotPersisted": "Grant persistent storage by importing or editing a project so the browser keeps your show data.",
+    "performanceHud": "Show performance HUD",
+    "performanceHudHint": "Shows FPS, CPU, and memory next to the GSC menu. CPU and memory require the desktop app.",
+    "performanceHudFpsTooltip": "UI frame rate (frames per second)",
+    "performanceHudCpuTooltip": "This app’s CPU usage",
+    "performanceHudRamTooltip": "This app’s memory use (RAM)"
   },
   "remote": {
     "title": "Remote control",

@@ -85,12 +85,15 @@ interface PreferencesState {
   remotePin: string;
   /** Start remote server automatically on app launch. */
   remoteAutoStart: boolean;
+  /** Show FPS / CPU / RAM overlay in the top-right corner. */
+  performanceHudEnabled: boolean;
   /** Kokoro speech model downloaded and ready for TTS cues. */
   speechModelReady: boolean;
   setSpeechModelReady: (ready: boolean) => void;
   setRemotePort: (remotePort: number) => void;
   setRemotePin: (remotePin: string) => void;
   setRemoteAutoStart: (remoteAutoStart: boolean) => void;
+  setPerformanceHudEnabled: (enabled: boolean) => void;
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -119,6 +122,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         remotePort: 8766,
         remotePin: "",
         remoteAutoStart: false,
+        performanceHudEnabled: true,
         speechModelReady: false,
         setLocale: (locale) => {
           setAppLocale(locale);
@@ -149,6 +153,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         setRemotePort: (remotePort) => set({ remotePort }),
         setRemotePin: (remotePin) => set({ remotePin }),
         setRemoteAutoStart: (remoteAutoStart) => set({ remoteAutoStart }),
+        setPerformanceHudEnabled: (performanceHudEnabled) => set({ performanceHudEnabled }),
         setSpeechModelReady: (speechModelReady) => set({ speechModelReady }),
       }),
       {
@@ -176,6 +181,7 @@ export const usePreferencesStore = create<PreferencesState>()(
           remotePort: s.remotePort,
           remotePin: s.remotePin,
           remoteAutoStart: s.remoteAutoStart,
+          performanceHudEnabled: s.performanceHudEnabled,
           speechModelReady: s.speechModelReady,
         }),
       },
