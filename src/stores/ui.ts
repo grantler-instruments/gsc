@@ -39,6 +39,8 @@ interface UiState {
   hotCuePanelVisible: boolean;
   /** Asset row under the pointer in the assets panel (session only). */
   hoveredAssetPath: string | null;
+  /** Number of filesystem assets currently being imported for a cue drop. */
+  assetImportCount: number;
   /** Audio mixer dock above the transport bar. */
   audioMixerOpen: boolean;
   /** Height of the audio mixer dock in pixels. */
@@ -65,6 +67,8 @@ interface UiState {
   setHotCuePanelVisible: (visible: boolean) => void;
   toggleHotCuePanelVisible: () => void;
   setHoveredAssetPath: (path: string | null) => void;
+  beginAssetImport: () => void;
+  endAssetImport: () => void;
   setAudioMixerOpen: (open: boolean) => void;
   setAudioMixerHeight: (height: number) => void;
   toggleAudioMixer: () => void;
@@ -92,6 +96,7 @@ export const useUiStore = create<UiState>()(
         hotCuePanelOrientation: "right",
         hotCuePanelVisible: true,
         hoveredAssetPath: null,
+        assetImportCount: 0,
         audioMixerOpen: false,
         audioMixerHeight: DEFAULT_AUDIO_MIXER_HEIGHT,
         videoOutputOpen: false,
@@ -141,6 +146,9 @@ export const useUiStore = create<UiState>()(
         setHotCuePanelVisible: (hotCuePanelVisible) => set({ hotCuePanelVisible }),
         toggleHotCuePanelVisible: () => set((s) => ({ hotCuePanelVisible: !s.hotCuePanelVisible })),
         setHoveredAssetPath: (hoveredAssetPath) => set({ hoveredAssetPath }),
+        beginAssetImport: () => set((s) => ({ assetImportCount: s.assetImportCount + 1 })),
+        endAssetImport: () =>
+          set((s) => ({ assetImportCount: Math.max(0, s.assetImportCount - 1) })),
         setAudioMixerOpen: (audioMixerOpen) => set({ audioMixerOpen }),
         setAudioMixerHeight: (audioMixerHeight) =>
           set({ audioMixerHeight: clampAudioMixerHeight(audioMixerHeight) }),

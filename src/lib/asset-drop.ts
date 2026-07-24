@@ -6,6 +6,7 @@ import {
 } from "../platform/project-storage";
 import { useProjectStore } from "../stores/project";
 import { applyRenumber, patchListById } from "../stores/project/helpers";
+import { useUiStore } from "../stores/ui";
 import { useVfsStore } from "../stores/vfs";
 import { assetKindFromFilename } from "../vfs/import";
 import { isContainerCue } from "./cues";
@@ -155,11 +156,16 @@ export async function handleTauriMediaDrop(
   position: { x: number; y: number },
   targetHint?: TauriDropTarget,
 ): Promise<void> {
-  const { dropTargetAtPhysicalPosition, applyAssetDropPayloads } = await import("./tauri-drop");
-  const [target, payloads] = await Promise.all([
-    targetHint ? Promise.resolve(targetHint) : dropTargetAtPhysicalPosition(position),
-    resolveAssetDropFromDiskPaths(paths),
-  ]);
-  if (!payloads.length) return;
-  applyAssetDropPayloads(payloads, target);
+  const { beginAssetImport, endAssetImport } = useUiStore.getState();
+  beginAssetImport();
+  try {
+    const { dropTargetAtPhysicalPosition, applyAssetDropPayloads } = await import("./tauri-drop");
+    const [target, payloads] = await Promise.all([
+      targetHint ? Promise.resolve(targetHint) : dropTargetAtPhysicalPosition(position),
+      resolveAssetDropFromDiskPaths(paths),
+    ]);
+    if (payloads.length) applyAssetDropPayloads(payloads, target);
+  } finally {
+    endAssetImport();
+  }
 }

@@ -688,6 +688,7 @@
       "channels": "Channels",
       "channelCount_one": "{{count}} channel",
       "channelCount_other": "{{count}} channels",
+      "loading": "Reading file metadata…",
       "usedBy": "Used by cues",
       "cueCount_one": "{{count}} cue",
       "cueCount_other": "{{count}} cues",
