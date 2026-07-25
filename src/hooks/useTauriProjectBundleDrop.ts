@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { t } from "../i18n/t";
 import { diskPathsMayHaveMedia, handleTauriMediaDrop } from "../lib/asset-drop";
 import { notifyWarning } from "../lib/notifications";
-import { openProjectPath } from "../lib/open-project-path";
+import { isOpenableProjectPath, openProjectPath } from "../lib/open-project-path";
 import { isGscProjectDirPath, isProjectBundlePath } from "../lib/project-paths";
 import { isQlab5WorkspacePath } from "../lib/qlab5/import-qlab5-project";
 import { dropTargetAtPhysicalPosition, tauriDragHighlightState } from "../lib/tauri-drop";
@@ -107,15 +107,16 @@ export function useTauriProjectBundleDrop(): void {
             return;
           }
 
-          const folderPath = paths.find(
-            (p) => !isProjectBundlePath(p) && !isGscProjectDirPath(p) && !isQlab5WorkspacePath(p),
-          );
-          if (folderPath) {
-            void openProjectPath(folderPath);
-            return;
-          }
+          void (async () => {
+            for (const path of paths) {
+              if (await isOpenableProjectPath(path)) {
+                await openProjectPath(path);
+                return;
+              }
+            }
 
-          void handleTauriMediaDrop(paths, position, targetHint);
+            await handleTauriMediaDrop(paths, position, targetHint);
+          })();
         });
       } catch (err) {
         console.warn("[tauri] drag-drop listener unavailable", err);
