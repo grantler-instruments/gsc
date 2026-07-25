@@ -20,6 +20,7 @@ import { useShowModeKeepAwake } from "./useShowModeKeepAwake";
 import { useSpeechModelWarmup } from "./useSpeechModelWarmup";
 import { useTauriAppMenu } from "./useTauriAppMenu";
 import { useTauriOpenProject } from "./useTauriOpenProject";
+import { useTauriProjectBundleDrop } from "./useTauriProjectBundleDrop";
 import { useUpdateCheck } from "./useUpdateCheck";
 
 /** Side-effect hooks for session restore, engines, and platform integration. */
@@ -43,6 +44,7 @@ export function useAppRuntime(): boolean {
   usePreventBrowserFileDrop();
   useTauriAppMenu();
   useTauriOpenProject(sessionReady);
+  useTauriProjectBundleDrop();
   useDraftSaveReminder();
   useEnttecProConnection();
   useRemoteHost(sessionReady);

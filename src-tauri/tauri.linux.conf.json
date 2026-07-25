@@ -1,0 +1,14 @@
+{
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Grantler Stage Control",
+        "url": "app/index.html",
+        "width": 1280,
+        "height": 800,
+        "dragDropEnabled": true
+      }
+    ]
+  }
+}
