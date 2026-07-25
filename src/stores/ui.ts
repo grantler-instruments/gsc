@@ -79,7 +79,7 @@ export const useUiStore = create<UiState>()(
         compactInspectorDrawerOpen: false,
         compactInspectorDrawerDismissed: true,
         hotCuePanelOrientation: "right",
-        hotCuePanelVisible: true,
+        hotCuePanelVisible: false,
         hoveredAssetPath: null,
         audioMixerOpen: false,
         audioMixerHeight: DEFAULT_AUDIO_MIXER_HEIGHT,
