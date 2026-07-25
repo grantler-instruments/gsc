@@ -1,8 +1,9 @@
 import Box from "@mui/material/Box";
 import type { SxProps, Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-import { type CSSProperties, useCallback, useEffect, useRef } from "react";
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { audioEngine } from "../audio/engine";
 import {
   isOutputLayerLooping,
   isOutputLayerPlaybackComplete,
@@ -10,6 +11,7 @@ import {
   shouldWrapVideoAtSliceEnd,
   sliceEndSec,
 } from "../lib/video-playback";
+import { isTauri } from "../platform";
 import { useTransportStore } from "../stores/transport";
 import type { OutputLayer } from "../types/output";
 import { visualLayerSx, visualLayerWrapSx, visualStageEmptySx } from "./visualStageSx";
@@ -21,6 +23,16 @@ function clamp01(value: number): number {
 interface VideoLayerProps {
   layer: OutputLayer;
   onEnded?: (cueId: string) => void;
+}
+
+function VideoLayer({ layer, onEnded }: VideoLayerProps) {
+  // Browser output has independently tested control/output video timing. Keep
+  // its preview element separate; the shared decoder is a Tauri optimization.
+  return isTauri() ? (
+    <AudioVideoLayer layer={layer} onEnded={onEnded} />
+  ) : (
+    <ControlVideoLayer layer={layer} onEnded={onEnded} />
+  );
 }
 
 /** Control preview — keeps transport clock in sync and reports end-of-playback. */
@@ -179,6 +191,46 @@ function ControlVideoLayer({ layer, onEnded }: VideoLayerProps) {
   );
 }
 
+/**
+ * Displays the audio engine's video element when it is available. The element
+ * is already playing for the cue's audio, so adopting it avoids asking
+ * WebKit/GStreamer to decode the same file a second time for the preview.
+ */
+function AudioVideoLayer({ layer, onEnded }: VideoLayerProps) {
+  const mountRef = useRef<HTMLDivElement>(null);
+  const [video, setVideo] = useState(() => audioEngine.getVideoVoiceElement(layer.cueId));
+
+  useEffect(() => {
+    const syncVideo = () => setVideo(audioEngine.getVideoVoiceElement(layer.cueId));
+    syncVideo();
+    return audioEngine.subscribeVideoVoices(syncVideo);
+  }, [layer.cueId]);
+
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount || !video) return;
+
+    Object.assign(video.style, visualLayerSx);
+    mount.appendChild(video);
+
+    return () => {
+      if (!video.isConnected) return;
+      video.style.display = "none";
+      document.body.appendChild(video);
+    };
+  }, [video]);
+
+  useEffect(() => {
+    if (video) video.style.opacity = String(clamp01(layer.opacity));
+  }, [layer.opacity, video]);
+
+  if (!video) {
+    return <ControlVideoLayer layer={layer} onEnded={onEnded} />;
+  }
+
+  return <Box ref={mountRef} sx={{ width: "100%", height: "100%" }} />;
+}
+
 function ImageLayer({ layer }: { layer: OutputLayer }) {
   return (
     <img
@@ -231,7 +283,7 @@ export function VisualStage({ layers, className, sx }: VisualStageProps) {
       {layers.map((layer, index) => (
         <Box key={layer.cueId} sx={{ ...visualLayerWrapSx, zIndex: index + 1 }}>
           {layer.type === "video" ? (
-            <ControlVideoLayer layer={layer} onEnded={handleEnded} />
+            <VideoLayer layer={layer} onEnded={handleEnded} />
           ) : (
             <ImageLayer layer={layer} />
           )}

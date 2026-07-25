@@ -57,11 +57,29 @@ export class AudioEngine {
   private masterVolume = 1;
   private voices = new Map<string, ActiveVoice>();
   private videoVoices = new Map<string, VideoVoice>();
+  private videoVoiceListeners = new Set<() => void>();
   private syncGeneration = 0;
   private onVoiceEndedHandler: VoiceEndedHandler | null = null;
 
   onVoiceEnded(handler: VoiceEndedHandler | null): void {
     this.onVoiceEndedHandler = handler;
+  }
+
+  /**
+   * Lets a visual surface adopt the existing media element, avoiding a second
+   * video decoder for the same cue.
+   */
+  getVideoVoiceElement(cueId: string): HTMLVideoElement | undefined {
+    return this.videoVoices.get(cueId)?.video;
+  }
+
+  subscribeVideoVoices(listener: () => void): () => void {
+    this.videoVoiceListeners.add(listener);
+    return () => this.videoVoiceListeners.delete(listener);
+  }
+
+  private notifyVideoVoiceListeners(): void {
+    for (const listener of this.videoVoiceListeners) listener();
   }
 
   async unlock(): Promise<AudioContext> {
@@ -126,6 +144,7 @@ export class AudioEngine {
     if (!voice) return;
     stopVideoVoice(voice);
     this.videoVoices.delete(cueId);
+    this.notifyVideoVoiceListeners();
   }
 
   private startVoice(cue: Cue, buffer: AudioBuffer, ctx: AudioContext, goAtMs: number): void {
@@ -304,6 +323,7 @@ export class AudioEngine {
         }
 
         this.videoVoices.set(cueId, voice);
+        this.notifyVideoVoiceListeners();
       }
 
       for (const cueId of targetAudio) {

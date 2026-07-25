@@ -3,6 +3,8 @@ import { getPlatform } from "./index";
 
 const OUTPUT_LABEL = "output";
 const OUTPUT_WINDOW_NAME = "gsc-output";
+const WEB_OUTPUT_WINDOW_FEATURES =
+  "popup,width=1280,height=720,menubar=no,toolbar=no,location=no,status=no,noopener,noreferrer";
 const WEB_WATCH_MS = 1000;
 
 function outputUrl(): string {
@@ -41,7 +43,7 @@ async function openWebOutputWindow(focus = true): Promise<void> {
     return;
   }
 
-  webOutputWindow = window.open(outputUrl(), OUTPUT_WINDOW_NAME, "noopener,noreferrer");
+  webOutputWindow = window.open(outputUrl(), OUTPUT_WINDOW_NAME, WEB_OUTPUT_WINDOW_FEATURES);
 
   if (!webOutputWindow) {
     throw new Error(t("output.popupBlocked"));
