@@ -14,6 +14,7 @@ import {
   setActiveAssetDrag,
   setActiveCueDrag,
 } from "../../lib/drag";
+import { runRecoverableAction } from "../../lib/notifications";
 import { useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
 import { useCueListActions } from "./cueListActionsContext";
@@ -117,14 +118,14 @@ export function useCueListTrailingDrop(canEdit: boolean, allCues: Cue[]) {
         return;
       }
 
-      void (async () => {
+      void runRecoverableAction(async () => {
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
           applyAssetPayloads(payloads, { kind: "list", listId });
         } finally {
           setActiveAssetDrag(null);
         }
-      })();
+      });
     },
     [allCues, canEdit, listId, moveCueToList, onCueReparent, onCueReparentToListEnd],
   );

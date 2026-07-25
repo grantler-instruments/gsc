@@ -25,6 +25,7 @@ import {
   setActiveCueDrag,
   setCueDragData,
 } from "../../lib/drag";
+import { runRecoverableAction } from "../../lib/notifications";
 import { triggerHotCueAndFocusMain } from "../../lib/transport-actions";
 import { useFadeStore } from "../../stores/fade";
 import { useActiveCueList, useProjectStore } from "../../stores/project";
@@ -116,14 +117,14 @@ export function HotCueGrid({ listId }: { listId?: string }) {
 
       if (!isAssetDrag(e.dataTransfer) && !isExternalFileDrag(e.dataTransfer)) return;
       focusList();
-      void (async () => {
+      void runRecoverableAction(async () => {
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
           applyAssetPayloads(payloads, { kind: "list", listId: list.id });
         } finally {
           setActiveAssetDrag(null);
         }
-      })();
+      });
     },
     [canEdit, focusList, list.cues, list.id, moveCueToList, reorderCueRelative],
   );
@@ -155,14 +156,14 @@ export function HotCueGrid({ listId }: { listId?: string }) {
       // If an asset was dropped onto a specific hot cue, select it so the
       // inspector (incl. preview) reflects the updated cue immediately.
       selectCue(cueId);
-      void (async () => {
+      void runRecoverableAction(async () => {
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
           applyAssetPayloads(payloads, { kind: "row", listId: list.id, cueId });
         } finally {
           setActiveAssetDrag(null);
         }
-      })();
+      });
     },
     [canEdit, focusList, list.id, moveCueToList, reorderCueRelative, selectCue],
   );

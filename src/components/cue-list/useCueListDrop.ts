@@ -14,6 +14,7 @@ import {
   setActiveAssetDrag,
   setActiveCueDrag,
 } from "../../lib/drag";
+import { runRecoverableAction } from "../../lib/notifications";
 import { useProjectStore } from "../../stores/project";
 import { useClearOnDragEnd } from "./useClearOnDragEnd";
 
@@ -66,14 +67,14 @@ export function useCueListDrop(canEdit: boolean, listId: string) {
         return;
       }
 
-      void (async () => {
+      void runRecoverableAction(async () => {
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
           applyAssetPayloads(payloads, { kind: "list", listId });
         } finally {
           setActiveAssetDrag(null);
         }
-      })();
+      });
     },
     [canEdit, listId, moveCueToGroup, moveCueToList],
   );

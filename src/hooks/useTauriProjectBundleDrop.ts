@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { t } from "../i18n/t";
 import { diskPathsMayHaveMedia, handleTauriMediaDrop } from "../lib/asset-drop";
-import { notifyWarning } from "../lib/notifications";
-import { isOpenableProjectPath, openProjectPath } from "../lib/open-project-path";
+import { notifyWarning, runRecoverableAction } from "../lib/notifications";
+import { isOpenableProjectPath } from "../lib/open-project-path";
+import { openDroppedProjectPath } from "../lib/project-file-actions";
 import { isGscProjectDirPath, isProjectBundlePath } from "../lib/project-paths";
 import { isQlab5WorkspacePath } from "../lib/qlab5/import-qlab5-project";
 import { dropTargetAtPhysicalPosition, tauriDragHighlightState } from "../lib/tauri-drop";
@@ -87,36 +88,39 @@ export function useTauriProjectBundleDrop(): void {
           const { paths, position } = event.payload;
           const targetHint = lastTargetRef.current ?? undefined;
           clearHighlights();
-          if (useUiStore.getState().showMode) return;
-
-          const bundlePath = paths.find(isProjectBundlePath);
-          if (bundlePath) {
-            void openProjectPath(bundlePath);
+          if (useUiStore.getState().showMode) {
+            notifyWarning(t("common.state.disabledInShowMode"));
             return;
           }
 
-          const qlabWorkspace = paths.find(isQlab5WorkspacePath);
-          if (qlabWorkspace) {
-            void openProjectPath(qlabWorkspace);
-            return;
-          }
+          void runRecoverableAction(async () => {
+            const bundlePath = paths.find(isProjectBundlePath);
+            if (bundlePath) {
+              await openDroppedProjectPath(bundlePath);
+              return;
+            }
 
-          const projectDir = paths.find(isGscProjectDirPath);
-          if (projectDir) {
-            void openProjectPath(projectDir);
-            return;
-          }
+            const qlabWorkspace = paths.find(isQlab5WorkspacePath);
+            if (qlabWorkspace) {
+              await openDroppedProjectPath(qlabWorkspace);
+              return;
+            }
 
-          void (async () => {
+            const projectDir = paths.find(isGscProjectDirPath);
+            if (projectDir) {
+              await openDroppedProjectPath(projectDir);
+              return;
+            }
+
             for (const path of paths) {
               if (await isOpenableProjectPath(path)) {
-                await openProjectPath(path);
+                await openDroppedProjectPath(path);
                 return;
               }
             }
 
             await handleTauriMediaDrop(paths, position, targetHint);
-          })();
+          });
         });
       } catch (err) {
         console.warn("[tauri] drag-drop listener unavailable", err);

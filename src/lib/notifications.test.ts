@@ -4,6 +4,7 @@ import {
   notifyErrorDeduped,
   notifyWarningDeduped,
   resetNotificationDedupeForTests,
+  runRecoverableAction,
 } from "./notifications";
 
 describe("deduped notifications", () => {
@@ -35,5 +36,14 @@ describe("deduped notifications", () => {
     notifyErrorDeduped("test error", 5000);
     expect(useNotificationsStore.getState().queue).toHaveLength(1);
     expect(useNotificationsStore.getState().queue[0]?.severity).toBe("error");
+  });
+
+  it("converts a rejected action into a deduped error notification", async () => {
+    const result = await runRecoverableAction(() => Promise.reject(new Error("drop failed")));
+
+    expect(result).toBeUndefined();
+    expect(useNotificationsStore.getState().queue).toEqual([
+      expect.objectContaining({ message: "drop failed", severity: "error" }),
+    ]);
   });
 });

@@ -37,6 +37,16 @@ export function notifyErrorFromUnknown(err: unknown): void {
   notifyError(formatAppError(err));
 }
 
+/** Run a user-triggered async action without letting a recoverable failure escape the UI. */
+export async function runRecoverableAction<T>(action: () => Promise<T>): Promise<T | undefined> {
+  try {
+    return await action();
+  } catch (err) {
+    notifyErrorDeduped(formatAppError(err));
+    return undefined;
+  }
+}
+
 export function notifyWarning(message: string): void {
   notify(message, "warning");
 }
