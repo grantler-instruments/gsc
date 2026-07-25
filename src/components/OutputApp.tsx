@@ -1,3 +1,4 @@
+import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import Box from "@mui/material/Box";
 import GlobalStyles from "@mui/material/GlobalStyles";
 import { useEffect, useRef, useState } from "react";
@@ -11,12 +12,14 @@ import { storeOutputAssetBlob } from "../lib/output-asset-bridge";
 import { createOutputChannel, isOutputMessage, postRequestState } from "../lib/output-channel";
 import { isOutputStateFadeOnly, outputStatesEqual } from "../lib/output-layer-sync";
 import { applyOutputLayerOpacities } from "../lib/output-opacity";
+import { toggleWindowFullscreen } from "../platform/window-fullscreen";
 import type { OutputState } from "../types/output";
 import { OutputImperativeStage } from "./OutputImperativeStage";
 
 /** Full-screen output window — subscribes to cross-window state. */
 export function OutputApp() {
   const { t } = useTranslation();
+  const [fullscreenControlVisible, setFullscreenControlVisible] = useState(false);
   const [state, setState] = useState<OutputState>({
     revision: 0,
     projectId: "",
@@ -25,8 +28,28 @@ export function OutputApp() {
     layers: [],
   });
   const stateRef = useRef(state);
+  const fullscreenControlTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   stateRef.current = state;
   const layers = useResolvedOutputLayers(state);
+
+  const hideFullscreenControl = () => {
+    if (fullscreenControlTimeoutRef.current) {
+      clearTimeout(fullscreenControlTimeoutRef.current);
+      fullscreenControlTimeoutRef.current = null;
+    }
+    setFullscreenControlVisible(false);
+  };
+
+  const showFullscreenControl = () => {
+    if (fullscreenControlTimeoutRef.current) {
+      clearTimeout(fullscreenControlTimeoutRef.current);
+    }
+    setFullscreenControlVisible(true);
+    fullscreenControlTimeoutRef.current = setTimeout(() => {
+      fullscreenControlTimeoutRef.current = null;
+      setFullscreenControlVisible(false);
+    }, 10_000);
+  };
 
   useAppViewport();
   useNdiFramePublisher();
@@ -51,6 +74,15 @@ export function OutputApp() {
       body.style.overflow = "";
     };
   }, [t]);
+
+  useEffect(
+    () => () => {
+      if (fullscreenControlTimeoutRef.current) {
+        clearTimeout(fullscreenControlTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     const channel = createOutputChannel();
@@ -107,9 +139,42 @@ export function OutputApp() {
           height: "var(--app-vh, 100vh)",
           bgcolor: "#000",
           overflow: "hidden",
+          position: "relative",
         }}
+        onMouseLeave={hideFullscreenControl}
+        onMouseMove={showFullscreenControl}
       >
         <OutputImperativeStage layers={layers} />
+        <Box
+          aria-label={t("common.action.expand")}
+          className="output-fullscreen-overlay"
+          component="button"
+          onBlur={hideFullscreenControl}
+          onClick={() => void toggleWindowFullscreen()}
+          onFocus={showFullscreenControl}
+          sx={{
+            position: "absolute",
+            top: 16,
+            left: 16,
+            display: "grid",
+            placeItems: "center",
+            border: 0,
+            p: 1,
+            borderRadius: "50%",
+            color: "common.white",
+            bgcolor: "rgba(0, 0, 0, 0.35)",
+            cursor: "pointer",
+            opacity: fullscreenControlVisible ? 1 : 0,
+            transition: "opacity 0.15s ease",
+            "&:focus-visible": {
+              outline: "3px solid",
+              outlineColor: "primary.light",
+              outlineOffset: -3,
+            },
+          }}
+        >
+          <OpenInFullIcon sx={{ fontSize: 32 }} />
+        </Box>
       </Box>
     </>
   );
