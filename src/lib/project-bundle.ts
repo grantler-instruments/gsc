@@ -1,4 +1,4 @@
-import { strFromU8, strToU8, unzipSync, type Zippable, zipSync } from "fflate";
+import { strFromU8, strToU8, Unzip, UnzipInflate, type Zippable, zipSync } from "fflate";
 import { t } from "../i18n/t";
 import type { ProjectSnapshot } from "../types/cue";
 import { vfsPut } from "../vfs/engine";
@@ -21,6 +21,50 @@ export interface ProjectBundleAsset {
   data: Uint8Array;
 }
 
+// Media files are already compressed. Storing them prevents DEFLATE failures
+// from making an otherwise valid project bundle impossible to import.
+const BINARY_ASSET_ZIP_OPTIONS = { level: 0 } as const;
+
+function concatChunks(chunks: Uint8Array[]): Uint8Array {
+  if (chunks.length === 1) return chunks[0] ?? new Uint8Array();
+
+  const size = chunks.reduce((total, chunk) => total + chunk.length, 0);
+  const result = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
+/**
+ * Extract valid ZIP members independently, so one corrupt asset does not
+ * prevent the project metadata and other assets from being recovered.
+ */
+function unzipRecoverableEntries(data: Uint8Array): Record<string, Uint8Array> {
+  const entries: Record<string, Uint8Array> = {};
+  const unzip = new Unzip((file) => {
+    const chunks: Uint8Array[] = [];
+    file.ondata = (error, chunk, final) => {
+      if (error || !chunk) {
+        chunks.length = 0;
+        return;
+      }
+      chunks.push(chunk);
+      if (final) entries[file.name] = concatChunks(chunks);
+    };
+    try {
+      file.start();
+    } catch {
+      // An unsupported or corrupt member is treated as a missing asset.
+    }
+  });
+  unzip.register(UnzipInflate);
+  unzip.push(data, true);
+  return entries;
+}
+
 export async function buildProjectBundleZip(
   snapshot: ProjectSnapshot,
   assetPaths: string[],
@@ -39,7 +83,7 @@ export async function buildProjectBundleZip(
     }
     const rel = virtualToRelative(virtualPath);
     const zipPath = rel.startsWith(`${ASSETS_DIR}/`) ? rel : `${ASSETS_DIR}/${rel}`;
-    zipEntries[zipPath] = new Uint8Array(await blob.arrayBuffer());
+    zipEntries[zipPath] = [new Uint8Array(await blob.arrayBuffer()), BINARY_ASSET_ZIP_OPTIONS];
   }
 
   return { zip: zipSync(zipEntries), missing };
@@ -49,7 +93,7 @@ export function parseProjectBundleZip(data: Uint8Array): {
   snapshot: ProjectSnapshot;
   assets: ProjectBundleAsset[];
 } {
-  const unzipped = unzipSync(data);
+  const unzipped = unzipRecoverableEntries(data);
   let snapshot: ProjectSnapshot | undefined;
 
   const assets: ProjectBundleAsset[] = [];
