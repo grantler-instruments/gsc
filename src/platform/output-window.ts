@@ -4,7 +4,7 @@ import { getPlatform } from "./index";
 const OUTPUT_LABEL = "output";
 const OUTPUT_WINDOW_NAME = "gsc-output";
 const WEB_OUTPUT_WINDOW_FEATURES =
-  "popup,width=1280,height=720,menubar=no,toolbar=no,location=no,status=no,noopener,noreferrer";
+  "popup,width=1280,height=720,menubar=no,toolbar=no,location=no,status=no";
 const WEB_WATCH_MS = 1000;
 
 function outputUrl(): string {
