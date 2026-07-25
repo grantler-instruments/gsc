@@ -1,6 +1,12 @@
 import { visualLayerSx } from "../components/visualStageSx";
 import type { OutputLayer } from "../types/output";
-import { isOutputLayerLooping, outputLayerTargetTime, sliceEndSec } from "./video-playback";
+import {
+  isOutputLayerLooping,
+  isOutputLayerPlaybackComplete,
+  outputLayerTargetTime,
+  shouldWrapVideoAtSliceEnd,
+  sliceEndSec,
+} from "./video-playback";
 
 interface LayerEntry {
   layer: OutputLayer;
@@ -9,6 +15,7 @@ interface LayerEntry {
   objectUrl: string;
   loopTimerId: number;
   loopIterations: number;
+  loopWrapped: boolean;
   goAtMs: number;
 }
 
@@ -45,6 +52,7 @@ export class OutputStageEngine {
     this.root.style.height = "100%";
     this.root.style.background = "#000";
     this.root.style.overflow = "hidden";
+    document.addEventListener("visibilitychange", this.handleVisibilityChange);
   }
 
   syncLayers(layers: OutputLayer[]): void {
@@ -62,11 +70,31 @@ export class OutputStageEngine {
   }
 
   destroy(): void {
+    document.removeEventListener("visibilitychange", this.handleVisibilityChange);
     for (const cueId of [...this.entries.keys()]) {
       this.removeEntry(cueId);
     }
     this.root.replaceChildren();
   }
+
+  private handleVisibilityChange = (): void => {
+    if (document.visibilityState !== "visible") return;
+
+    for (const entry of this.entries.values()) {
+      const video = entry.media;
+      if (
+        !(video instanceof HTMLVideoElement) ||
+        video.ended ||
+        !video.paused ||
+        isOutputLayerPlaybackComplete(entry.layer)
+      ) {
+        continue;
+      }
+
+      void video.play().catch(() => {});
+      this.scheduleLoopWrap(entry);
+    }
+  };
 
   private removeEntry(cueId: string): void {
     const entry = this.entries.get(cueId);
@@ -90,6 +118,7 @@ export class OutputStageEngine {
 
     if (existing.layer.inTime !== layer.inTime || existing.layer.sliceSec !== layer.sliceSec) {
       existing.layer = layer;
+      existing.loopWrapped = false;
       if (existing.media instanceof HTMLVideoElement) {
         this.scheduleLoopWrap(existing);
       }
@@ -109,6 +138,7 @@ export class OutputStageEngine {
     if (existing.media instanceof HTMLVideoElement && existing.goAtMs !== layer.goAtMs) {
       existing.goAtMs = layer.goAtMs;
       existing.loopIterations = 0;
+      existing.loopWrapped = false;
       seekVideo(existing.media, outputLayerTargetTime(layer));
       void existing.media.play().catch(() => {});
       this.scheduleLoopWrap(existing);
@@ -137,13 +167,22 @@ export class OutputStageEngine {
       });
 
       const startPlayback = () => {
-        seekVideo(video, outputLayerTargetTime(layer));
-        void video.play().catch(() => {});
         const entry = this.entries.get(layer.cueId);
+        const current = entry?.layer ?? layer;
+        seekVideo(video, outputLayerTargetTime(current));
+        void video.play().catch(() => {});
         if (entry) this.scheduleLoopWrap(entry);
       };
 
-      video.addEventListener("loadedmetadata", startPlayback, { once: true });
+      video.addEventListener("loadedmetadata", startPlayback);
+      video.addEventListener("timeupdate", () => {
+        const entry = this.entries.get(layer.cueId);
+        if (entry) this.wrapLoopIfNeeded(entry);
+      });
+      video.addEventListener("ended", () => {
+        const entry = this.entries.get(layer.cueId);
+        if (entry) this.handleVideoEnded(entry);
+      });
       video.addEventListener("error", () => {
         console.warn("[output] Could not load", layer.objectUrl);
       });
@@ -168,8 +207,56 @@ export class OutputStageEngine {
       objectUrl: layer.objectUrl,
       loopTimerId: 0,
       loopIterations: 0,
+      loopWrapped: false,
       goAtMs: layer.goAtMs,
     };
+  }
+
+  private wrapLoopIfNeeded(entry: LayerEntry): void {
+    const video = entry.media;
+    if (!(video instanceof HTMLVideoElement) || !isOutputLayerLooping(entry.layer)) return;
+
+    const endSec = sliceEndSec(entry.layer.inTime, entry.layer.sliceSec);
+    if (!shouldWrapVideoAtSliceEnd(video.currentTime, endSec)) {
+      entry.loopWrapped = false;
+      return;
+    }
+    if (entry.loopWrapped) return;
+
+    entry.loopWrapped = true;
+    this.wrapLoop(entry);
+  }
+
+  private handleVideoEnded(entry: LayerEntry): void {
+    const video = entry.media;
+    if (!(video instanceof HTMLVideoElement) || !isOutputLayerLooping(entry.layer)) return;
+
+    entry.loopWrapped = true;
+    this.wrapLoop(entry);
+  }
+
+  private wrapLoop(entry: LayerEntry): void {
+    const video = entry.media;
+    if (!(video instanceof HTMLVideoElement)) return;
+
+    window.clearTimeout(entry.loopTimerId);
+    entry.loopTimerId = 0;
+
+    const current = entry.layer;
+    if (!isOutputLayerLooping(current)) return;
+
+    if (current.loopCount !== "inf") {
+      const next = entry.loopIterations + 1;
+      if (next >= (current.loopCount as number)) {
+        video.pause();
+        return;
+      }
+      entry.loopIterations = next;
+    }
+
+    seekVideo(video, current.inTime);
+    void video.play().catch(() => {});
+    this.scheduleLoopWrap(entry);
   }
 
   private scheduleLoopWrap(entry: LayerEntry): void {
@@ -186,21 +273,8 @@ export class OutputStageEngine {
 
     entry.loopTimerId = window.setTimeout(() => {
       entry.loopTimerId = 0;
-      const current = entry.layer;
-      if (!isOutputLayerLooping(current)) return;
-
-      if (current.loopCount !== "inf") {
-        const next = entry.loopIterations + 1;
-        if (next >= (current.loopCount as number)) {
-          video.pause();
-          return;
-        }
-        entry.loopIterations = next;
-      }
-
-      seekVideo(video, current.inTime);
-      void video.play().catch(() => {});
-      this.scheduleLoopWrap(entry);
+      entry.loopWrapped = true;
+      this.wrapLoop(entry);
     }, delayMs);
   }
 }
