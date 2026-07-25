@@ -9,7 +9,11 @@ import {
   transportGoButton,
 } from "./helpers/active-cues";
 import { gotoApp } from "./helpers/app";
-import { expectCueInSequenceList, sequenceCueRow } from "./helpers/cue-list-panel";
+import {
+  expectCueInSequenceList,
+  selectSequenceCueRow,
+  sequenceCueRow,
+} from "./helpers/cue-list-panel";
 import {
   appendAudioOnHotCuePanel,
   dropAudioOnCueList,
@@ -17,14 +21,27 @@ import {
   dropAudioOnHotCuePanel,
   fixturePath,
 } from "./helpers/drop-audio";
+import { enableLoopPlayback } from "./helpers/fade-cues";
 import { expectHotCuePadActive, hotCuePadSurfaceBackground, hotCuePanel } from "./helpers/hot-cues";
 
 test.describe.configure({ mode: "serial" });
 
 const MAIN_AUDIO = "white-noise-playback.wav";
-const HOT_AUDIO = "white-noise-short-b.wav";
-const HOT_AUDIO_2 = "white-noise-short-a.wav";
+const HOT_AUDIO = "white-noise-playback.mp3";
+const HOT_AUDIO_2 = "white-noise-playback.ogg";
 const HOT_AUDIO_LONG = "white-noise-playback.flac";
+
+function audioMimeType(fileName: string): string {
+  if (fileName.endsWith(".flac")) return "audio/flac";
+  if (fileName.endsWith(".mp3")) return "audio/mpeg";
+  if (fileName.endsWith(".ogg")) return "audio/ogg";
+  return "audio/wav";
+}
+
+async function selectLoopingMainAudio(page: import("@playwright/test").Page): Promise<void> {
+  await selectSequenceCueRow(page, MAIN_AUDIO);
+  await enableLoopPlayback(page);
+}
 
 async function startMainAndHotAudio(
   page: import("@playwright/test").Page,
@@ -32,25 +49,18 @@ async function startMainAndHotAudio(
 ): Promise<void> {
   await dropAudioOnCueList(page, fixturePath(MAIN_AUDIO), MAIN_AUDIO, "audio/wav");
   await expectCueInSequenceList(page, MAIN_AUDIO);
-  await sequenceCueRow(page, MAIN_AUDIO).click();
 
-  await dropAudioOnHotCuePanel(
-    page,
-    fixturePath(hotAudio),
-    hotAudio,
-    hotAudio.endsWith(".flac") ? "audio/flac" : "audio/wav",
-  );
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await dropAudioOnHotCuePanel(page, fixturePath(hotAudio), hotAudio, audioMimeType(hotAudio));
   await openActiveCuesTab(page);
-
-  await expect(transportGoButton(page)).toBeEnabled();
-  await transportGoButton(page).click();
 
   const hotCuePanel = page.getByRole("complementary", { name: "Hot cues" });
   await hotCuePanel.getByRole("button", { name: "GO" }).first().click();
-
-  await expect(activeCueRow(page, MAIN_AUDIO)).toBeVisible();
   await expect(activeCueRow(page, hotAudio)).toBeVisible();
+
+  await selectLoopingMainAudio(page);
+  await expect(transportGoButton(page)).toBeEnabled();
+  await transportGoButton(page).click();
+  await expect(activeCueRow(page, MAIN_AUDIO)).toBeVisible();
 }
 
 test("hot cue audio stacks on top of playing main audio", async ({ page }) => {
@@ -61,13 +71,13 @@ test("hot cue audio stacks on top of playing main audio", async ({ page }) => {
 
   await dropAudioOnCueList(page, fixturePath(MAIN_AUDIO), MAIN_AUDIO, "audio/wav");
   await expectCueInSequenceList(page, MAIN_AUDIO);
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await selectLoopingMainAudio(page);
 
-  await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO), HOT_AUDIO, "audio/wav");
+  await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO), HOT_AUDIO, audioMimeType(HOT_AUDIO));
   await expect(page.getByRole("complementary", { name: "Hot cues" })).toContainText(HOT_AUDIO);
   // Dropping onto the hot-cue panel focuses the hot list; return focus to the main list
   // so the footer transport GO triggers the selected main cue.
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await selectLoopingMainAudio(page);
 
   await openActiveCuesTab(page);
   await expect(transportGoButton(page)).toBeEnabled();
@@ -77,8 +87,8 @@ test("hot cue audio stacks on top of playing main audio", async ({ page }) => {
   const hotCuePanel = page.getByRole("complementary", { name: "Hot cues" });
   await hotCuePanel.getByRole("button", { name: "GO" }).first().click();
 
-  await expect(activeCueRow(page, HOT_AUDIO)).toBeVisible();
   await expect(activeCueRow(page, MAIN_AUDIO)).toBeVisible();
+  await expect(activeCueRow(page, HOT_AUDIO)).toBeVisible();
 });
 
 test("panic stops both main and hot-cue audio", async ({ page }) => {
@@ -89,10 +99,10 @@ test("panic stops both main and hot-cue audio", async ({ page }) => {
 
   await dropAudioOnCueList(page, fixturePath(MAIN_AUDIO), MAIN_AUDIO, "audio/wav");
   await expectCueInSequenceList(page, MAIN_AUDIO);
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await selectLoopingMainAudio(page);
 
-  await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO), HOT_AUDIO, "audio/wav");
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO), HOT_AUDIO, audioMimeType(HOT_AUDIO));
+  await selectLoopingMainAudio(page);
   await openActiveCuesTab(page);
 
   await expect(transportGoButton(page)).toBeEnabled();
@@ -118,10 +128,10 @@ test("Stop all stops both main and hot-cue audio", async ({ page }) => {
 
   await dropAudioOnCueList(page, fixturePath(MAIN_AUDIO), MAIN_AUDIO, "audio/wav");
   await expectCueInSequenceList(page, MAIN_AUDIO);
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await selectLoopingMainAudio(page);
 
-  await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO), HOT_AUDIO, "audio/wav");
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO), HOT_AUDIO, audioMimeType(HOT_AUDIO));
+  await selectLoopingMainAudio(page);
   await openActiveCuesTab(page);
 
   await expect(transportGoButton(page)).toBeEnabled();
@@ -160,10 +170,10 @@ test("Space fires selected hot cue while main audio is playing", async ({ page }
 
   await dropAudioOnCueList(page, fixturePath(MAIN_AUDIO), MAIN_AUDIO, "audio/wav");
   await expectCueInSequenceList(page, MAIN_AUDIO);
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await selectLoopingMainAudio(page);
 
-  await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO), HOT_AUDIO, "audio/wav");
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO), HOT_AUDIO, audioMimeType(HOT_AUDIO));
+  await selectLoopingMainAudio(page);
   await openActiveCuesTab(page);
 
   await expect(transportGoButton(page)).toBeEnabled();
@@ -201,11 +211,16 @@ test("two hot cues stack on top of playing main audio", async ({ page }) => {
 
   await dropAudioOnCueList(page, fixturePath(MAIN_AUDIO), MAIN_AUDIO, "audio/wav");
   await expectCueInSequenceList(page, MAIN_AUDIO);
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await selectLoopingMainAudio(page);
 
   await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO_LONG), HOT_AUDIO_LONG, "audio/flac");
-  await appendAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO_2), HOT_AUDIO_2, "audio/wav");
-  await sequenceCueRow(page, MAIN_AUDIO).click();
+  await appendAudioOnHotCuePanel(
+    page,
+    fixturePath(HOT_AUDIO_2),
+    HOT_AUDIO_2,
+    audioMimeType(HOT_AUDIO_2),
+  );
+  await selectLoopingMainAudio(page);
   await openActiveCuesTab(page);
 
   await expect(transportGoButton(page)).toBeEnabled();
@@ -242,7 +257,12 @@ test("hot cue pad highlights while its cue is active", async ({ page }) => {
   await gotoApp(page, { resetStorage: true });
 
   await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO_LONG), HOT_AUDIO_LONG, "audio/flac");
-  await appendAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO_2), HOT_AUDIO_2, "audio/wav");
+  await appendAudioOnHotCuePanel(
+    page,
+    fixturePath(HOT_AUDIO_2),
+    HOT_AUDIO_2,
+    audioMimeType(HOT_AUDIO_2),
+  );
   const inactiveBackground = await hotCuePadSurfaceBackground(page, HOT_AUDIO_2);
 
   await openActiveCuesTab(page);
@@ -259,7 +279,7 @@ test("dropping audio onto a specific hot cue pad updates that pad", async ({ pag
 
   await gotoApp(page, { resetStorage: true });
 
-  await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO), HOT_AUDIO, "audio/wav");
+  await dropAudioOnHotCuePanel(page, fixturePath(HOT_AUDIO), HOT_AUDIO, audioMimeType(HOT_AUDIO));
   await expect(hotCuePanel(page).getByText(HOT_AUDIO, { exact: true })).toBeVisible();
 
   await dropAudioOnHotCuePad(

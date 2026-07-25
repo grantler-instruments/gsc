@@ -10,6 +10,7 @@ import {
   WHITE_NOISE_NAME,
 } from "../shared/fixtures";
 import { sequenceCueList, sequenceCueRow } from "./cue-list-panel";
+import { showHotCuePanel } from "./hot-cues";
 
 export {
   ASSET_DROP_CUE_LOAD_MAX_MS,
@@ -66,6 +67,7 @@ export async function dropAudioFile(
     return;
   }
 
+  await showHotCuePanel(page);
   const hotPanel = page.getByRole("complementary", { name: "Hot cues" });
   const emptyDropZone = hotPanel.getByText(
     "Drop assets here or use the flame button to add hot cues.",
@@ -95,6 +97,7 @@ export async function appendAudioOnHotCuePanel(
   const resolvedMimeType = mimeType ?? mimeTypeForFileName(fileName);
   const dataTransfer = await createAudioDataTransfer(page, bytes, fileName, resolvedMimeType);
 
+  await showHotCuePanel(page);
   const hotPanel = page.getByRole("complementary", { name: "Hot cues" });
   await hotPanel.evaluate((panel, dt) => {
     const grid = [...panel.querySelectorAll("div")].find((el) => {
@@ -120,6 +123,7 @@ export async function dropAudioOnHotCuePad(
   const resolvedMimeType = mimeType ?? mimeTypeForFileName(fileName);
   const dataTransfer = await createAudioDataTransfer(page, bytes, fileName, resolvedMimeType);
 
+  await showHotCuePanel(page);
   const hotPanel = page.getByRole("complementary", { name: "Hot cues" });
   const pad = hotPanel
     .getByText(targetCueName, { exact: true })
