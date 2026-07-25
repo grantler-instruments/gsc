@@ -46,6 +46,11 @@
       "hardenedRuntime": true,
       "minimumSystemVersion": "10.15"
     },
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true
+      }
+    },
     "fileAssociations": [
       {
         "ext": ["gsc"],
