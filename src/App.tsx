@@ -72,7 +72,6 @@ function App() {
         <Qlab5ImportConfirmDialogHost />
         <Qlab5ImportReportDialogHost />
         <AppSnackbar />
-        <TriggerNoteToasts />
       </>
     );
   }
@@ -127,6 +126,7 @@ function App() {
 
       <Box sx={{ flexShrink: 0, minWidth: 0 }}>
         {audioMixerOpen && <AudioMixerDock />}
+        <TriggerNoteToasts />
         <TransportBar />
       </Box>
       {compact && <CompactInspectorDrawer />}
@@ -142,7 +142,6 @@ function App() {
       <Qlab5ImportConfirmDialogHost />
       <Qlab5ImportReportDialogHost />
       <AppSnackbar />
-      <TriggerNoteToasts />
     </Box>
   );
 }
