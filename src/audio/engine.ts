@@ -7,6 +7,7 @@ import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
 import type { AudioBus } from "../types/audio-bus";
 import type { Cue } from "../types/cue";
 import { getCachedAudioBuffer, loadAudioBuffer } from "./buffer-cache";
+import { prepareBusEffects } from "./effects/worklet";
 import { MixerGraph } from "./mixer";
 import {
   seekVideoVoice,
@@ -85,12 +86,14 @@ export class AudioEngine {
   async unlock(): Promise<AudioContext> {
     if (!this.ctx) {
       this.ctx = new AudioContext();
+    }
+    // Resume inside the user gesture, then register processors before connecting voices.
+    const resume = this.ctx.state === "suspended" ? this.ctx.resume() : Promise.resolve();
+    await Promise.all([resume, prepareBusEffects(this.ctx)]);
+    if (!this.mixer) {
       this.mixer = new MixerGraph(this.ctx);
       this.mixer.sync(this.audioBuses);
       this.mixer.setMasterVolume(this.masterVolume);
-    }
-    if (this.ctx.state === "suspended") {
-      await this.ctx.resume();
     }
     return this.ctx;
   }

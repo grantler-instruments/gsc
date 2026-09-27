@@ -1,4 +1,9 @@
-import { busEffectiveVolume, clampBusPan, resolveBusOutputBusId } from "../lib/audio-buses";
+import {
+  busEffectiveVolume,
+  clampBusPan,
+  resolveBusOutputBusId,
+  resolveDuckerSourceBusIds,
+} from "../lib/audio-buses";
 import { effectChainKey } from "../lib/audio-effects";
 import type { AudioBus } from "../types/audio-bus";
 import type { AudioEffect } from "../types/audio-effect";
@@ -85,6 +90,8 @@ export class MixerGraph {
   /** Reconcile bus nodes with project config. */
   sync(buses: AudioBus[]): void {
     const nextIds = new Set(buses.map((bus) => bus.id));
+    // Remove routing and sidechain edges before disposing/rebuilding any effects.
+    for (const runtime of this.buses.values()) runtime.panner.disconnect();
 
     for (const [id, runtime] of this.buses) {
       if (!nextIds.has(id)) {
@@ -127,6 +134,14 @@ export class MixerGraph {
       if (!runtime) continue;
       const outputBusId = resolveBusOutputBusId(bus, buses);
       this.reconnectBusOutput(runtime, outputBusId);
+    }
+    const sources = resolveDuckerSourceBusIds(buses);
+    for (const runtime of this.buses.values()) {
+      for (const effect of runtime.effectRuntimes) {
+        const sourceId = sources.get(effect.id);
+        const source = sourceId ? this.buses.get(sourceId) : undefined;
+        if (source && effect.sidechain) source.panner.connect(effect.sidechain, 0, 1);
+      }
     }
   }
 

@@ -1,12 +1,16 @@
 import type {
   AudioEffect,
+  AudioEffectParamsPatch,
   AudioEffectType,
   DelayAudioEffect,
   DelayEffectParams,
+  DuckerEffectParams,
   EqAudioEffect,
   EqEffectParams,
+  LimiterEffectParams,
   ReverbAudioEffect,
   ReverbEffectParams,
+  StereoEffectParams,
 } from "../types/audio-effect";
 import {
   DELAY_FEEDBACK_MAX,
@@ -57,6 +61,44 @@ export function normalizeReverbParams(
   };
 }
 
+function finiteRange(
+  value: number | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(min, Math.min(max, value))
+    : fallback;
+}
+
+export function normalizeLimiterParams(params?: Partial<LimiterEffectParams>): LimiterEffectParams {
+  return {
+    ceilingDb: finiteRange(params?.ceilingDb, -1, -24, 0),
+    releaseMs: finiteRange(params?.releaseMs, 100, 10, 1000),
+  };
+}
+
+export function normalizeDuckerParams(params?: Partial<DuckerEffectParams>): DuckerEffectParams {
+  return {
+    sourceBusId: typeof params?.sourceBusId === "string" ? params.sourceBusId : "",
+    thresholdDb: finiteRange(params?.thresholdDb, -30, -60, 0),
+    reductionDb: finiteRange(params?.reductionDb, 12, 0, 36),
+    attackMs: finiteRange(params?.attackMs, 20, 1, 500),
+    releaseMs: finiteRange(params?.releaseMs, 300, 10, 2000),
+  };
+}
+
+export function normalizeStereoParams(params?: Partial<StereoEffectParams>): StereoEffectParams {
+  return {
+    width: finiteRange(params?.width, 1, 0, 2),
+    mono: params?.mono === true,
+    swap: params?.swap === true,
+    invertLeft: params?.invertLeft === true,
+    invertRight: params?.invertRight === true,
+  };
+}
+
 export function defaultEqEffect(): EqAudioEffect {
   return {
     id: randomId(),
@@ -86,6 +128,12 @@ export function defaultReverbEffect(): ReverbAudioEffect {
 
 export function createDefaultBusEffect(type: AudioEffectType): AudioEffect {
   switch (type) {
+    case "limiter":
+      return { id: randomId(), type, enabled: true, params: normalizeLimiterParams() };
+    case "ducker":
+      return { id: randomId(), type, enabled: true, params: normalizeDuckerParams() };
+    case "stereo":
+      return { id: randomId(), type, enabled: true, params: normalizeStereoParams() };
     case "eq":
       return defaultEqEffect();
     case "delay":
@@ -103,6 +151,27 @@ export function normalizeAudioEffect(
   raw: Partial<AudioEffect> & Pick<AudioEffect, "id">,
 ): AudioEffect {
   switch (raw.type) {
+    case "limiter":
+      return {
+        id: raw.id,
+        type: raw.type,
+        enabled: raw.enabled !== false,
+        params: normalizeLimiterParams(raw.params),
+      };
+    case "ducker":
+      return {
+        id: raw.id,
+        type: raw.type,
+        enabled: raw.enabled !== false,
+        params: normalizeDuckerParams(raw.params),
+      };
+    case "stereo":
+      return {
+        id: raw.id,
+        type: raw.type,
+        enabled: raw.enabled !== false,
+        params: normalizeStereoParams(raw.params),
+      };
     case "delay":
       return {
         id: raw.id,
@@ -161,31 +230,13 @@ export function reorderAudioEffects(
   return unchanged ? null : next;
 }
 
-export function mergeEffectParams(
-  effect: EqAudioEffect,
-  patch: Partial<EqEffectParams & DelayEffectParams & ReverbEffectParams> | undefined,
-): EqEffectParams;
-export function mergeEffectParams(
-  effect: DelayAudioEffect,
-  patch: Partial<EqEffectParams & DelayEffectParams & ReverbEffectParams> | undefined,
-): DelayEffectParams;
-export function mergeEffectParams(
-  effect: ReverbAudioEffect,
-  patch: Partial<EqEffectParams & DelayEffectParams & ReverbEffectParams> | undefined,
-): ReverbEffectParams;
-export function mergeEffectParams(
-  effect: AudioEffect,
-  patch: Partial<EqEffectParams & DelayEffectParams & ReverbEffectParams> | undefined,
-): AudioEffect["params"] {
-  if (!patch) return effect.params;
-  switch (effect.type) {
-    case "eq":
-      return normalizeEqParams({ ...effect.params, ...patch });
-    case "delay":
-      return normalizeDelayParams({ ...effect.params, ...patch });
-    case "reverb":
-      return normalizeReverbParams({ ...effect.params, ...patch });
-  }
+export function mergeEffectParams<T extends AudioEffect>(
+  effect: T,
+  patch: AudioEffectParamsPatch | undefined,
+): T["params"] {
+  // Normalization selects only the fields belonging to this effect type.
+  return normalizeAudioEffect({ ...effect, params: { ...effect.params, ...patch } } as AudioEffect)
+    .params;
 }
 
 export function effectChainKey(effects: AudioEffect[] | undefined): string {

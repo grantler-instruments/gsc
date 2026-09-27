@@ -17,7 +17,7 @@ import { DEFAULT_AUDIO_MIXER_HEIGHT, MIN_AUDIO_MIXER_HEIGHT } from "../../lib/au
 import { useProjectStore } from "../../stores/project";
 import { useUiStore } from "../../stores/ui";
 import type { AudioBus } from "../../types/audio-bus";
-import type { AudioEffectType } from "../../types/audio-effect";
+import type { AudioEffectParamsPatch, AudioEffectType } from "../../types/audio-effect";
 import { BusPremixer, premixerContentWidth } from "./BusPremixer";
 
 const MIXER_RESIZE_HANDLE_HEIGHT = 6;
@@ -53,7 +53,7 @@ interface BusStripProps {
   onAddEffect: (type: AudioEffectType) => void;
   onUpdateEffect: (
     effectId: string,
-    patch: { params?: Record<string, number>; enabled?: boolean },
+    patch: { params?: AudioEffectParamsPatch; enabled?: boolean },
   ) => void;
   onRemoveEffect: (effectId: string) => void;
   onReorderEffect: (draggedId: string, targetId: string, place: "before" | "after") => void;
@@ -310,6 +310,7 @@ function BusStrip({
           >
             <BusPremixer
               bus={bus}
+              audioBuses={audioBuses}
               canEdit={canEdit}
               onAddEffect={(type) => {
                 onAddEffect(type);
