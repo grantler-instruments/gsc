@@ -577,6 +577,7 @@
     "fadeOutSeconds": "Fade out (s)",
     "volume": "Volume",
     "pan": "Pan",
+    "audioRouting": "Audio routing",
     "audioBus": "Output bus",
     "audioBusDirect": "Direct (master)",
     "opacity": "Opacity",

@@ -84,22 +84,46 @@ export function CueChannelStrip({
     if (state.fadesByTargetId[cue.id]?.property === property) state.clearFade(cue.id);
     updateCue(cue.id, { [property]: value });
   };
+  if (inspector) {
+    return (
+      <Stack spacing={1.5}>
+        <SliderNumberField
+          label={t("inspector.volume")}
+          value={resolveEffectiveVolume(cue.id, cue.volume ?? 1, frame || undefined)}
+          min={0}
+          max={1}
+          step={0.01}
+          readOnly={readOnly}
+          onChange={(value) => changeLevel("volume", value)}
+        />
+        <SliderNumberField
+          label={t("inspector.pan")}
+          value={resolveEffectivePan(cue.id, cue.pan ?? 0, frame || undefined)}
+          min={-1}
+          max={1}
+          step={0.01}
+          readOnly={readOnly}
+          onChange={(value) => changeLevel("pan", value)}
+        />
+      </Stack>
+    );
+  }
   return (
     <Stack
       data-cue-strip={cue.id}
       spacing={1}
       sx={{
-        width: inspector ? "100%" : 174,
-        minWidth: inspector ? 0 : 174,
+        width: 174,
+        minWidth: 174,
         flexShrink: 0,
-        height: inspector ? 320 : "100%",
+        height: "100%",
         minHeight: 285,
         border: 1,
         borderColor: "divider",
         borderRadius: 1,
         bgcolor: "background.default",
         p: 1,
-        mr: inspector ? 0 : 1,
+        mr: 1,
       }}
     >
       <Typography noWrap variant="subtitle2" title={`${cue.number} ${cue.name}`}>
@@ -113,31 +137,19 @@ export function CueChannelStrip({
             ? ` · ${t("audioMixer.video")}`
             : ""}
       </Typography>
-      {inspector ? (
-        <SliderNumberField
-          label={t("inspector.pan")}
-          value={resolveEffectivePan(cue.id, cue.pan ?? 0, frame || undefined)}
+      <Box sx={{ px: 1 }}>
+        <Typography variant="caption">{t("audioMixer.pan")}</Typography>
+        <Slider
+          size="small"
           min={-1}
           max={1}
           step={0.01}
-          readOnly={readOnly}
-          onChange={(value) => changeLevel("pan", value)}
+          disabled={readOnly}
+          value={resolveEffectivePan(cue.id, cue.pan ?? 0, frame || undefined)}
+          aria-label={`${cue.name} ${t("audioMixer.pan")}`}
+          onChange={(_, v) => changeLevel("pan", v as number)}
         />
-      ) : (
-        <Box sx={{ px: 1 }}>
-          <Typography variant="caption">{t("audioMixer.pan")}</Typography>
-          <Slider
-            size="small"
-            min={-1}
-            max={1}
-            step={0.01}
-            disabled={readOnly}
-            value={resolveEffectivePan(cue.id, cue.pan ?? 0, frame || undefined)}
-            aria-label={`${cue.name} ${t("audioMixer.pan")}`}
-            onChange={(_, v) => changeLevel("pan", v as number)}
-          />
-        </Box>
-      )}
+      </Box>
       <ChannelFader
         meterId={cueMeterId(cue.id)}
         label={cue.name}

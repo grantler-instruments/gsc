@@ -516,6 +516,7 @@
     "fadeOutSeconds": "Ausblenden (s)",
     "volume": "Lautstärke",
     "pan": "Panorama",
+    "audioRouting": "Audio-Routing",
     "audioBus": "Ausgangsbuss",
     "audioBusDirect": "Direkt (Master)",
     "opacity": "Deckkraft",

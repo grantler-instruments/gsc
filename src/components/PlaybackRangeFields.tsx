@@ -1,4 +1,5 @@
 import Box from "@mui/material/Box";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { formatTime, normalizePlaybackRange } from "../lib/time";
@@ -7,7 +8,6 @@ import { AudioWaveform } from "./AudioWaveform";
 import {
   inspectorDerivedSx,
   inspectorFieldSx,
-  inspectorGroupHintSx,
   inspectorGroupLegendSx,
   inspectorGroupSx,
   inspectorInfiniteBtnSx,
@@ -36,6 +36,11 @@ export function PlaybackRangeFields({ cue, readOnly = false, onChange }: Playbac
   const hasWaveform = (cue.type === "audio" || isVideo) && !!cue.assetPath;
   const effectiveOutLabel = outTime !== undefined ? formatTime(outTime) : t("inspector.endOfFile");
   const sliceSec = outTime !== undefined && outTime > inTime ? outTime - inTime : null;
+  const rangeHint = hasWaveform
+    ? t("inspector.waveformRangeHint")
+    : isImage
+      ? t("inspector.imageRangeHint")
+      : t("inspector.numericRangeHint");
 
   const patchIn = (value: number) => {
     const nextIn = Math.max(0, value);
@@ -56,15 +61,12 @@ export function PlaybackRangeFields({ cue, readOnly = false, onChange }: Playbac
   return (
     <Box component="fieldset" sx={inspectorGroupSx}>
       <Box component="legend" sx={inspectorGroupLegendSx}>
-        {t("inspector.playbackRange")}
+        <Tooltip title={rangeHint} describeChild arrow>
+          <Box component="span" tabIndex={0} sx={{ cursor: "help" }}>
+            {t("inspector.playbackRange")}
+          </Box>
+        </Tooltip>
       </Box>
-      <Typography component="p" sx={inspectorGroupHintSx}>
-        {hasWaveform
-          ? t("inspector.waveformRangeHint")
-          : isImage
-            ? t("inspector.imageRangeHint")
-            : t("inspector.numericRangeHint")}
-      </Typography>
 
       {hasWaveform && (
         <Box sx={inspectorWaveformFieldSx}>

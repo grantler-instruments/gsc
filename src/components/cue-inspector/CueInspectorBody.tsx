@@ -10,9 +10,9 @@ import { CueAssetAssign } from "../CueAssetAssign";
 import { FadeInspectorFields } from "../FadeInspectorFields";
 import { StopInspectorFields } from "../StopInspectorFields";
 import { WaitInspectorFields } from "../WaitInspectorFields";
+import { AudioRoutingInspectorFields } from "./AudioRoutingInspectorFields";
 import { CueInspectorNameFields } from "./CueInspectorNameFields";
 import { DmxInspectorFields } from "./DmxInspectorFields";
-import { LiveAudioInspectorFields } from "./LiveAudioInspectorFields";
 import { MediaInspectorFields } from "./MediaInspectorFields";
 import { MidiInspectorFields } from "./MidiInspectorFields";
 import { OscInspectorFields } from "./OscInspectorFields";
@@ -132,13 +132,12 @@ export function CueInspectorBody({
 
       <TtsInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
 
-      {cue.type === "liveAudio" && (
-        <LiveAudioInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
-      )}
-
       <MediaInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
 
       {hasCueChannelStrip(cue) && <CueChannelStrip cue={cue} readOnly={readOnly} inspector />}
+      {(hasCueChannelStrip(cue) || cue.type === "tts") && (
+        <AudioRoutingInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
+      )}
     </>
   );
 }
