@@ -6,6 +6,7 @@ import { useDmxFadeEngine } from "./useDmxFadeEngine";
 import { useDraftSaveReminder } from "./useDraftSaveReminder";
 import { useEnttecProConnection } from "./useEnttecProConnection";
 import { useFadeAnimation } from "./useFadeAnimation";
+import { useMediaMemoryManager } from "./useMediaMemoryManager";
 import { useMidiEngine } from "./useMidiEngine";
 import { useMidiInput } from "./useMidiInput";
 import { useNdiOutputEngine } from "./useNdiOutputEngine";
@@ -31,6 +32,7 @@ export function useAppRuntime(): boolean {
   useShowModeKeepAwake();
   useAppKeyboard();
   useAudioEngine();
+  useMediaMemoryManager(sessionReady);
   useMidiEngine();
   useOscEngine();
   useDmxEngine();

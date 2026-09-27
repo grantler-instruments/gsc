@@ -88,16 +88,18 @@ async function findLegacyCachedAssetBlob(
   return undefined;
 }
 
-/** Store asset bytes in IndexedDB, with legacy Cache API fallback reads. */
-export async function cacheAsset(projectId: string, path: string, blob: Blob): Promise<void> {
+/** Store bytes with legacy Cache API fallback; true means the primary IDB write succeeded. */
+export async function cacheAsset(projectId: string, path: string, blob: Blob): Promise<boolean> {
+  let stored = false;
   try {
     await initProjectIdb();
     await idbPutAsset(projectId, path, blob);
+    stored = true;
   } catch (err) {
     console.warn(`[asset-cache] Could not write IDB for ${path}`, err);
   }
 
-  if (typeof caches === "undefined") return;
+  if (typeof caches === "undefined") return stored;
   try {
     const cache = await caches.open(CACHE_NAME);
     const normalized = normalizePath(path);
@@ -106,6 +108,7 @@ export async function cacheAsset(projectId: string, path: string, blob: Blob): P
   } catch (err) {
     console.warn(`[asset-cache] Could not open cache for ${path}`, err);
   }
+  return stored;
 }
 
 /** Read asset bytes for a project; IndexedDB first, then legacy Cache API. */
