@@ -578,6 +578,7 @@
     "volume": "Volume",
     "pan": "Pan",
     "audioRouting": "Audio routing",
+    "moveTriggerNote": "Move trigger note (drag or use arrow keys)",
     "audioBus": "Output bus",
     "audioBusDirect": "Direct (master)",
     "opacity": "Opacity",

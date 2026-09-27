@@ -39,6 +39,8 @@ interface UiState {
   audioMixerOpen: boolean;
   /** Height of the audio mixer dock in pixels. */
   audioMixerHeight: number;
+  triggerNotePosition: { x: number; y: number } | null;
+  setTriggerNotePosition: (position: { x: number; y: number }) => void;
   setSidebarTab: (tab: SidebarTabId) => void;
   setRightSidebarTab: (tab: RightSidebarTabId) => void;
   setDarkMode: (dark: boolean) => void;
@@ -83,6 +85,8 @@ export const useUiStore = create<UiState>()(
         hoveredAssetPath: null,
         audioMixerOpen: false,
         audioMixerHeight: DEFAULT_AUDIO_MIXER_HEIGHT,
+        triggerNotePosition: null,
+        setTriggerNotePosition: (triggerNotePosition) => set({ triggerNotePosition }),
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
         setRightSidebarTab: (rightSidebarTab) => set({ rightSidebarTab }),
         setDarkMode: (darkMode) => set({ darkMode }),
@@ -142,6 +146,7 @@ export const useUiStore = create<UiState>()(
           hotCuePanelOrientation: s.hotCuePanelOrientation,
           hotCuePanelVisible: s.hotCuePanelVisible,
           audioMixerHeight: s.audioMixerHeight,
+          triggerNotePosition: s.triggerNotePosition,
         }),
         merge: (persisted, current) => {
           const saved = persisted as Partial<UiState> | undefined;
