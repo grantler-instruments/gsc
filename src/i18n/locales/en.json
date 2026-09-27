@@ -761,6 +761,16 @@
     "expandAboveCueList": "Expand above cue list"
   },
   "audioMixer": {
+    "clip": "CLIP",
+    "playing": "Playing",
+    "idle": "Idle",
+    "liveInput": "Live input",
+    "video": "Video",
+    "master": "Master",
+    "allCues": "All audio cues",
+    "activeCues": "Active audio cues",
+    "noAudioCues": "Add an audio or live-audio cue to see its channel strip.",
+    "noActiveCues": "No active audio cues. Switch to all audio cues to prepare levels.",
     "limiter": "Limiter",
     "ducker": "Ducker",
     "stereo": "Stereo utility",

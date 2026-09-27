@@ -11,14 +11,18 @@ import Slider from "@mui/material/Slider";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { busMeterId } from "../../audio/meters";
 import { DEFAULT_AUDIO_MIXER_HEIGHT, MIN_AUDIO_MIXER_HEIGHT } from "../../lib/audio-mixer-layout";
 import { useProjectStore } from "../../stores/project";
+import { useTransportStore } from "../../stores/transport";
 import { useUiStore } from "../../stores/ui";
 import type { AudioBus } from "../../types/audio-bus";
 import type { AudioEffectParamsPatch, AudioEffectType } from "../../types/audio-effect";
+import { AudioLevelMeter } from "./AudioLevelMeter";
 import { BusPremixer, premixerContentWidth } from "./BusPremixer";
+import { CueChannelStrip, hasCueChannelStrip, MasterChannelStrip } from "./CueChannelStrip";
 
 const MIXER_RESIZE_HANDLE_HEIGHT = 6;
 const FADER_COLUMN_WIDTH = 140;
@@ -120,9 +124,12 @@ function BusFaderControls({ bus, audioBuses, canEdit, onUpdate }: BusFaderContro
           minHeight: 28,
           position: "relative",
           display: "flex",
-          justifyContent: "center",
+          justifyContent: "flex-start",
         }}
       >
+        <Box sx={{ ml: 5, height: "100%" }}>
+          <AudioLevelMeter meterId={busMeterId(bus.id)} label={bus.name} />
+        </Box>
         <Slider
           size="small"
           orientation="vertical"
@@ -425,6 +432,16 @@ export function AudioMixerDock() {
   const audioMixerHeight = useUiStore((s) => s.audioMixerHeight);
   const setAudioMixerHeight = useUiStore((s) => s.setAudioMixerHeight);
   const canEdit = !showMode;
+  const [showAllCues, setShowAllCues] = useState(false);
+  const cueLists = useProjectStore((s) => s.cueLists);
+  const activeCueIds = useTransportStore((s) => s.activeCueIds);
+  const mixerCues = useMemo(
+    () =>
+      cueLists
+        .flatMap((list) => list.cues)
+        .filter((cue) => hasCueChannelStrip(cue) && (showAllCues || activeCueIds.includes(cue.id))),
+    [cueLists, activeCueIds, showAllCues],
+  );
   const audioBuses = useProjectStore((s) => s.audioBuses);
   const addAudioBus = useProjectStore((s) => s.addAudioBus);
   const removeAudioBus = useProjectStore((s) => s.removeAudioBus);
@@ -447,6 +464,8 @@ export function AudioMixerDock() {
 
   return (
     <Box
+      role="region"
+      aria-label={t("audioMixer.title")}
       sx={{
         height: audioMixerHeight,
         flexShrink: 0,
@@ -482,6 +501,13 @@ export function AudioMixerDock() {
           <Typography variant="subtitle2" sx={{ flex: 1, m: 0 }}>
             {t("audioMixer.title")}
           </Typography>
+          <Button
+            size="small"
+            onClick={() => setShowAllCues((value) => !value)}
+            aria-pressed={showAllCues}
+          >
+            {showAllCues ? t("audioMixer.allCues") : t("audioMixer.activeCues")}
+          </Button>
           <IconButton
             size="small"
             title={t("audioMixer.close")}
@@ -498,45 +524,45 @@ export function AudioMixerDock() {
               flex: 1,
               minWidth: 0,
               display: "flex",
-              alignItems: audioBuses.length === 0 ? "center" : "stretch",
-              justifyContent: audioBuses.length === 0 ? "center" : "flex-start",
+              alignItems: "stretch",
+              justifyContent: "flex-start",
               overflow: "auto",
               px: 1,
               py: 1,
             }}
           >
-            {audioBuses.length === 0 ? (
-              <Stack sx={{ alignItems: "center", gap: 1, px: 2, py: 1 }}>
-                <Typography variant="body2" color="text.secondary">
-                  {t("audioMixer.empty")}
-                </Typography>
-                {canEdit && (
-                  <Button size="small" variant="outlined" onClick={handleAddBus}>
-                    {t("audioMixer.addBus")}
-                  </Button>
-                )}
-              </Stack>
-            ) : (
-              audioBuses.map((bus) => (
-                <BusStrip
-                  key={bus.id}
-                  bus={bus}
-                  audioBuses={audioBuses}
-                  canEdit={canEdit}
-                  onUpdate={(patch) => updateAudioBus(bus.id, patch)}
-                  onRemove={() => removeAudioBus(bus.id)}
-                  onAddEffect={(type) => addBusEffect(bus.id, type)}
-                  onUpdateEffect={(effectId, patch) => updateBusEffect(bus.id, effectId, patch)}
-                  onRemoveEffect={(effectId) => removeBusEffect(bus.id, effectId)}
-                  onReorderEffect={(draggedId, targetId, place) =>
-                    reorderBusEffectRelative(bus.id, draggedId, targetId, place)
-                  }
-                />
-              ))
+            {mixerCues.map((cue) => (
+              <CueChannelStrip key={cue.id} cue={cue} readOnly={!canEdit} />
+            ))}
+            {mixerCues.length === 0 && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ width: 140, flexShrink: 0, p: 2 }}
+              >
+                {showAllCues ? t("audioMixer.noAudioCues") : t("audioMixer.noActiveCues")}
+              </Typography>
             )}
+            {audioBuses.map((bus) => (
+              <BusStrip
+                key={bus.id}
+                bus={bus}
+                audioBuses={audioBuses}
+                canEdit={canEdit}
+                onUpdate={(patch) => updateAudioBus(bus.id, patch)}
+                onRemove={() => removeAudioBus(bus.id)}
+                onAddEffect={(type) => addBusEffect(bus.id, type)}
+                onUpdateEffect={(effectId, patch) => updateBusEffect(bus.id, effectId, patch)}
+                onRemoveEffect={(effectId) => removeBusEffect(bus.id, effectId)}
+                onReorderEffect={(draggedId, targetId, place) =>
+                  reorderBusEffectRelative(bus.id, draggedId, targetId, place)
+                }
+              />
+            ))}
+            <MasterChannelStrip readOnly={!canEdit} />
           </Box>
 
-          {canEdit && audioBuses.length > 0 && (
+          {canEdit && (
             <Box
               sx={{
                 flexShrink: 0,

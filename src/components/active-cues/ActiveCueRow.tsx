@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { cueMeterId } from "../../audio/meters";
 import { useDmxFadeCueProgress } from "../../hooks/useDmxFadeCueProgress";
 import { usePropertyFadeCueProgress } from "../../hooks/usePropertyFadeCueProgress";
 import { formatDmxCue } from "../../lib/dmx";
@@ -29,6 +30,8 @@ import { useTransportStore } from "../../stores/transport";
 import { useGscTokens } from "../../theme/useGscTokens";
 import type { Cue } from "../../types/cue";
 import { AudioWaveform } from "../AudioWaveform";
+import { AudioLevelMeter } from "../audio-mixer/AudioLevelMeter";
+import { hasCueChannelStrip } from "../audio-mixer/CueChannelStrip";
 import { CueTypeBadge } from "../CueTypeIcon";
 import { PlaybackProgress } from "../PlaybackProgress";
 import { ActiveCueLevelControl } from "./ActiveCueLevelControl";
@@ -162,6 +165,9 @@ export const ActiveCueRow = memo(function ActiveCueRow({
         {playback && cueShowsPlaybackProgress(cue) && <PlaybackProgress progress={playback} />}
         {lightFadeProgress && <PlaybackProgress progress={lightFadeProgress} />}
         {propertyFadeProgress && <PlaybackProgress progress={propertyFadeProgress} />}
+        {hasCueChannelStrip(cue) && (
+          <AudioLevelMeter meterId={cueMeterId(cue.id)} label={cue.name} compact />
+        )}
         {canVolumeFadeTarget(cue) && (
           <ActiveCueLevelControl
             label={t("activeCues.volumeShort")}

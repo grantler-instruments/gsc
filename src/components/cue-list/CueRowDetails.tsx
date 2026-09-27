@@ -1,5 +1,6 @@
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import { cueMeterId } from "../../audio/meters";
 import { useDmxFadeCueProgress } from "../../hooks/useDmxFadeCueProgress";
 import { usePropertyFadeCueProgress } from "../../hooks/usePropertyFadeCueProgress";
 import { getCueAssetWarning } from "../../lib/cue-asset";
@@ -33,6 +34,8 @@ import { useProjectStore } from "../../stores/project";
 import type { RunningSequence } from "../../stores/transport";
 import { cueDetailSx } from "../../theme/cueStyles";
 import type { Cue } from "../../types/cue";
+import { AudioLevelMeter } from "../audio-mixer/AudioLevelMeter";
+import { hasCueChannelStrip } from "../audio-mixer/CueChannelStrip";
 import { PlaybackProgress } from "../PlaybackProgress";
 
 interface CueRowDetailsProps {
@@ -89,6 +92,9 @@ export function CueRowDetails({
 
   return (
     <>
+      {hasCueChannelStrip(cue) && (
+        <AudioLevelMeter meterId={cueMeterId(cue.id)} label={cue.name} compact />
+      )}
       {isParallel && (
         <Typography component="span" sx={cueDetailSx}>
           {childCount === 0

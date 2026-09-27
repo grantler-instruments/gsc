@@ -10,6 +10,7 @@ import type { AudioBus } from "../types/audio-bus";
 import type { Cue } from "../types/cue";
 import { getCachedAudioBuffer, loadAudioBuffer } from "./buffer-cache";
 import { prepareBusEffects } from "./effects/worklet";
+import { audioMeters, cueMeterId } from "./meters";
 import { MixerGraph } from "./mixer";
 import {
   seekVideoVoice,
@@ -136,12 +137,14 @@ export class AudioEngine {
   private connectVoicePanner(panner: StereoPannerNode, cue: Cue): string | undefined {
     const busId = resolveCueAudioBusId(cue, this.audioBuses);
     panner.connect(this.voiceDestination(cue));
+    if (this.ctx) audioMeters.attach(cueMeterId(cue.id), this.ctx, panner);
     return busId;
   }
 
   private stopVoice(cueId: string): void {
     const voice = this.voices.get(cueId);
     if (!voice) return;
+    audioMeters.remove(cueMeterId(cueId));
     voice.source.onended = null;
     try {
       voice.source.stop();
@@ -157,6 +160,7 @@ export class AudioEngine {
   private stopVideoVoice(cueId: string): void {
     const voice = this.videoVoices.get(cueId);
     if (!voice) return;
+    audioMeters.remove(cueMeterId(cueId));
     stopVideoVoice(voice);
     this.videoVoices.delete(cueId);
     this.notifyVideoVoiceListeners();
@@ -165,6 +169,7 @@ export class AudioEngine {
   private stopLiveAudioVoice(cueId: string): void {
     const voice = this.liveAudioVoices.get(cueId);
     if (!voice) return;
+    audioMeters.remove(cueMeterId(cueId));
     voice.source.disconnect();
     voice.splitter?.disconnect();
     voice.gain.disconnect();
@@ -173,10 +178,18 @@ export class AudioEngine {
     this.liveAudioVoices.delete(cueId);
   }
 
-  private async startLiveAudioVoice(cue: Cue, ctx: AudioContext): Promise<void> {
+  private async startLiveAudioVoice(
+    cue: Cue,
+    ctx: AudioContext,
+    generation: number,
+  ): Promise<void> {
     if (this.liveAudioVoices.has(cue.id)) return;
     const deviceId = usePreferencesStore.getState().audioInputDeviceId ?? undefined;
     const stream = await openAudioInputStream(deviceId);
+    if (generation !== this.syncGeneration || this.liveAudioVoices.has(cue.id)) {
+      for (const track of stream.getTracks()) track.stop();
+      return;
+    }
     const source = ctx.createMediaStreamSource(stream);
     const channel = Math.max(1, Math.floor(cue.liveAudioChannel ?? 1));
     const splitter = ctx.createChannelSplitter(Math.max(channel, 2));
@@ -232,7 +245,7 @@ export class AudioEngine {
 
     source.onended = () => {
       if (this.voices.get(cue.id)?.source === source) {
-        this.voices.delete(cue.id);
+        this.stopVoice(cue.id);
         this.handleVoiceEnded(cue.id);
       }
     };
@@ -305,6 +318,7 @@ export class AudioEngine {
 
     try {
       const ctx = await this.ensureContext();
+      if (generation !== this.syncGeneration) return;
       const cueById = new Map(cues.map((c) => [c.id, c]));
       const targetAudio = new Set<string>();
       const targetLiveAudio = new Set<string>();
@@ -312,9 +326,13 @@ export class AudioEngine {
 
       for (const id of activeCueIds) {
         const cue = cueById.get(id);
-        if (!cue?.assetPath) continue;
+        if (!cue) continue;
+        if (cue.type === "liveAudio") {
+          targetLiveAudio.add(id);
+          continue;
+        }
+        if (!cue.assetPath) continue;
         if (cue.type === "audio" || cue.type === "tts") targetAudio.add(id);
-        if (cue.type === "liveAudio") targetLiveAudio.add(id);
         if (cue.type === "video") targetVideo.add(id);
       }
 
@@ -428,8 +446,12 @@ export class AudioEngine {
 
       for (const cueId of targetLiveAudio) {
         const cue = cueById.get(cueId);
-        if (cue) await this.startLiveAudioVoice(cue, ctx);
+        if (generation !== this.syncGeneration) return;
+        if (cue) await this.startLiveAudioVoice(cue, ctx, generation);
       }
+
+      if (generation !== this.syncGeneration) return;
+      this.updateActiveVoiceLevels(cues);
 
       const missingAudio =
         targetAudio.size > 0 && [...targetAudio].every((id) => !this.voices.has(id));

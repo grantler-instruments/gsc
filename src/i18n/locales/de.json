@@ -650,6 +650,16 @@
     "expandAboveCueList": "Über Cue-Liste ausklappen"
   },
   "audioMixer": {
+    "clip": "CLIP",
+    "playing": "Läuft",
+    "idle": "Inaktiv",
+    "liveInput": "Live-Eingang",
+    "video": "Video",
+    "master": "Master",
+    "allCues": "Alle Audio-Cues",
+    "activeCues": "Aktive Audio-Cues",
+    "noAudioCues": "Füge einen Audio- oder Live-Audio-Cue hinzu, um seinen Kanalzug zu sehen.",
+    "noActiveCues": "Keine aktiven Audio-Cues. Wechsle zu allen Audio-Cues, um die Pegel vorzubereiten.",
     "limiter": "Limiter",
     "ducker": "Ducker",
     "stereo": "Stereo-Werkzeug",

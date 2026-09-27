@@ -8,7 +8,6 @@ import { closeAudioInputStream, openAudioInputStream } from "../../lib/audio-inp
 import { usePreferencesStore } from "../../stores/preferences";
 import type { Cue } from "../../types/cue";
 import { inspectorFieldLabelSx, inspectorFieldSx } from "../inspectorSx";
-import { AudioBusSelect } from "./AudioBusSelect";
 
 interface Props {
   cue: Cue;
@@ -29,17 +28,23 @@ export function LiveAudioInspectorFields({ cue, readOnly, onChange }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    let refreshGeneration = 0;
     const mediaDevices = navigator.mediaDevices;
     const refresh = async () => {
+      const generation = ++refreshGeneration;
       try {
         const stream = await openAudioInputStream(deviceId ?? undefined);
         try {
           const track = stream.getAudioTracks()[0];
-          const reportedCount =
-            track?.getCapabilities?.().channelCount?.max ?? track?.getSettings().channelCount ?? 1;
+          const capabilities = track?.getCapabilities?.();
+          const settings = track?.getSettings();
+          const reportedCount = Math.max(
+            capabilities?.channelCount?.max ?? 1,
+            settings?.channelCount ?? 1,
+          );
           const count = Number.isFinite(reportedCount) ? Math.max(1, Math.floor(reportedCount)) : 1;
           const available = await mediaDevices?.enumerateDevices();
-          if (!cancelled) {
+          if (!cancelled && generation === refreshGeneration) {
             setDevices(available ?? []);
             setInputChannels({ deviceId, count });
           }
@@ -47,7 +52,7 @@ export function LiveAudioInspectorFields({ cue, readOnly, onChange }: Props) {
           closeAudioInputStream(stream);
         }
       } catch {
-        if (!cancelled) {
+        if (!cancelled && generation === refreshGeneration) {
           setDevices([]);
           setInputChannels(null);
         }
@@ -76,11 +81,6 @@ export function LiveAudioInspectorFields({ cue, readOnly, onChange }: Props) {
   if (cue.type !== "liveAudio") return null;
   return (
     <Box sx={inspectorFieldSx}>
-      <AudioBusSelect
-        value={cue.audioBusId}
-        readOnly={readOnly}
-        onChange={(audioBusId) => onChange({ audioBusId })}
-      />
       <Typography component="label" htmlFor="live-audio-channel-select" sx={inspectorFieldLabelSx}>
         {t("inspector.audioChannel")}
         {deviceLabel ? ` (${deviceLabel})` : ""}

@@ -28,6 +28,14 @@ export function createMockAudioContext(): AudioContext {
   const destination = createMockAudioNode();
   return {
     destination,
+    sampleRate: 48000,
+    state: "running",
+    createChannelSplitter: () => createMockAudioNode(),
+    createAnalyser: () => ({
+      ...createMockAudioNode(),
+      fftSize: 2048,
+      getFloatTimeDomainData: (data: Float32Array) => data.fill(0),
+    }),
     createGain: () => createMockAudioNode({ gain: { value: 1 } }),
     createStereoPanner: () => createMockAudioNode({ pan: { value: 0 } }),
   } as unknown as AudioContext;

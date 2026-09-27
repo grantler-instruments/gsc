@@ -7,7 +7,6 @@ import { inspectorFieldLabelSx, inspectorFieldSx } from "../inspectorSx";
 import { LoopFields } from "../LoopFields";
 import { PlaybackRangeFields } from "../PlaybackRangeFields";
 import { SliderNumberField } from "../SliderNumberField";
-import { AudioBusSelect } from "./AudioBusSelect";
 
 interface MediaInspectorFieldsProps {
   cue: Cue;
@@ -34,34 +33,7 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
       <PlaybackRangeFields cue={cue} readOnly={readOnly} onChange={onChange} />
 
       {(cue.type === "audio" || cue.type === "video") && (
-        <>
-          <LoopFields cue={cue} readOnly={readOnly} onChange={onChange} />
-          <SliderNumberField
-            label={t("inspector.volume")}
-            value={cue.volume ?? 1}
-            min={0}
-            max={1}
-            step={0.01}
-            readOnly={readOnly}
-            onChange={(volume) => onChange({ volume })}
-            inputWidth={48}
-          />
-          <SliderNumberField
-            label={t("inspector.pan")}
-            value={cue.pan ?? 0}
-            min={-1}
-            max={1}
-            step={0.01}
-            readOnly={readOnly}
-            onChange={(pan) => onChange({ pan })}
-            inputWidth={48}
-          />
-          <AudioBusSelect
-            value={cue.audioBusId}
-            readOnly={readOnly}
-            onChange={(audioBusId) => onChange({ audioBusId })}
-          />
-        </>
+        <LoopFields cue={cue} readOnly={readOnly} onChange={onChange} />
       )}
 
       {(cue.type === "video" || cue.type === "image") && (

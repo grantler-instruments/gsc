@@ -4,6 +4,7 @@ import { cueNeedsAsset } from "../../lib/cue-asset";
 import { isContainerCue, isFadeCue, isStopCue, isWaitCue } from "../../lib/cues";
 import { getTtsCueWarning, isTtsCue } from "../../lib/tts";
 import type { Cue, MidiCueData, OscCueData } from "../../types/cue";
+import { CueChannelStrip, hasCueChannelStrip } from "../audio-mixer/CueChannelStrip";
 import { ContainerInspectorFields } from "../ContainerInspectorFields";
 import { CueAssetAssign } from "../CueAssetAssign";
 import { FadeInspectorFields } from "../FadeInspectorFields";
@@ -134,6 +135,8 @@ export function CueInspectorBody({
       {cue.type === "liveAudio" && (
         <LiveAudioInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
       )}
+
+      {hasCueChannelStrip(cue) && <CueChannelStrip cue={cue} readOnly={readOnly} inspector />}
 
       <MediaInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
     </>
