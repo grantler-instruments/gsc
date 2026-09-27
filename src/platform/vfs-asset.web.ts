@@ -14,7 +14,7 @@ export async function loadAssetBlobFromProjectCache(
   const blob = await getCachedAsset(projectId, normalized);
   if (!blob) return undefined;
 
-  vfsPut(normalized, blob, { cache: false });
+  vfsPut(normalized, blob, { cache: false, persisted: true });
   useVfsStore.getState().refreshEntriesLoaded();
   return blob;
 }

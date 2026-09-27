@@ -67,9 +67,10 @@ import type { PendingDraftProject, StartupProjectsChoice } from "../stores/start
 import { requestStartupProjectsChoice } from "../stores/startup-projects-prompt";
 import type { VfsEntry } from "../stores/vfs";
 import { useVfsStore } from "../stores/vfs";
-import { vfsClear, vfsGet, vfsHas } from "../vfs/engine";
+import { pauseBlobEviction, vfsClear, vfsGet, vfsHas } from "../vfs/engine";
 import { assetKindFromPath } from "../vfs/import";
 import { markGscProjectPackage } from "./macos-package";
+import { resolveAssetBlob } from "./vfs-asset";
 
 const LAST_ROOT_KEY = "gsc-tauri-last-project-root";
 const DRAFT_ROOT_KEY = "gsc-tauri-draft-root";
@@ -493,6 +494,13 @@ async function promptAndCommitProjectLocation(): Promise<string | null> {
         defaultPath,
       );
       if (!folder) return null;
+      // Materialize media before changing the root used to reload evicted files.
+      const snapshot = useProjectStore.getState().getSnapshot();
+      if (snapshot.version === 2) {
+        for (const path of collectSessionAssetPaths(snapshot, useVfsStore.getState().entries)) {
+          if (!(await resolveAssetBlob(path))) throw new Error(`Missing asset: ${path}`);
+        }
+      }
       useProjectLocationStore.getState().setRootDir(folder, { temporary: false });
       localStorage.setItem(LAST_ROOT_KEY, folder);
       localStorage.removeItem(DRAFT_ROOT_KEY);
@@ -714,6 +722,7 @@ export async function persistTauriProject(options?: {
   promptForLocation?: boolean;
   saveAs?: boolean;
 }): Promise<void> {
+  const resumeEviction = pauseBlobEviction();
   try {
     const rootDir = await resolveProjectRootDir(options);
     if (!rootDir) return;
@@ -723,6 +732,8 @@ export async function persistTauriProject(options?: {
     syncDraftRootKey();
   } catch {
     notifyWarningDeduped(t("notification.autosaveFailed"));
+  } finally {
+    resumeEviction();
   }
 }
 
@@ -732,7 +743,7 @@ export async function exportProjectBundleTauri(): Promise<boolean> {
 
   const paths = collectSessionAssetPaths(snapshot, useVfsStore.getState().entries);
 
-  const { zip, missing } = await buildProjectBundleZip(snapshot, paths, vfsGet);
+  const { zip, missing } = await buildProjectBundleZip(snapshot, paths, resolveAssetBlob);
   if (missing.length > 0) {
     notifyWarning(t("notification.exportMissingAssets", { count: missing.length }));
   }
