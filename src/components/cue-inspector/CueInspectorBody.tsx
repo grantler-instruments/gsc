@@ -11,6 +11,7 @@ import { StopInspectorFields } from "../StopInspectorFields";
 import { WaitInspectorFields } from "../WaitInspectorFields";
 import { CueInspectorNameFields } from "./CueInspectorNameFields";
 import { DmxInspectorFields } from "./DmxInspectorFields";
+import { LiveAudioInspectorFields } from "./LiveAudioInspectorFields";
 import { MediaInspectorFields } from "./MediaInspectorFields";
 import { MidiInspectorFields } from "./MidiInspectorFields";
 import { OscInspectorFields } from "./OscInspectorFields";
@@ -129,6 +130,10 @@ export function CueInspectorBody({
       />
 
       <TtsInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
+
+      {cue.type === "liveAudio" && (
+        <LiveAudioInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
+      )}
 
       <MediaInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
     </>

@@ -21,6 +21,7 @@ import { CueTypeIcon } from "./CueTypeIcon";
 type AddCueMenuType = Extract<
   CueType,
   | "audio"
+  | "liveAudio"
   | "video"
   | "image"
   | "tts"
@@ -38,7 +39,7 @@ type AddCueMenuType = Extract<
 >;
 
 const ADD_CUE_SECTIONS: { subheaderKey?: string; types: readonly AddCueMenuType[] }[] = [
-  { types: ["audio", "video", "image", "tts", "midi", "osc", "dmx"] },
+  { types: ["audio", "liveAudio", "video", "image", "tts", "midi", "osc", "dmx"] },
   { subheaderKey: "cueMenu.sectionGroup", types: ["sequence", "group"] },
   {
     subheaderKey: "cueMenu.sectionUtility",
@@ -48,6 +49,7 @@ const ADD_CUE_SECTIONS: { subheaderKey?: string; types: readonly AddCueMenuType[
 
 const DEFAULT_CUE_NAME_KEYS: Partial<Record<AddCueMenuType, string>> = {
   audio: "cueMenu.defaultAudio",
+  liveAudio: "cueMenu.defaultLiveAudio",
   video: "cueMenu.defaultVideo",
   image: "cueMenu.defaultImage",
   tts: "cueMenu.defaultTts",

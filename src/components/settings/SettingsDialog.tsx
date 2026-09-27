@@ -89,7 +89,11 @@ export function SettingsDialog() {
           ) : null}
 
           {category === "audio" ? (
-            <SettingsAudioPanel isTauri={isTauri} audioDevices={devices.audioDevices} />
+            <SettingsAudioPanel
+              isTauri={isTauri}
+              audioDevices={devices.audioDevices}
+              audioInputDevices={devices.audioInputDevices}
+            />
           ) : null}
 
           {category === "speech" ? <SettingsSpeechPanel /> : null}

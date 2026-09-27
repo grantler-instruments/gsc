@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  closeAudioInputStream,
+  ensureAudioInputAccess,
+  listAudioInputDevices,
+} from "../../lib/audio-input";
+import {
   estimateStorage,
   formatStorageBytes,
   getStoragePressure,
@@ -20,6 +25,7 @@ export function useSettingsDevices(open: boolean, isTauri: boolean) {
   const setDmxOutputBackend = usePreferencesStore((s) => s.setDmxOutputBackend);
 
   const [audioDevices, setAudioDevices] = useState<DeviceOption[]>([]);
+  const [audioInputDevices, setAudioInputDevices] = useState<DeviceOption[]>([]);
   const [midiOutDevices, setMidiOutDevices] = useState<DeviceOption[]>([]);
   const [midiInDevices, setMidiInDevices] = useState<DeviceOption[]>([]);
   const [serialPorts, setSerialPorts] = useState<DeviceOption[]>([]);
@@ -45,14 +51,20 @@ export function useSettingsDevices(open: boolean, isTauri: boolean) {
 
     void (async () => {
       try {
-        const [audio, midiOut, midiIn, serial] = await Promise.all([
+        const [audio, audioInput, midiOut, midiIn, serial] = await Promise.all([
           isTauri ? listAudioOutputDevices() : Promise.resolve([]),
+          (async () => {
+            const stream = await ensureAudioInputAccess();
+            closeAudioInputStream(stream);
+            return listAudioInputDevices();
+          })(),
           listMidiOutputDevices(),
           listMidiInputDevices(),
           isTauri ? listSerialPorts() : Promise.resolve([]),
         ]);
         if (cancelled) return;
         setAudioDevices(audio);
+        setAudioInputDevices(audioInput);
         setMidiOutDevices(midiOut);
         setMidiInDevices(midiIn);
         setSerialPorts(serial);
@@ -101,6 +113,7 @@ export function useSettingsDevices(open: boolean, isTauri: boolean) {
 
   return {
     audioDevices,
+    audioInputDevices,
     midiOutDevices,
     midiInDevices,
     serialPorts,
