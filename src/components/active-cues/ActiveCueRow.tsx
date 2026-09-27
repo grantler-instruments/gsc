@@ -94,7 +94,6 @@ export const ActiveCueRow = memo(function ActiveCueRow({
         ...(isPrimary && { bgcolor: tokens.rowActive }),
       }}
     >
-      <CueTypeBadge type={cue.type} showLabel={false} compact />
       <Box
         sx={{
           flex: 1,
@@ -104,20 +103,46 @@ export const ActiveCueRow = memo(function ActiveCueRow({
           gap: 0.25,
         }}
       >
-        <Typography
-          component="span"
-          sx={{
-            fontWeight: 600,
-            fontSize: 12,
-            color: tokens.accent,
-            fontVariantNumeric: "tabular-nums",
-          }}
-        >
-          {cue.number}
-        </Typography>
-        <Typography component="span" noWrap sx={{ fontSize: 13 }}>
-          {cue.name}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0 }}>
+          <CueTypeBadge type={cue.type} showLabel={false} compact />
+          <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+            <Typography
+              component="span"
+              sx={{
+                fontWeight: 600,
+                fontSize: 12,
+                color: tokens.accent,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {cue.number}
+            </Typography>
+            <Typography component="span" noWrap sx={{ fontSize: 13 }}>
+              {cue.name}
+            </Typography>
+          </Box>
+          {isPrimary && (
+            <Box
+              component="span"
+              title={t("activeCues.lastTriggered")}
+              sx={{ color: "success.main", fontSize: 10, flexShrink: 0 }}
+            >
+              ●
+            </Box>
+          )}
+          <Button
+            variant="text"
+            size="small"
+            title={t("activeCues.stopThisCue")}
+            sx={{ flexShrink: 0 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onStop();
+            }}
+          >
+            {t("common.action.stop")}
+          </Button>
+        </Box>
         {cue.type === "midi" && cue.midi && (
           <Typography component="span" noWrap sx={{ fontSize: 11, color: "text.secondary" }}>
             {formatMidiCue(cue.midi)}
@@ -140,22 +165,30 @@ export const ActiveCueRow = memo(function ActiveCueRow({
         )}
         {(cue.type === "audio" || cue.type === "tts" || cue.type === "video") && cue.assetPath && (
           <Box
-            sx={{ mt: 0.5 }}
+            sx={{ mt: 0.5, display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <AudioWaveform
-              assetPath={cue.assetPath}
-              inTime={cue.inTime}
-              outTime={cue.outTime}
-              positionSec={playback?.positionSec}
-              height={cue.type === "video" ? 48 : 36}
-              mediaKind={cue.type === "video" ? "video" : "audio"}
-              hoverPreview={cue.type === "video"}
-              seekable={!!playback}
-              onSeek={(positionSec) => seekCue(cue.id, positionSec)}
-            />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <AudioWaveform
+                assetPath={cue.assetPath}
+                inTime={cue.inTime}
+                outTime={cue.outTime}
+                positionSec={playback?.positionSec}
+                height={cue.type === "video" ? 48 : 36}
+                mediaKind={cue.type === "video" ? "video" : "audio"}
+                hoverPreview={cue.type === "video"}
+                seekable={!!playback}
+                onSeek={(positionSec) => seekCue(cue.id, positionSec)}
+              />
+            </Box>
+            {hasCueChannelStrip(cue) && (
+              <AudioLevelMeter meterId={cueMeterId(cue.id)} label={cue.name} compact />
+            )}
           </Box>
+        )}
+        {hasCueChannelStrip(cue) && (cue.type === "liveAudio" || !cue.assetPath) && (
+          <AudioLevelMeter meterId={cueMeterId(cue.id)} label={cue.name} compact />
         )}
         {rangeLabel && (
           <Typography component="span" noWrap sx={{ fontSize: 11, color: "text.secondary" }}>
@@ -165,9 +198,6 @@ export const ActiveCueRow = memo(function ActiveCueRow({
         {playback && cueShowsPlaybackProgress(cue) && <PlaybackProgress progress={playback} />}
         {lightFadeProgress && <PlaybackProgress progress={lightFadeProgress} />}
         {propertyFadeProgress && <PlaybackProgress progress={propertyFadeProgress} />}
-        {hasCueChannelStrip(cue) && (
-          <AudioLevelMeter meterId={cueMeterId(cue.id)} label={cue.name} compact />
-        )}
         {canVolumeFadeTarget(cue) && (
           <ActiveCueLevelControl
             label={t("activeCues.volumeShort")}
@@ -202,30 +232,6 @@ export const ActiveCueRow = memo(function ActiveCueRow({
           />
         )}
       </Box>
-      {isPrimary && (
-        <Box
-          component="span"
-          title={t("activeCues.lastTriggered")}
-          sx={{
-            color: "success.main",
-            fontSize: 10,
-            flexShrink: 0,
-          }}
-        >
-          ●
-        </Box>
-      )}
-      <Button
-        variant="text"
-        size="small"
-        title={t("activeCues.stopThisCue")}
-        onClick={(e) => {
-          e.stopPropagation();
-          onStop();
-        }}
-      >
-        {t("common.action.stop")}
-      </Button>
     </Box>
   );
 });

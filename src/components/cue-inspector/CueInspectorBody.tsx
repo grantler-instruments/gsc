@@ -136,9 +136,9 @@ export function CueInspectorBody({
         <LiveAudioInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
       )}
 
-      {hasCueChannelStrip(cue) && <CueChannelStrip cue={cue} readOnly={readOnly} inspector />}
-
       <MediaInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
+
+      {hasCueChannelStrip(cue) && <CueChannelStrip cue={cue} readOnly={readOnly} inspector />}
     </>
   );
 }

@@ -1,3 +1,4 @@
+import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { cueMeterId } from "../../audio/meters";
@@ -92,9 +93,6 @@ export function CueRowDetails({
 
   return (
     <>
-      {hasCueChannelStrip(cue) && (
-        <AudioLevelMeter meterId={cueMeterId(cue.id)} label={cue.name} compact />
-      )}
       {isParallel && (
         <Typography component="span" sx={cueDetailSx}>
           {childCount === 0
@@ -179,9 +177,18 @@ export function CueRowDetails({
           {loopLabel}
         </Typography>
       )}
-      {active && playback && cueShowsPlaybackProgress(cue) && (
-        <PlaybackProgress progress={playback} compact tone={isWait ? "wait" : "media"} />
-      )}
+      {(active && playback && cueShowsPlaybackProgress(cue)) || hasCueChannelStrip(cue) ? (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0 }}>
+          {active && playback && cueShowsPlaybackProgress(cue) && (
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <PlaybackProgress progress={playback} compact tone={isWait ? "wait" : "media"} />
+            </Box>
+          )}
+          {hasCueChannelStrip(cue) && (
+            <AudioLevelMeter meterId={cueMeterId(cue.id)} label={cue.name} compact />
+          )}
+        </Box>
+      ) : null}
       {isLightFadeCue(cue) && lightFadeProgress && (
         <PlaybackProgress progress={lightFadeProgress} compact />
       )}
