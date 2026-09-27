@@ -11,23 +11,18 @@ import Slider from "@mui/material/Slider";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_AUDIO_MIXER_HEIGHT, MIN_AUDIO_MIXER_HEIGHT } from "../../lib/audio-mixer-layout";
 import { useProjectStore } from "../../stores/project";
 import { useUiStore } from "../../stores/ui";
 import type { AudioBus } from "../../types/audio-bus";
 import type { AudioEffectType } from "../../types/audio-effect";
-import { BusPremixer, FX_SLIDER_HEIGHT, premixerContentWidth } from "./BusPremixer";
+import { BusPremixer, premixerContentWidth } from "./BusPremixer";
 
 const MIXER_RESIZE_HANDLE_HEIGHT = 6;
-const FADER_COLUMN_WIDTH = 96;
-const FADER_PAN_WIDTH = 72;
-const FADER_VOLUME_WIDTH = 48;
-const FADER_OUTPUT_WIDTH = 108;
-const FADER_ROW_WIDTH = FADER_PAN_WIDTH + FADER_VOLUME_WIDTH + FADER_OUTPUT_WIDTH + 16;
-/** Minimum body height for pan → volume → destination in one column. */
-const FADER_STACKED_HEIGHT_THRESHOLD = 280;
+const FADER_COLUMN_WIDTH = 140;
+const BUS_TOGGLE_WIDTH = 24;
 
 const horizontalSliderSx = {
   width: "100%",
@@ -36,7 +31,10 @@ const horizontalSliderSx = {
 } as const;
 
 const verticalSliderSx = {
-  height: FX_SLIDER_HEIGHT,
+  position: "absolute",
+  top: 6,
+  bottom: 6,
+  height: "auto",
   width: 24,
   mx: "auto",
   py: 0,
@@ -65,48 +63,31 @@ interface BusFaderControlsProps {
   bus: AudioBus;
   audioBuses: AudioBus[];
   canEdit: boolean;
-  stacked: boolean;
   onUpdate: (patch: Partial<Omit<AudioBus, "id">>) => void;
 }
 
-function BusFaderControls({ bus, audioBuses, canEdit, stacked, onUpdate }: BusFaderControlsProps) {
+function BusFaderControls({ bus, audioBuses, canEdit, onUpdate }: BusFaderControlsProps) {
   const { t } = useTranslation();
 
   const panControl = (
-    <Stack spacing={0.5} sx={{ width: stacked ? "100%" : FADER_PAN_WIDTH, flexShrink: 0 }}>
+    <Stack spacing={0.5} sx={{ width: "100%", flexShrink: 0 }}>
       <Typography
         variant="caption"
         sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", color: "text.secondary" }}
       >
         {t("audioMixer.pan")}
       </Typography>
-      {stacked ? (
-        <Slider
-          size="small"
-          orientation="horizontal"
-          min={-1}
-          max={1}
-          step={0.01}
-          value={bus.pan ?? 0}
-          disabled={!canEdit}
-          onChange={(_, value) => onUpdate({ pan: value as number })}
-          sx={horizontalSliderSx}
-        />
-      ) : (
-        <Box sx={{ height: FX_SLIDER_HEIGHT, display: "flex", alignItems: "center" }}>
-          <Slider
-            size="small"
-            orientation="horizontal"
-            min={-1}
-            max={1}
-            step={0.01}
-            value={bus.pan ?? 0}
-            disabled={!canEdit}
-            onChange={(_, value) => onUpdate({ pan: value as number })}
-            sx={horizontalSliderSx}
-          />
-        </Box>
-      )}
+      <Slider
+        size="small"
+        min={-1}
+        max={1}
+        step={0.01}
+        value={bus.pan ?? 0}
+        disabled={!canEdit}
+        aria-label={t("audioMixer.pan")}
+        onChange={(_, value) => onUpdate({ pan: value as number })}
+        sx={horizontalSliderSx}
+      />
     </Stack>
   );
 
@@ -114,9 +95,10 @@ function BusFaderControls({ bus, audioBuses, canEdit, stacked, onUpdate }: BusFa
     <Stack
       spacing={0.5}
       sx={{
-        width: stacked ? "100%" : FADER_VOLUME_WIDTH,
-        flexShrink: 0,
-        alignItems: stacked ? "stretch" : "center",
+        width: "100%",
+        flex: 1,
+        minHeight: 70,
+        alignItems: "stretch",
       }}
     >
       <Typography
@@ -126,16 +108,17 @@ function BusFaderControls({ bus, audioBuses, canEdit, stacked, onUpdate }: BusFa
           fontWeight: 700,
           letterSpacing: "0.04em",
           color: "text.secondary",
-          alignSelf: stacked ? undefined : "center",
+          alignSelf: "center",
         }}
       >
         {t("audioMixer.volume")}
       </Typography>
       <Box
         sx={{
-          width: stacked ? "100%" : FADER_VOLUME_WIDTH,
-          height: FX_SLIDER_HEIGHT,
-          flexShrink: 0,
+          width: "100%",
+          flex: 1,
+          minHeight: 28,
+          position: "relative",
           display: "flex",
           justifyContent: "center",
         }}
@@ -143,6 +126,7 @@ function BusFaderControls({ bus, audioBuses, canEdit, stacked, onUpdate }: BusFa
         <Slider
           size="small"
           orientation="vertical"
+          aria-label={t("audioMixer.volume")}
           min={0}
           max={1}
           step={0.01}
@@ -169,10 +153,8 @@ function BusFaderControls({ bus, audioBuses, canEdit, stacked, onUpdate }: BusFa
     <Stack
       spacing={0.5}
       sx={{
-        width: stacked ? "100%" : FADER_OUTPUT_WIDTH,
+        width: "100%",
         flexShrink: 0,
-        alignSelf: stacked ? undefined : "stretch",
-        justifyContent: stacked ? undefined : "space-between",
       }}
     >
       <Typography
@@ -191,7 +173,7 @@ function BusFaderControls({ bus, audioBuses, canEdit, stacked, onUpdate }: BusFa
           const value = event.target.value;
           onUpdate({ outputBusId: value || undefined });
         }}
-        sx={{ fontSize: 11, flexShrink: 0, ...(stacked ? {} : { mt: "auto" }) }}
+        sx={{ fontSize: 11, flexShrink: 0 }}
       >
         <MenuItem value="">{t("audioMixer.outputBusDirect")}</MenuItem>
         {audioBuses
@@ -208,18 +190,17 @@ function BusFaderControls({ bus, audioBuses, canEdit, stacked, onUpdate }: BusFa
   return (
     <Box
       sx={{
-        width: stacked ? FADER_COLUMN_WIDTH : FADER_ROW_WIDTH,
-        minWidth: stacked ? FADER_COLUMN_WIDTH : FADER_ROW_WIDTH,
+        width: FADER_COLUMN_WIDTH,
+        minWidth: FADER_COLUMN_WIDTH,
         flexShrink: 0,
-        minHeight: 0,
+        minHeight: 200,
         alignSelf: "stretch",
         display: "flex",
-        flexDirection: stacked ? "column" : "row",
-        alignItems: stacked ? "stretch" : "flex-start",
-        gap: 0.75,
-        px: 0.75,
+        flexDirection: "column",
+        alignItems: "stretch",
+        gap: 0.5,
+        px: 1.5,
         py: 1,
-        overflow: "auto",
       }}
     >
       {panControl}
@@ -243,35 +224,22 @@ function BusStrip({
   const { t } = useTranslation();
   const [premixerOpen, setPremixerOpen] = useState((bus.effects?.length ?? 0) > 0);
   const premixerWidth = premixerContentWidth(bus);
-  const bodyRef = useRef<HTMLDivElement>(null);
-  const [stackedFader, setStackedFader] = useState(true);
-
-  useEffect(() => {
-    const element = bodyRef.current;
-    if (!element) return;
-
-    const updateLayout = () => {
-      setStackedFader(element.clientHeight >= FADER_STACKED_HEIGHT_THRESHOLD);
-    };
-
-    updateLayout();
-    const observer = new ResizeObserver(updateLayout);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  const faderWidth = stackedFader ? FADER_COLUMN_WIDTH : FADER_ROW_WIDTH;
 
   return (
     <Box
       sx={{
         flexShrink: 0,
         height: "100%",
-        display: "flex",
-        flexDirection: "column",
+        display: "grid",
+        gridTemplateColumns: `minmax(0, 1fr) ${BUS_TOGGLE_WIDTH}px`,
+        gridTemplateRows: "auto minmax(0, 1fr)",
         mr: 1,
-        width: premixerOpen ? premixerWidth + faderWidth + 8 : faderWidth + 16,
-        minWidth: premixerOpen ? premixerWidth + faderWidth + 8 : faderWidth + 16,
+        width: premixerOpen
+          ? premixerWidth + FADER_COLUMN_WIDTH + BUS_TOGGLE_WIDTH + 2
+          : FADER_COLUMN_WIDTH + BUS_TOGGLE_WIDTH + 2,
+        minWidth: premixerOpen
+          ? premixerWidth + FADER_COLUMN_WIDTH + BUS_TOGGLE_WIDTH + 2
+          : FADER_COLUMN_WIDTH + BUS_TOGGLE_WIDTH + 2,
         border: 1,
         borderColor: "divider",
         borderRadius: 1,
@@ -288,22 +256,10 @@ function BusStrip({
           borderBottom: 1,
           borderColor: "divider",
           bgcolor: "background.paper",
+          flexShrink: 0,
           minWidth: 0,
         }}
       >
-        <IconButton
-          size="small"
-          title={premixerOpen ? t("audioMixer.collapsePremixer") : t("audioMixer.expandPremixer")}
-          aria-expanded={premixerOpen}
-          onClick={() => setPremixerOpen((open) => !open)}
-          sx={{ flexShrink: 0, p: 0.5 }}
-        >
-          {premixerOpen ? (
-            <ChevronLeftIcon sx={{ fontSize: 16 }} />
-          ) : (
-            <ChevronRightIcon sx={{ fontSize: 16 }} />
-          )}
-        </IconButton>
         <TextField
           size="small"
           value={bus.name}
@@ -330,7 +286,6 @@ function BusStrip({
       </Stack>
 
       <Box
-        ref={bodyRef}
         sx={{
           flex: 1,
           minHeight: 0,
@@ -367,14 +322,31 @@ function BusStrip({
           </Box>
         )}
 
-        <BusFaderControls
-          bus={bus}
-          audioBuses={audioBuses}
-          canEdit={canEdit}
-          stacked={stackedFader}
-          onUpdate={onUpdate}
-        />
+        <BusFaderControls bus={bus} audioBuses={audioBuses} canEdit={canEdit} onUpdate={onUpdate} />
       </Box>
+      <IconButton
+        size="small"
+        title={premixerOpen ? t("common.action.collapse") : t("common.action.expand")}
+        aria-label={premixerOpen ? t("common.action.collapse") : t("common.action.expand")}
+        aria-expanded={premixerOpen}
+        onClick={() => setPremixerOpen((open) => !open)}
+        sx={{
+          gridColumn: 2,
+          gridRow: "1 / -1",
+          width: BUS_TOGGLE_WIDTH,
+          height: "100%",
+          p: 0,
+          borderRadius: "0 3px 3px 0",
+          borderLeft: 1,
+          borderColor: "divider",
+        }}
+      >
+        {premixerOpen ? (
+          <ChevronLeftIcon sx={{ fontSize: 16 }} />
+        ) : (
+          <ChevronRightIcon sx={{ fontSize: 16 }} />
+        )}
+      </IconButton>
     </Box>
   );
 }

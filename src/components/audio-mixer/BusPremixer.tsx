@@ -31,7 +31,7 @@ import {
 import { useClearOnDragEnd } from "../cue-list/useClearOnDragEnd";
 
 export const EQ_BAND_WIDTH = 36;
-export const EQ_BLOCK_WIDTH = EQ_BAND_WIDTH * 3;
+export const EQ_BLOCK_WIDTH = EQ_BAND_WIDTH * 3 + 13;
 export const FX_BLOCK_WIDTH = 108;
 export const FX_SLIDER_HEIGHT = 140;
 export const ADD_EFFECT_COLUMN_WIDTH = 72;
@@ -130,6 +130,7 @@ function EffectBlockShell({
       onDrop={reorder?.onDrop}
       sx={{
         width,
+        minHeight: 220,
         flexShrink: 0,
         display: "flex",
         flexDirection: "column",
@@ -502,7 +503,7 @@ export function BusPremixer({
       <Button
         size="small"
         variant="text"
-        sx={{ fontSize: 10, py: 0 }}
+        sx={{ fontSize: 10, py: 0, minWidth: 0 }}
         onClick={(e) => setMenuAnchor(e.currentTarget)}
       >
         {t("audioMixer.addEffect")}
@@ -553,25 +554,6 @@ export function BusPremixer({
         bgcolor: "action.hover",
       }}
     >
-      <Stack
-        direction="row"
-        sx={{
-          alignItems: "center",
-          px: 1,
-          py: 0.5,
-          borderBottom: 1,
-          borderColor: "divider",
-          flexShrink: 0,
-        }}
-      >
-        <Typography
-          variant="caption"
-          sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", color: "text.secondary" }}
-        >
-          {t("audioMixer.premixer")}
-        </Typography>
-      </Stack>
-
       <Box sx={{ flex: 1, minHeight: 0, display: "flex", minWidth: 0 }}>
         {effects.length === 0 ? (
           <Box
@@ -646,9 +628,11 @@ export function BusPremixer({
         {addEffectMenu && (
           <Box
             sx={{
+              width: ADD_EFFECT_COLUMN_WIDTH,
               flexShrink: 0,
               display: "flex",
               alignItems: "center",
+              justifyContent: "center",
               px: 1,
               borderLeft: 1,
               borderColor: "divider",

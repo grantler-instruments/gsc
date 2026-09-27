@@ -1,4 +1,4 @@
-export const DEFAULT_AUDIO_MIXER_HEIGHT = 300;
+export const DEFAULT_AUDIO_MIXER_HEIGHT = 380;
 export const MIN_AUDIO_MIXER_HEIGHT = 160;
 export const MAX_AUDIO_MIXER_HEIGHT = 560;
 
