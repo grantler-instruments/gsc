@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import { cueMeterId } from "../../audio/meters";
 import { useDmxFadeCueProgress } from "../../hooks/useDmxFadeCueProgress";
 import { usePropertyFadeCueProgress } from "../../hooks/usePropertyFadeCueProgress";
 import { getCueAssetWarning } from "../../lib/cue-asset";
@@ -35,8 +34,6 @@ import { useProjectStore } from "../../stores/project";
 import type { RunningSequence } from "../../stores/transport";
 import { cueDetailSx } from "../../theme/cueStyles";
 import type { Cue } from "../../types/cue";
-import { AudioLevelMeter } from "../audio-mixer/AudioLevelMeter";
-import { hasCueChannelStrip } from "../audio-mixer/CueChannelStrip";
 import { PlaybackProgress } from "../PlaybackProgress";
 
 interface CueRowDetailsProps {
@@ -177,16 +174,11 @@ export function CueRowDetails({
           {loopLabel}
         </Typography>
       )}
-      {(active && playback && cueShowsPlaybackProgress(cue)) || hasCueChannelStrip(cue) ? (
+      {active && playback && cueShowsPlaybackProgress(cue) ? (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0 }}>
-          {active && playback && cueShowsPlaybackProgress(cue) && (
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <PlaybackProgress progress={playback} compact tone={isWait ? "wait" : "media"} />
-            </Box>
-          )}
-          {hasCueChannelStrip(cue) && (
-            <AudioLevelMeter meterId={cueMeterId(cue.id)} label={cue.name} compact />
-          )}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <PlaybackProgress progress={playback} compact tone={isWait ? "wait" : "media"} />
+          </Box>
         </Box>
       ) : null}
       {isLightFadeCue(cue) && lightFadeProgress && (

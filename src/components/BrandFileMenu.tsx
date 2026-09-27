@@ -69,9 +69,11 @@ export function BrandFileMenu() {
   const [recents, setRecents] = useState<RecentProjectEntry[]>([]);
   const [storedProjects, setStoredProjects] = useState<IdbProjectSummary[]>([]);
   const [storedSubmenuAnchor, setStoredSubmenuAnchor] = useState<null | HTMLElement>(null);
+  const [recentSubmenuAnchor, setRecentSubmenuAnchor] = useState<null | HTMLElement>(null);
   const { showInstallMenuItem, install: installPwa } = usePwaInstall();
   const open = Boolean(anchorEl);
   const storedSubmenuOpen = Boolean(storedSubmenuAnchor);
+  const recentSubmenuOpen = Boolean(recentSubmenuAnchor);
 
   useEffect(() => {
     if (!open) return;
@@ -97,10 +99,12 @@ export function BrandFileMenu() {
   };
 
   const closeStoredSubmenu = () => setStoredSubmenuAnchor(null);
+  const closeRecentSubmenu = () => setRecentSubmenuAnchor(null);
 
   const close = () => {
     setAnchorEl(null);
     closeStoredSubmenu();
+    closeRecentSubmenu();
   };
 
   const handleExport = async () => {
@@ -214,50 +218,24 @@ export function BrandFileMenu() {
           />
         </MenuItem>
 
-        {isTauri && recents.length > 0 ? <Divider key="recent-divider" /> : null}
-
-        {isTauri
-          ? recents.map((entry) => (
-              <MenuItem
-                key={entry.path}
-                disabled={showMode}
-                onClick={() => {
-                  close();
-                  void openRecentProjectPath(entry.path);
-                }}
-                sx={{
-                  pr: 1,
-                  "@media (hover: hover)": {
-                    "& .recent-project-remove": {
-                      opacity: 0,
-                      transition: "opacity 0.15s ease",
-                    },
-                    "&:hover .recent-project-remove, &:focus-within .recent-project-remove": {
-                      opacity: 1,
-                    },
-                  },
-                }}
-              >
-                <ListItemIcon>
-                  <HistoryOutlinedIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary={entry.name} secondary={truncatePath(entry.path)} />
-                <IconButton
-                  className="recent-project-remove"
-                  size="small"
-                  aria-label={t("startup.removeRecentProject", { projectName: entry.name })}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeRecentProject(entry.path);
-                    setRecents((prev) => prev.filter((recent) => recent.path !== entry.path));
-                  }}
-                  sx={{ ml: 1, flexShrink: 0 }}
-                >
-                  <CloseOutlinedIcon fontSize="small" />
-                </IconButton>
-              </MenuItem>
-            ))
-          : null}
+        {isTauri && recents.length > 0 ? (
+          <>
+            <Divider />
+            <MenuItem
+              disabled={showMode}
+              aria-haspopup="menu"
+              aria-expanded={recentSubmenuOpen}
+              onMouseEnter={(e) => setRecentSubmenuAnchor(e.currentTarget)}
+              onClick={(e) => setRecentSubmenuAnchor(e.currentTarget)}
+            >
+              <ListItemIcon>
+                <HistoryOutlinedIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary={t("startup.recentProjects")} />
+              <ChevronRightIcon fontSize="small" sx={{ ml: 1, opacity: 0.7 }} />
+            </MenuItem>
+          </>
+        ) : null}
 
         {!isTauri && storedProjects.length > 0 ? (
           <MenuItem
@@ -341,6 +319,50 @@ export function BrandFileMenu() {
           </ListItemIcon>
           <ListItemText primary={t("support.menuItem")} />
         </MenuItem>
+      </Menu>
+
+      <Menu
+        anchorEl={recentSubmenuAnchor}
+        open={recentSubmenuOpen}
+        onClose={closeRecentSubmenu}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{ list: { onMouseLeave: closeRecentSubmenu } }}
+      >
+        {recents.map((entry) => (
+          <MenuItem
+            key={entry.path}
+            disabled={showMode}
+            onClick={() => {
+              close();
+              void openRecentProjectPath(entry.path);
+            }}
+            sx={{
+              pr: 1,
+              "@media (hover: hover)": {
+                "& .recent-project-remove": { opacity: 0 },
+                "&:hover .recent-project-remove, &:focus-within .recent-project-remove": {
+                  opacity: 1,
+                },
+              },
+            }}
+          >
+            <ListItemText primary={entry.name} secondary={truncatePath(entry.path)} />
+            <IconButton
+              className="recent-project-remove"
+              size="small"
+              aria-label={t("startup.removeRecentProject", { projectName: entry.name })}
+              onClick={(e) => {
+                e.stopPropagation();
+                removeRecentProject(entry.path);
+                setRecents((prev) => prev.filter((recent) => recent.path !== entry.path));
+              }}
+              sx={{ ml: 1, flexShrink: 0 }}
+            >
+              <CloseOutlinedIcon fontSize="small" />
+            </IconButton>
+          </MenuItem>
+        ))}
       </Menu>
 
       <Menu

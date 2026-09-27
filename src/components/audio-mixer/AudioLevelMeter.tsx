@@ -42,9 +42,9 @@ export function AudioLevelMeter({
         flexDirection: "column",
         gap: 0.5,
         flexShrink: 0,
-        width: 64,
-        height: compact ? 15 : "100%",
-        minHeight: compact ? 15 : 100,
+        width: compact ? 10 : 64,
+        height: compact ? 36 : "100%",
+        minHeight: compact ? 36 : 100,
         color: "text.secondary",
         fontSize: 9,
         fontVariantNumeric: "tabular-nums",
@@ -54,7 +54,7 @@ export function AudioLevelMeter({
         component="span"
         sx={{
           display: "flex",
-          flexDirection: compact ? "column" : "row",
+          flexDirection: "row",
           gap: "3px",
           flex: 1,
           minHeight: 0,
@@ -88,7 +88,7 @@ export function AudioLevelMeter({
               flex: 1,
               bgcolor: "action.hover",
               borderRadius: "2px",
-              minWidth: compact ? 0 : 8,
+              minWidth: compact ? 3 : 8,
             }}
           >
             <Box
@@ -96,10 +96,9 @@ export function AudioLevelMeter({
               sx={{
                 position: "absolute",
                 inset: 0,
-                background: `linear-gradient(to ${compact ? "right" : "top"}, #39bf78 0%, #39bf78 78%, #e8bf45 80%, #e8bf45 94%, #ef5350 95%)`,
-                clipPath: compact
-                  ? `inset(0 ${100 - percent(db)}% 0 0)`
-                  : `inset(${100 - percent(db)}% 0 0 0)`,
+                background:
+                  "linear-gradient(to top, #39bf78 0%, #39bf78 78%, #e8bf45 80%, #e8bf45 94%, #ef5350 95%)",
+                clipPath: `inset(${100 - percent(db)}% 0 0 0)`,
               }}
             />
             <Box
@@ -107,21 +106,11 @@ export function AudioLevelMeter({
               sx={{
                 position: "absolute",
                 bgcolor: "text.primary",
-                ...(compact
-                  ? {
-                      left: `${percent(reading.peakDb[channel])}%`,
-                      top: 0,
-                      bottom: 0,
-                      width: "1px",
-                      transform: "translateX(-1px)",
-                    }
-                  : {
-                      bottom: `${percent(reading.peakDb[channel])}%`,
-                      left: 0,
-                      right: 0,
-                      height: "1px",
-                      transform: "translateY(1px)",
-                    }),
+                bottom: `${percent(reading.peakDb[channel])}%`,
+                left: 0,
+                right: 0,
+                height: "1px",
+                transform: "translateY(1px)",
                 opacity: reading.peakDb[channel] > -60 ? 0.8 : 0,
               }}
             />
@@ -132,8 +121,8 @@ export function AudioLevelMeter({
           aria-hidden
           sx={{
             bgcolor: reading.clipped ? "error.main" : "action.disabledBackground",
-            width: compact ? "100%" : 4,
-            height: compact ? 2 : "100%",
+            width: compact ? 3 : 4,
+            height: "100%",
             borderRadius: 1,
           }}
         />
