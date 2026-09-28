@@ -1,41 +1,12 @@
-import { createContext, type ReactNode, useContext, useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import { applyAssetPayloads } from "../../lib/asset-drop";
-import type { AssetDragPayload } from "../../lib/drag";
 import { triggerGoAndAdvance, triggerHotCue } from "../../lib/transport-actions";
 import { useProjectStore } from "../../stores/project";
 import type { RunningSequence } from "../../stores/transport";
 import { useUiStore } from "../../stores/ui";
 import type { Cue } from "../../types/cue";
 
-export interface CueListActionsContextValue {
-  canEdit: boolean;
-  listId: string;
-  allCues: Cue[];
-  runningSequences: Record<string, RunningSequence>;
-  onGo: (cue: Cue) => void;
-  onRemove: (cueId: string) => void;
-  onCreateStop: (cueId: string) => void;
-  onCreateVolumeFade: (cueId: string) => void;
-  onCreateOpacityFade: (cueId: string) => void;
-  onCreatePanFade: (cueId: string) => void;
-  onCreateLightFade: (cueId: string) => void;
-  onAssetDrop: (cueId: string, payload: AssetDragPayload) => void;
-  onCueDrop: (draggedId: string, groupId: string) => void;
-  onCueReparent: (draggedId: string, targetId: string, place: "before" | "after") => void;
-  onCueReparentToListEnd: (draggedId: string) => void;
-  onCueReorder: (draggedId: string, targetId: string, place: "before" | "after") => void;
-  onToggleExpand: (groupId: string) => void;
-}
-
-const CueListActionsContext = createContext<CueListActionsContextValue | null>(null);
-
-export function useCueListActions(): CueListActionsContextValue {
-  const ctx = useContext(CueListActionsContext);
-  if (!ctx) {
-    throw new Error("useCueListActions must be used within CueListActionsProvider");
-  }
-  return ctx;
-}
+import { CueListActionsContext, type CueListActionsContextValue } from "./cueListActionsContext";
 
 interface CueListActionsProviderProps {
   canEdit: boolean;

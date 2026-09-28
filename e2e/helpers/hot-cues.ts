@@ -8,6 +8,13 @@ export function hotCuePanel(page: Page) {
   return page.getByRole("complementary", { name: "Hot cues" });
 }
 
+/** Open the hot-cue panel when it is hidden. */
+export async function showHotCuePanel(page: Page): Promise<void> {
+  const showButton = page.getByRole("button", { name: "Show hot cue panel" });
+  if (await showButton.isVisible()) await showButton.click();
+  await expect(hotCuePanel(page)).toBeVisible();
+}
+
 /** Hot-cue pad container for a cue matched by display name. */
 export function hotCuePad(page: Page, cueName: string) {
   return hotCuePanel(page)
@@ -46,6 +53,7 @@ export async function copyContainerToHotPanel(
   await sourceRow.click();
   await copySelectedCues(page);
 
+  await showHotCuePanel(page);
   const panel = hotCuePanel(page);
   await panel.click();
   await pasteSelectedCues(page);

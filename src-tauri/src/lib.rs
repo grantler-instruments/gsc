@@ -45,7 +45,7 @@ use supertonic::{
     supertonic_assets_ready, supertonic_clear_assets, supertonic_ensure_assets, supertonic_list_langs,
     supertonic_load, supertonic_unload, tts_synthesize, SupertonicState,
 };
-use system_stats::{get_process_stats, SystemStatsState};
+use system_stats::{get_memory_pressure, get_process_stats, SystemStatsState};
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::{Emitter, Manager, RunEvent};
 
@@ -108,6 +108,7 @@ pub fn run() {
             supertonic_list_langs,
             tts_synthesize,
             get_process_stats,
+            get_memory_pressure,
         ])
         .setup(|app| {
             handle_cli_open_files(app.handle());

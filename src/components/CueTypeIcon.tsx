@@ -4,6 +4,7 @@ import HubIcon from "@mui/icons-material/Hub";
 import ImageIcon from "@mui/icons-material/Image";
 import LayersIcon from "@mui/icons-material/Layers";
 import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
+import MicIcon from "@mui/icons-material/Mic";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import PianoIcon from "@mui/icons-material/Piano";
 import PlaylistPlayIcon from "@mui/icons-material/PlaylistPlay";
@@ -22,6 +23,7 @@ import type { AssetKind, CueType } from "../types/cue";
 
 const CUE_TYPE_ICONS: Record<CueType, ElementType<SvgIconProps>> = {
   audio: AudiotrackIcon,
+  liveAudio: MicIcon,
   video: VideocamIcon,
   image: ImageIcon,
   tts: RecordVoiceOverIcon,

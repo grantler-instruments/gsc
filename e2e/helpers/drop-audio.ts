@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, type Page } from "@playwright/test";
+import { ASSET_DROP_CUE_LOAD_MAX_MS } from "../shared/asset-drop";
 import {
   fixturePath,
   mimeTypeForFileName,
@@ -8,9 +9,11 @@ import {
   WHITE_NOISE_FIXTURE,
   WHITE_NOISE_NAME,
 } from "../shared/fixtures";
-import { sequenceCueList } from "./cue-list-panel";
+import { sequenceCueList, sequenceCueRow } from "./cue-list-panel";
+import { showHotCuePanel } from "./hot-cues";
 
 export {
+  ASSET_DROP_CUE_LOAD_MAX_MS,
   fixturePath,
   mimeTypeForFileName,
   WHITE_NOISE_ALT_FIXTURE,
@@ -64,6 +67,7 @@ export async function dropAudioFile(
     return;
   }
 
+  await showHotCuePanel(page);
   const hotPanel = page.getByRole("complementary", { name: "Hot cues" });
   const emptyDropZone = hotPanel.getByText(
     "Drop assets here or use the flame button to add hot cues.",
@@ -93,6 +97,7 @@ export async function appendAudioOnHotCuePanel(
   const resolvedMimeType = mimeType ?? mimeTypeForFileName(fileName);
   const dataTransfer = await createAudioDataTransfer(page, bytes, fileName, resolvedMimeType);
 
+  await showHotCuePanel(page);
   const hotPanel = page.getByRole("complementary", { name: "Hot cues" });
   await hotPanel.evaluate((panel, dt) => {
     const grid = [...panel.querySelectorAll("div")].find((el) => {
@@ -118,6 +123,7 @@ export async function dropAudioOnHotCuePad(
   const resolvedMimeType = mimeType ?? mimeTypeForFileName(fileName);
   const dataTransfer = await createAudioDataTransfer(page, bytes, fileName, resolvedMimeType);
 
+  await showHotCuePanel(page);
   const hotPanel = page.getByRole("complementary", { name: "Hot cues" });
   const pad = hotPanel
     .getByText(targetCueName, { exact: true })
@@ -141,6 +147,53 @@ export async function dropAudioOnCueList(
     mimeType,
     target: "cue-list",
   });
+}
+
+/**
+ * Drop a file onto the cue list and measure ms until the cue row appears.
+ * DataTransfer prep is excluded from the timer.
+ */
+export async function measureCueListAssetDropLoadMs(
+  page: Page,
+  options: {
+    fixturePath: string;
+    fileName: string;
+    mimeType?: string;
+    maxMs?: number;
+  },
+): Promise<number> {
+  const maxMs = options.maxMs ?? ASSET_DROP_CUE_LOAD_MAX_MS;
+  const mimeType = options.mimeType ?? mimeTypeForFileName(options.fileName);
+  const bytes = readFileSync(options.fixturePath);
+  const dataTransfer = await createAudioDataTransfer(page, bytes, options.fileName, mimeType);
+
+  const dropZone = sequenceCueList(page);
+  await expect(dropZone).toHaveCount(1);
+
+  const startedAtMs = Date.now();
+  await dropZone.dispatchEvent("dragover", { dataTransfer });
+  await dropZone.dispatchEvent("drop", { dataTransfer });
+
+  let loadMs = 0;
+  await expect
+    .poll(
+      async () => {
+        const count = await sequenceCueRow(page, options.fileName).count();
+        if (count === 1) {
+          loadMs = Date.now() - startedAtMs;
+          return true;
+        }
+        return false;
+      },
+      { timeout: maxMs + 10_000 },
+    )
+    .toBe(true);
+
+  expect(
+    loadMs,
+    `cue list asset drop took ${loadMs}ms until cue row (limit ${maxMs}ms)`,
+  ).toBeLessThanOrEqual(maxMs);
+  return loadMs;
 }
 
 export async function dropAudioOnHotCuePanel(

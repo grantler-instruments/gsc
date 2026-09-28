@@ -74,7 +74,6 @@ export class OutputStageEngine implements OutputStageHandle {
     this.root.style.height = "100%";
     this.root.style.background = "#000";
     this.root.style.overflow = "hidden";
-
     this.compositor = options.useCompositor === false ? null : tryCreateVideoCompositor(this.root);
     if (this.compositor) {
       this.compositor.start();
@@ -87,6 +86,7 @@ export class OutputStageEngine implements OutputStageHandle {
         this.syncCompositorSize();
       });
     }
+    document.addEventListener("visibilitychange", this.handleVisibilityChange);
   }
 
   /** Re-measure host size after layout (embedded previews). */
@@ -134,6 +134,7 @@ export class OutputStageEngine implements OutputStageHandle {
   destroy(): void {
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
+    document.removeEventListener("visibilitychange", this.handleVisibilityChange);
     for (const cueId of [...this.entries.keys()]) {
       this.removeEntry(cueId);
     }
@@ -170,6 +171,14 @@ export class OutputStageEngine implements OutputStageHandle {
 
     this.compositor.setLayers(compositorLayers);
   }
+  private handleVisibilityChange = (): void => {
+    if (document.visibilityState !== "visible") return;
+
+    for (const entry of this.entries.values()) {
+      const video = entry.media;
+      if (video instanceof HTMLVideoElement && video.paused) entry.sync?.seekAndPlay();
+    }
+  };
 
   private removeEntry(cueId: string): void {
     const entry = this.entries.get(cueId);

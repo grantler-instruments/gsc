@@ -3,6 +3,14 @@ import { isGscProjectDirPath, isProjectBundlePath } from "./project-paths";
 import { isQlab5WorkspacePath } from "./qlab5/import-qlab5-project";
 import { confirmAndImportQlab5Path, isQlab5ProjectFolderPath } from "./qlab5-import-actions";
 
+/** True when a dropped path represents a project that can be opened or imported. */
+export async function isOpenableProjectPath(path: string): Promise<boolean> {
+  if (isProjectBundlePath(path) || isGscProjectDirPath(path) || isQlab5WorkspacePath(path)) {
+    return true;
+  }
+  return isQlab5ProjectFolderPath(path);
+}
+
 /** Open a `.gsc` directory, `.gsc.zip` bundle, or import a QLab 5 project. */
 export async function openProjectPath(path: string): Promise<boolean> {
   if (isProjectBundlePath(path)) {

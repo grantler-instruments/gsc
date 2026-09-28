@@ -4,17 +4,20 @@ import { cueNeedsAsset } from "../../lib/cue-asset";
 import { isContainerCue, isFadeCue, isStopCue, isWaitCue } from "../../lib/cues";
 import { getTtsCueWarning, isTtsCue } from "../../lib/tts";
 import type { Cue, MidiCueData, OscCueData } from "../../types/cue";
+import { CueChannelStrip, hasCueChannelStrip } from "../audio-mixer/CueChannelStrip";
 import { ContainerInspectorFields } from "../ContainerInspectorFields";
 import { CueAssetAssign } from "../CueAssetAssign";
 import { FadeInspectorFields } from "../FadeInspectorFields";
 import { StopInspectorFields } from "../StopInspectorFields";
 import { WaitInspectorFields } from "../WaitInspectorFields";
+import { AudioRoutingInspectorFields } from "./AudioRoutingInspectorFields";
 import { CueInspectorNameFields } from "./CueInspectorNameFields";
 import { DmxInspectorFields } from "./DmxInspectorFields";
 import { MediaInspectorFields } from "./MediaInspectorFields";
 import { MidiInspectorFields } from "./MidiInspectorFields";
 import { OscInspectorFields } from "./OscInspectorFields";
 import { TtsInspectorFields } from "./TtsInspectorFields";
+import { VideoRoutingInspectorFields } from "./VideoRoutingInspectorFields";
 
 interface CueInspectorBodyProps {
   cue: Cue;
@@ -131,6 +134,14 @@ export function CueInspectorBody({
       <TtsInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
 
       <MediaInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
+
+      {hasCueChannelStrip(cue) && <CueChannelStrip cue={cue} readOnly={readOnly} inspector />}
+      {(cue.type === "video" || cue.type === "image") && (
+        <VideoRoutingInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
+      )}
+      {(hasCueChannelStrip(cue) || cue.type === "tts") && (
+        <AudioRoutingInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
+      )}
     </>
   );
 }

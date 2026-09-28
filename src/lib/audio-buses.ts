@@ -39,7 +39,7 @@ export function normalizeAudioBuses(buses: AudioBus[] | undefined): AudioBus[] {
   if (!buses?.length) return [];
 
   const normalized = buses.map((bus) => normalizeAudioBusFields(bus));
-  return normalized.map((bus) => {
+  const routed = normalized.map((bus) => {
     const outputBusId = resolveBusOutputBusId(bus, normalized);
     if (outputBusId === bus.outputBusId) return bus;
     if (!outputBusId) {
@@ -49,6 +49,22 @@ export function normalizeAudioBuses(buses: AudioBus[] | undefined): AudioBus[] {
     }
     return { ...bus, outputBusId };
   });
+  const sources = resolveDuckerSourceBusIds(routed);
+  return routed.map((bus) => ({
+    ...bus,
+    ...(bus.effects
+      ? {
+          effects: bus.effects.map((effect) =>
+            effect.type === "ducker" && effect.params.sourceBusId !== (sources.get(effect.id) ?? "")
+              ? {
+                  ...effect,
+                  params: { ...effect.params, sourceBusId: sources.get(effect.id) ?? "" },
+                }
+              : effect,
+          ),
+        }
+      : {}),
+  }));
 }
 
 export function createAudioBus(
@@ -137,4 +153,30 @@ export function normalizeCueAudioBus(cue: Cue, buses: AudioBus[]): Cue {
 
 export function busEffectiveVolume(bus: AudioBus): number {
   return bus.muted ? 0 : clamp01(bus.volume);
+}
+
+/** Post-fader sidechains are graph edges too; never introduce an audio feedback loop. */
+export function resolveDuckerSourceBusIds(buses: AudioBus[]): Map<string, string> {
+  const edges = new Map<string, Set<string>>(buses.map((bus) => [bus.id, new Set()]));
+  for (const bus of buses) {
+    const output = resolveBusOutputBusId(bus, buses);
+    if (output) edges.get(bus.id)?.add(output);
+  }
+  const reaches = (from: string, target: string, visited = new Set<string>()): boolean => {
+    if (from === target) return true;
+    if (visited.has(from)) return false;
+    visited.add(from);
+    return [...(edges.get(from) ?? [])].some((next) => reaches(next, target, visited));
+  };
+  const sources = new Map<string, string>();
+  for (const bus of buses) {
+    for (const effect of bus.effects ?? []) {
+      if (effect.type !== "ducker") continue;
+      const source = effect.params.sourceBusId;
+      if (!edges.has(source) || reaches(bus.id, source)) continue;
+      sources.set(effect.id, source);
+      edges.get(source)?.add(bus.id);
+    }
+  }
+  return sources;
 }

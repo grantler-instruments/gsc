@@ -14,3 +14,15 @@ export async function getProcessStats(): Promise<ProcessStats | null> {
   const { getProcessStats: get } = await import("./performance-stats.tauri");
   return get();
 }
+export interface MemoryPressure {
+  availableMb: number;
+  totalMb: number;
+  processMb: number;
+}
+
+/** System available / total RAM. Null when unavailable (web has no reliable OS API). */
+export async function getMemoryPressure(): Promise<MemoryPressure | null> {
+  if (getPlatform() !== "tauri") return null;
+  const { getMemoryPressure: get } = await import("./performance-stats.tauri");
+  return get();
+}

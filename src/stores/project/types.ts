@@ -3,10 +3,8 @@ import type { CueList } from "../../lib/cue-lists";
 import type { AudioBus } from "../../types/audio-bus";
 import type {
   AudioEffect,
+  AudioEffectParamsPatch,
   AudioEffectType,
-  DelayEffectParams,
-  EqEffectParams,
-  ReverbEffectParams,
 } from "../../types/audio-effect";
 import type {
   Cue,
@@ -127,7 +125,7 @@ export interface ProjectState {
     busId: string,
     effectId: string,
     patch: Partial<Omit<AudioEffect, "id" | "params" | "type">> & {
-      params?: Partial<EqEffectParams & DelayEffectParams & ReverbEffectParams>;
+      params?: AudioEffectParamsPatch;
     },
   ) => void;
   removeBusEffect: (busId: string, effectId: string) => void;

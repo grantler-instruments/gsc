@@ -1,7 +1,6 @@
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CloseIcon from "@mui/icons-material/Close";
-import CropFreeIcon from "@mui/icons-material/CropFree";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -29,7 +28,44 @@ import {
   type VideoOutputFramePreviewSource,
 } from "./VideoOutputFramePanel";
 
-const STRIP_WIDTH = 132;
+const STRIP_WIDTH = 140;
+const STRIP_TOGGLE_WIDTH = 24;
+
+function StripToggle({
+  open,
+  label,
+  onToggle,
+}: {
+  open: boolean;
+  label: string;
+  onToggle: () => void;
+}) {
+  return (
+    <IconButton
+      size="small"
+      title={label}
+      aria-label={label}
+      aria-expanded={open}
+      onClick={onToggle}
+      sx={{
+        gridColumn: 2,
+        gridRow: "1 / -1",
+        width: STRIP_TOGGLE_WIDTH,
+        height: "100%",
+        p: 0,
+        borderRadius: "0 3px 3px 0",
+        borderLeft: 1,
+        borderColor: "divider",
+      }}
+    >
+      {open ? (
+        <ChevronLeftIcon sx={{ fontSize: 16 }} />
+      ) : (
+        <ChevronRightIcon sx={{ fontSize: 16 }} />
+      )}
+    </IconButton>
+  );
+}
 
 function outputStripWidth(
   premixerOpen: boolean,
@@ -38,7 +74,7 @@ function outputStripWidth(
   faderWidth: number,
 ): number {
   const sideWidth = (premixerOpen ? premixerWidth : 0) + (frameOpen ? FRAME_PANEL_WIDTH : 0);
-  return sideWidth > 0 ? sideWidth + faderWidth + 8 : faderWidth + 16;
+  return sideWidth + faderWidth + STRIP_TOGGLE_WIDTH + 2;
 }
 
 function useFramePreviewSource(
@@ -124,8 +160,9 @@ export function MasterProgramStrip() {
       sx={{
         flexShrink: 0,
         height: "100%",
-        display: "flex",
-        flexDirection: "column",
+        display: "grid",
+        gridTemplateColumns: `minmax(0, 1fr) ${STRIP_TOGGLE_WIDTH}px`,
+        gridTemplateRows: "auto minmax(0, 1fr)",
         mr: 1,
         width: stripWidth,
         minWidth: stripWidth,
@@ -136,19 +173,6 @@ export function MasterProgramStrip() {
       }}
     >
       <Stack direction="row" sx={stripEffectsHeaderSx}>
-        <IconButton
-          size="small"
-          title={premixerOpen ? t("videoOutput.collapsePremixer") : t("videoOutput.expandPremixer")}
-          aria-expanded={premixerOpen}
-          onClick={() => setPremixerOpen((open) => !open)}
-          sx={{ flexShrink: 0, p: 0.5 }}
-        >
-          {premixerOpen ? (
-            <ChevronLeftIcon sx={{ fontSize: 16 }} />
-          ) : (
-            <ChevronRightIcon sx={{ fontSize: 16 }} />
-          )}
-        </IconButton>
         <TextField
           size="small"
           value={masterVideoOutputName}
@@ -209,6 +233,7 @@ export function MasterProgramStrip() {
             max={1}
             step={0.01}
             value={masterVideoOutputOpacity}
+            aria-label={t("videoOutput.opacity")}
             disabled={!canEdit}
             onChange={(_, value) => updateMasterVideoOutputOpacity(value as number)}
             sx={opacitySliderSx}
@@ -222,6 +247,11 @@ export function MasterProgramStrip() {
           </Typography>
         </Stack>
       </Box>
+      <StripToggle
+        open={premixerOpen}
+        label={premixerOpen ? t("common.action.collapse") : t("common.action.expand")}
+        onToggle={() => setPremixerOpen((open) => !open)}
+      />
     </Box>
   );
 }
@@ -265,8 +295,9 @@ export function ProgramBusStrip({
       sx={{
         flexShrink: 0,
         height: "100%",
-        display: "flex",
-        flexDirection: "column",
+        display: "grid",
+        gridTemplateColumns: `minmax(0, 1fr) ${STRIP_TOGGLE_WIDTH}px`,
+        gridTemplateRows: "auto minmax(0, 1fr)",
         mr: 1,
         width: stripWidth,
         minWidth: stripWidth,
@@ -277,19 +308,6 @@ export function ProgramBusStrip({
       }}
     >
       <Stack direction="row" sx={stripEffectsHeaderSx}>
-        <IconButton
-          size="small"
-          title={premixerOpen ? t("videoOutput.collapsePremixer") : t("videoOutput.expandPremixer")}
-          aria-expanded={premixerOpen}
-          onClick={() => setPremixerOpen((open) => !open)}
-          sx={{ flexShrink: 0, p: 0.5 }}
-        >
-          {premixerOpen ? (
-            <ChevronLeftIcon sx={{ fontSize: 16 }} />
-          ) : (
-            <ChevronRightIcon sx={{ fontSize: 16 }} />
-          )}
-        </IconButton>
         <TextField
           size="small"
           value={bus.name}
@@ -360,12 +378,18 @@ export function ProgramBusStrip({
             max={1}
             step={0.01}
             value={bus.opacity}
+            aria-label={t("videoOutput.opacity")}
             disabled={!canEdit}
             onChange={(_, value) => onUpdate({ opacity: value as number })}
             sx={opacitySliderSx}
           />
         </Stack>
       </Box>
+      <StripToggle
+        open={premixerOpen}
+        label={premixerOpen ? t("common.action.collapse") : t("common.action.expand")}
+        onToggle={() => setPremixerOpen((open) => !open)}
+      />
     </Box>
   );
 }
@@ -409,8 +433,9 @@ export function DestinationOutputStrip({
       sx={{
         flexShrink: 0,
         height: "100%",
-        display: "flex",
-        flexDirection: "column",
+        display: "grid",
+        gridTemplateColumns: `minmax(0, 1fr) ${STRIP_TOGGLE_WIDTH}px`,
+        gridTemplateRows: "auto minmax(0, 1fr)",
         mr: 1,
         width: stripWidth,
         minWidth: stripWidth,
@@ -421,15 +446,6 @@ export function DestinationOutputStrip({
       }}
     >
       <Stack direction="row" sx={stripEffectsHeaderSx}>
-        <IconButton
-          size="small"
-          title={frameOpen ? t("videoOutput.collapseFrame") : t("videoOutput.expandFrame")}
-          aria-expanded={frameOpen}
-          onClick={() => setFrameOpen((open) => !open)}
-          sx={{ flexShrink: 0, p: 0.5 }}
-        >
-          <CropFreeIcon sx={{ fontSize: 16, color: frameOpen ? "primary.main" : "inherit" }} />
-        </IconButton>
         <TextField
           size="small"
           value={output.name}
@@ -541,6 +557,11 @@ export function DestinationOutputStrip({
           )}
         </Stack>
       </Box>
+      <StripToggle
+        open={frameOpen}
+        label={frameOpen ? t("videoOutput.collapseFrame") : t("videoOutput.expandFrame")}
+        onToggle={() => setFrameOpen((open) => !open)}
+      />
     </Box>
   );
 }

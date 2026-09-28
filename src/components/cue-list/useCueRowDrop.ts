@@ -14,6 +14,7 @@ import {
   setActiveAssetDrag,
   setActiveCueDrag,
 } from "../../lib/drag";
+import { runRecoverableAction } from "../../lib/notifications";
 import { useProjectStore } from "../../stores/project";
 import type { Cue } from "../../types/cue";
 import {
@@ -196,7 +197,7 @@ export function useCueRowDrop({
         return;
       }
 
-      void (async () => {
+      void runRecoverableAction(async () => {
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
           if (!payloads.length) return;
@@ -204,7 +205,7 @@ export function useCueRowDrop({
         } finally {
           setActiveAssetDrag(null);
         }
-      })();
+      });
     },
     [allCues, canEdit, cue.id, isContainer, listId, moveCueToList, onCueDrop, onCueReparent],
   );

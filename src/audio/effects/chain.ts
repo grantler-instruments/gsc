@@ -3,9 +3,14 @@ import { createDelayEffect } from "./delay";
 import { createEqEffect } from "./eq";
 import { createReverbEffect } from "./reverb";
 import type { BusEffectRuntime } from "./types";
+import { createWorkletEffect } from "./worklet";
 
 export function createBusEffectRuntime(ctx: AudioContext, effect: AudioEffect): BusEffectRuntime {
   switch (effect.type) {
+    case "limiter":
+    case "ducker":
+    case "stereo":
+      return createWorkletEffect(ctx, effect);
     case "eq": {
       const runtime = createEqEffect(ctx);
       runtime.id = effect.id;

@@ -50,7 +50,7 @@ describe("MixerGraph", () => {
     const gains: Array<{ gain: { value: number } }> = [];
     const panners: Array<{ pan: { value: number } }> = [];
     ctx = {
-      destination: createMockAudioContext().destination,
+      ...createMockAudioContext(),
       createGain: () => {
         const node = { gain: { value: 1 }, connect: () => node, disconnect: () => {} };
         gains.push(node);

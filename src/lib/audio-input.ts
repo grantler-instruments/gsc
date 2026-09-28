@@ -25,9 +25,17 @@ export async function openAudioInputStream(deviceId?: string): Promise<MediaStre
   if (!isAudioInputSupported()) {
     throw new Error("Audio input not supported");
   }
-  const constraints: MediaStreamConstraints = {
-    audio: isDefaultAudioInputId(deviceId) ? true : { deviceId: { ideal: deviceId } },
+  // Ask the browser for the device's full multichannel format. Without this,
+  // Chromium/WebKit commonly negotiates a mono default even for devices such
+  // as BlackHole 64ch, and the channel picker can only see channel 1.
+  const audio: MediaTrackConstraints = {
+    channelCount: { ideal: 64 },
+    echoCancellation: false,
+    noiseSuppression: false,
+    autoGainControl: false,
   };
+  if (!isDefaultAudioInputId(deviceId)) audio.deviceId = { ideal: deviceId };
+  const constraints: MediaStreamConstraints = { audio };
   return navigator.mediaDevices.getUserMedia(constraints);
 }
 

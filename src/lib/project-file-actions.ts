@@ -17,6 +17,7 @@ import { useProjectLocationStore } from "../stores/project-location";
 import { requestUnsavedProjectChoice } from "../stores/unsaved-project-prompt";
 import { requestWebOpenProjectsChoice } from "../stores/web-open-projects-prompt";
 import { notifyWarning } from "./notifications";
+import { openProjectPath } from "./open-project-path";
 import { isQlab5WorkspacePath } from "./qlab5/import-qlab5-project";
 import {
   confirmAndImportQlab5FolderFiles,
@@ -38,6 +39,16 @@ export async function prepareToSwitchProject(): Promise<boolean> {
     await persistPlatformProject();
   }
   return true;
+}
+
+/** Open a project supplied by an external action after protecting unsaved work. */
+export async function openDroppedProjectPath(path: string): Promise<boolean> {
+  if (!canEditProject()) return false;
+  if (!(await prepareToSwitchProject())) return false;
+
+  const opened = await openProjectPath(path);
+  if (!opened) notifyWarning(t("notification.openProjectFailed"));
+  return opened;
 }
 
 function pickWebOpenFile(): Promise<File | undefined> {

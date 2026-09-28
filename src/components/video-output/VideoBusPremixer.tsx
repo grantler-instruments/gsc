@@ -2,7 +2,6 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -103,7 +102,7 @@ export function VideoBusPremixer({
       <Button
         size="small"
         variant="text"
-        sx={{ fontSize: 10, py: 0 }}
+        sx={{ fontSize: 10, py: 0, minWidth: 0 }}
         onClick={(e) => setMenuAnchor(e.currentTarget)}
       >
         {t("videoOutput.addEffect")}
@@ -143,25 +142,6 @@ export function VideoBusPremixer({
         bgcolor: "action.hover",
       }}
     >
-      <Stack
-        direction="row"
-        sx={{
-          alignItems: "center",
-          px: 1,
-          py: 0.5,
-          borderBottom: 1,
-          borderColor: "divider",
-          flexShrink: 0,
-        }}
-      >
-        <Typography
-          variant="caption"
-          sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", color: "text.secondary" }}
-        >
-          {t("videoOutput.premixer")}
-        </Typography>
-      </Stack>
-
       <Box sx={{ flex: 1, minHeight: 0, display: "flex", minWidth: 0 }}>
         {effects.length === 0 ? (
           <Box
@@ -184,8 +164,7 @@ export function VideoBusPremixer({
               flex: 1,
               minWidth: 0,
               minHeight: 0,
-              overflowY: "auto",
-              overflowX: "hidden",
+              overflow: "auto",
               display: "flex",
               gap: 1,
               px: 1,

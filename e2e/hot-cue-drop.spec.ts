@@ -1,14 +1,15 @@
 import { expect, test } from "@playwright/test";
 import { transportGoButton } from "./helpers/active-cues";
 import { dropAudioOnHotCuePanel, WHITE_NOISE_ALT_NAME } from "./helpers/drop-audio";
-import { hotCuePanel } from "./helpers/hot-cues";
+import { hotCuePanel, showHotCuePanel } from "./helpers/hot-cues";
 
 test("dropping audio onto the hot cue panel creates a hot cue and asset", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("./");
 
   await expect(transportGoButton(page)).toBeVisible();
-  await expect(page.getByRole("complementary", { name: "Hot cues" })).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "Hot cues" })).toHaveCount(0);
+  await showHotCuePanel(page);
 
   const assetsPanel = page.locator('[data-gsc-drop-zone="assets"]');
   const mainCueList = page.locator('[data-gsc-drop-zone="cue-list"]');

@@ -11,6 +11,7 @@ export const cueListEmptySx = {
 
 export const CUE_TYPE_COLORS: Record<CueType | AssetKind, { color: string; bgcolor: string }> = {
   audio: { color: "#6fcf97", bgcolor: "#1e3a2f" },
+  liveAudio: { color: "#f29b6f", bgcolor: "#3a281e" },
   video: { color: "#a78bfa", bgcolor: "#2a2540" },
   image: { color: "#e8b86d", bgcolor: "#3a2e1e" },
   tts: { color: "#7ec8e8", bgcolor: "#1e323a" },
@@ -32,6 +33,7 @@ export const ADD_CUE_ICON_COLORS: Partial<Record<CueType, string>> = {
   osc: "#8ad4c4",
   dmx: "#f2d072",
   audio: "#6fcf97",
+  liveAudio: "#f29b6f",
   video: "#a78bfa",
   image: "#e8b86d",
   tts: "#7ec8e8",

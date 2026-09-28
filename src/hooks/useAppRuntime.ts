@@ -6,6 +6,7 @@ import { useDmxFadeEngine } from "./useDmxFadeEngine";
 import { useDraftSaveReminder } from "./useDraftSaveReminder";
 import { useEnttecProConnection } from "./useEnttecProConnection";
 import { useFadeAnimation } from "./useFadeAnimation";
+import { useMediaMemoryManager } from "./useMediaMemoryManager";
 import { useMidiEngine } from "./useMidiEngine";
 import { useMidiInput } from "./useMidiInput";
 import { useNdiOutputEngine } from "./useNdiOutputEngine";
@@ -20,6 +21,7 @@ import { useShowModeKeepAwake } from "./useShowModeKeepAwake";
 import { useSpeechModelWarmup } from "./useSpeechModelWarmup";
 import { useTauriAppMenu } from "./useTauriAppMenu";
 import { useTauriOpenProject } from "./useTauriOpenProject";
+import { useTauriProjectBundleDrop } from "./useTauriProjectBundleDrop";
 import { useUpdateCheck } from "./useUpdateCheck";
 
 /** Side-effect hooks for session restore, engines, and platform integration. */
@@ -30,6 +32,7 @@ export function useAppRuntime(): boolean {
   useShowModeKeepAwake();
   useAppKeyboard();
   useAudioEngine();
+  useMediaMemoryManager(sessionReady);
   useMidiEngine();
   useOscEngine();
   useDmxEngine();
@@ -43,6 +46,7 @@ export function useAppRuntime(): boolean {
   usePreventBrowserFileDrop();
   useTauriAppMenu();
   useTauriOpenProject(sessionReady);
+  useTauriProjectBundleDrop();
   useDraftSaveReminder();
   useEnttecProConnection();
   useRemoteHost(sessionReady);

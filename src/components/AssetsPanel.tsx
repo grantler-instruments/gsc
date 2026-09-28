@@ -26,6 +26,7 @@ import {
 } from "../lib/cue-asset";
 import { pointerLeftElement } from "../lib/dom";
 import { isAssetDrag, setActiveAssetDrag, setAssetDragData } from "../lib/drag";
+import { notifyWarning, runRecoverableAction } from "../lib/notifications";
 import { requestDeleteAssetInUseChoice } from "../stores/delete-asset-prompt";
 import { useProjectStore } from "../stores/project";
 import { useUiStore } from "../stores/ui";
@@ -96,15 +97,18 @@ export function AssetsPanel() {
       setDropActive(false);
       e.preventDefault();
       e.stopPropagation();
-      if (!canEdit) return;
+      if (!canEdit) {
+        notifyWarning(t("common.state.disabledInShowMode"));
+        return;
+      }
       // Re-dropping an asset from this panel — nothing to import.
       if (isAssetDrag(e.dataTransfer) && !isExternalFileDrag(e.dataTransfer)) {
         return;
       }
       if (!isExternalFileDrag(e.dataTransfer)) return;
-      await importFromDrop(e.dataTransfer);
+      await runRecoverableAction(() => importFromDrop(e.dataTransfer));
     },
-    [canEdit, importFromDrop],
+    [canEdit, importFromDrop, t],
   );
 
   const onDragOver = useCallback(
@@ -138,7 +142,7 @@ export function AssetsPanel() {
   const onFileInput = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
-      if (files?.length) await importFromFileList(files);
+      if (files?.length) await runRecoverableAction(() => importFromFileList(files));
       e.target.value = "";
     },
     [importFromFileList],

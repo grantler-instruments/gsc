@@ -25,10 +25,21 @@ export async function readAssetBlobFromProjectDisk(virtualPath: string): Promise
   }
 }
 
+/** True when the asset file exists in the open project's folder. */
+export async function assetExistsOnProjectDisk(virtualPath: string): Promise<boolean> {
+  const rootDir = useProjectLocationStore.getState().rootDir;
+  if (!rootDir) return false;
+  try {
+    return await exists(diskPathForAsset(rootDir, normalizePath(virtualPath)));
+  } catch {
+    return false;
+  }
+}
+
 /** Load a disk-backed asset into the in-memory VFS (no Cache API write). */
 export async function loadAssetBlobFromProjectDisk(virtualPath: string): Promise<Blob | undefined> {
   const blob = await readAssetBlobFromProjectDisk(virtualPath);
   if (!blob) return undefined;
-  vfsPut(virtualPath, blob, { cache: false });
+  vfsPut(virtualPath, blob, { cache: false, persisted: true });
   return blob;
 }

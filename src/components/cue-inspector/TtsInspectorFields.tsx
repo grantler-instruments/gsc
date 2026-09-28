@@ -31,7 +31,6 @@ import {
 import { useSpeechModelStore } from "../../stores/speech-model";
 import type { Cue } from "../../types/cue";
 import { SliderNumberField } from "../SliderNumberField";
-import { AudioBusSelect } from "./AudioBusSelect";
 
 interface TtsInspectorFieldsProps {
   cue: Cue;
@@ -284,12 +283,6 @@ export function TtsInspectorFields({ cue, readOnly, onChange }: TtsInspectorFiel
         readOnly={readOnly}
         onChange={(pan) => onChange({ pan })}
         inputWidth={48}
-      />
-
-      <AudioBusSelect
-        value={cue.audioBusId}
-        readOnly={readOnly}
-        onChange={(audioBusId) => onChange({ audioBusId })}
       />
     </>
   );

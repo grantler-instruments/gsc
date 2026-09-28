@@ -121,9 +121,9 @@ export function RemoteApp() {
         )}
       </Box>
 
+      <TriggerNoteToasts />
       <TransportBar />
       <AppSnackbar />
-      <TriggerNoteToasts />
 
       <Dialog open={needsPin} maxWidth="xs" fullWidth>
         <DialogTitle>{t("remote.enterPinTitle")}</DialogTitle>

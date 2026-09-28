@@ -18,14 +18,16 @@ function updateBusEffects(
   busId: string,
   updater: (effects: AudioEffect[]) => AudioEffect[],
 ): ProjectState["audioBuses"] {
-  return buses.map((bus) => {
-    if (bus.id !== busId) return bus;
-    const effects = updater(bus.effects ?? []);
-    return normalizeAudioBus({
-      ...bus,
-      effects: effects.length > 0 ? effects : undefined,
-    });
-  });
+  return normalizeAudioBuses(
+    buses.map((bus) => {
+      if (bus.id !== busId) return bus;
+      const effects = updater(bus.effects ?? []);
+      return normalizeAudioBus({
+        ...bus,
+        effects: effects.length > 0 ? effects : undefined,
+      });
+    }),
+  );
 }
 
 export function createAudioBusActions(
@@ -84,29 +86,11 @@ export function createAudioBusActions(
             if (effect.id !== effectId) return effect;
             const enabled = patch.enabled ?? effect.enabled;
 
-            switch (effect.type) {
-              case "delay":
-                return normalizeAudioEffect({
-                  id: effect.id,
-                  type: "delay",
-                  enabled,
-                  params: patch.params ? mergeEffectParams(effect, patch.params) : effect.params,
-                });
-              case "reverb":
-                return normalizeAudioEffect({
-                  id: effect.id,
-                  type: "reverb",
-                  enabled,
-                  params: patch.params ? mergeEffectParams(effect, patch.params) : effect.params,
-                });
-              default:
-                return normalizeAudioEffect({
-                  id: effect.id,
-                  type: "eq",
-                  enabled,
-                  params: patch.params ? mergeEffectParams(effect, patch.params) : effect.params,
-                });
-            }
+            return normalizeAudioEffect({
+              ...effect,
+              enabled,
+              params: mergeEffectParams(effect, patch.params),
+            } as AudioEffect);
           }),
         ),
       })),

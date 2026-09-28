@@ -1,5 +1,6 @@
 export type CueType =
   | "audio"
+  | "liveAudio"
   | "video"
   | "image"
   | "tts"
@@ -20,6 +21,7 @@ export type FadeCueType = "volumeFade" | "opacityFade" | "panFade" | "lightFade"
 /** Media file cues (not MIDI/OSC/TTS). */
 export type AssetKind = Exclude<
   CueType,
+  | "liveAudio"
   | "tts"
   | "midi"
   | "osc"
@@ -100,6 +102,8 @@ export interface Cue {
   /** When set, cue is a child of a group/sequence container. */
   parentId?: string;
   assetPath?: string;
+  /** 1-based input channel for live audio cues. */
+  liveAudioChannel?: number;
   midi?: MidiCueData;
   osc?: OscCueData;
   dmx?: DmxCueData;

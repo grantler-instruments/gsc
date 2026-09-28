@@ -1,10 +1,6 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { clampAudioMixerHeight, DEFAULT_AUDIO_MIXER_HEIGHT } from "../lib/audio-mixer-layout";
-import {
-  clampVideoOutputDockHeight,
-  DEFAULT_VIDEO_OUTPUT_DOCK_HEIGHT,
-} from "../lib/video-output-layout";
 import type { MidiAction } from "../types/midi-mapping";
 import type { RightSidebarTabId } from "../types/right-sidebar";
 import type { SidebarTabId } from "../types/sidebar";
@@ -43,12 +39,14 @@ interface UiState {
   assetImportCount: number;
   /** Audio mixer dock above the transport bar. */
   audioMixerOpen: boolean;
-  /** Height of the audio mixer dock in pixels. */
+  /** Shared mixer dock height in pixels. */
   audioMixerHeight: number;
   /** Video output dock above the transport bar. */
   videoOutputOpen: boolean;
-  /** Height of the video output dock in pixels. */
+  /** Kept in sync with audioMixerHeight for the video output dock. */
   videoOutputHeight: number;
+  triggerNotePosition: { x: number; y: number } | null;
+  setTriggerNotePosition: (position: { x: number; y: number }) => void;
   setSidebarTab: (tab: SidebarTabId) => void;
   setRightSidebarTab: (tab: RightSidebarTabId) => void;
   setDarkMode: (dark: boolean) => void;
@@ -94,13 +92,15 @@ export const useUiStore = create<UiState>()(
         compactInspectorDrawerOpen: false,
         compactInspectorDrawerDismissed: true,
         hotCuePanelOrientation: "right",
-        hotCuePanelVisible: true,
+        hotCuePanelVisible: false,
         hoveredAssetPath: null,
         assetImportCount: 0,
         audioMixerOpen: false,
         audioMixerHeight: DEFAULT_AUDIO_MIXER_HEIGHT,
         videoOutputOpen: false,
-        videoOutputHeight: DEFAULT_VIDEO_OUTPUT_DOCK_HEIGHT,
+        videoOutputHeight: DEFAULT_AUDIO_MIXER_HEIGHT,
+        triggerNotePosition: null,
+        setTriggerNotePosition: (triggerNotePosition) => set({ triggerNotePosition }),
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
         setRightSidebarTab: (rightSidebarTab) => set({ rightSidebarTab }),
         setDarkMode: (darkMode) => set({ darkMode }),
@@ -150,12 +150,16 @@ export const useUiStore = create<UiState>()(
         endAssetImport: () =>
           set((s) => ({ assetImportCount: Math.max(0, s.assetImportCount - 1) })),
         setAudioMixerOpen: (audioMixerOpen) => set({ audioMixerOpen }),
-        setAudioMixerHeight: (audioMixerHeight) =>
-          set({ audioMixerHeight: clampAudioMixerHeight(audioMixerHeight) }),
+        setAudioMixerHeight: (height) => {
+          const mixerHeight = clampAudioMixerHeight(height);
+          set({ audioMixerHeight: mixerHeight, videoOutputHeight: mixerHeight });
+        },
         toggleAudioMixer: () => set((s) => ({ audioMixerOpen: !s.audioMixerOpen })),
         setVideoOutputOpen: (videoOutputOpen) => set({ videoOutputOpen }),
-        setVideoOutputHeight: (videoOutputHeight) =>
-          set({ videoOutputHeight: clampVideoOutputDockHeight(videoOutputHeight) }),
+        setVideoOutputHeight: (height) => {
+          const mixerHeight = clampAudioMixerHeight(height);
+          set({ audioMixerHeight: mixerHeight, videoOutputHeight: mixerHeight });
+        },
         toggleVideoOutput: () => set((s) => ({ videoOutputOpen: !s.videoOutputOpen })),
       }),
       {
@@ -168,18 +172,18 @@ export const useUiStore = create<UiState>()(
           hotCuePanelVisible: s.hotCuePanelVisible,
           audioMixerHeight: s.audioMixerHeight,
           videoOutputHeight: s.videoOutputHeight,
+          triggerNotePosition: s.triggerNotePosition,
         }),
         merge: (persisted, current) => {
           const saved = persisted as Partial<UiState> | undefined;
+          const mixerHeight = clampAudioMixerHeight(
+            saved?.audioMixerHeight ?? saved?.videoOutputHeight ?? current.audioMixerHeight,
+          );
           return {
             ...current,
             ...saved,
-            audioMixerHeight: clampAudioMixerHeight(
-              saved?.audioMixerHeight ?? current.audioMixerHeight,
-            ),
-            videoOutputHeight: clampVideoOutputDockHeight(
-              saved?.videoOutputHeight ?? current.videoOutputHeight,
-            ),
+            audioMixerHeight: mixerHeight,
+            videoOutputHeight: mixerHeight,
           };
         },
       },

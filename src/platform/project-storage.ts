@@ -43,7 +43,11 @@ export async function importProjectBundle(file?: File): Promise<void> {
   if (!file) return;
   const { withProjectLoading } = await import("../stores/project-loading");
   const { importProjectBundleWeb } = await import("./project-storage.web");
-  return withProjectLoading(() => importProjectBundleWeb(file));
+  try {
+    await withProjectLoading(() => importProjectBundleWeb(file));
+  } catch (err) {
+    notifyErrorFromUnknown(err);
+  }
 }
 
 export async function openProject(): Promise<boolean> {

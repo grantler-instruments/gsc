@@ -4,10 +4,9 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getPrimarySelectedCueId } from "../lib/cue-selection";
-import { getCueDisplayName } from "../lib/cues";
 import { useActiveCueList } from "../stores/project";
 
-/** Top-right preview of the selected cue's trigger note for the operator. */
+/** Movable preview of the selected cue's trigger note for the operator. */
 export function TriggerNoteToasts() {
   const { t } = useTranslation();
   const activeList = useActiveCueList();
@@ -17,29 +16,29 @@ export function TriggerNoteToasts() {
   const [dismissedCueId, setDismissedCueId] = useState<string | null>(null);
 
   useEffect(() => {
-    setDismissedCueId(null);
+    setDismissedCueId((previous) => (previous === selectedCueId ? previous : null));
   }, [selectedCueId]);
 
   if (!cue || !message || dismissedCueId === selectedCueId) return null;
-
-  const cueName = getCueDisplayName(cue, activeList.cues);
 
   return (
     <Box
       aria-live="polite"
       sx={{
-        position: "fixed",
-        top: 16,
-        right: 16,
-        zIndex: (theme) => theme.zIndex.snackbar + 1,
-        maxWidth: 360,
-        width: "min(360px, calc(100vw - 32px))",
+        flexShrink: 0,
+        px: { xs: 1, sm: 2 },
+        py: 0.75,
+        bgcolor: "background.paper",
       }}
     >
       <Alert
         severity="info"
-        variant="filled"
-        sx={{ width: "100%" }}
+        variant="outlined"
+        sx={{
+          width: "100%",
+          "& .MuiAlert-message": { minWidth: 0, flex: 1 },
+          overflowWrap: "anywhere",
+        }}
         onClose={() => selectedCueId && setDismissedCueId(selectedCueId)}
         slotProps={{
           closeButton: {
@@ -47,20 +46,11 @@ export function TriggerNoteToasts() {
           },
         }}
       >
-        <Typography
-          component="p"
-          variant="caption"
-          sx={{
-            m: 0,
-            mb: 0.5,
-            opacity: 0.85,
-            fontWeight: 600,
-            letterSpacing: "0.02em",
-            lineHeight: 1.3,
-          }}
-        >
-          {cueName}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+          <Typography component="span" variant="caption" sx={{ opacity: 0.85, fontWeight: 600 }}>
+            {cue.name}
+          </Typography>
+        </Box>
         <Typography
           component="p"
           variant="body1"

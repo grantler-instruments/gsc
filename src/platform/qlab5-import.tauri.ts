@@ -12,7 +12,12 @@ async function readBytes(path: string): Promise<Uint8Array> {
 }
 
 export async function findQlab5WorkspaceInDirectory(dirPath: string): Promise<string | null> {
-  const entries = await readDir(dirPath);
+  let entries: Awaited<ReturnType<typeof readDir>>;
+  try {
+    entries = await readDir(dirPath);
+  } catch {
+    return null;
+  }
   const workspaceEntry = entries.find((e) =>
     e.name?.toLowerCase().endsWith(QLAB5_WORKSPACE_EXTENSION),
   );

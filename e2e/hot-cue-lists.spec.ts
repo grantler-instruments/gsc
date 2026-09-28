@@ -19,8 +19,8 @@ import {
 test.describe.configure({ mode: "serial" });
 
 const MAIN_AUDIO = "white-noise-playback.wav";
-const HOT_A = "white-noise-short-a.wav";
-const HOT_B = "white-noise-short-b.wav";
+const HOT_A = "white-noise-playback.mp3";
+const HOT_B = "white-noise-playback.ogg";
 
 test("second hot list tab keeps its own cues when firing", async ({ page }) => {
   test.setTimeout(60_000);
@@ -31,7 +31,7 @@ test("second hot list tab keeps its own cues when firing", async ({ page }) => {
   await expectCueInSequenceList(page, MAIN_AUDIO);
   await sequenceCueRow(page, MAIN_AUDIO).click();
 
-  await dropAudioOnHotCuePanel(page, fixturePath(HOT_A), HOT_A, "audio/wav");
+  await dropAudioOnHotCuePanel(page, fixturePath(HOT_A), HOT_A, "audio/mpeg");
   await expect(hotCuePanel(page)).toContainText(HOT_A);
 
   await addHotCueList(page);
@@ -39,7 +39,7 @@ test("second hot list tab keeps its own cues when firing", async ({ page }) => {
   await expect(hotTabs).toHaveCount(2);
   await expect(hotTabs.nth(1)).toHaveAttribute("aria-selected", "true");
 
-  await dropAudioOnHotCuePanel(page, fixturePath(HOT_B), HOT_B, "audio/wav");
+  await dropAudioOnHotCuePanel(page, fixturePath(HOT_B), HOT_B, "audio/ogg");
   await expect(hotCuePanel(page)).toContainText(HOT_B);
   await expect(hotCuePanel(page).getByText(HOT_A, { exact: true })).toHaveCount(0);
 
@@ -69,8 +69,8 @@ test("reorders hot-cue pads within a list", async ({ page }) => {
 
   await gotoApp(page, { resetStorage: true });
 
-  await dropAudioOnHotCuePanel(page, fixturePath(HOT_A), HOT_A, "audio/wav");
-  await appendAudioOnHotCuePanel(page, fixturePath(HOT_B), HOT_B, "audio/wav");
+  await dropAudioOnHotCuePanel(page, fixturePath(HOT_A), HOT_A, "audio/mpeg");
+  await appendAudioOnHotCuePanel(page, fixturePath(HOT_B), HOT_B, "audio/ogg");
 
   await expect.poll(() => hotCueNamesInOrder(page)).toEqual([HOT_A, HOT_B]);
 

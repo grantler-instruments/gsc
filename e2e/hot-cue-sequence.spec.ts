@@ -16,7 +16,7 @@ test.describe.configure({ mode: "serial" });
 
 const MAIN_AUDIO = "white-noise-playback.wav";
 const SHORT_A = "white-noise-short-a.wav";
-const SHORT_B = "white-noise-short-b.wav";
+const SECOND_STEP_AUDIO = "white-noise-playback.flac";
 /** Short clip length from generate-audio-fixtures.mjs. */
 const SHORT_CLIP_SEC = 0.5;
 const STEP_ADVANCE_TIMEOUT_MS = 15_000 + SHORT_CLIP_SEC * 1000;
@@ -26,14 +26,14 @@ async function prepareHotSequenceFromMainList(
 ): Promise<void> {
   await dropAudioOnCueList(page, fixturePath(MAIN_AUDIO), MAIN_AUDIO, "audio/wav");
   await dropAudioOnCueList(page, fixturePath(SHORT_A), SHORT_A, "audio/wav");
-  await dropAudioOnCueList(page, fixturePath(SHORT_B), SHORT_B, "audio/wav");
+  await dropAudioOnCueList(page, fixturePath(SECOND_STEP_AUDIO), SECOND_STEP_AUDIO, "audio/flac");
   await expectCueInSequenceList(page, MAIN_AUDIO);
   await expectCueInSequenceList(page, SHORT_A);
-  await expectCueInSequenceList(page, SHORT_B);
+  await expectCueInSequenceList(page, SECOND_STEP_AUDIO);
 
   await addCueType(page, "Sequence");
   await dragCueIntoContainer(page, SHORT_A, "Sequence");
-  await dragCueIntoContainer(page, SHORT_B, "Sequence");
+  await dragCueIntoContainer(page, SECOND_STEP_AUDIO, "Sequence");
   await expandContainerCue(page, "Sequence");
 
   await expect(
@@ -61,6 +61,8 @@ test("hot sequence auto-advances while main audio keeps playing", async ({ page 
   await expect(activeCueRow(page, SHORT_A)).toBeVisible({ timeout: 10_000 });
 
   await expect(activeCueRow(page, SHORT_A)).toBeHidden({ timeout: STEP_ADVANCE_TIMEOUT_MS });
-  await expect(activeCueRow(page, SHORT_B)).toBeVisible({ timeout: STEP_ADVANCE_TIMEOUT_MS });
+  await expect(activeCueRow(page, SECOND_STEP_AUDIO)).toBeVisible({
+    timeout: STEP_ADVANCE_TIMEOUT_MS,
+  });
   await expect(activeCueRow(page, MAIN_AUDIO)).toBeVisible();
 });

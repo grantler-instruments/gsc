@@ -1,9 +1,15 @@
-import { busEffectiveVolume, clampBusPan, resolveBusOutputBusId } from "../lib/audio-buses";
+import {
+  busEffectiveVolume,
+  clampBusPan,
+  resolveBusOutputBusId,
+  resolveDuckerSourceBusIds,
+} from "../lib/audio-buses";
 import { effectChainKey } from "../lib/audio-effects";
 import type { AudioBus } from "../types/audio-bus";
 import type { AudioEffect } from "../types/audio-effect";
 import { buildBusEffectChain } from "./effects/chain";
 import type { BusEffectRuntime } from "./effects/types";
+import { audioMeters, busMeterId, MASTER_METER_ID } from "./meters";
 
 interface BusRuntime {
   input: GainNode;
@@ -21,13 +27,16 @@ export class MixerGraph {
   constructor(private ctx: AudioContext) {
     this.master = ctx.createGain();
     this.master.connect(ctx.destination);
+    audioMeters.attach(MASTER_METER_ID, ctx, this.master);
   }
 
   dispose(): void {
-    for (const runtime of this.buses.values()) {
+    for (const [id, runtime] of this.buses) {
+      audioMeters.remove(busMeterId(id));
       this.disposeBusRuntime(runtime);
     }
     this.buses.clear();
+    audioMeters.remove(MASTER_METER_ID);
     this.master.disconnect();
   }
 
@@ -85,9 +94,12 @@ export class MixerGraph {
   /** Reconcile bus nodes with project config. */
   sync(buses: AudioBus[]): void {
     const nextIds = new Set(buses.map((bus) => bus.id));
+    // Remove routing and sidechain edges before disposing/rebuilding any effects.
+    for (const runtime of this.buses.values()) runtime.panner.disconnect();
 
     for (const [id, runtime] of this.buses) {
       if (!nextIds.has(id)) {
+        audioMeters.remove(busMeterId(id));
         this.disposeBusRuntime(runtime);
         this.buses.delete(id);
       }
@@ -127,6 +139,15 @@ export class MixerGraph {
       if (!runtime) continue;
       const outputBusId = resolveBusOutputBusId(bus, buses);
       this.reconnectBusOutput(runtime, outputBusId);
+      audioMeters.attach(busMeterId(bus.id), this.ctx, runtime.panner);
+    }
+    const sources = resolveDuckerSourceBusIds(buses);
+    for (const runtime of this.buses.values()) {
+      for (const effect of runtime.effectRuntimes) {
+        const sourceId = sources.get(effect.id);
+        const source = sourceId ? this.buses.get(sourceId) : undefined;
+        if (source && effect.sidechain) source.panner.connect(effect.sidechain, 0, 1);
+      }
     }
   }
 

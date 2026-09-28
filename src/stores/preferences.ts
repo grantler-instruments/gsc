@@ -35,6 +35,9 @@ interface PreferencesState {
   locale: SupportedLocale;
   /** Tauri: selected audio output device id (device name from cpal). */
   soundCardId: string | null;
+  /** Browser audio input device id used by all live-audio cues. */
+  audioInputDeviceId: string | null;
+  audioInputDeviceLabel: string | null;
   /** Web MIDI output id or Tauri MIDI port index (output). */
   midiInterfaceId: string | null;
   /** Web MIDI input id or Tauri MIDI port index (input). */
@@ -52,6 +55,7 @@ interface PreferencesState {
   deemexMidiStartChannel: number;
   setLocale: (locale: SupportedLocale) => void;
   setSoundCardId: (soundCardId: string | null) => void;
+  setAudioInputDeviceId: (audioInputDeviceId: string | null, label?: string | null) => void;
   setMidiInterfaceId: (midiInterfaceId: string | null) => void;
   setMidiInputId: (midiInputId: string | null) => void;
   setMidiDebounceMs: (midiDebounceMs: number) => void;
@@ -102,6 +106,8 @@ export const usePreferencesStore = create<PreferencesState>()(
       (set) => ({
         locale: "en",
         soundCardId: null,
+        audioInputDeviceId: null,
+        audioInputDeviceLabel: null,
         midiInterfaceId: null,
         midiInputId: null,
         midiDebounceMs: DEFAULT_MIDI_DEBOUNCE_MS,
@@ -129,6 +135,8 @@ export const usePreferencesStore = create<PreferencesState>()(
           set({ locale });
         },
         setSoundCardId: (soundCardId) => set({ soundCardId }),
+        setAudioInputDeviceId: (audioInputDeviceId, label = null) =>
+          set({ audioInputDeviceId, audioInputDeviceLabel: label }),
         setMidiInterfaceId: (midiInterfaceId) => set({ midiInterfaceId }),
         setMidiInputId: (midiInputId) => set({ midiInputId }),
         setMidiDebounceMs: (midiDebounceMs) => set({ midiDebounceMs }),
@@ -161,6 +169,8 @@ export const usePreferencesStore = create<PreferencesState>()(
         partialize: (s) => ({
           locale: s.locale,
           soundCardId: s.soundCardId,
+          audioInputDeviceId: s.audioInputDeviceId,
+          audioInputDeviceLabel: s.audioInputDeviceLabel,
           midiInterfaceId: s.midiInterfaceId,
           midiInputId: s.midiInputId,
           midiDebounceMs: s.midiDebounceMs,

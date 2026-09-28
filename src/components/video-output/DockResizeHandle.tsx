@@ -15,10 +15,11 @@ export function DockResizeHandle({ height, onResize }: DockResizeHandleProps) {
   const dragRef = useRef<{ startY: number; startHeight: number } | null>(null);
 
   const endDrag = (target: EventTarget & Element, pointerId: number) => {
-    if (!dragRef.current) return;
+    if (target.hasPointerCapture(pointerId)) {
+      target.releasePointerCapture(pointerId);
+    }
     dragRef.current = null;
-    target.releasePointerCapture(pointerId);
-    document.body.style.userSelect = "";
+    document.body.style.removeProperty("user-select");
   };
 
   return (

@@ -12,13 +12,13 @@ async function collectMediaFilePaths(paths: string[]): Promise<string[]> {
   for (const p of paths) {
     if (isProjectBundlePath(p)) continue;
 
-    const name = await basename(p);
-    if (assetKindFromFilename(name)) {
-      out.push(p);
-      continue;
-    }
-
     try {
+      const name = await basename(p);
+      if (assetKindFromFilename(name)) {
+        out.push(p);
+        continue;
+      }
+
       const entries = await readDir(p);
       for (const entry of entries) {
         const child = await join(p, entry.name);

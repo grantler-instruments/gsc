@@ -198,3 +198,51 @@ describe("clampEqGainDb", () => {
     expect(clampEqGainDb(-99)).toBe(-12);
   });
 });
+
+describe("utility effect persistence", () => {
+  it.each([
+    "limiter",
+    "ducker",
+    "stereo",
+  ] as const)("round-trips %s without changing its type", (type) => {
+    const effect = createDefaultBusEffect(type);
+    expect(normalizeAudioEffect(JSON.parse(JSON.stringify(effect)))).toEqual(effect);
+    expect(normalizeAudioEffect({ ...effect, enabled: false }).enabled).toBe(false);
+  });
+
+  it("clamps non-finite and out-of-range dynamics parameters", () => {
+    expect(
+      normalizeAudioEffect({
+        id: "limit",
+        type: "limiter",
+        params: { ceilingDb: 20, releaseMs: Number.NaN },
+      }).params,
+    ).toEqual({ ceilingDb: 0, releaseMs: 100 });
+    const duck = createDefaultBusEffect("ducker");
+    expect(
+      mergeEffectParams(duck, {
+        sourceBusId: "voice",
+        reductionDb: 99,
+        attackMs: -1,
+        releaseMs: Infinity,
+      }),
+    ).toEqual({
+      sourceBusId: "voice",
+      thresholdDb: -30,
+      reductionDb: 36,
+      attackMs: 1,
+      releaseMs: 300,
+    });
+  });
+
+  it("preserves boolean stereo settings and unrelated values during updates", () => {
+    const stereo = createDefaultBusEffect("stereo");
+    expect(mergeEffectParams(stereo, { mono: true, swap: true, width: 9 })).toEqual({
+      width: 2,
+      mono: true,
+      swap: true,
+      invertLeft: false,
+      invertRight: false,
+    });
+  });
+});

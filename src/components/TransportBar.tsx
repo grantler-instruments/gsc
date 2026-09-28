@@ -36,6 +36,8 @@ const STATUS_SLOT_WIDTH = 240;
 function CueNotesLine({ notes }: { notes?: string }) {
   const text = notes?.trim();
 
+  if (!text) return null;
+
   return (
     <Box
       sx={{
@@ -44,35 +46,37 @@ function CueNotesLine({ notes }: { notes?: string }) {
         flexShrink: 0,
       }}
     >
-      {text ? (
-        <Typography
-          component="p"
-          variant="caption"
-          sx={{
-            m: 0,
-            whiteSpace: "pre-wrap",
-            lineHeight: 1.35,
-            fontSize: 12,
-            color: "text.secondary",
-          }}
-        >
-          {text}
-        </Typography>
-      ) : null}
+      <Typography
+        component="p"
+        variant="caption"
+        sx={{
+          m: 0,
+          whiteSpace: "pre-wrap",
+          lineHeight: 1.35,
+          fontSize: 12,
+          color: "primary.main",
+        }}
+      >
+        {text}
+      </Typography>
     </Box>
   );
 }
 
 function CueSummary({ cue, allCues }: { cue: Cue; allCues?: Cue[] }) {
   const displayName = allCues ? getCueDisplayName(cue, allCues) : cue.name;
+  const hasNotes = Boolean(cue.notes?.trim());
 
   return (
-    <Stack direction="row" sx={{ alignItems: "flex-start", gap: 1.25, minWidth: 0 }}>
+    <Stack
+      direction="row"
+      sx={{ alignItems: hasNotes ? "flex-start" : "center", gap: 1.25, minWidth: 0 }}
+    >
       <Box sx={{ alignSelf: "center", flexShrink: 0 }}>
         <CueTypeBadge type={cue.type} showLabel={false} />
       </Box>
       <TransportCueThumbnail cue={cue} allCues={allCues} />
-      <Stack sx={{ flex: 1, minWidth: 0, pt: 0.125 }}>
+      <Stack sx={{ flex: 1, minWidth: 0, pt: hasNotes ? 0.125 : 0 }}>
         <Typography noWrap sx={{ lineHeight: 1.3, fontSize: 14 }}>
           {displayName}
         </Typography>

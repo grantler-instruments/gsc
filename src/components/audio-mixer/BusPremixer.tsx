@@ -4,22 +4,26 @@ import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 import Slider from "@mui/material/Slider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { resolveDuckerSourceBusIds } from "../../lib/audio-buses";
 import { busHasEffectType } from "../../lib/audio-effects";
 import { readBusEffectDragId, setActiveBusEffectDrag, setBusEffectDragData } from "../../lib/drag";
 import type { AudioBus } from "../../types/audio-bus";
 import type {
   AudioEffect,
+  AudioEffectParamsPatch,
   AudioEffectType,
   DelayEffectParams,
   EqEffectParams,
   ReverbEffectParams,
 } from "../../types/audio-effect";
 import {
+  AUDIO_EFFECT_TYPES,
   DELAY_FEEDBACK_MAX,
   DELAY_TIME_MAX_SEC,
   DELAY_TIME_MIN_SEC,
@@ -31,8 +35,10 @@ import {
 import { useClearOnDragEnd } from "../cue-list/useClearOnDragEnd";
 
 export const EQ_BAND_WIDTH = 36;
-export const EQ_BLOCK_WIDTH = EQ_BAND_WIDTH * 3;
+export const EQ_BLOCK_WIDTH = EQ_BAND_WIDTH * 3 + 13;
 export const FX_BLOCK_WIDTH = 108;
+const UTILITY_BLOCK_WIDTH = 164;
+const DUCKER_BLOCK_WIDTH = 220;
 export const FX_SLIDER_HEIGHT = 140;
 export const ADD_EFFECT_COLUMN_WIDTH = 72;
 export const PREMIXER_EMPTY_WIDTH = 120;
@@ -62,10 +68,11 @@ interface ParamRowProps {
   max: number;
   step: number;
   disabled: boolean;
+  unit?: string;
   onChange: (value: number) => void;
 }
 
-function ParamRow({ label, value, min, max, step, disabled, onChange }: ParamRowProps) {
+function ParamRow({ label, value, min, max, step, disabled, unit, onChange }: ParamRowProps) {
   return (
     <Stack spacing={0.25}>
       <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "baseline" }}>
@@ -74,6 +81,7 @@ function ParamRow({ label, value, min, max, step, disabled, onChange }: ParamRow
         </Typography>
         <Typography variant="caption" sx={{ fontSize: 10, color: "text.secondary" }}>
           {Number.isInteger(step) ? value : value.toFixed(2)}
+          {unit ? ` ${unit}` : ""}
         </Typography>
       </Stack>
       <Slider
@@ -82,6 +90,7 @@ function ParamRow({ label, value, min, max, step, disabled, onChange }: ParamRow
         max={max}
         step={step}
         value={value}
+        aria-label={label}
         disabled={disabled}
         onChange={(_, next) => onChange(next as number)}
         sx={horizontalSliderSx}
@@ -130,6 +139,7 @@ function EffectBlockShell({
       onDrop={reorder?.onDrop}
       sx={{
         width,
+        minHeight: 220,
         flexShrink: 0,
         display: "flex",
         flexDirection: "column",
@@ -388,11 +398,162 @@ function ReverbEffectBlock({
   );
 }
 
+interface UtilityEffectBlockProps {
+  effect: Extract<AudioEffect, { type: "limiter" | "ducker" | "stereo" }>;
+  bus: AudioBus;
+  audioBuses: AudioBus[];
+  canEdit: boolean;
+  onUpdate: (params: AudioEffectParamsPatch) => void;
+  onToggle: (enabled: boolean) => void;
+  onRemove: () => void;
+  reorder?: EffectReorderProps;
+}
+
+function UtilityEffectBlock({
+  effect,
+  bus,
+  audioBuses,
+  canEdit,
+  onUpdate,
+  onToggle,
+  onRemove,
+  reorder,
+}: UtilityEffectBlockProps) {
+  const { t } = useTranslation();
+  const disabled = !canEdit || !effect.enabled;
+  const parameter = (
+    key: keyof AudioEffectParamsPatch,
+    value: number,
+    min: number,
+    max: number,
+    step: number,
+    unit: string,
+  ) => (
+    <ParamRow
+      key={key}
+      label={t(`audioMixer.${key}`)}
+      value={value}
+      min={min}
+      max={max}
+      step={step}
+      unit={unit}
+      disabled={disabled}
+      onChange={(next) => onUpdate({ [key]: next })}
+    />
+  );
+  return (
+    <EffectBlockShell
+      title={t(`audioMixer.${effect.type}`)}
+      enabled={effect.enabled}
+      canEdit={canEdit}
+      onToggle={() => onToggle(!effect.enabled)}
+      onRemove={onRemove}
+      width={effect.type === "ducker" ? DUCKER_BLOCK_WIDTH : UTILITY_BLOCK_WIDTH}
+      reorder={reorder}
+    >
+      <Stack spacing={0.5} sx={{ flex: 1, justifyContent: "center" }}>
+        {effect.type === "limiter" && (
+          <>
+            {parameter("ceilingDb", effect.params.ceilingDb, -24, 0, 0.5, "dB")}
+            {parameter("releaseMs", effect.params.releaseMs, 10, 1000, 10, "ms")}
+          </>
+        )}
+        {effect.type === "ducker" && (
+          <>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10 }}>
+              {t("audioMixer.triggerBus")}
+            </Typography>
+            <Select
+              size="small"
+              fullWidth
+              displayEmpty
+              value={effect.params.sourceBusId}
+              disabled={disabled}
+              inputProps={{ "aria-label": t("audioMixer.triggerBus") }}
+              onChange={(event) => onUpdate({ sourceBusId: event.target.value })}
+              sx={{ fontSize: 11 }}
+            >
+              <MenuItem value="">{t("common.action.none")}</MenuItem>
+              {audioBuses
+                .filter((entry) => entry.id !== bus.id)
+                .map((entry) => {
+                  const candidate = audioBuses.map((item) =>
+                    item.id !== bus.id
+                      ? item
+                      : {
+                          ...item,
+                          effects: item.effects?.map((fx) =>
+                            fx.id === effect.id
+                              ? { ...effect, params: { ...effect.params, sourceBusId: entry.id } }
+                              : fx,
+                          ),
+                        },
+                  );
+                  const sources = resolveDuckerSourceBusIds(candidate);
+                  const wouldClearOtherSource = audioBuses.some((item) =>
+                    item.effects?.some(
+                      (fx) =>
+                        fx.type === "ducker" &&
+                        fx.id !== effect.id &&
+                        fx.params.sourceBusId &&
+                        sources.get(fx.id) !== fx.params.sourceBusId,
+                    ),
+                  );
+                  return (
+                    <MenuItem
+                      key={entry.id}
+                      value={entry.id}
+                      disabled={sources.get(effect.id) !== entry.id || wouldClearOtherSource}
+                    >
+                      {entry.name}
+                    </MenuItem>
+                  );
+                })}
+            </Select>
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
+              {parameter("thresholdDb", effect.params.thresholdDb, -60, 0, 1, "dB")}
+              {parameter("reductionDb", effect.params.reductionDb, 0, 36, 1, "dB")}
+              {parameter("attackMs", effect.params.attackMs, 1, 500, 1, "ms")}
+              {parameter("releaseMs", effect.params.releaseMs, 10, 2000, 10, "ms")}
+            </Box>
+          </>
+        )}
+        {effect.type === "stereo" && (
+          <>
+            <ParamRow
+              label={t("audioMixer.width")}
+              value={effect.params.width * 100}
+              min={0}
+              max={200}
+              step={1}
+              unit="%"
+              disabled={disabled || effect.params.mono}
+              onChange={(width) => onUpdate({ width: width / 100 })}
+            />
+            {(["mono", "swap", "invertLeft", "invertRight"] as const).map((key) => (
+              <Button
+                key={key}
+                size="small"
+                fullWidth
+                aria-pressed={effect.params[key]}
+                disabled={disabled}
+                variant={effect.params[key] ? "contained" : "outlined"}
+                onClick={() => onUpdate({ [key]: !effect.params[key] })}
+                sx={{ fontSize: 10, py: 0.25 }}
+              >
+                {t(`audioMixer.${key}`)}
+              </Button>
+            ))}
+          </>
+        )}
+      </Stack>
+    </EffectBlockShell>
+  );
+}
+
 export function premixerContentWidth(bus: AudioBus): number {
   const list = bus.effects ?? [];
-  const availableTypes = (["eq", "delay", "reverb"] as const).filter(
-    (type) => !busHasEffectType(bus, type),
-  );
+  const availableTypes = AUDIO_EFFECT_TYPES.filter((type) => !busHasEffectType(bus, type));
   const addColumnWidth = availableTypes.length > 0 ? ADD_EFFECT_COLUMN_WIDTH : 0;
 
   if (list.length === 0) return PREMIXER_EMPTY_WIDTH + addColumnWidth;
@@ -400,6 +561,8 @@ export function premixerContentWidth(bus: AudioBus): number {
   return (
     list.reduce((width, effect) => {
       if (effect.type === "eq") return width + EQ_BLOCK_WIDTH;
+      if (effect.type === "ducker") return width + DUCKER_BLOCK_WIDTH;
+      if (effect.type === "limiter" || effect.type === "stereo") return width + UTILITY_BLOCK_WIDTH;
       return width + FX_BLOCK_WIDTH;
     }, 0) +
     Math.max(0, list.length - 1) * PREMIXER_EFFECTS_GAP +
@@ -410,12 +573,13 @@ export function premixerContentWidth(bus: AudioBus): number {
 
 interface BusPremixerProps {
   bus: AudioBus;
+  audioBuses: AudioBus[];
   canEdit: boolean;
   onAddEffect: (type: AudioEffectType) => void;
   onUpdateEffect: (
     effectId: string,
     patch: {
-      params?: Partial<EqEffectParams & DelayEffectParams & ReverbEffectParams>;
+      params?: AudioEffectParamsPatch;
       enabled?: boolean;
     },
   ) => void;
@@ -427,6 +591,7 @@ type EffectDropTarget = { id: string; place: "before" | "after" };
 
 export function BusPremixer({
   bus,
+  audioBuses,
   canEdit,
   onAddEffect,
   onUpdateEffect,
@@ -493,7 +658,7 @@ export function BusPremixer({
     [canReorder, clearDropTarget, dropTarget, handleEffectDragOver, handleEffectDrop],
   );
 
-  const availableTypes: AudioEffectType[] = (["eq", "delay", "reverb"] as const).filter(
+  const availableTypes: AudioEffectType[] = AUDIO_EFFECT_TYPES.filter(
     (type) => !busHasEffectType(bus, type),
   );
 
@@ -502,42 +667,23 @@ export function BusPremixer({
       <Button
         size="small"
         variant="text"
-        sx={{ fontSize: 10, py: 0 }}
+        sx={{ fontSize: 10, py: 0, minWidth: 0 }}
         onClick={(e) => setMenuAnchor(e.currentTarget)}
       >
         {t("audioMixer.addEffect")}
       </Button>
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
-        {availableTypes.includes("eq") && (
+        {availableTypes.map((type) => (
           <MenuItem
+            key={type}
             onClick={() => {
-              onAddEffect("eq");
+              onAddEffect(type);
               setMenuAnchor(null);
             }}
           >
-            {t("audioMixer.eq")}
+            {t(`audioMixer.${type}`)}
           </MenuItem>
-        )}
-        {availableTypes.includes("delay") && (
-          <MenuItem
-            onClick={() => {
-              onAddEffect("delay");
-              setMenuAnchor(null);
-            }}
-          >
-            {t("audioMixer.delay")}
-          </MenuItem>
-        )}
-        {availableTypes.includes("reverb") && (
-          <MenuItem
-            onClick={() => {
-              onAddEffect("reverb");
-              setMenuAnchor(null);
-            }}
-          >
-            {t("audioMixer.reverb")}
-          </MenuItem>
-        )}
+        ))}
       </Menu>
     </>
   );
@@ -553,25 +699,6 @@ export function BusPremixer({
         bgcolor: "action.hover",
       }}
     >
-      <Stack
-        direction="row"
-        sx={{
-          alignItems: "center",
-          px: 1,
-          py: 0.5,
-          borderBottom: 1,
-          borderColor: "divider",
-          flexShrink: 0,
-        }}
-      >
-        <Typography
-          variant="caption"
-          sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", color: "text.secondary" }}
-        >
-          {t("audioMixer.premixer")}
-        </Typography>
-      </Stack>
-
       <Box sx={{ flex: 1, minHeight: 0, display: "flex", minWidth: 0 }}>
         {effects.length === 0 ? (
           <Box
@@ -604,13 +731,26 @@ export function BusPremixer({
               const common = {
                 canEdit,
                 reorder: getEffectReorderProps(effect.id),
-                onUpdate: (
-                  params: Partial<EqEffectParams & DelayEffectParams & ReverbEffectParams>,
-                ) => onUpdateEffect(effect.id, { params }),
+                onUpdate: (params: AudioEffectParamsPatch) => onUpdateEffect(effect.id, { params }),
                 onToggle: (enabled: boolean) => onUpdateEffect(effect.id, { enabled }),
                 onRemove: () => onRemoveEffect(effect.id),
               };
 
+              if (
+                effect.type === "limiter" ||
+                effect.type === "ducker" ||
+                effect.type === "stereo"
+              ) {
+                return (
+                  <UtilityEffectBlock
+                    key={effect.id}
+                    effect={effect}
+                    bus={bus}
+                    audioBuses={audioBuses}
+                    {...common}
+                  />
+                );
+              }
               if (effect.type === "eq") {
                 return (
                   <EqEffectBlock
@@ -646,9 +786,11 @@ export function BusPremixer({
         {addEffectMenu && (
           <Box
             sx={{
+              width: ADD_EFFECT_COLUMN_WIDTH,
               flexShrink: 0,
               display: "flex",
               alignItems: "center",
+              justifyContent: "center",
               px: 1,
               borderLeft: 1,
               borderColor: "divider",

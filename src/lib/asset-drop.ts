@@ -1,9 +1,6 @@
 import { getPlatform } from "../platform";
 import { filesFromDataTransfer } from "../platform/files.web";
-import {
-  openDroppedProjectBundle,
-  openDroppedProjectBundleFile,
-} from "../platform/project-storage";
+import { openDroppedProjectBundleFile } from "../platform/project-storage";
 import { useProjectStore } from "../stores/project";
 import { applyRenumber, patchListById } from "../stores/project/helpers";
 import { useUiStore } from "../stores/ui";
@@ -11,6 +8,8 @@ import { useVfsStore } from "../stores/vfs";
 import { assetKindFromFilename } from "../vfs/import";
 import { isContainerCue } from "./cues";
 import { type AssetDragPayload, isAssetDrag, readAssetDragData } from "./drag";
+import { runRecoverableAction } from "./notifications";
+import { openDroppedProjectPath, prepareToSwitchProject } from "./project-file-actions";
 import { isProjectBundlePath } from "./project-paths";
 import { canEditProject } from "./show-mode";
 import type { TauriDropTarget } from "./tauri-drop";
@@ -56,9 +55,12 @@ export async function resolveAssetDropPayloads(
     if (bundleFile) {
       const path = (bundleFile as File & { path?: string }).path;
       if (path) {
-        void openDroppedProjectBundle(path);
+        void runRecoverableAction(() => openDroppedProjectPath(path));
       } else {
-        void openDroppedProjectBundleFile(bundleFile);
+        void runRecoverableAction(async () => {
+          if (!(await prepareToSwitchProject())) return false;
+          return openDroppedProjectBundleFile(bundleFile);
+        });
       }
       return [];
     }

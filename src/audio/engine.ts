@@ -1,4 +1,5 @@
 import { resolveCueAudioBusId } from "../lib/audio-buses";
+import { openAudioInputStream } from "../lib/audio-input";
 import { clamp01, clampPan } from "../lib/clamp";
 import { getLoopPlayCount } from "../lib/loop";
 import { getMediaDurationSec } from "../lib/media-duration";
@@ -6,9 +7,12 @@ import { transportNowMs } from "../lib/transport-clock";
 import { videoPlaybackWindow, videoTargetTime } from "../lib/video-playback";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
+import { usePreferencesStore } from "../stores/preferences";
 import type { AudioBus } from "../types/audio-bus";
 import type { Cue } from "../types/cue";
 import { getCachedAudioBuffer, loadAudioBuffer } from "./buffer-cache";
+import { prepareBusEffects } from "./effects/worklet";
+import { audioMeters, cueMeterId } from "./meters";
 import { MixerGraph } from "./mixer";
 import {
   seekVideoVoice,
@@ -26,6 +30,15 @@ interface ActiveVoice {
   audioBusId?: string;
 }
 
+interface LiveAudioVoice {
+  stream: MediaStream;
+  source: MediaStreamAudioSourceNode;
+  splitter?: ChannelSplitterNode;
+  gain: GainNode;
+  panner: StereoPannerNode;
+  audioBusId?: string;
+}
+
 type VoiceEndedHandler = (cueId: string) => void;
 
 /**
@@ -38,7 +51,9 @@ export class AudioEngine {
   private audioBuses: AudioBus[] = [];
   private masterVolume = 1;
   private voices = new Map<string, ActiveVoice>();
+  private liveAudioVoices = new Map<string, LiveAudioVoice>();
   private videoVoices = new Map<string, VideoVoice>();
+  private videoVoiceListeners = new Set<() => void>();
   private syncGeneration = 0;
   private onVoiceEndedHandler: VoiceEndedHandler | null = null;
 
@@ -51,15 +66,34 @@ export class AudioEngine {
     this.syncGeneration++;
   }
 
+  /**
+   * Lets a visual surface adopt the existing media element, avoiding a second
+   * video decoder for the same cue.
+   */
+  getVideoVoiceElement(cueId: string): HTMLVideoElement | undefined {
+    return this.videoVoices.get(cueId)?.video;
+  }
+
+  subscribeVideoVoices(listener: () => void): () => void {
+    this.videoVoiceListeners.add(listener);
+    return () => this.videoVoiceListeners.delete(listener);
+  }
+
+  private notifyVideoVoiceListeners(): void {
+    for (const listener of this.videoVoiceListeners) listener();
+  }
+
   async unlock(): Promise<AudioContext> {
     if (!this.ctx) {
       this.ctx = new AudioContext();
+    }
+    // Resume inside the user gesture, then register processors before connecting voices.
+    const resume = this.ctx.state === "suspended" ? this.ctx.resume() : Promise.resolve();
+    await Promise.all([resume, prepareBusEffects(this.ctx)]);
+    if (!this.mixer) {
       this.mixer = new MixerGraph(this.ctx);
       this.mixer.sync(this.audioBuses);
       this.mixer.setMasterVolume(this.masterVolume);
-    }
-    if (this.ctx.state === "suspended") {
-      await this.ctx.resume();
     }
     return this.ctx;
   }
@@ -90,12 +124,14 @@ export class AudioEngine {
   private connectVoicePanner(panner: StereoPannerNode, cue: Cue): string | undefined {
     const busId = resolveCueAudioBusId(cue, this.audioBuses);
     panner.connect(this.voiceDestination(cue));
+    if (this.ctx) audioMeters.attach(cueMeterId(cue.id), this.ctx, panner);
     return busId;
   }
 
   private stopVoice(cueId: string): void {
     const voice = this.voices.get(cueId);
     if (!voice) return;
+    audioMeters.remove(cueMeterId(cueId));
     voice.source.onended = null;
     try {
       voice.source.stop();
@@ -111,8 +147,48 @@ export class AudioEngine {
   private stopVideoVoice(cueId: string): void {
     const voice = this.videoVoices.get(cueId);
     if (!voice) return;
+    audioMeters.remove(cueMeterId(cueId));
     stopVideoVoice(voice);
     this.videoVoices.delete(cueId);
+    this.notifyVideoVoiceListeners();
+  }
+
+  private stopLiveAudioVoice(cueId: string): void {
+    const voice = this.liveAudioVoices.get(cueId);
+    if (!voice) return;
+    audioMeters.remove(cueMeterId(cueId));
+    voice.source.disconnect();
+    voice.splitter?.disconnect();
+    voice.gain.disconnect();
+    voice.panner.disconnect();
+    for (const track of voice.stream.getTracks()) track.stop();
+    this.liveAudioVoices.delete(cueId);
+  }
+
+  private async startLiveAudioVoice(
+    cue: Cue,
+    ctx: AudioContext,
+    generation: number,
+  ): Promise<void> {
+    if (this.liveAudioVoices.has(cue.id)) return;
+    const deviceId = usePreferencesStore.getState().audioInputDeviceId ?? undefined;
+    const stream = await openAudioInputStream(deviceId);
+    if (generation !== this.syncGeneration || this.liveAudioVoices.has(cue.id)) {
+      for (const track of stream.getTracks()) track.stop();
+      return;
+    }
+    const source = ctx.createMediaStreamSource(stream);
+    const channel = Math.max(1, Math.floor(cue.liveAudioChannel ?? 1));
+    const splitter = ctx.createChannelSplitter(Math.max(channel, 2));
+    const gain = ctx.createGain();
+    gain.gain.value = clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1));
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = clampPan(resolveEffectivePan(cue.id, cue.pan ?? 0));
+    source.connect(splitter);
+    splitter.connect(gain, channel - 1);
+    gain.connect(panner);
+    const audioBusId = this.connectVoicePanner(panner, cue);
+    this.liveAudioVoices.set(cue.id, { stream, source, splitter, gain, panner, audioBusId });
   }
 
   private startVoice(cue: Cue, buffer: AudioBuffer, ctx: AudioContext, goAtMs: number): void {
@@ -156,7 +232,7 @@ export class AudioEngine {
 
     source.onended = () => {
       if (this.voices.get(cue.id)?.source === source) {
-        this.voices.delete(cue.id);
+        this.stopVoice(cue.id);
         this.handleVoiceEnded(cue.id);
       }
     };
@@ -204,6 +280,17 @@ export class AudioEngine {
         updateVideoVoiceLevels(voice, cue);
       }
     }
+    for (const [cueId, voice] of this.liveAudioVoices) {
+      const cue = cues.find((c) => c.id === cueId);
+      if (!cue) continue;
+      const nextBusId = resolveCueAudioBusId(cue, this.audioBuses);
+      if (voice.audioBusId !== nextBusId) {
+        voice.panner.disconnect();
+        voice.audioBusId = this.connectVoicePanner(voice.panner, cue);
+      }
+      voice.gain.gain.value = clamp01(resolveEffectiveVolume(cueId, cue.volume ?? 1));
+      voice.panner.pan.value = clampPan(resolveEffectivePan(cueId, cue.pan ?? 0));
+    }
   }
 
   async sync(
@@ -218,13 +305,20 @@ export class AudioEngine {
 
     try {
       const ctx = await this.ensureContext();
+      if (generation !== this.syncGeneration) return;
       const cueById = new Map(cues.map((c) => [c.id, c]));
       const targetAudio = new Set<string>();
+      const targetLiveAudio = new Set<string>();
       const targetVideo = new Set<string>();
 
       for (const id of activeCueIds) {
         const cue = cueById.get(id);
-        if (!cue?.assetPath) continue;
+        if (!cue) continue;
+        if (cue.type === "liveAudio") {
+          targetLiveAudio.add(id);
+          continue;
+        }
+        if (!cue.assetPath) continue;
         if (cue.type === "audio" || cue.type === "tts") targetAudio.add(id);
         if (cue.type === "video") targetVideo.add(id);
       }
@@ -239,6 +333,9 @@ export class AudioEngine {
         if (!targetVideo.has(id)) {
           this.stopVideoVoice(id);
         }
+      }
+      for (const id of [...this.liveAudioVoices.keys()]) {
+        if (!targetLiveAudio.has(id)) this.stopLiveAudioVoice(id);
       }
 
       if (generation !== this.syncGeneration) return;
@@ -291,6 +388,7 @@ export class AudioEngine {
         }
 
         this.videoVoices.set(cueId, voice);
+        this.notifyVideoVoiceListeners();
       }
 
       for (const cueId of targetAudio) {
@@ -333,6 +431,15 @@ export class AudioEngine {
         }
       }
 
+      for (const cueId of targetLiveAudio) {
+        const cue = cueById.get(cueId);
+        if (generation !== this.syncGeneration) return;
+        if (cue) await this.startLiveAudioVoice(cue, ctx, generation);
+      }
+
+      if (generation !== this.syncGeneration) return;
+      this.updateActiveVoiceLevels(cues);
+
       const missingAudio =
         targetAudio.size > 0 && [...targetAudio].every((id) => !this.voices.has(id));
       const missingVideo =
@@ -359,6 +466,9 @@ export class AudioEngine {
     }
     for (const id of [...this.videoVoices.keys()]) {
       this.stopVideoVoice(id);
+    }
+    for (const id of [...this.liveAudioVoices.keys()]) {
+      this.stopLiveAudioVoice(id);
     }
   }
 }

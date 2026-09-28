@@ -82,6 +82,8 @@ export function VideoOutputDock() {
 
   return (
     <Box
+      role="region"
+      aria-label={t("videoOutput.title")}
       sx={{
         height: videoOutputHeight,
         flexShrink: 0,
@@ -114,21 +116,9 @@ export function VideoOutputDock() {
           }}
         >
           <OndemandVideoOutlinedIcon fontSize="small" color="primary" aria-hidden />
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="subtitle2" sx={{ m: 0 }}>
-              {t("videoOutput.title")}
-            </Typography>
-            {!showMode && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                {t("videoOutput.hintShort")}
-              </Typography>
-            )}
-            {showMode && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                {t("videoOutput.showModeHint")}
-              </Typography>
-            )}
-          </Box>
+          <Typography variant="subtitle2" sx={{ flex: 1, m: 0 }}>
+            {t("videoOutput.title")}
+          </Typography>
           <IconButton
             size="small"
             title={t("videoOutput.close")}
@@ -139,79 +129,86 @@ export function VideoOutputDock() {
           </IconButton>
         </Stack>
 
-        <Box
-          sx={{
-            flex: 1,
-            minHeight: 0,
-            display: "flex",
-            alignItems: "stretch",
-            justifyContent: "flex-start",
-            overflow: "auto",
-            minWidth: 0,
-            px: 1,
-            py: 1,
-          }}
-        >
-          <Box sx={sectionColumnSx}>
-            <Typography variant="caption" sx={sectionLabelSx}>
-              {t("videoOutput.program")}
-            </Typography>
-            <Box sx={sectionRowSx}>
-              <MasterProgramStrip />
-              {videoBuses.map((bus) => (
-                <ProgramBusStrip
-                  key={bus.id}
-                  bus={bus}
-                  canEdit={canEdit}
-                  onUpdate={(patch) => updateVideoBus(bus.id, patch)}
-                  onRemove={() => removeVideoBus(bus.id)}
-                  onAddEffect={(type) => addVideoBusEffect(bus.id, type)}
-                  onUpdateEffect={(effectId, patch) =>
-                    updateVideoBusEffect(bus.id, effectId, patch)
-                  }
-                  onRemoveEffect={(effectId) => removeVideoBusEffect(bus.id, effectId)}
-                  onReorderEffect={(draggedId, targetId, place) =>
-                    reorderVideoBusEffectRelative(bus.id, draggedId, targetId, place)
-                  }
-                />
-              ))}
-              {canEdit && (
-                <Box sx={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
-                  <Button size="small" variant="text" onClick={handleAddBus}>
-                    {t("videoOutput.addBus")}
-                  </Button>
-                </Box>
-              )}
+        <Box sx={{ flex: 1, minHeight: 0, display: "flex", minWidth: 0 }}>
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              alignItems: "stretch",
+              justifyContent: "flex-start",
+              overflow: "auto",
+              minWidth: 0,
+              px: 1,
+              py: 1,
+            }}
+          >
+            <Box sx={sectionColumnSx}>
+              <Typography variant="caption" sx={sectionLabelSx}>
+                {t("videoOutput.program")}
+              </Typography>
+              <Box sx={sectionRowSx}>
+                <MasterProgramStrip />
+                {videoBuses.map((bus) => (
+                  <ProgramBusStrip
+                    key={bus.id}
+                    bus={bus}
+                    canEdit={canEdit}
+                    onUpdate={(patch) => updateVideoBus(bus.id, patch)}
+                    onRemove={() => removeVideoBus(bus.id)}
+                    onAddEffect={(type) => addVideoBusEffect(bus.id, type)}
+                    onUpdateEffect={(effectId, patch) =>
+                      updateVideoBusEffect(bus.id, effectId, patch)
+                    }
+                    onRemoveEffect={(effectId) => removeVideoBusEffect(bus.id, effectId)}
+                    onReorderEffect={(draggedId, targetId, place) =>
+                      reorderVideoBusEffectRelative(bus.id, draggedId, targetId, place)
+                    }
+                  />
+                ))}
+              </Box>
+            </Box>
+
+            <Divider orientation="vertical" flexItem sx={{ mx: 1.5 }} />
+
+            <Box sx={sectionColumnSx}>
+              <Typography variant="caption" sx={sectionLabelSx}>
+                {t("videoOutput.destination")}
+              </Typography>
+              <Box sx={sectionRowSx}>
+                {videoOutputs.map((output) => (
+                  <DestinationOutputStrip
+                    key={output.id}
+                    output={output}
+                    buses={videoBuses}
+                    preview={previewForOutput(output.id)}
+                    canEdit={canEdit}
+                    onUpdate={(patch) => updateVideoOutput(output.id, patch)}
+                    onRemove={() => removeVideoOutput(output.id)}
+                  />
+                ))}
+              </Box>
             </Box>
           </Box>
-
-          <Divider orientation="vertical" flexItem sx={{ mx: 1.5 }} />
-
-          <Box sx={sectionColumnSx}>
-            <Typography variant="caption" sx={sectionLabelSx}>
-              {t("videoOutput.destination")}
-            </Typography>
-            <Box sx={sectionRowSx}>
-              {videoOutputs.map((output) => (
-                <DestinationOutputStrip
-                  key={output.id}
-                  output={output}
-                  buses={videoBuses}
-                  preview={previewForOutput(output.id)}
-                  canEdit={canEdit}
-                  onUpdate={(patch) => updateVideoOutput(output.id, patch)}
-                  onRemove={() => removeVideoOutput(output.id)}
-                />
-              ))}
-              {canEdit && (
-                <Box sx={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
-                  <Button size="small" variant="text" onClick={handleAddOutput}>
-                    {t("videoOutput.addOutput")}
-                  </Button>
-                </Box>
-              )}
-            </Box>
-          </Box>
+          {canEdit && (
+            <Stack
+              spacing={1}
+              sx={{
+                flexShrink: 0,
+                justifyContent: "center",
+                px: 1,
+                borderLeft: 1,
+                borderColor: "divider",
+              }}
+            >
+              <Button size="small" variant="text" onClick={handleAddBus}>
+                {t("videoOutput.addBus")}
+              </Button>
+              <Button size="small" variant="text" onClick={handleAddOutput}>
+                {t("videoOutput.addOutput")}
+              </Button>
+            </Stack>
+          )}
         </Box>
       </Box>
     </Box>

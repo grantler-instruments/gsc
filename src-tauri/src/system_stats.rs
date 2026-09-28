@@ -49,3 +49,31 @@ pub fn get_process_stats(state: State<'_, SystemStatsState>) -> Result<ProcessSt
         memory_mb: process.memory() as f32 / (1024.0 * 1024.0),
     })
 }
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryPressure {
+    pub available_mb: f32,
+    pub total_mb: f32,
+    pub process_mb: f32,
+}
+
+/// System-wide available / total RAM plus this process's RSS, for media cache eviction.
+#[tauri::command]
+pub fn get_memory_pressure(state: State<'_, SystemStatsState>) -> Result<MemoryPressure, String> {
+    let pid = Pid::from_u32(std::process::id());
+    let mut system = state.system.lock().map_err(|e| e.to_string())?;
+
+    system.refresh_memory();
+    system.refresh_processes(ProcessesToUpdate::Some(&[pid]), false);
+
+    let process_mb = system
+        .process(pid)
+        .map(|p| p.memory() as f32 / (1024.0 * 1024.0))
+        .unwrap_or(0.0);
+
+    Ok(MemoryPressure {
+        available_mb: system.available_memory() as f32 / (1024.0 * 1024.0),
+        total_mb: system.total_memory() as f32 / (1024.0 * 1024.0),
+        process_mb,
+    })
+}
