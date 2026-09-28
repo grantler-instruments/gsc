@@ -33,9 +33,9 @@ export async function setInspectorPan(page: Page, pan: number): Promise<void> {
 }
 
 export async function enableLoopPlayback(page: Page): Promise<void> {
-  const loopCheckbox = page.getByRole("checkbox", { name: "Loop playback" });
-  await expect(loopCheckbox).toBeVisible();
-  await loopCheckbox.check();
+  const loopSwitch = page.getByRole("switch", { name: "Loop playback" });
+  await expect(loopSwitch).toBeVisible();
+  await loopSwitch.check();
 }
 
 function activeCueLevelSlider(page: Page, cueName: string, levelLabel: "Vol" | "Pan") {

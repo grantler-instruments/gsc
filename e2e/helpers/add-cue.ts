@@ -2,9 +2,9 @@ import { expect, type Page } from "@playwright/test";
 import { sequenceCueListPanel } from "./cue-list-panel";
 
 export type AddCueMenuType =
-  | "Audio cue"
-  | "Video cue"
-  | "Image cue"
+  | "Audio"
+  | "Video"
+  | "Image"
   | "Sequence"
   | "Parallel"
   | "Wait"

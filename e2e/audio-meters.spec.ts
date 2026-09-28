@@ -37,6 +37,9 @@ async function addToneCue(page: Page) {
     return dt;
   }, TONE_NAME);
   await sequenceCueList(page).dispatchEvent("drop", { dataTransfer });
+  // Drop handlers import asynchronously; GO may still target the previous cue until this finishes.
+  await expect(sequenceCueRow(page, TONE_NAME)).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Name", exact: true })).toHaveValue(TONE_NAME);
 }
 
 // Exercises actual Web Audio analysis rather than fabricated UI values.
@@ -44,7 +47,6 @@ test("cue, bus and master meters follow playback, routing and faders", async ({ 
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("./");
   await addToneCue(page);
-  await expect(sequenceCueRow(page, TONE_NAME)).toBeVisible();
   await page.getByRole("button", { name: "Show audio mixer", exact: true }).click();
   const mixer = page.getByRole("region", { name: "Audio mixer", exact: true });
   await expect(mixer.getByRole("meter", { name: "Master", exact: true })).toHaveAttribute(
@@ -148,6 +150,12 @@ test("live audio meters start on GO and stop with the cue", async ({ page }) => 
   await addToneCue(page);
   await transportGoButton(page).click();
   await expect(mixer.locator("[data-cue-strip]")).toHaveCount(2);
+  await expect(
+    mixer
+      .locator("[data-cue-strip]")
+      .filter({ hasText: TONE_NAME })
+      .getByText("Playing", { exact: true }),
+  ).toBeVisible();
   await strip.getByRole("slider", { name: "Live audio cue Volume", exact: true }).fill("0");
   await expect
     .poll(async () =>
