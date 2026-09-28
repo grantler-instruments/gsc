@@ -44,6 +44,7 @@ describe("output-layer-sync", () => {
       revision: 1,
       projectId: "p1",
       projectRootDir: null,
+      outputId: "master",
       activeCueIds: ["cue-1"],
       layers: [testLayer()],
     };
@@ -51,6 +52,7 @@ describe("output-layer-sync", () => {
       revision: 9,
       projectId: "p1",
       projectRootDir: null,
+      outputId: "master",
       activeCueIds: ["cue-1"],
       layers: [testLayer()],
     };
@@ -58,6 +60,7 @@ describe("output-layer-sync", () => {
       revision: 2,
       projectId: "p1",
       projectRootDir: null,
+      outputId: "master",
       activeCueIds: ["cue-1"],
       layers: [testLayer({ opacity: 0.25 })],
     };

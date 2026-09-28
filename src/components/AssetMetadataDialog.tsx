@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -53,6 +54,7 @@ export function AssetMetadataDialog({ assetPath, onClose }: AssetMetadataDialogP
   const entry = useVfsStore((s) => s.entries.find((candidate) => candidate.path === assetPath));
   const cueLists = useProjectStore((s) => s.cueLists);
   const [technicalMetadata, setTechnicalMetadata] = useState<AssetTechnicalMetadata>();
+  const [metadataLoading, setMetadataLoading] = useState(false);
   const usages = useMemo(
     () => (assetPath ? findAssetCueUsages(cueLists, assetPath) : []),
     [assetPath, cueLists],
@@ -61,10 +63,22 @@ export function AssetMetadataDialog({ assetPath, onClose }: AssetMetadataDialogP
   useEffect(() => {
     if (!assetPath || !entry?.loaded) {
       setTechnicalMetadata(undefined);
+      setMetadataLoading(false);
       return;
     }
+    let active = true;
     setTechnicalMetadata(getAssetTechnicalMetadata(assetPath));
-    void ensureAssetTechnicalMetadata(assetPath, entry.kind).then(setTechnicalMetadata);
+    setMetadataLoading(true);
+    void ensureAssetTechnicalMetadata(assetPath, entry.kind)
+      .then((metadata) => {
+        if (active) setTechnicalMetadata(metadata);
+      })
+      .finally(() => {
+        if (active) setMetadataLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [assetPath, entry?.kind, entry?.loaded]);
 
   return (
@@ -128,6 +142,14 @@ export function AssetMetadataDialog({ assetPath, onClose }: AssetMetadataDialogP
                 label={t("assets.metadata.channels")}
                 value={t("assets.metadata.channelCount", { count: technicalMetadata.channels })}
               />
+            )}
+            {metadataLoading && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "text.secondary" }}>
+                <CircularProgress size={16} />
+                <Typography component="span" sx={{ fontSize: 13 }}>
+                  {t("assets.metadata.loading")}
+                </Typography>
+              </Box>
             )}
           </>
         ) : (

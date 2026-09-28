@@ -130,9 +130,11 @@ jobs:
 
       - name: Set experimental version
         id: version
+        shell: bash
         run: |
           BASE=$(node -p "require('./package.json').version")
-          VERSION="${BASE}-experimental.${{ github.run_number }}"
+          # WiX MSI requires a numeric-only semver pre-release (<=65535), not `-experimental.N`.
+          VERSION="${BASE}-${{ github.run_number }}"
           node scripts/sync-version.mjs "$VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 

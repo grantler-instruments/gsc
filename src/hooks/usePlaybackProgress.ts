@@ -9,10 +9,15 @@ import {
   createPlaybackBounds,
   cueNeedsKnownDuration,
   cueShowsPlaybackProgress,
+  isEngineManagedPlaybackCue,
   isFinitePlaybackComplete,
   type PlaybackBounds,
 } from "../lib/playback-slice";
-import { notifyStepPlaybackEnded } from "../lib/sequence-runner";
+import {
+  notifyStepPlaybackEnded,
+  tryAdvanceSequenceIfStepPlaybackInactive,
+} from "../lib/sequence-runner";
+import { transportNowMs } from "../lib/transport-clock";
 import { isWaitCue } from "../lib/wait";
 import type { CuePlaybackProgress } from "../stores/playback";
 import { usePlaybackStore } from "../stores/playback";
@@ -21,7 +26,7 @@ import { type RunningSequence, useTransportStore } from "../stores/transport";
 import type { Cue } from "../types/cue";
 
 interface PlaybackSession {
-  /** Wall-clock when the cue entered activeCueIds — not when bounds were resolved. */
+  /** Transport clock ms when the cue entered activeCueIds — not when bounds were resolved. */
   goAtMs: number;
   bounds: PlaybackBounds;
 }
@@ -49,7 +54,16 @@ function needsProgressUpdates(
   activeCueIds: string[],
   runningSequences: Record<string, RunningSequence>,
 ): boolean {
-  return activeCueIds.length > 0 || runningSequencesHaveWaitProgress(runningSequences);
+  return (
+    activeCueIds.length > 0 ||
+    Object.keys(runningSequences).length > 0 ||
+    runningSequencesHaveWaitProgress(runningSequences)
+  );
+}
+
+/** Progress tick may stop/notify; video completion stays on the media element sync path. */
+function cueCompletesViaProgressTick(cue: Cue): boolean {
+  return !isEngineManagedPlaybackCue(cue) || cue.type === "audio";
 }
 
 export function usePlaybackProgress(): void {
@@ -99,13 +113,20 @@ export function usePlaybackProgress(): void {
       }
 
       sessionsRef.current.set(cueId, {
-        goAtMs: goAtByCueIdRef.current.get(cueId) ?? Date.now(),
+        goAtMs: goAtByCueIdRef.current.get(cueId) ?? transportNowMs(),
         bounds: createPlaybackBounds(cue, sourceDurationSec),
       });
     };
 
+    const refreshSessionBounds = (cueId: string, cue: Cue) => {
+      const session = sessionsRef.current.get(cueId);
+      if (!session) return;
+      const sourceDurationSec = cue.assetPath ? getMediaDurationSec(cue.assetPath) : undefined;
+      session.bounds = createPlaybackBounds(cue, sourceDurationSec);
+    };
+
     const syncSessions = (activeCueIds: string[]) => {
-      const now = Date.now();
+      const now = transportNowMs();
       const { cueStartedAtMs } = useTransportStore.getState();
       const cueById = allProjectCuesById();
 
@@ -126,6 +147,7 @@ export function usePlaybackProgress(): void {
         const cue = cueById.get(id);
         if (cue && cueShowsPlaybackProgress(cue)) {
           tryStartSession(id, cue);
+          refreshSessionBounds(id, cue);
         }
       }
 
@@ -147,13 +169,12 @@ export function usePlaybackProgress(): void {
 
       const { activeCueIds, runningSequences } = useTransportStore.getState();
       const cueById = allProjectCuesById();
-      const nowWall = Date.now();
-      const nowPerf = performance.now();
+      const now = transportNowMs();
       const entries: CuePlaybackProgress[] = [];
       const completedCueIds: string[] = [];
 
       for (const runningSequence of Object.values(runningSequences)) {
-        const stepElapsedSec = (nowPerf - runningSequence.stepStartedAtMs) / 1000;
+        const stepElapsedSec = (now - runningSequence.stepStartedAtMs) / 1000;
         for (const cueId of runningSequence.stepCueIds) {
           const cue = cueById.get(cueId);
           if (!cue || !isWaitCue(cue)) continue;
@@ -171,7 +192,7 @@ export function usePlaybackProgress(): void {
       for (const cueId of activeCueIds) {
         const session = sessionsRef.current.get(cueId);
         if (session) {
-          const elapsedSec = (nowWall - session.goAtMs) / 1000;
+          const elapsedSec = (now - session.goAtMs) / 1000;
           const snapshot = computePlaybackProgressWithBounds(session.bounds, elapsedSec);
 
           entries.push({
@@ -182,7 +203,10 @@ export function usePlaybackProgress(): void {
           });
 
           if (isFinitePlaybackComplete(session.bounds, elapsedSec)) {
-            completedCueIds.push(cueId);
+            const cue = cueById.get(cueId);
+            if (cue && cueCompletesViaProgressTick(cue)) {
+              completedCueIds.push(cueId);
+            }
           }
           continue;
         }
@@ -196,8 +220,8 @@ export function usePlaybackProgress(): void {
         }
 
         const bounds = createPlaybackBounds(cue, sourceDurationSec);
-        const goAtMs = goAtByCueIdRef.current.get(cueId) ?? nowWall;
-        const elapsedSec = (nowWall - goAtMs) / 1000;
+        const goAtMs = goAtByCueIdRef.current.get(cueId) ?? now;
+        const elapsedSec = (now - goAtMs) / 1000;
         const snapshot = computePlaybackProgressWithBounds(bounds, elapsedSec);
 
         entries.push({
@@ -207,7 +231,7 @@ export function usePlaybackProgress(): void {
           ...snapshot,
         });
 
-        if (isFinitePlaybackComplete(bounds, elapsedSec)) {
+        if (isFinitePlaybackComplete(bounds, elapsedSec) && cueCompletesViaProgressTick(cue)) {
           completedCueIds.push(cueId);
         }
       }
@@ -222,6 +246,8 @@ export function usePlaybackProgress(): void {
         useTransportStore.getState().stopMany(completedCueIds);
         notifyStepPlaybackEnded(completedCueIds);
       }
+
+      tryAdvanceSequenceIfStepPlaybackInactive();
 
       const transport = useTransportStore.getState();
       if (needsProgressUpdates(transport.activeCueIds, transport.runningSequences)) {
@@ -258,6 +284,12 @@ export function usePlaybackProgress(): void {
         state.cueStartedAtMs === prev.cueStartedAtMs
       ) {
         return;
+      }
+      if (
+        state.activeCueIds !== prev.activeCueIds ||
+        state.runningSequences !== prev.runningSequences
+      ) {
+        tryAdvanceSequenceIfStepPlaybackInactive();
       }
       ensureTickLoop();
     });

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { clamp01, clampPan } from "../lib/clamp";
 import type { DmxFadePlan } from "../lib/dmx-fade";
 import type { PlaybackProgressSnapshot } from "../lib/playback-slice";
 import { handleSequenceFadeCueCompleted } from "../lib/sequence-runner";
@@ -27,14 +28,6 @@ export interface ActiveDmxFade {
   plan: DmxFadePlan;
   endDmx: DmxCueData;
   sourceFadeCueId?: string;
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
-function clampPan(value: number): number {
-  return Math.max(-1, Math.min(1, value));
 }
 
 function clampFadeLevel(property: FadeProperty, value: number): number {

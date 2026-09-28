@@ -19,6 +19,7 @@ import { createMidiMappingActions } from "./midi-mapping-actions";
 import { createSelectionActions } from "./selection-actions";
 import { createSnapshotActions } from "./snapshot-actions";
 import type { ProjectState } from "./types";
+import { createVideoBusActions } from "./video-bus-actions";
 
 export { getActiveCueListFromState, getMainSequenceListFromState } from "./helpers";
 
@@ -29,6 +30,8 @@ export const useProjectStore = create<ProjectState>()(
       midiMappings: [...initialProjectData.midiMappings],
       fixtures: [...initialProjectData.fixtures],
       audioBuses: [...initialProjectData.audioBuses],
+      videoBuses: [...initialProjectData.videoBuses],
+      videoOutputs: [...initialProjectData.videoOutputs],
       fixturePlot: { ...initialProjectData.fixturePlot, entries: [] },
       ...createCueEditorActions(set, get),
       ...createSelectionActions(set, get),
@@ -36,6 +39,7 @@ export const useProjectStore = create<ProjectState>()(
       ...createMidiMappingActions(set, get),
       ...createFixtureActions(set, get),
       ...createAudioBusActions(set, get),
+      ...createVideoBusActions(set, get),
       ...createFixturePlotActions(set, get),
       ...createSnapshotActions(set, get),
     }),

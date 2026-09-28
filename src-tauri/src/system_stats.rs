@@ -49,7 +49,6 @@ pub fn get_process_stats(state: State<'_, SystemStatsState>) -> Result<ProcessSt
         memory_mb: process.memory() as f32 / (1024.0 * 1024.0),
     })
 }
-
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MemoryPressure {

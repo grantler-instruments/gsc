@@ -1,4 +1,5 @@
 const STAGE_ROOT_SELECTOR = "[data-gsc-output-stage]";
+const COMPOSITOR_CANVAS_SELECTOR = "canvas[data-gsc-compositor]";
 
 /** Hidden mirrors for NDI capture — drawImage on a visible playing video flickers in WKWebView. */
 const ndiMirrorVideos = new WeakMap<HTMLVideoElement, HTMLVideoElement>();
@@ -50,10 +51,36 @@ function syncNdiMirrorVideo(source: HTMLVideoElement): HTMLVideoElement | null {
   return mirror.readyState >= 2 ? mirror : null;
 }
 
-/** Draw the output stage DOM into a canvas and return BGRA pixels. */
+function captureCompositorCanvas(
+  canvas: HTMLCanvasElement,
+  width: number,
+  height: number,
+): Uint8Array | null {
+  if (canvas.width <= 0 || canvas.height <= 0) return null;
+
+  const capture = document.createElement("canvas");
+  capture.width = width;
+  capture.height = height;
+  const ctx = capture.getContext("2d", { alpha: false });
+  if (!ctx) return null;
+
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(canvas, 0, 0, width, height);
+
+  const imageData = ctx.getImageData(0, 0, width, height);
+  return rgbaToBgra(imageData.data);
+}
+
+/** Draw the output stage into a canvas and return BGRA pixels. */
 export function captureOutputStageFrame(width: number, height: number): Uint8Array | null {
   const stage = document.querySelector(STAGE_ROOT_SELECTOR);
   if (!stage) return null;
+
+  const compositorCanvas = stage.querySelector<HTMLCanvasElement>(COMPOSITOR_CANVAS_SELECTOR);
+  if (compositorCanvas) {
+    return captureCompositorCanvas(compositorCanvas, width, height);
+  }
 
   const canvas = document.createElement("canvas");
   canvas.width = width;

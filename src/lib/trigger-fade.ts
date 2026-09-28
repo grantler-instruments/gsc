@@ -7,6 +7,7 @@ import {
 } from "../stores/fade";
 import { useProjectStore } from "../stores/project";
 import type { Cue } from "../types/cue";
+import { clamp01, clampPan } from "./clamp";
 import { getFadeTarget } from "./cues";
 import { applyDmxCueToBuffers } from "./dmx";
 import { buildDmxFadePlan } from "./dmx-fade";
@@ -17,14 +18,6 @@ import {
   isVolumeFadeCue,
   resolveLightFadeEndDmx,
 } from "./fade";
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
-function clampPan(value: number): number {
-  return Math.max(-1, Math.min(1, value));
-}
 
 function resolveFadeFromLevel(fadeCue: Cue, target: Cue): number {
   if (isVolumeFadeCue(fadeCue)) {

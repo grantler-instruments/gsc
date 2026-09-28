@@ -16,6 +16,7 @@ import {
 } from "../../lib/drag";
 import { runRecoverableAction } from "../../lib/notifications";
 import { useProjectStore } from "../../stores/project";
+import { useUiStore } from "../../stores/ui";
 import { useClearOnDragEnd } from "./useClearOnDragEnd";
 
 export function useCueListDrop(canEdit: boolean, listId: string) {
@@ -67,11 +68,14 @@ export function useCueListDrop(canEdit: boolean, listId: string) {
         return;
       }
 
+      const externalFileDrop = isExternalFileDrag(e.dataTransfer);
       void runRecoverableAction(async () => {
+        if (externalFileDrop) useUiStore.getState().beginAssetImport();
         try {
           const payloads = await resolveAssetDropPayloads(e.dataTransfer);
           applyAssetPayloads(payloads, { kind: "list", listId });
         } finally {
+          if (externalFileDrop) useUiStore.getState().endAssetImport();
           setActiveAssetDrag(null);
         }
       });

@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { getNdiOutputStatus, startNdiOutput, stopNdiOutput } from "../platform/ndi";
-import { isOutputMode } from "../platform/output-window";
+import { isOutputMode, openOutputWindow } from "../platform/output-window";
 import { usePreferencesStore } from "../stores/preferences";
+import { useProjectStore } from "../stores/project";
 import {
   DEFAULT_NDI_OUTPUT_FPS,
   DEFAULT_NDI_OUTPUT_HEIGHT,
@@ -27,7 +28,11 @@ function buildConfig(
   };
 }
 
-/** Starts and stops the native NDI program output sender from preferences. */
+/**
+ * Starts and stops the native NDI program output sender.
+ * Prefers a project VideoOutput with kind "ndi" (bus patch + source name);
+ * falls back to preferences + master window title when none exist.
+ */
 export function useNdiOutputEngine(): void {
   const { t } = useTranslation();
   const configRef = useRef<NdiOutputConfig | null>(null);
@@ -37,6 +42,8 @@ export function useNdiOutputEngine(): void {
   const ndiOutputWidth = usePreferencesStore((s) => s.ndiOutputWidth);
   const ndiOutputHeight = usePreferencesStore((s) => s.ndiOutputHeight);
   const ndiOutputFps = usePreferencesStore((s) => s.ndiOutputFps);
+  const videoOutputs = useProjectStore((s) => s.videoOutputs);
+  const ndiOutput = videoOutputs.find((o) => o.kind === "ndi");
 
   useEffect(() => {
     if (!NDI_ENABLED || isOutputMode()) return;
@@ -46,15 +53,34 @@ export function useNdiOutputEngine(): void {
     const sync = async () => {
       if (cancelled) return;
 
-      if (!ndiOutputEnabled) {
+      const enabled = ndiOutputEnabled;
+
+      if (!enabled) {
         configRef.current = null;
         await stopNdiOutput();
         return;
       }
 
+      const sourceName = ndiOutput?.name?.trim() || ndiSourceName;
+      const windowTitle = ndiOutput
+        ? t("videoOutput.windowTitleNamed", { name: ndiOutput.name })
+        : t("common.brand.outputWindowTitle");
+
+      if (ndiOutput) {
+        try {
+          await openOutputWindow({
+            outputId: ndiOutput.id,
+            outputName: ndiOutput.name,
+            focus: false,
+          });
+        } catch (err) {
+          console.warn("[ndi] failed to open capture window", err);
+        }
+      }
+
       const nextConfig = buildConfig(
-        ndiSourceName,
-        t("common.brand.outputWindowTitle"),
+        sourceName,
+        windowTitle,
         ndiOutputWidth,
         ndiOutputHeight,
         ndiOutputFps,
@@ -88,5 +114,13 @@ export function useNdiOutputEngine(): void {
       cancelled = true;
       void stopNdiOutput();
     };
-  }, [ndiOutputEnabled, ndiSourceName, ndiOutputWidth, ndiOutputHeight, ndiOutputFps, t]);
+  }, [
+    ndiOutputEnabled,
+    ndiSourceName,
+    ndiOutputWidth,
+    ndiOutputHeight,
+    ndiOutputFps,
+    ndiOutput,
+    t,
+  ]);
 }

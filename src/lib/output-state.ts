@@ -7,15 +7,27 @@ import { useProjectLocationStore } from "../stores/project-location";
 import { useTransportStore } from "../stores/transport";
 import { useVfsStore } from "../stores/vfs";
 import type { Cue } from "../types/cue";
-import type { OutputLayer, OutputState } from "../types/output";
+import type { MultiviewPreviewState, OutputLayer, OutputState } from "../types/output";
+import type { VideoBus } from "../types/video-bus";
+import type { VideoOutput } from "../types/video-output";
 import { vfsGetObjectUrl } from "../vfs/engine";
+import { clamp01 } from "./clamp";
+import { findCueInLists } from "./cue-lists";
 import { getLoopPlayCount } from "./loop";
 import { getMediaDurationSec } from "./media-duration";
 import { getPlaybackSliceSec } from "./playback-slice";
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
+import { transportNowMs } from "./transport-clock";
+import {
+  busEffectiveOpacity,
+  findVideoBus,
+  masterVideoOutputEffectiveOpacity,
+  resolveCueVideoBusId,
+} from "./video-buses";
+import {
+  findVideoOutput,
+  listPublishableVideoOutputIds,
+  resolveOutputBusId,
+} from "./video-outputs";
 
 async function buildLayer(cue: Cue, goAtMs: number): Promise<OutputLayer | undefined> {
   if ((cue.type !== "video" && cue.type !== "image") || !cue.assetPath) {
@@ -37,13 +49,14 @@ async function buildLayer(cue: Cue, goAtMs: number): Promise<OutputLayer | undef
   const sliceSec = getPlaybackSliceSec(cue, sourceDurationSec);
   const inTime = cue.inTime ?? 0;
   const loopCount = cue.type === "video" ? getLoopPlayCount(cue) : 1;
+  const cueOpacity = resolveEffectiveOpacity(cue.id, clamp01(cue.opacity ?? 1));
 
   return {
     cueId: cue.id,
     type: cue.type,
     assetPath: cue.assetPath,
     objectUrl,
-    opacity: resolveEffectiveOpacity(cue.id, clamp01(cue.opacity ?? 1)),
+    opacity: cueOpacity,
     volume: resolveEffectiveVolume(cue.id, clamp01(cue.volume ?? 1)),
     inTime,
     outTime: cue.outTime,
@@ -54,25 +67,42 @@ async function buildLayer(cue: Cue, goAtMs: number): Promise<OutputLayer | undef
   };
 }
 
-/** Build the current visual output snapshot from live stores. */
-export async function buildOutputState(revision: number): Promise<OutputState> {
+function cueMatchesProgramBus(
+  cue: Cue,
+  programBusId: string | undefined,
+  videoBuses: VideoBus[],
+): boolean {
+  const cueBusId = resolveCueVideoBusId(cue, videoBuses);
+  return cueBusId === programBusId;
+}
+
+function activeCueIdsForProgramBus(
+  activeCueIds: string[],
+  programBusId: string | undefined,
+  videoBuses: VideoBus[],
+  cueLists: ReturnType<typeof useProjectStore.getState>["cueLists"],
+): string[] {
+  return activeCueIds.filter((cueId) => {
+    const cue = findCueInLists(cueLists, cueId)?.cue;
+    if (!cue) return false;
+    return cueMatchesProgramBus(cue, programBusId, videoBuses);
+  });
+}
+
+async function buildLayersForActiveCues(
+  programBusId: string | undefined,
+): Promise<{ projectId: string; layers: OutputLayer[] }> {
   const { activeCueIds, cueStartedAtMs } = useTransportStore.getState();
   const progressByCueId = usePlaybackStore.getState().byCueId;
+  const { cueLists, videoBuses, id: projectId } = useProjectStore.getState();
 
-  // Use every cue across all cue lists so hot cues still resolve even when
-  // the main list has edit focus.
-  const cueById = new Map(
-    useProjectStore
-      .getState()
-      .cueLists.reduce<Cue[]>((all, list) => all.concat(list.cues), [])
-      .map((c) => [c.id, c]),
-  );
-  const now = Date.now();
+  const now = transportNowMs();
 
   const layers: OutputLayer[] = [];
   for (const cueId of activeCueIds) {
-    const cue = cueById.get(cueId);
+    const cue = findCueInLists(cueLists, cueId)?.cue;
     if (!cue) continue;
+    if (!cueMatchesProgramBus(cue, programBusId, videoBuses)) continue;
 
     const progress = progressByCueId[cueId];
     const goAtMs = cueStartedAtMs[cueId] ?? (progress ? now - progress.elapsedSec * 1000 : now);
@@ -81,7 +111,51 @@ export async function buildOutputState(revision: number): Promise<OutputState> {
     if (layer) layers.push(layer);
   }
 
-  const { id: projectId } = useProjectStore.getState();
+  return { projectId, layers };
+}
+
+function programLook(
+  programBusId: string | undefined,
+  videoBuses: VideoBus[],
+  masterVideoOutputOpacity: number,
+  masterVideoOutputEffects: ReturnType<typeof useProjectStore.getState>["masterVideoOutputEffects"],
+  masterVideoOutputName: string,
+): { busOpacity: number; busEffects?: typeof masterVideoOutputEffects; busName: string } {
+  const outputBus = programBusId ? findVideoBus(videoBuses, programBusId) : undefined;
+  return {
+    busOpacity: outputBus
+      ? busEffectiveOpacity(outputBus)
+      : masterVideoOutputEffectiveOpacity(masterVideoOutputOpacity),
+    ...(outputBus?.effects?.length
+      ? { busEffects: outputBus.effects }
+      : masterVideoOutputEffects?.length
+        ? { busEffects: masterVideoOutputEffects }
+        : {}),
+    busName: outputBus?.name ?? masterVideoOutputName,
+  };
+}
+
+/** Build the current visual output snapshot for a destination. */
+export async function buildOutputState(revision: number, outputId: string): Promise<OutputState> {
+  const {
+    cueLists,
+    videoBuses,
+    videoOutputs,
+    masterVideoOutputEffects,
+    masterVideoOutputOpacity,
+    masterVideoOutputName,
+  } = useProjectStore.getState();
+  const output = findVideoOutput(videoOutputs, outputId);
+  const programBusId = output ? resolveOutputBusId(output, videoBuses) : undefined;
+  const { projectId, layers } = await buildLayersForActiveCues(programBusId);
+  const { activeCueIds } = useTransportStore.getState();
+  const look = programLook(
+    programBusId,
+    videoBuses,
+    masterVideoOutputOpacity,
+    masterVideoOutputEffects,
+    masterVideoOutputName,
+  );
   const projectRootDir =
     getPlatform() === "tauri" ? useProjectLocationStore.getState().rootDir : null;
 
@@ -89,7 +163,73 @@ export async function buildOutputState(revision: number): Promise<OutputState> {
     useVfsStore.getState().refreshEntriesLoaded();
   }
 
-  return { revision, projectId, projectRootDir, activeCueIds, layers };
+  return {
+    revision,
+    projectId,
+    projectRootDir,
+    outputId,
+    ...(programBusId ? { busId: programBusId } : {}),
+    outputName: output?.name ?? look.busName,
+    busName: look.busName,
+    activeCueIds: activeCueIdsForProgramBus(activeCueIds, programBusId, videoBuses, cueLists),
+    layers,
+    busOpacity: look.busOpacity,
+    ...(look.busEffects ? { busEffects: look.busEffects } : {}),
+    ...(output?.outputFrame ? { outputFrame: output.outputFrame } : {}),
+  };
+}
+
+/** One preview tile per video output destination. */
+export async function buildMultiviewPreviewState(revision: number): Promise<MultiviewPreviewState> {
+  const {
+    videoBuses,
+    videoOutputs,
+    masterVideoOutputName,
+    masterVideoOutputEffects,
+    masterVideoOutputOpacity,
+  } = useProjectStore.getState();
+
+  const destinations: MultiviewPreviewState["destinations"] = [];
+  let projectId = useProjectStore.getState().id;
+
+  for (const output of videoOutputs) {
+    const programBusId = resolveOutputBusId(output, videoBuses);
+    const { projectId: pid, layers } = await buildLayersForActiveCues(programBusId);
+    projectId = pid;
+    const look = programLook(
+      programBusId,
+      videoBuses,
+      masterVideoOutputOpacity,
+      masterVideoOutputEffects,
+      masterVideoOutputName,
+    );
+    destinations.push({
+      outputId: output.id,
+      ...(programBusId ? { busId: programBusId } : {}),
+      busName: look.busName,
+      outputName: output.name,
+      layers,
+      busOpacity: look.busOpacity,
+      ...(look.busEffects ? { busEffects: look.busEffects } : {}),
+      ...(output.outputFrame ? { outputFrame: output.outputFrame } : {}),
+    });
+  }
+
+  return {
+    revision,
+    projectId,
+    destinations,
+  };
+}
+
+/** Output ids that should receive dedicated output publishers. */
+export function listVideoOutputIds(videoOutputs: VideoOutput[]): string[] {
+  return listPublishableVideoOutputIds(videoOutputs);
+}
+
+/** @deprecated Use listVideoOutputIds. */
+export function listVideoOutputBusIds(videoBuses: VideoBus[]): string[] {
+  return videoBuses.map((bus) => bus.id);
 }
 
 /** True when transport is active but visual layers are not ready to publish yet. */

@@ -517,6 +517,7 @@
     "volume": "Lautstärke",
     "pan": "Panorama",
     "audioRouting": "Audio-Routing",
+    "videoRouting": "Video-Routing",
     "moveTriggerNote": "Trigger-Notiz verschieben (ziehen oder Pfeiltasten verwenden)",
     "audioBus": "Ausgangsbuss",
     "audioBusDirect": "Direkt (Master)",

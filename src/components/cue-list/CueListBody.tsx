@@ -1,7 +1,10 @@
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { GSC_LIST_ID } from "../../lib/tauri-drop";
+import { useUiStore } from "../../stores/ui";
 import { cueListDropActiveSx, cueListEmptySx } from "../../theme/cueStyles";
 import type { GscTokenSet } from "../../theme/tokens";
 import { CueListTrailingDrop } from "./CueListTrailingDrop";
@@ -32,6 +35,7 @@ export function CueListBody({
   children,
 }: CueListBodyProps) {
   const { t } = useTranslation();
+  const assetImportCount = useUiStore((s) => s.assetImportCount);
 
   return (
     <Box
@@ -52,6 +56,7 @@ export function CueListBody({
         minHeight: 0,
         display: "flex",
         flexDirection: "column",
+        position: "relative",
         ...(listDropActive && cueListDropActiveSx(tokens)),
       }}
     >
@@ -62,6 +67,26 @@ export function CueListBody({
       )}
       {children}
       {!isEmpty && canEdit && <CueListTrailingDrop canEdit={canEdit} />}
+      {assetImportCount > 0 && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 1,
+            bgcolor: "background.paper",
+            opacity: 0.9,
+          }}
+        >
+          <CircularProgress size={20} />
+          <Typography component="span" sx={{ fontSize: 14 }}>
+            {t("common.action.importing")}
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 }

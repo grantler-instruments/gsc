@@ -1,5 +1,6 @@
 import type { Cue } from "../types/cue";
 import { createPlaybackBounds } from "./playback-slice";
+import { transportNowMs } from "./transport-clock";
 
 /** Clamp a file position to the cue's active in→out slice. */
 export function clampSeekPositionSec(
@@ -18,7 +19,7 @@ export function goAtMsForSeekPosition(
   cue: Cue,
   positionSec: number,
   sourceDurationSec?: number,
-  nowMs = Date.now(),
+  nowMs = transportNowMs(),
 ): number {
   const bounds = createPlaybackBounds(cue, sourceDurationSec);
   const clamped = clampSeekPositionSec(cue, positionSec, sourceDurationSec);

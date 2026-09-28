@@ -1,0 +1,6 @@
+export {
+  clampAudioMixerHeight as clampVideoOutputDockHeight,
+  DEFAULT_AUDIO_MIXER_HEIGHT as DEFAULT_VIDEO_OUTPUT_DOCK_HEIGHT,
+  MAX_AUDIO_MIXER_HEIGHT as MAX_VIDEO_OUTPUT_DOCK_HEIGHT,
+  MIN_AUDIO_MIXER_HEIGHT as MIN_VIDEO_OUTPUT_DOCK_HEIGHT,
+} from "./audio-mixer-layout";

@@ -17,11 +17,12 @@ interface MediaInspectorFieldsProps {
 export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspectorFieldsProps) {
   const { t } = useTranslation();
   const isMedia = cue.type === "audio" || cue.type === "video" || cue.type === "image";
+  const isVisual = cue.type === "video" || cue.type === "image";
   if (!isMedia) return null;
 
   return (
     <>
-      {(cue.type === "video" || cue.type === "image") && cue.assetPath && (
+      {isVisual && cue.assetPath && (
         <Box sx={inspectorFieldSx}>
           <Typography component="span" sx={inspectorFieldLabelSx}>
             {t("inspector.preview")}
@@ -32,11 +33,7 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
 
       <PlaybackRangeFields cue={cue} readOnly={readOnly} onChange={onChange} />
 
-      {(cue.type === "audio" || cue.type === "video") && (
-        <LoopFields cue={cue} readOnly={readOnly} onChange={onChange} />
-      )}
-
-      {(cue.type === "video" || cue.type === "image") && (
+      {isVisual && (
         <SliderNumberField
           label={t("inspector.opacity")}
           value={cue.opacity ?? 1}
@@ -47,6 +44,10 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
           onChange={(opacity) => onChange({ opacity })}
           inputWidth={48}
         />
+      )}
+
+      {(cue.type === "audio" || cue.type === "video") && (
+        <LoopFields cue={cue} readOnly={readOnly} onChange={onChange} />
       )}
     </>
   );

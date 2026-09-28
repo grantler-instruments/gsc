@@ -1,8 +1,10 @@
 import { resolveCueAudioBusId } from "../lib/audio-buses";
 import { openAudioInputStream } from "../lib/audio-input";
+import { clamp01, clampPan } from "../lib/clamp";
 import { getLoopPlayCount } from "../lib/loop";
 import { getMediaDurationSec } from "../lib/media-duration";
-import { videoTargetTime } from "../lib/video-playback";
+import { transportNowMs } from "../lib/transport-clock";
+import { videoPlaybackWindow, videoTargetTime } from "../lib/video-playback";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
 import { usePreferencesStore } from "../stores/preferences";
@@ -19,26 +21,6 @@ import {
   updateVideoVoiceLevels,
   type VideoVoice,
 } from "./video-voice";
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
-function clampPan(value: number): number {
-  return Math.max(-1, Math.min(1, value));
-}
-
-function playbackWindow(cue: Cue, bufferDuration: number) {
-  const inT = Math.max(0, cue.inTime ?? 0);
-  const endSec =
-    cue.outTime !== undefined
-      ? Math.min(bufferDuration, Math.max(inT, cue.outTime))
-      : bufferDuration;
-  return {
-    offsetSec: inT,
-    durationSec: Math.max(0.01, endSec - inT),
-  };
-}
 
 interface ActiveVoice {
   source: AudioBufferSourceNode;
@@ -77,6 +59,11 @@ export class AudioEngine {
 
   onVoiceEnded(handler: VoiceEndedHandler | null): void {
     this.onVoiceEndedHandler = handler;
+  }
+
+  /** Drop in-flight sync work without stopping active voices (e.g. between sequence steps). */
+  cancelPendingSync(): void {
+    this.syncGeneration++;
   }
 
   /**
@@ -205,7 +192,7 @@ export class AudioEngine {
   }
 
   private startVoice(cue: Cue, buffer: AudioBuffer, ctx: AudioContext, goAtMs: number): void {
-    const { offsetSec, durationSec } = playbackWindow(cue, buffer.duration);
+    const { offsetSec, durationSec } = videoPlaybackWindow(cue, buffer.duration);
     const loopPlayCount = getLoopPlayCount(cue);
     const shouldLoop = loopPlayCount !== 1;
     const startOffset = videoTargetTime(cue, buffer.duration, goAtMs);
@@ -234,7 +221,7 @@ export class AudioEngine {
       source.start(when, startOffset);
 
       if (loopPlayCount !== "inf") {
-        const elapsed = (Date.now() - goAtMs) / 1000;
+        const elapsed = (transportNowMs() - goAtMs) / 1000;
         const totalRun = durationSec * (loopPlayCount as number);
         const remaining = Math.max(0.01, totalRun - elapsed);
         source.stop(when + remaining);
@@ -356,7 +343,7 @@ export class AudioEngine {
       for (const cueId of targetVideo) {
         const cue = cueById.get(cueId);
         if (!cue) continue;
-        const goAtMs = cueStartedAtMs[cueId] ?? Date.now();
+        const goAtMs = cueStartedAtMs[cueId] ?? transportNowMs();
 
         if (this.videoVoices.has(cueId)) {
           const existing = this.videoVoices.get(cueId);
@@ -408,7 +395,7 @@ export class AudioEngine {
         const cue = cueById.get(cueId);
         if (!cue?.assetPath) continue;
         const assetPath = cue.assetPath;
-        const goAtMs = cueStartedAtMs[cueId] ?? Date.now();
+        const goAtMs = cueStartedAtMs[cueId] ?? transportNowMs();
 
         if (this.voices.has(cueId)) {
           const existing = this.voices.get(cueId);

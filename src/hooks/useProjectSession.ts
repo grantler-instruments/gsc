@@ -19,9 +19,29 @@ function debounce(fn: () => void, ms: number): () => void {
   };
 }
 
+let sessionRestoreDone = false;
+let webRestorePromise: Promise<void> | null = null;
+
+async function restoreWebSessionOnce(): Promise<void> {
+  if (!webRestorePromise) {
+    webRestorePromise = restorePlatformProject()
+      .then(() => undefined)
+      .finally(() => {
+        webRestorePromise = null;
+      });
+  }
+  return webRestorePromise;
+}
+
+/** Test-only reset of session bootstrap state. */
+export function resetProjectSessionBootstrapForTests(): void {
+  sessionRestoreDone = false;
+  webRestorePromise = null;
+}
+
 /** Restore last project and autosave (web: localStorage+cache, Tauri: disk folder). */
 export function useProjectSession(): boolean {
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(sessionRestoreDone);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,40 +72,12 @@ export function useProjectSession(): boolean {
     window.addEventListener("beforeunload", onUnload);
     window.addEventListener("pagehide", onPageHide);
 
-    void (async () => {
-      clearRestoreSteps();
-      startRestoreStep("session", "project.restoreStep.session");
-      try {
-        if (getPlatform() === "tauri") {
-          const { applyTauriStartupChoice, prepareTauriStartupRestore } = await import(
-            "../platform/project-storage.tauri"
-          );
-          const choice = await withRestoreStep(
-            "tauri-startup",
-            "project.restoreStep.tauriStartup",
-            () => prepareTauriStartupRestore(),
-          );
-          if (cancelled) return;
-          setReady(true);
-          if (choice) {
-            await withRestoreStep("apply-choice", "project.restoreStep.applyChoice", () =>
-              applyTauriStartupChoice(choice),
-            );
-          }
-        } else {
-          await withRestoreStep("web-restore", "project.restoreStep.webRestore", () =>
-            restorePlatformProject(),
-          );
-          if (cancelled) return;
-          setReady(true);
-        }
-      } catch (err) {
-        console.error("[session] restore failed", err);
-        notifyWarning(t("notification.restoreProjectFailed"));
-        if (!cancelled) setReady(true);
-      }
-      if (cancelled) return;
-      useProjectLoadingStore.getState().finishRestoreStep("session");
+    const markReady = () => {
+      sessionRestoreDone = true;
+      if (!cancelled) setReady(true);
+    };
+
+    const attachPersistSubscriptions = () => {
       unsubs.push(
         useProjectStore.subscribe((state, prev) => {
           if (projectPersistStateChanged(prev, state)) {
@@ -104,6 +96,50 @@ export function useProjectSession(): boolean {
         }),
       );
       useProjectLoadingStore.getState().clearAssetProgress();
+    };
+
+    void (async () => {
+      if (sessionRestoreDone) {
+        markReady();
+        attachPersistSubscriptions();
+        return;
+      }
+
+      clearRestoreSteps();
+      startRestoreStep("session", "project.restoreStep.session");
+      try {
+        if (getPlatform() === "tauri") {
+          const { applyTauriStartupChoice, prepareTauriStartupRestore } = await import(
+            "../platform/project-storage.tauri"
+          );
+          const choice = await withRestoreStep(
+            "tauri-startup",
+            "project.restoreStep.tauriStartup",
+            () => prepareTauriStartupRestore(),
+          );
+          if (cancelled) return;
+          markReady();
+          if (choice) {
+            await withRestoreStep("apply-choice", "project.restoreStep.applyChoice", () =>
+              applyTauriStartupChoice(choice),
+            );
+          }
+        } else {
+          await withRestoreStep("web-restore", "project.restoreStep.webRestore", () =>
+            restoreWebSessionOnce(),
+          );
+          if (cancelled) return;
+          markReady();
+        }
+      } catch (err) {
+        console.error("[session] restore failed", err);
+        notifyWarning(t("notification.restoreProjectFailed"));
+        if (!cancelled) markReady();
+      }
+
+      if (cancelled) return;
+      useProjectLoadingStore.getState().finishRestoreStep("session");
+      attachPersistSubscriptions();
     })();
 
     return () => {

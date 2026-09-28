@@ -35,10 +35,16 @@ interface UiState {
   hotCuePanelVisible: boolean;
   /** Asset row under the pointer in the assets panel (session only). */
   hoveredAssetPath: string | null;
+  /** Number of filesystem assets currently being imported for a cue drop. */
+  assetImportCount: number;
   /** Audio mixer dock above the transport bar. */
   audioMixerOpen: boolean;
-  /** Height of the audio mixer dock in pixels. */
+  /** Shared mixer dock height in pixels. */
   audioMixerHeight: number;
+  /** Video output dock above the transport bar. */
+  videoOutputOpen: boolean;
+  /** Kept in sync with audioMixerHeight for the video output dock. */
+  videoOutputHeight: number;
   triggerNotePosition: { x: number; y: number } | null;
   setTriggerNotePosition: (position: { x: number; y: number }) => void;
   setSidebarTab: (tab: SidebarTabId) => void;
@@ -59,9 +65,14 @@ interface UiState {
   setHotCuePanelVisible: (visible: boolean) => void;
   toggleHotCuePanelVisible: () => void;
   setHoveredAssetPath: (path: string | null) => void;
+  beginAssetImport: () => void;
+  endAssetImport: () => void;
   setAudioMixerOpen: (open: boolean) => void;
   setAudioMixerHeight: (height: number) => void;
   toggleAudioMixer: () => void;
+  setVideoOutputOpen: (open: boolean) => void;
+  setVideoOutputHeight: (height: number) => void;
+  toggleVideoOutput: () => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -83,8 +94,11 @@ export const useUiStore = create<UiState>()(
         hotCuePanelOrientation: "right",
         hotCuePanelVisible: false,
         hoveredAssetPath: null,
+        assetImportCount: 0,
         audioMixerOpen: false,
         audioMixerHeight: DEFAULT_AUDIO_MIXER_HEIGHT,
+        videoOutputOpen: false,
+        videoOutputHeight: DEFAULT_AUDIO_MIXER_HEIGHT,
         triggerNotePosition: null,
         setTriggerNotePosition: (triggerNotePosition) => set({ triggerNotePosition }),
         setSidebarTab: (sidebarTab) => set({ sidebarTab }),
@@ -132,10 +146,21 @@ export const useUiStore = create<UiState>()(
         setHotCuePanelVisible: (hotCuePanelVisible) => set({ hotCuePanelVisible }),
         toggleHotCuePanelVisible: () => set((s) => ({ hotCuePanelVisible: !s.hotCuePanelVisible })),
         setHoveredAssetPath: (hoveredAssetPath) => set({ hoveredAssetPath }),
+        beginAssetImport: () => set((s) => ({ assetImportCount: s.assetImportCount + 1 })),
+        endAssetImport: () =>
+          set((s) => ({ assetImportCount: Math.max(0, s.assetImportCount - 1) })),
         setAudioMixerOpen: (audioMixerOpen) => set({ audioMixerOpen }),
-        setAudioMixerHeight: (audioMixerHeight) =>
-          set({ audioMixerHeight: clampAudioMixerHeight(audioMixerHeight) }),
+        setAudioMixerHeight: (height) => {
+          const mixerHeight = clampAudioMixerHeight(height);
+          set({ audioMixerHeight: mixerHeight, videoOutputHeight: mixerHeight });
+        },
         toggleAudioMixer: () => set((s) => ({ audioMixerOpen: !s.audioMixerOpen })),
+        setVideoOutputOpen: (videoOutputOpen) => set({ videoOutputOpen }),
+        setVideoOutputHeight: (height) => {
+          const mixerHeight = clampAudioMixerHeight(height);
+          set({ audioMixerHeight: mixerHeight, videoOutputHeight: mixerHeight });
+        },
+        toggleVideoOutput: () => set((s) => ({ videoOutputOpen: !s.videoOutputOpen })),
       }),
       {
         name: "gsc-ui",
@@ -146,16 +171,19 @@ export const useUiStore = create<UiState>()(
           hotCuePanelOrientation: s.hotCuePanelOrientation,
           hotCuePanelVisible: s.hotCuePanelVisible,
           audioMixerHeight: s.audioMixerHeight,
+          videoOutputHeight: s.videoOutputHeight,
           triggerNotePosition: s.triggerNotePosition,
         }),
         merge: (persisted, current) => {
           const saved = persisted as Partial<UiState> | undefined;
+          const mixerHeight = clampAudioMixerHeight(
+            saved?.audioMixerHeight ?? saved?.videoOutputHeight ?? current.audioMixerHeight,
+          );
           return {
             ...current,
             ...saved,
-            audioMixerHeight: clampAudioMixerHeight(
-              saved?.audioMixerHeight ?? current.audioMixerHeight,
-            ),
+            audioMixerHeight: mixerHeight,
+            videoOutputHeight: mixerHeight,
           };
         },
       },

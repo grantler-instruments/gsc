@@ -90,6 +90,7 @@ function createTauriOutputChannel(): OutputChannel {
   };
 }
 
+/** Shared bus for all output windows — receivers filter by `state.outputId`. */
 export function createOutputChannel(): OutputChannel {
   return getPlatform() === "tauri" ? createTauriOutputChannel() : createBroadcastOutputChannel();
 }
@@ -109,8 +110,8 @@ export function postOutputAsset(
   channel.postMessage(message);
 }
 
-export function postRequestState(channel: OutputChannel): void {
-  const message: OutputMessage = { type: "request-state" };
+export function postRequestState(channel: OutputChannel, outputId?: string): void {
+  const message: OutputMessage = { type: "request-state", outputId };
   channel.postMessage(message);
 }
 

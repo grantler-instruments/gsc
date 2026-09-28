@@ -17,6 +17,7 @@ import { MediaInspectorFields } from "./MediaInspectorFields";
 import { MidiInspectorFields } from "./MidiInspectorFields";
 import { OscInspectorFields } from "./OscInspectorFields";
 import { TtsInspectorFields } from "./TtsInspectorFields";
+import { VideoRoutingInspectorFields } from "./VideoRoutingInspectorFields";
 
 interface CueInspectorBodyProps {
   cue: Cue;
@@ -135,6 +136,9 @@ export function CueInspectorBody({
       <MediaInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
 
       {hasCueChannelStrip(cue) && <CueChannelStrip cue={cue} readOnly={readOnly} inspector />}
+      {(cue.type === "video" || cue.type === "image") && (
+        <VideoRoutingInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
+      )}
       {(hasCueChannelStrip(cue) || cue.type === "tts") && (
         <AudioRoutingInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
       )}

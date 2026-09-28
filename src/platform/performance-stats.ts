@@ -14,7 +14,6 @@ export async function getProcessStats(): Promise<ProcessStats | null> {
   const { getProcessStats: get } = await import("./performance-stats.tauri");
   return get();
 }
-
 export interface MemoryPressure {
   availableMb: number;
   totalMb: number;
