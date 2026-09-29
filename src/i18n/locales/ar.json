@@ -401,6 +401,7 @@
     "createStopCue": "إنشاء إشارة إيقاف لـ {{label}}"
   },
   "cueRow": {
+    "loadingAsset": "جارٍ تحميل الملف…",
     "referenceMissing": "الإشارة المرجعية مفقودة",
     "addFixturesToLightFade": "أضف وحدات ومستويات إلى تلاشي الإضاءة هذا",
     "fadeTargetMissing": "هدف التلاشي مفقود",

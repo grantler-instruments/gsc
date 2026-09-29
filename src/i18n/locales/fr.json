@@ -401,6 +401,7 @@
     "createStopCue": "Créer un top d’arrêt pour {{label}}"
   },
   "cueRow": {
+    "loadingAsset": "Chargement du média…",
     "referenceMissing": "Top de référence manquant",
     "addFixturesToLightFade": "Ajoutez des projecteurs et des niveaux à ce fondu de lumière",
     "fadeTargetMissing": "Cible du fondu manquante",

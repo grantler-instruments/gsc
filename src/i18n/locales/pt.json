@@ -401,6 +401,7 @@
     "createStopCue": "Criar deixa de parada para {{label}}"
   },
   "cueRow": {
+    "loadingAsset": "Carregando recurso…",
     "referenceMissing": "Deixa de referência ausente",
     "addFixturesToLightFade": "Adicione refletores e níveis a este fade de luz",
     "fadeTargetMissing": "Alvo do fade ausente",

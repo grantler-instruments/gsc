@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { clearCachedAudioBuffer } from "../audio/buffer-cache";
 import { clearAssetTechnicalMetadata } from "../lib/asset-technical-metadata";
-import { clearMediaDuration } from "../lib/media-duration";
+import { clearMediaDuration, prefetchMediaDurations } from "../lib/media-duration";
 import { getPlatform } from "../platform";
 import { filesFromDataTransfer } from "../platform/files.web";
 import type { AssetKind } from "../types/cue";
@@ -25,6 +25,8 @@ interface VfsState {
     options?: { replaceExisting?: boolean },
   ) => Promise<ImportedAsset[]>;
   importFromDrop: (dataTransfer: DataTransfer) => Promise<ImportedAsset[]>;
+  /** Tauri: list assets already copied into the project folder (bytes load on first use). */
+  addDiskAssets: (assets: ImportedAsset[]) => void;
   removeEntry: (path: string) => void;
   syncFromEngine: () => void;
   refreshEntriesLoaded: () => void;
@@ -78,6 +80,17 @@ export const useVfsStore = create<VfsState>()(
       importFromDrop: async (dataTransfer) => {
         const files = filesFromDataTransfer(dataTransfer);
         return get().importFromFileList(files);
+      },
+
+      addDiskAssets: (assets) => {
+        const byPath = new Map(get().entries.map((e) => [e.path, e]));
+        for (const asset of assets) byPath.set(asset.path, { ...asset, loaded: true });
+        set({
+          entries: [...byPath.values()].sort((a, b) => a.path.localeCompare(b.path)),
+        });
+        prefetchMediaDurations(
+          assets.filter((a) => a.kind === "audio" || a.kind === "video").map((a) => a.path),
+        );
       },
 
       removeEntry: (path) => {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getCachedAudioBuffer, loadAudioBuffer } from "../audio/buffer-cache";
 import { ensureMediaDurationSec, getMediaDurationSec } from "../lib/media-duration";
-import { computeWaveformPeaks, WAVEFORM_PEAK_COUNT } from "../lib/waveform";
+import { getWaveformPeaks, WAVEFORM_PEAK_COUNT } from "../lib/waveform";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { vfsHas } from "../vfs/engine";
 
@@ -25,7 +25,7 @@ async function loadVideoWaveform(assetPath: string): Promise<MediaWaveformData |
     const buffer = await loadAudioBuffer(assetPath);
     if (buffer) {
       return {
-        peaks: computeWaveformPeaks(buffer),
+        peaks: await getWaveformPeaks(buffer),
         durationSec: buffer.duration,
       };
     }
@@ -80,13 +80,11 @@ export function useMediaWaveform(
       if (mediaKind === "audio") {
         const cached = getCachedAudioBuffer(assetPath);
         if (cached) {
+          const peaks = await getWaveformPeaks(cached);
           if (cancelled) return;
           setMissing(false);
           setLoading(false);
-          setData({
-            peaks: computeWaveformPeaks(cached),
-            durationSec: cached.duration,
-          });
+          setData({ peaks, durationSec: cached.duration });
           return;
         }
       }
@@ -98,10 +96,10 @@ export function useMediaWaveform(
         const result =
           mediaKind === "video"
             ? await loadVideoWaveform(assetPath)
-            : await loadAudioBuffer(assetPath).then((buffer) =>
+            : await loadAudioBuffer(assetPath).then(async (buffer) =>
                 buffer
                   ? {
-                      peaks: computeWaveformPeaks(buffer),
+                      peaks: await getWaveformPeaks(buffer),
                       durationSec: buffer.duration,
                     }
                   : null,

@@ -1,3 +1,4 @@
+import { markAssetLoading } from "../stores/asset-loading";
 import { useProjectStore } from "../stores/project";
 import { useProjectLoadingStore } from "../stores/project-loading";
 import { useVfsStore, type VfsEntry } from "../stores/vfs";
@@ -35,15 +36,24 @@ export function buildVfsEntries(paths: string[], metadata: PersistedAssetEntry[]
 
 async function hydratePathsWithProgress(projectId: string, paths: string[]): Promise<void> {
   const { setAssetStatus } = useProjectLoadingStore.getState();
+  const started = new Set<string>();
 
-  await hydrateVfsFromProjectCache(projectId, paths, {
-    onPathStart: (path) => {
-      if (!vfsHas(path)) setAssetStatus(path, "loading");
-    },
-    onPathComplete: (path, loaded) => {
-      setAssetStatus(path, loaded ? "loaded" : "pending");
-    },
-  });
+  try {
+    await hydrateVfsFromProjectCache(projectId, paths, {
+      onPathStart: (path) => {
+        if (vfsHas(path)) return;
+        started.add(path);
+        markAssetLoading(path, true);
+        setAssetStatus(path, "loading");
+      },
+      onPathComplete: (path, loaded) => {
+        if (started.delete(path)) markAssetLoading(path, false);
+        setAssetStatus(path, loaded ? "loaded" : "pending");
+      },
+    });
+  } finally {
+    for (const path of started) markAssetLoading(path, false);
+  }
 
   const stillMissing = paths.filter((path) => !vfsHas(path));
   if (stillMissing.length > 0) {

@@ -1,5 +1,6 @@
 import { setMediaDurationSec } from "../lib/media-duration";
 import { resolveAssetBlob } from "../platform/vfs-asset";
+import { trackAssetLoading } from "../stores/asset-loading";
 import { vfsGet } from "../vfs/engine";
 
 interface CacheEntry {
@@ -77,6 +78,7 @@ export async function loadAudioBuffer(
         if (decoding.get(assetPath) === pending) decoding.delete(assetPath);
       });
     decoding.set(assetPath, pending);
+    void trackAssetLoading(assetPath, pending).catch(() => {});
   }
   return pending;
 }

@@ -444,6 +444,7 @@
     "convertToAudioHint": "Aktuelle Sprache generieren, bevor umgewandelt wird."
   },
   "cueRow": {
+    "loadingAsset": "Asset wird geladen…",
     "referenceMissing": "Referenz-Cue fehlt",
     "addFixturesToLightFade": "Fixtures und Werte zu diesem Licht-Fade hinzufügen",
     "fadeTargetMissing": "Fade-Ziel fehlt",

@@ -34,22 +34,24 @@ export function LiveAudioInspectorFields({ cue, readOnly, onChange }: Props) {
       const generation = ++refreshGeneration;
       try {
         const stream = await openAudioInputStream(deviceId ?? undefined);
+        let reportedCount = 1;
         try {
           const track = stream.getAudioTracks()[0];
           const capabilities = track?.getCapabilities?.();
           const settings = track?.getSettings();
-          const reportedCount = Math.max(
+          reportedCount = Math.max(
             capabilities?.channelCount?.max ?? 1,
             settings?.channelCount ?? 1,
           );
-          const count = Number.isFinite(reportedCount) ? Math.max(1, Math.floor(reportedCount)) : 1;
-          const available = await mediaDevices?.enumerateDevices();
-          if (!cancelled && generation === refreshGeneration) {
-            setDevices(available ?? []);
-            setInputChannels({ deviceId, count });
-          }
         } finally {
+          // Release the input before awaiting anything else so the probe never holds it open.
           closeAudioInputStream(stream);
+        }
+        const count = Number.isFinite(reportedCount) ? Math.max(1, Math.floor(reportedCount)) : 1;
+        const available = await mediaDevices?.enumerateDevices();
+        if (!cancelled && generation === refreshGeneration) {
+          setDevices(available ?? []);
+          setInputChannels({ deviceId, count });
         }
       } catch {
         if (!cancelled && generation === refreshGeneration) {

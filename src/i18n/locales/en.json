@@ -502,6 +502,7 @@
     }
   },
   "cueRow": {
+    "loadingAsset": "Loading asset…",
     "referenceMissing": "Reference cue missing",
     "addFixturesToLightFade": "Add fixtures and levels to this light fade",
     "fadeTargetMissing": "Fade target missing",

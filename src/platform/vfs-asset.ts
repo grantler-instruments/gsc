@@ -1,3 +1,4 @@
+import { trackAssetLoading } from "../stores/asset-loading";
 import { vfsGet } from "../vfs/engine";
 import { getPlatform } from "./index";
 import { isRemoteClient } from "./remote-mode";
@@ -26,6 +27,7 @@ export async function resolveAssetBlob(assetPath: string): Promise<Blob | undefi
       loading.delete(assetPath);
     });
     loading.set(assetPath, pending);
+    void trackAssetLoading(assetPath, pending).catch(() => {});
   }
   return pending;
 }

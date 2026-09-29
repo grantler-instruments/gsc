@@ -2,6 +2,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -23,6 +24,7 @@ import { pointerLeftElement } from "../../lib/dom";
 import { setActiveCueDrag, setCueDragData } from "../../lib/drag";
 import { isLightFadeReady } from "../../lib/fade";
 import { getParallelGroupOrderConflict } from "../../lib/parallel-group-fire";
+import { useIsAssetLoading } from "../../stores/asset-loading";
 import { usePlaybackStore } from "../../stores/playback";
 import { useProjectStore } from "../../stores/project";
 import { isCueInRunningStep } from "../../stores/transport";
@@ -135,6 +137,7 @@ export const CueRow = memo(function CueRow({
   useRestartCssAnimation(cueNumberRef, highlightAsTarget, targetHighlightToken);
 
   const playback = usePlaybackStore((s) => (active ? s.byCueId[cue.id] : undefined));
+  const loadingAsset = useIsAssetLoading(cue.assetPath);
 
   const fixtures = useProjectStore((s) => s.fixtures);
   const isPreviewing = useUiStore((s) => s.dmxPreviewCueIds.includes(cue.id));
@@ -299,6 +302,18 @@ export const CueRow = memo(function CueRow({
           playback={playback}
         />
       </Box>
+      {loadingAsset ? (
+        <Tooltip title={t("cueRow.loadingAsset")} arrow>
+          <CircularProgress
+            size={14}
+            thickness={5}
+            color="inherit"
+            aria-label={t("cueRow.loadingAsset")}
+            data-cue-loading=""
+            sx={{ flexShrink: 0, opacity: 0.8 }}
+          />
+        </Tooltip>
+      ) : null}
       <CueNotesIcon notes={cue.notes} />
       <CueRowActions
         cue={cue}

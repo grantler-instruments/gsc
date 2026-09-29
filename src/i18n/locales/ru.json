@@ -401,6 +401,7 @@
     "createStopCue": "Создать кью остановки для {{label}}"
   },
   "cueRow": {
+    "loadingAsset": "Загрузка ресурса…",
     "referenceMissing": "Опорное кью отсутствует",
     "addFixturesToLightFade": "Добавьте приборы и уровни в этот фейд света",
     "fadeTargetMissing": "Цель фейда отсутствует",

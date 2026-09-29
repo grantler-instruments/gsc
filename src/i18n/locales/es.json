@@ -401,6 +401,7 @@
     "createStopCue": "Crear cue de detener para {{label}}"
   },
   "cueRow": {
+    "loadingAsset": "Cargando recurso…",
     "referenceMissing": "Cue de referencia faltante",
     "addFixturesToLightFade": "Añada fixtures y niveles a este fundido de luz",
     "fadeTargetMissing": "Objetivo de fundido faltante",

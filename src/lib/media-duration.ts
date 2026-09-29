@@ -4,7 +4,8 @@ import { vfsHas } from "../vfs/engine";
 import { assetKindFromPath } from "../vfs/import";
 
 const cache = new Map<string, number>();
-const pending = new Set<string>();
+/** In-flight probes, shared so concurrent callers wait for the same result. */
+const pending = new Map<string, Promise<number | undefined>>();
 
 export function getMediaDurationSec(assetPath: string): number | undefined {
   const d = cache.get(assetPath);
@@ -49,13 +50,7 @@ async function probeVideoDurationSec(assetPath: string): Promise<number | undefi
   }
 }
 
-/** Decode or read metadata so duration is available for UI and sequencing. */
-export async function ensureMediaDurationSec(assetPath: string): Promise<number | undefined> {
-  const cached = getMediaDurationSec(assetPath);
-  if (cached !== undefined) return cached;
-  if (pending.has(assetPath)) return undefined;
-
-  pending.add(assetPath);
+async function probeMediaDurationSec(assetPath: string): Promise<number | undefined> {
   try {
     const kind = assetKindFromPath(assetPath);
     const duration =
@@ -72,9 +67,21 @@ export async function ensureMediaDurationSec(assetPath: string): Promise<number 
   } catch (err) {
     console.warn(`[media] Could not read duration for ${assetPath}`, err);
     return undefined;
-  } finally {
-    pending.delete(assetPath);
   }
+}
+
+/** Decode or read metadata so duration is available for UI and sequencing. */
+export function ensureMediaDurationSec(assetPath: string): Promise<number | undefined> {
+  const cached = getMediaDurationSec(assetPath);
+  if (cached !== undefined) return Promise.resolve(cached);
+  let probe = pending.get(assetPath);
+  if (!probe) {
+    probe = probeMediaDurationSec(assetPath).finally(() => {
+      if (pending.get(assetPath) === probe) pending.delete(assetPath);
+    });
+    pending.set(assetPath, probe);
+  }
+  return probe;
 }
 
 export function prefetchMediaDurations(assetPaths: string[]): void {

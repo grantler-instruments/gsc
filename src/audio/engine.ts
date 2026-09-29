@@ -8,7 +8,7 @@ import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
 import { usePreferencesStore } from "../stores/preferences";
 import type { AudioBus } from "../types/audio-bus";
 import type { Cue } from "../types/cue";
-import { getCachedAudioBuffer, loadAudioBuffer } from "./buffer-cache";
+import { getCachedAudioBuffer, preloadAudioBuffer } from "./buffer-cache";
 import { prepareBusEffects } from "./effects/worklet";
 import { audioMeters, cueMeterId } from "./meters";
 import { MixerGraph } from "./mixer";
@@ -61,7 +61,8 @@ type VoiceEndedHandler = (cueId: string) => void;
 
 /**
  * Browser playback via Web Audio API (reliable in Chrome/Brave).
- * Video cues use MediaElementSource; audio cues use decoded buffers.
+ * Video cues use MediaElementSource; audio cues use decoded buffers. Audio not decoded
+ * yet streams through a media element so GO starts at once while the decode runs.
  */
 export class AudioEngine {
   private ctx: AudioContext | null = null;
@@ -71,6 +72,7 @@ export class AudioEngine {
   private voices = new Map<string, ActiveVoice>();
   private liveAudioVoices = new Map<string, LiveAudioVoice>();
   private videoVoices = new Map<string, VideoVoice>();
+  private streamedAudioVoices = new Map<string, VideoVoice>();
   private videoVoiceListeners = new Set<() => void>();
   private syncGeneration = 0;
   private onVoiceEndedHandler: VoiceEndedHandler | null = null;
@@ -164,6 +166,14 @@ export class AudioEngine {
     stopVideoVoice(voice);
     this.videoVoices.delete(cueId);
     this.notifyVideoVoiceListeners();
+  }
+
+  private stopStreamedAudioVoice(cueId: string): void {
+    const voice = this.streamedAudioVoices.get(cueId);
+    if (!voice) return;
+    audioMeters.remove(cueMeterId(cueId));
+    stopVideoVoice(voice);
+    this.streamedAudioVoices.delete(cueId);
   }
 
   private stopLiveAudioVoice(cueId: string): void {
@@ -286,7 +296,7 @@ export class AudioEngine {
         this.updateVoiceLevels(cueId, cue);
       }
     }
-    for (const voice of this.videoVoices.values()) {
+    for (const voice of [...this.videoVoices.values(), ...this.streamedAudioVoices.values()]) {
       const cue = cues.find((c) => c.id === voice.cueId);
       if (cue) {
         this.rerouteVideoVoiceIfNeeded(voice, cue);
@@ -340,6 +350,9 @@ export class AudioEngine {
         if (!targetAudio.has(id)) {
           this.stopVoice(id);
         }
+      }
+      for (const id of [...this.streamedAudioVoices.keys()]) {
+        if (!targetAudio.has(id)) this.stopStreamedAudioVoice(id);
       }
 
       for (const id of [...this.videoVoices.keys()]) {
@@ -421,27 +434,53 @@ export class AudioEngine {
           this.stopVoice(cueId);
         }
 
-        let buffer = getCachedAudioBuffer(assetPath);
-        if (!buffer) {
-          try {
-            buffer = (await loadAudioBuffer(assetPath, ctx)) ?? undefined;
-          } catch (err) {
-            console.warn(`[audio] Could not decode ${assetPath}`, err);
+        const streamed = this.streamedAudioVoices.get(cueId);
+        if (streamed) {
+          if (streamed.goAtMs === goAtMs) {
+            this.rerouteVideoVoiceIfNeeded(streamed, cue);
+            updateVideoVoiceLevels(streamed, cue);
             continue;
           }
+          // Re-fired: restart, from the decoded buffer when it is ready by now.
+          this.stopStreamedAudioVoice(cueId);
         }
-        if (!buffer) {
-          console.warn(`[audio] Missing asset in VFS: ${assetPath}`);
+
+        const buffer = getCachedAudioBuffer(assetPath);
+        if (buffer) {
+          try {
+            this.startVoice(cue, buffer, ctx, goAtMs);
+          } catch (err) {
+            console.warn(`[audio] Could not play ${assetPath}`, err);
+          }
           continue;
         }
 
+        // Decoding a long file takes seconds; stream it now and decode for the next GO.
+        const blob = await resolveAssetBlob(assetPath);
         if (generation !== this.syncGeneration) return;
-
-        try {
-          this.startVoice(cue, buffer, ctx, goAtMs);
-        } catch (err) {
-          console.warn(`[audio] Could not play ${assetPath}`, err);
+        if (!blob) {
+          console.warn(`[audio] Missing asset in VFS: ${assetPath}`);
+          continue;
         }
+        preloadAudioBuffer(assetPath);
+
+        const voice = startVideoVoice(
+          cue,
+          ctx,
+          goAtMs,
+          (id) => {
+            if (this.streamedAudioVoices.get(id) === voice) {
+              this.stopStreamedAudioVoice(id);
+              this.handleVoiceEnded(id);
+            }
+          },
+          (panner) => this.connectVoicePanner(panner, cue),
+        );
+        if (!voice) {
+          console.warn(`[audio] Missing asset in VFS: ${assetPath}`);
+          continue;
+        }
+        this.streamedAudioVoices.set(cueId, voice);
       }
 
       for (const cueId of targetLiveAudio) {
@@ -454,7 +493,8 @@ export class AudioEngine {
       this.updateActiveVoiceLevels(cues);
 
       const missingAudio =
-        targetAudio.size > 0 && [...targetAudio].every((id) => !this.voices.has(id));
+        targetAudio.size > 0 &&
+        [...targetAudio].every((id) => !this.voices.has(id) && !this.streamedAudioVoices.has(id));
       const missingVideo =
         targetVideo.size > 0 && [...targetVideo].every((id) => !this.videoVoices.has(id));
 
@@ -479,6 +519,9 @@ export class AudioEngine {
     }
     for (const id of [...this.videoVoices.keys()]) {
       this.stopVideoVoice(id);
+    }
+    for (const id of [...this.streamedAudioVoices.keys()]) {
+      this.stopStreamedAudioVoice(id);
     }
     for (const id of [...this.liveAudioVoices.keys()]) {
       this.stopLiveAudioVoice(id);

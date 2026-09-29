@@ -401,6 +401,7 @@
     "createStopCue": "为 {{label}} 创建停止提示"
   },
   "cueRow": {
+    "loadingAsset": "正在加载素材…",
     "referenceMissing": "参考提示缺失",
     "addFixturesToLightFade": "为此灯光渐变添加灯具和电平",
     "fadeTargetMissing": "渐变目标缺失",

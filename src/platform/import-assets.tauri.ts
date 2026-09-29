@@ -1,9 +1,11 @@
 import { basename, join } from "@tauri-apps/api/path";
-import { readDir, readFile } from "@tauri-apps/plugin-fs";
+import { readDir, readFile, stat } from "@tauri-apps/plugin-fs";
 import { t } from "../i18n/t";
 import { notifyWarning } from "../lib/notifications";
-import { isProjectBundlePath } from "../lib/project-paths";
+import { isProjectBundlePath, VFS_ASSETS_ROOT } from "../lib/project-paths";
+import { useProjectLocationStore } from "../stores/project-location";
 import { useVfsStore } from "../stores/vfs";
+import { joinPath, normalizePath, vfsHas, vfsRegisterDiskPath } from "../vfs/engine";
 import { assetKindFromFilename, type ImportedAsset, mimeTypeFromPath } from "../vfs/import";
 
 async function collectMediaFilePaths(paths: string[]): Promise<string[]> {
@@ -57,18 +59,52 @@ export async function filesFromDiskPaths(paths: string[]): Promise<File[]> {
     }
   }
 
-  if (readFailures > 0) {
-    notifyWarning(
-      readFailures === 1
-        ? t("notification.droppedFileReadFailed")
-        : t("notification.droppedFilesReadFailed", { count: readFailures }),
-    );
-  }
+  notifyReadFailures(readFailures);
 
   return files;
 }
 
+function notifyReadFailures(count: number): void {
+  if (count === 0) return;
+  notifyWarning(
+    count === 1
+      ? t("notification.droppedFileReadFailed")
+      : t("notification.droppedFilesReadFailed", { count }),
+  );
+}
+
+/** Copy dropped files into the project folder on disk; bytes load lazily when first used. */
+async function copyDiskPathsIntoProject(paths: string[]): Promise<ImportedAsset[]> {
+  const { copyDiskFileIntoProject } = await import("./project-storage.tauri");
+  const imported: ImportedAsset[] = [];
+  let failures = 0;
+
+  for (const diskPath of await collectMediaFilePaths(paths)) {
+    const name = await basename(diskPath);
+    const kind = assetKindFromFilename(name);
+    if (!kind) continue;
+    const path = normalizePath(joinPath(VFS_ASSETS_ROOT, name));
+    try {
+      // Same as importFiles: an asset already in the project keeps its current bytes.
+      if (!vfsHas(path)) {
+        await copyDiskFileIntoProject(diskPath, path);
+        vfsRegisterDiskPath(path);
+      }
+      const { size } = await stat(diskPath);
+      imported.push({ path, name, size, mimeType: mimeTypeFromPath(name), kind });
+    } catch (err) {
+      console.warn(`[tauri] Could not copy dropped file ${diskPath}`, err);
+      failures += 1;
+    }
+  }
+
+  notifyReadFailures(failures);
+  useVfsStore.getState().addDiskAssets(imported);
+  return imported;
+}
+
 export async function importAssetsFromDiskPaths(paths: string[]): Promise<ImportedAsset[]> {
+  if (useProjectLocationStore.getState().rootDir) return copyDiskPathsIntoProject(paths);
   const files = await filesFromDiskPaths(paths);
   if (!files.length) return [];
   return useVfsStore.getState().importFromFileList(files);

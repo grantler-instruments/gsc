@@ -88,7 +88,9 @@ export function usePlaybackProgress(): void {
           prefetchMediaDurations([assetPath]);
         }
         if (!assetPath) return;
-        void ensureMediaDurationSec(assetPath).then(() => {
+        void ensureMediaDurationSec(assetPath).then((durationSec) => {
+          // Retrying without a duration would re-enter here on the same microtask queue forever.
+          if (durationSec === undefined) return;
           const { activeCueIds: currentActive } = useTransportStore.getState();
           if (currentActive.includes(cueId)) {
             tryStartSession(cueId, cue);

@@ -1,14 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { openAudioInputStream } from "../lib/audio-input";
+import { resolveAssetBlob } from "../platform/vfs-asset";
 import type { Cue } from "../types/cue";
-import { getCachedAudioBuffer } from "./buffer-cache";
+import { getCachedAudioBuffer, preloadAudioBuffer } from "./buffer-cache";
 import { AudioEngine } from "./engine";
 import { audioMeters, cueMeterId, SILENT_METER } from "./meters";
 import { createMockAudioContext, createMockAudioNode } from "./test/mock-audio-context";
+import { startVideoVoice, stopVideoVoice, type VideoVoice } from "./video-voice";
 
 vi.mock("../lib/audio-input", () => ({ openAudioInputStream: vi.fn() }));
 vi.mock("./effects/worklet", () => ({ prepareBusEffects: vi.fn(async () => {}) }));
-vi.mock("./buffer-cache", () => ({ getCachedAudioBuffer: vi.fn(), loadAudioBuffer: vi.fn() }));
+vi.mock("../platform/vfs-asset", () => ({ resolveAssetBlob: vi.fn() }));
+vi.mock("./video-voice", () => ({
+  seekVideoVoice: vi.fn(),
+  startVideoVoice: vi.fn(),
+  stopVideoVoice: vi.fn(),
+  updateVideoVoiceLevels: vi.fn(),
+}));
+vi.mock("./buffer-cache", () => ({ getCachedAudioBuffer: vi.fn(), preloadAudioBuffer: vi.fn() }));
 
 const cue: Cue = { id: "live", number: "1", name: "Mic", type: "liveAudio", volume: 0.5 };
 let engine: AudioEngine;
@@ -112,5 +121,23 @@ describe("cue meter lifecycle", () => {
     expect(source.disconnect).toHaveBeenCalledOnce();
     expect(finished).toHaveBeenCalledWith("audio");
     expect(audioMeters.getReading(cueMeterId("audio"))).toBe(SILENT_METER);
+  });
+
+  it("streams audio that is not decoded yet and decodes it for the next GO", async () => {
+    const voice = { cueId: "long", goAtMs: 1 } as VideoVoice;
+    vi.mocked(getCachedAudioBuffer).mockReturnValue(undefined);
+    vi.mocked(resolveAssetBlob).mockResolvedValue(new Blob());
+    vi.mocked(startVideoVoice).mockReturnValue(voice);
+    const longCue: Cue = { ...cue, id: "long", type: "audio", assetPath: "long.mp3" };
+
+    await engine.sync([longCue.id], [longCue], 1, { long: 1 });
+    expect(startVideoVoice).toHaveBeenCalledOnce();
+    expect(preloadAudioBuffer).toHaveBeenCalledWith("long.mp3");
+
+    await engine.sync([longCue.id], [longCue], 1, { long: 1 });
+    expect(startVideoVoice).toHaveBeenCalledOnce();
+
+    await engine.sync([], [longCue], 1);
+    expect(stopVideoVoice).toHaveBeenCalledWith(voice);
   });
 });

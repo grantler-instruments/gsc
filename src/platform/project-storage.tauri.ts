@@ -769,6 +769,24 @@ export async function syncImportedAssetToDisk(virtualPath: string, blob: Blob): 
   await writeAssetToDisk(rootDir, virtualPath, blob, writeDiskFile, ensureDiskDir);
 }
 
+/**
+ * Copy a file from anywhere on disk into the project's assets folder natively, so its
+ * bytes never pass through the webview. Returns false when no project folder is bound.
+ */
+export async function copyDiskFileIntoProject(
+  sourceDiskPath: string,
+  virtualPath: string,
+): Promise<boolean> {
+  const rootDir = useProjectLocationStore.getState().rootDir;
+  if (!rootDir) return false;
+  const diskPath = diskPathForAsset(rootDir, virtualPath);
+  if (diskPath !== sourceDiskPath) {
+    await ensureDiskDir(diskPath.replace(/[/\\][^/\\]+$/, ""));
+    await copyFile(sourceDiskPath, diskPath);
+  }
+  return true;
+}
+
 export async function removeAssetFromDisk(virtualPath: string): Promise<void> {
   const rootDir = useProjectLocationStore.getState().rootDir;
   if (!rootDir) return;
