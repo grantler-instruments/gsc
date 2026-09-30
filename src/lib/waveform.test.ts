@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { computeWaveformPeaks, getWaveformPeaks, WAVEFORM_PEAK_COUNT } from "./waveform";
+import {
+  computeWaveformPeaks,
+  getWaveformDetailPeaks,
+  getWaveformPeaks,
+  WAVEFORM_DETAIL_PEAK_COUNT,
+  WAVEFORM_PEAK_COUNT,
+} from "./waveform";
 
 function fakeBuffer(channels: Float32Array[]): AudioBuffer {
   return {
@@ -33,5 +39,22 @@ describe("waveform peaks", () => {
     const first = getWaveformPeaks(buffer);
     expect(getWaveformPeaks(buffer)).toBe(first);
     expect(await first).toEqual(computeWaveformPeaks(buffer));
+  });
+});
+
+describe("waveform detail peaks", () => {
+  it("computes the detail bin count and caches per buffer", async () => {
+    const buffer = fakeBuffer([ramp(WAVEFORM_DETAIL_PEAK_COUNT * 4, 1)]);
+    const first = getWaveformDetailPeaks(buffer);
+    expect(getWaveformDetailPeaks(buffer)).toBe(first);
+    const peaks = await first;
+    expect(peaks).toHaveLength(WAVEFORM_DETAIL_PEAK_COUNT);
+    expect(peaks).toEqual(computeWaveformPeaks(buffer, WAVEFORM_DETAIL_PEAK_COUNT));
+    expect(peaks[WAVEFORM_DETAIL_PEAK_COUNT - 1]).toBe(1);
+  });
+
+  it("fills every bin when the file is shorter than the bin count", () => {
+    const peaks = computeWaveformPeaks(fakeBuffer([new Float32Array(100).fill(0.5)]), 400);
+    expect(Math.min(...peaks)).toBe(1);
   });
 });

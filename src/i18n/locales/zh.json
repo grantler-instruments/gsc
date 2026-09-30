@@ -712,7 +712,12 @@
     "loopCount": "{{count}}× 循环",
     "loadingVideo": "正在加载视频…",
     "loadingWaveform": "正在加载波形…",
-    "assetNotLoadedImport": "资源未加载 — 请在资源中导入文件。"
+    "assetNotLoadedImport": "资源未加载 — 请在资源中导入文件。",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "zoomFit": "显示整个文件",
+    "zoomLevel": "{{zoom}}×",
+    "zoomPanAria": "滚动缩放后的波形"
   },
   "midi": {
     "noteOn": "Ch{{channel}} 音符开 {{note}} {{velocity}}",

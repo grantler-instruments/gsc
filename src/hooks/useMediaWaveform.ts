@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getCachedAudioBuffer, loadAudioBuffer } from "../audio/buffer-cache";
 import { ensureMediaDurationSec, getMediaDurationSec } from "../lib/media-duration";
-import { getWaveformPeaks, WAVEFORM_PEAK_COUNT } from "../lib/waveform";
+import { getWaveformDetailPeaks, getWaveformPeaks, WAVEFORM_PEAK_COUNT } from "../lib/waveform";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { vfsHas } from "../vfs/engine";
 
@@ -130,6 +130,38 @@ export function useMediaWaveform(
   }, [assetPath, mediaKind]);
 
   return { data, loading, missing };
+}
+
+/**
+ * High-resolution peaks for zoomed waveform views. Loads only while `enabled`
+ * and resolves to null when the media has no decodable audio.
+ */
+export function useWaveformDetailPeaks(
+  assetPath: string | undefined,
+  enabled: boolean,
+): Float32Array | null {
+  const [peaks, setPeaks] = useState<{ assetPath: string; peaks: Float32Array } | null>(null);
+  const hasPeaks = !!peaks && peaks.assetPath === assetPath;
+
+  useEffect(() => {
+    if (!assetPath || !enabled || hasPeaks) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const buffer = await loadAudioBuffer(assetPath);
+        if (!buffer || cancelled) return;
+        const detail = await getWaveformDetailPeaks(buffer);
+        if (!cancelled) setPeaks({ assetPath, peaks: detail });
+      } catch {
+        /* keep drawing base peaks */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [assetPath, enabled, hasPeaks]);
+
+  return peaks && hasPeaks ? peaks.peaks : null;
 }
 
 /** @deprecated Use useMediaWaveform */

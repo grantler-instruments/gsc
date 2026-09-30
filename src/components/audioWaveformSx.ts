@@ -41,6 +41,11 @@ export const waveformSeekableSx = {
   touchAction: "none",
 };
 
+export const waveformZoomableSx = {
+  cursor: "grab",
+  touchAction: "none",
+};
+
 export const waveformDraggingSx = {
   userSelect: "none",
   "& [data-waveform-handle]::before": {
@@ -144,4 +149,30 @@ export const waveformThumbnailTimeSx = {
   color: "text.secondary",
   borderTop: 1,
   borderColor: "divider",
+};
+
+export const waveformZoomToolbarSx = {
+  display: "flex",
+  alignItems: "center",
+  gap: 0.25,
+  mt: 0.5,
+  "& .MuiIconButton-root": {
+    p: 0.375,
+    fontSize: 16,
+  },
+};
+
+export const waveformZoomLabelSx = {
+  minWidth: 32,
+  px: 0.5,
+  fontSize: 10,
+  fontVariantNumeric: "tabular-nums",
+  color: "text.secondary",
+};
+
+export const waveformZoomPanSx = {
+  flex: 1,
+  minWidth: 0,
+  mx: 1,
+  py: 1,
 };

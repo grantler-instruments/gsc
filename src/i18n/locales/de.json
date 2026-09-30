@@ -767,7 +767,12 @@
     "loopCount": "{{count}}× Schleife",
     "loadingVideo": "Video wird geladen…",
     "loadingWaveform": "Wellenform wird geladen…",
-    "assetNotLoadedImport": "Asset nicht geladen — Datei in Assets importieren."
+    "assetNotLoadedImport": "Asset nicht geladen — Datei in Assets importieren.",
+    "zoomIn": "Vergrößern",
+    "zoomOut": "Verkleinern",
+    "zoomFit": "Ganze Datei anzeigen",
+    "zoomLevel": "{{zoom}}×",
+    "zoomPanAria": "Gezoomte Wellenform scrollen"
   },
   "midi": {
     "noteOn": "Ch{{channel}} Note On {{note}} {{velocity}}",

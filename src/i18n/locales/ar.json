@@ -712,7 +712,12 @@
     "loopCount": "{{count}}× تكرار",
     "loadingVideo": "جارٍ تحميل الفيديو…",
     "loadingWaveform": "جارٍ تحميل الموجة…",
-    "assetNotLoadedImport": "الأصل غير محمّل — استورد الملف في الأصول."
+    "assetNotLoadedImport": "الأصل غير محمّل — استورد الملف في الأصول.",
+    "zoomIn": "تكبير",
+    "zoomOut": "تصغير",
+    "zoomFit": "عرض الملف كاملًا",
+    "zoomLevel": "{{zoom}}×",
+    "zoomPanAria": "تمرير الموجة المكبّرة"
   },
   "midi": {
     "noteOn": "قناة {{channel}} تشغيل نوتة {{note}} {{velocity}}",

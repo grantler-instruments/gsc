@@ -878,7 +878,12 @@
     "loopCount": "{{count}}× loop",
     "loadingVideo": "Loading video…",
     "loadingWaveform": "Loading waveform…",
-    "assetNotLoadedImport": "Asset not loaded — import the file in Assets."
+    "assetNotLoadedImport": "Asset not loaded — import the file in Assets.",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomFit": "Fit whole file",
+    "zoomLevel": "{{zoom}}×",
+    "zoomPanAria": "Scroll zoomed waveform"
   },
   "midi": {
     "noteOn": "Ch{{channel}} Note On {{note}} {{velocity}}",

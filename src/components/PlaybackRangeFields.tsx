@@ -80,6 +80,7 @@ export function PlaybackRangeFields({ cue, readOnly = false, onChange }: Playbac
               onRangeChange={onChange}
               mediaKind={isVideo ? "video" : "audio"}
               hoverPreview={isVideo && !readOnly}
+              zoomable
             />
           )}
           <Typography component="p" sx={inspectorWaveformRangeSummarySx}>

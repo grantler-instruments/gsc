@@ -712,7 +712,12 @@
     "loopCount": "{{count}}× boucle",
     "loadingVideo": "Chargement de la vidéo…",
     "loadingWaveform": "Chargement de la forme d’onde…",
-    "assetNotLoadedImport": "Média non chargé — importez le fichier dans Médias."
+    "assetNotLoadedImport": "Média non chargé — importez le fichier dans Médias.",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
+    "zoomFit": "Afficher tout le fichier",
+    "zoomLevel": "{{zoom}}×",
+    "zoomPanAria": "Faire défiler la forme d’onde zoomée"
   },
   "midi": {
     "noteOn": "Ca{{channel}} Note On {{note}} {{velocity}}",

@@ -712,7 +712,12 @@
     "loopCount": "{{count}}× repetição",
     "loadingVideo": "Carregando vídeo…",
     "loadingWaveform": "Carregando forma de onda…",
-    "assetNotLoadedImport": "Mídia não carregada — importe o arquivo em Mídias."
+    "assetNotLoadedImport": "Mídia não carregada — importe o arquivo em Mídias.",
+    "zoomIn": "Aproximar",
+    "zoomOut": "Afastar",
+    "zoomFit": "Ajustar ao arquivo inteiro",
+    "zoomLevel": "{{zoom}}×",
+    "zoomPanAria": "Rolar forma de onda ampliada"
   },
   "midi": {
     "noteOn": "Ca{{channel}} Note On {{note}} {{velocity}}",

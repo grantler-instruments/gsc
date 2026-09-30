@@ -732,7 +732,12 @@
     "loopCount": "{{count}}× bucle",
     "loadingVideo": "Cargando video…",
     "loadingWaveform": "Cargando forma de onda…",
-    "assetNotLoadedImport": "Asset no cargado — importe el archivo en Assets."
+    "assetNotLoadedImport": "Asset no cargado — importe el archivo en Assets.",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "zoomFit": "Ajustar al archivo completo",
+    "zoomLevel": "{{zoom}}×",
+    "zoomPanAria": "Desplazar forma de onda ampliada"
   },
   "midi": {
     "noteOn": "Ch{{channel}} Note On {{note}} {{velocity}}",

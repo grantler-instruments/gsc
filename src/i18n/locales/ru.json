@@ -712,7 +712,12 @@
     "loopCount": "{{count}}× цикл",
     "loadingVideo": "Загрузка видео…",
     "loadingWaveform": "Загрузка формы волны…",
-    "assetNotLoadedImport": "Медиа не загружено — импортируйте файл в «Медиа»."
+    "assetNotLoadedImport": "Медиа не загружено — импортируйте файл в «Медиа».",
+    "zoomIn": "Увеличить",
+    "zoomOut": "Уменьшить",
+    "zoomFit": "Показать весь файл",
+    "zoomLevel": "{{zoom}}×",
+    "zoomPanAria": "Прокрутка увеличенной волны"
   },
   "midi": {
     "noteOn": "Кан{{channel}} Note On {{note}} {{velocity}}",
