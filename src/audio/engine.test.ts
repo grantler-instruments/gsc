@@ -141,3 +141,94 @@ describe("cue meter lifecycle", () => {
     expect(stopVideoVoice).toHaveBeenCalledWith(voice);
   });
 });
+
+describe("context recovery after idle", () => {
+  type FakeCtx = AudioContext & {
+    resume: ReturnType<typeof vi.fn>;
+    close: ReturnType<typeof vi.fn>;
+  };
+  let created: FakeCtx[];
+  let nextState: string[];
+  let hangResume: boolean[];
+
+  beforeEach(() => {
+    created = [];
+    nextState = [];
+    hangResume = [];
+    vi.stubGlobal(
+      "AudioContext",
+      class {
+        constructor() {
+          const hang = hangResume.shift() ?? false;
+          const self = this as unknown as { state: string };
+          Object.assign(this, {
+            ...createMockAudioContext(),
+            state: nextState.shift() ?? "running",
+            currentTime: 0,
+            createBufferSource: () => ({ ...createMockAudioNode(), start: vi.fn(), stop: vi.fn() }),
+            resume: vi.fn(() => {
+              if (hang) return new Promise(() => {});
+              self.state = "running";
+              return Promise.resolve();
+            }),
+            close: vi.fn(async () => {
+              self.state = "closed";
+            }),
+          });
+          created.push(this as unknown as FakeCtx);
+        }
+      },
+    );
+    vi.mocked(getCachedAudioBuffer).mockReturnValue({ duration: 10 } as AudioBuffer);
+    engine = new AudioEngine();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const audioCue: Cue = { ...cue, id: "audio", type: "audio", assetPath: "tone.wav" };
+
+  it("resumes a context WebKit left interrupted", async () => {
+    nextState = ["interrupted"];
+    await engine.sync([audioCue.id], [audioCue], 1, { audio: 1 });
+    expect(created).toHaveLength(1);
+    expect(created[0].resume).toHaveBeenCalledOnce();
+    expect(created[0].state).toBe("running");
+  });
+
+  it("rebuilds the context when resume never settles, instead of hanging GO", async () => {
+    vi.useFakeTimers();
+    nextState = ["interrupted"];
+    hangResume = [true];
+    const sync = engine.sync([audioCue.id], [audioCue], 1, { audio: 1 });
+    await vi.advanceTimersByTimeAsync(600);
+    await sync;
+    expect(created).toHaveLength(2);
+    expect(created[0].close).toHaveBeenCalledOnce();
+    expect(created[1].state).toBe("running");
+  });
+
+  it("rebuilds a context whose clock stopped and replays running cues", async () => {
+    vi.useFakeTimers();
+    await engine.sync([audioCue.id], [audioCue], 1, { audio: 1 });
+    expect(created).toHaveLength(1);
+    const recovery = engine.recoverIfStalled();
+    await vi.advanceTimersByTimeAsync(200);
+    await recovery;
+    expect(created[0].close).toHaveBeenCalledOnce();
+    expect(created).toHaveLength(2);
+  });
+
+  it("keeps a healthy context", async () => {
+    vi.useFakeTimers();
+    await engine.sync([audioCue.id], [audioCue], 1, { audio: 1 });
+    const recovery = engine.recoverIfStalled();
+    await vi.advanceTimersByTimeAsync(50);
+    (created[0] as unknown as { currentTime: number }).currentTime = 0.15;
+    await vi.advanceTimersByTimeAsync(150);
+    await recovery;
+    expect(created[0].close).not.toHaveBeenCalled();
+    expect(created).toHaveLength(1);
+  });
+});

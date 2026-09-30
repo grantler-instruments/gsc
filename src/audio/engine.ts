@@ -28,6 +28,30 @@ function clampPan(value: number): number {
   return Math.max(-1, Math.min(1, value));
 }
 
+/** How long a resume may take before the context counts as stuck (WebKit can leave it pending). */
+const RESUME_TIMEOUT_MS = 500;
+/** Clock probe window used to spot a "running" context whose output device died. */
+const CLOCK_PROBE_MS = 150;
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Resume without ever hanging: WebKit keeps resume() pending while "interrupted". */
+async function resumeWithTimeout(ctx: AudioContext): Promise<boolean> {
+  if (ctx.state === "running") return true;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([
+    ctx.resume().catch(() => {}),
+    new Promise<void>((resolve) => {
+      timer = setTimeout(resolve, RESUME_TIMEOUT_MS);
+    }),
+  ]);
+  clearTimeout(timer);
+  // `state` includes WebKit's "interrupted", which lib.dom does not list.
+  return (ctx.state as string) === "running";
+}
+
 function playbackWindow(cue: Cue, bufferDuration: number) {
   const inT = Math.max(0, cue.inTime ?? 0);
   const endSec =
@@ -76,6 +100,18 @@ export class AudioEngine {
   private videoVoiceListeners = new Set<() => void>();
   private syncGeneration = 0;
   private onVoiceEndedHandler: VoiceEndedHandler | null = null;
+  private lastSyncArgs: Parameters<AudioEngine["sync"]> | null = null;
+  private recovering: Promise<void> | null = null;
+
+  constructor() {
+    if (typeof document === "undefined" || typeof window === "undefined") return;
+    // After idle, sleep or a device change the context can stall; fix it before the next GO.
+    const recover = () => {
+      if (document.visibilityState === "visible") void this.recoverIfStalled();
+    };
+    document.addEventListener("visibilitychange", recover);
+    window.addEventListener("focus", recover);
+  }
 
   onVoiceEnded(handler: VoiceEndedHandler | null): void {
     this.onVoiceEndedHandler = handler;
@@ -99,18 +135,77 @@ export class AudioEngine {
   }
 
   async unlock(): Promise<AudioContext> {
-    if (!this.ctx) {
-      this.ctx = new AudioContext();
-    }
+    let ctx = this.ctx ?? this.createContext();
     // Resume inside the user gesture, then register processors before connecting voices.
-    const resume = this.ctx.state === "suspended" ? this.ctx.resume() : Promise.resolve();
-    await Promise.all([resume, prepareBusEffects(this.ctx)]);
+    const [resumed] = await Promise.all([resumeWithTimeout(ctx), prepareBusEffects(ctx)]);
+    if (!resumed && ctx === this.ctx) {
+      console.warn(`[audio] AudioContext stuck in "${ctx.state}", rebuilding`);
+      this.rebuildContext();
+      ctx = this.createContext();
+      await Promise.all([resumeWithTimeout(ctx), prepareBusEffects(ctx)]);
+    }
     if (!this.mixer) {
-      this.mixer = new MixerGraph(this.ctx);
+      this.mixer = new MixerGraph(ctx);
       this.mixer.sync(this.audioBuses);
       this.mixer.setMasterVolume(this.masterVolume);
     }
-    return this.ctx;
+    return ctx;
+  }
+
+  private createContext(): AudioContext {
+    const ctx = new AudioContext();
+    ctx.onstatechange = () => {
+      if (ctx !== this.ctx) return;
+      console.info(`[audio] AudioContext state: ${ctx.state}`);
+      if (ctx.state !== "running" && ctx.state !== "closed") void resumeWithTimeout(ctx);
+    };
+    this.ctx = ctx;
+    return ctx;
+  }
+
+  /** Drop a dead context and its graph; the next unlock builds a fresh one. */
+  private rebuildContext(): void {
+    // Tear voices down without bumping syncGeneration so an in-flight sync still restarts them.
+    for (const id of [...this.voices.keys()]) this.stopVoice(id);
+    for (const id of [...this.videoVoices.keys()]) this.stopVideoVoice(id);
+    for (const id of [...this.streamedAudioVoices.keys()]) this.stopStreamedAudioVoice(id);
+    for (const id of [...this.liveAudioVoices.keys()]) this.stopLiveAudioVoice(id);
+    this.mixer?.dispose();
+    this.mixer = null;
+    const ctx = this.ctx;
+    this.ctx = null;
+    if (ctx) {
+      ctx.onstatechange = null;
+      void ctx.close().catch(() => {});
+    }
+  }
+
+  /**
+   * Resume a suspended/interrupted context, or rebuild one whose clock stopped
+   * (WebKit can report "running" after sleep while the output device is gone).
+   */
+  recoverIfStalled(): Promise<void> {
+    this.recovering ??= this.recover().finally(() => {
+      this.recovering = null;
+    });
+    return this.recovering;
+  }
+
+  private async recover(): Promise<void> {
+    const ctx = this.ctx;
+    if (!ctx || ctx.state === "closed") return;
+    let healthy = await resumeWithTimeout(ctx);
+    if (healthy) {
+      const before = ctx.currentTime;
+      await wait(CLOCK_PROBE_MS);
+      healthy = ctx.currentTime > before;
+    }
+    if (healthy || ctx !== this.ctx) return;
+    console.warn(`[audio] AudioContext stalled in "${ctx.state}", rebuilding`);
+    this.rebuildContext();
+    // Replay the last sync so running cues continue at their original GO offsets.
+    if (this.lastSyncArgs) await this.sync(...this.lastSyncArgs);
+    else await this.unlock();
   }
 
   private async ensureContext(): Promise<AudioContext> {
@@ -324,6 +419,7 @@ export class AudioEngine {
     audioBuses: AudioBus[] = [],
   ): Promise<void> {
     const generation = ++this.syncGeneration;
+    this.lastSyncArgs = [activeCueIds, cues, masterVolume, cueStartedAtMs, audioBuses];
     this.syncMixer(audioBuses, masterVolume);
 
     try {
@@ -514,6 +610,7 @@ export class AudioEngine {
 
   async stopAll(): Promise<void> {
     this.syncGeneration++;
+    this.lastSyncArgs = null;
     for (const id of [...this.voices.keys()]) {
       this.stopVoice(id);
     }
