@@ -102,6 +102,7 @@ export class AudioEngine {
   private onVoiceEndedHandler: VoiceEndedHandler | null = null;
   private lastSyncArgs: Parameters<AudioEngine["sync"]> | null = null;
   private recovering: Promise<void> | null = null;
+  private unlocking: Promise<AudioContext> | null = null;
 
   constructor() {
     if (typeof document === "undefined" || typeof window === "undefined") return;
@@ -134,15 +135,30 @@ export class AudioEngine {
     for (const listener of this.videoVoiceListeners) listener();
   }
 
-  async unlock(): Promise<AudioContext> {
+  /**
+   * Resume (or rebuild) the context. Concurrent callers — e.g. the window pointerdown
+   * listener and the sync a seek click triggers — share one attempt, so none of them
+   * gets a context that another caller just closed.
+   */
+  unlock(): Promise<AudioContext> {
+    this.unlocking ??= this.resumeOrRebuild().finally(() => {
+      this.unlocking = null;
+    });
+    return this.unlocking;
+  }
+
+  private async resumeOrRebuild(): Promise<AudioContext> {
     let ctx = this.ctx ?? this.createContext();
     // Resume inside the user gesture, then register processors before connecting voices.
     const [resumed] = await Promise.all([resumeWithTimeout(ctx), prepareBusEffects(ctx)]);
-    if (!resumed && ctx === this.ctx) {
+    // A stall recovery swapped the context while we waited; resume that one instead.
+    if (ctx !== this.ctx) return this.resumeOrRebuild();
+    if (!resumed) {
       console.warn(`[audio] AudioContext stuck in "${ctx.state}", rebuilding`);
       this.rebuildContext();
       ctx = this.createContext();
       await Promise.all([resumeWithTimeout(ctx), prepareBusEffects(ctx)]);
+      this.replayLastSyncSoon();
     }
     if (!this.mixer) {
       this.mixer = new MixerGraph(ctx);
@@ -150,6 +166,18 @@ export class AudioEngine {
       this.mixer.setMasterVolume(this.masterVolume);
     }
     return ctx;
+  }
+
+  /**
+   * Restart cues a rebuild tore down. Deferred so it never awaits the unlock that
+   * scheduled it; a sync already in flight simply finds its voices running.
+   */
+  private replayLastSyncSoon(): void {
+    const args = this.lastSyncArgs;
+    if (!args) return;
+    setTimeout(() => {
+      if (this.lastSyncArgs === args) void this.sync(...args);
+    }, 0);
   }
 
   private createContext(): AudioContext {
@@ -200,6 +228,8 @@ export class AudioEngine {
       await wait(CLOCK_PROBE_MS);
       healthy = ctx.currentTime > before;
     }
+    // An unlock may be rebuilding right now; let it finish instead of racing it.
+    if (this.unlocking) await this.unlocking.catch(() => {});
     if (healthy || ctx !== this.ctx) return;
     console.warn(`[audio] AudioContext stalled in "${ctx.state}", rebuilding`);
     this.rebuildContext();

@@ -165,7 +165,11 @@ describe("context recovery after idle", () => {
             ...createMockAudioContext(),
             state: nextState.shift() ?? "running",
             currentTime: 0,
-            createBufferSource: () => ({ ...createMockAudioNode(), start: vi.fn(), stop: vi.fn() }),
+            createBufferSource: vi.fn(() => ({
+              ...createMockAudioNode(),
+              start: vi.fn(),
+              stop: vi.fn(),
+            })),
             resume: vi.fn(() => {
               if (hang) return new Promise(() => {});
               self.state = "running";
@@ -218,6 +222,44 @@ describe("context recovery after idle", () => {
     await recovery;
     expect(created[0].close).toHaveBeenCalledOnce();
     expect(created).toHaveLength(2);
+  });
+
+  function stallContext(ctx: FakeCtx): void {
+    (ctx as unknown as { state: string }).state = "interrupted";
+    ctx.resume.mockImplementation(() => new Promise(() => {}));
+  }
+
+  const bufferSources = (ctx: FakeCtx) => vi.mocked(ctx.createBufferSource);
+
+  it("seek click on a stuck context restarts the cue on the rebuilt context", async () => {
+    vi.useFakeTimers();
+    await engine.sync([audioCue.id], [audioCue], 1, { audio: 1 });
+    stallContext(created[0]);
+    bufferSources(created[0]).mockClear();
+
+    // One click: the window pointerdown unlock and the seek's sync race each other.
+    const unlock = engine.unlock();
+    const sync = engine.sync([audioCue.id], [audioCue], 1, { audio: 2 });
+    await vi.advanceTimersByTimeAsync(600);
+    const [ctx] = await Promise.all([unlock, sync]);
+
+    expect(created).toHaveLength(2);
+    expect(ctx).toBe(created[1]);
+    expect(bufferSources(created[0])).not.toHaveBeenCalled();
+    expect(bufferSources(created[1])).toHaveBeenCalled();
+  });
+
+  it("restarts running cues when a click alone rebuilds a stuck context", async () => {
+    vi.useFakeTimers();
+    await engine.sync([audioCue.id], [audioCue], 1, { audio: 1 });
+    stallContext(created[0]);
+
+    const unlock = engine.unlock();
+    await vi.advanceTimersByTimeAsync(600);
+    await unlock;
+    await vi.advanceTimersByTimeAsync(10);
+    expect(created).toHaveLength(2);
+    expect(bufferSources(created[1])).toHaveBeenCalledOnce();
   });
 
   it("keeps a healthy context", async () => {
