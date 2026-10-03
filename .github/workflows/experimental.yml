@@ -144,6 +144,13 @@ jobs:
         if: matrix.platform == 'windows-latest'
         run: choco install imagemagick --yes
 
+      # ONNX Runtime / espeak-ng need the MSVC C++ runtime; ship it next to the exe
+      # so fresh Windows installs without the VC++ Redistributable still start.
+      - name: Copy VC++ runtime DLLs (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: ./scripts/ci/copy-vc-runtime.ps1
+
       # ort-sys has no prebuilt ONNX Runtime for Intel Mac; use Microsoft's last
       # official x86_64 package and dynamic-link (see setup action).
       - name: Setup ONNX Runtime for macOS x86_64
