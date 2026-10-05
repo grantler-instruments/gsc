@@ -18,6 +18,9 @@ export type CueType =
 
 export type FadeCueType = "volumeFade" | "opacityFade" | "panFade" | "lightFade";
 
+/** Shape of a media cue's built-in fade in / fade out. */
+export type MediaFadeCurve = "linear" | "equalPower" | "sCurve" | "exponential";
+
 /** Media file cues (not MIDI/OSC/TTS). */
 export type AssetKind = Exclude<
   CueType,
@@ -107,8 +110,12 @@ export interface Cue {
   inTime?: number;
   /** Seconds into the source media where playback stops (Out point). Omit to play to end. */
   outTime?: number;
+  /** Seconds the cue fades up from silence/transparent after GO (audio/video/speech/image). */
   fadeIn?: number;
+  /** Seconds the cue fades down before its natural end, and when stopped. */
   fadeOut?: number;
+  /** Shape of the built-in fade in / fade out; defaults to linear. */
+  fadeCurve?: MediaFadeCurve;
   /** Repeat the in/out region (audio/video). */
   loop?: boolean;
   /** When loop is true and set: how many times to play (minimum 2). Omit for infinite. */

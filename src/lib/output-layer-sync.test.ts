@@ -39,6 +39,18 @@ describe("output-layer-sync", () => {
     expect(outputLayersMediaEqual(base, [testLayer({ goAtMs: 2000 })])).toBe(false);
   });
 
+  it("treats a fade-out release as a fade-only change that still republishes", () => {
+    const fade = { fadeInSec: 1, fadeOutSec: 2, curve: "linear" as const };
+    const base = [testLayer({ fade })];
+    const released = [
+      testLayer({ fade: { ...fade, release: { startedAtMs: 5_000, durationSec: 2 } } }),
+    ];
+    expect(outputLayersEqual(base, [testLayer({ fade: { ...fade } })])).toBe(true);
+    expect(outputLayersEqual(base, released)).toBe(false);
+    expect(outputLayersEqual(base, [testLayer()])).toBe(false);
+    expect(outputLayersMediaEqual(base, released)).toBe(true);
+  });
+
   it("compares output state by project and layer content", () => {
     const left: OutputState = {
       revision: 1,

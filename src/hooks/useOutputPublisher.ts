@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { cacheAsset } from "../lib/asset-cache";
+import type { MediaFadeRelease } from "../lib/media-fade";
 import {
   createOutputChannel,
   isOutputMessage,
@@ -28,16 +29,22 @@ import type { OutputState } from "../types/output";
 const selectOutputTransportState = (s: {
   activeCueIds: string[];
   cueStartedAtMs: Record<string, number>;
+  releasingCues: Record<string, MediaFadeRelease>;
 }) => ({
   activeCueIds: s.activeCueIds,
   cueStartedAtMs: s.cueStartedAtMs,
+  releasingCues: s.releasingCues,
 });
 
 function outputTransportChanged(
   prev: ReturnType<typeof selectOutputTransportState>,
   next: ReturnType<typeof selectOutputTransportState>,
 ): boolean {
-  return prev.activeCueIds !== next.activeCueIds || prev.cueStartedAtMs !== next.cueStartedAtMs;
+  return (
+    prev.activeCueIds !== next.activeCueIds ||
+    prev.cueStartedAtMs !== next.cueStartedAtMs ||
+    prev.releasingCues !== next.releasingCues
+  );
 }
 
 function outputActiveCueIdsChanged(

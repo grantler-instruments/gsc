@@ -3,7 +3,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { formatTime, normalizePlaybackRange } from "../lib/time";
-import type { Cue } from "../types/cue";
+import type { Cue, MediaFadeCurve } from "../types/cue";
 import { AudioWaveform } from "./AudioWaveform";
 import {
   inspectorDerivedSx,
@@ -21,13 +21,20 @@ interface PlaybackRangeFieldsProps {
   cue: Cue;
   readOnly?: boolean;
   onChange: (patch: { inTime?: number; outTime?: number }) => void;
+  /** Enables the fade handles on the waveform. */
+  onFadeChange?: (patch: { fadeIn?: number; fadeOut?: number; fadeCurve?: MediaFadeCurve }) => void;
 }
 
 /**
  * In / Out points within a media file (QLab-style playback range).
  * Audio and video cues use the waveform; images keep numeric fields.
  */
-export function PlaybackRangeFields({ cue, readOnly = false, onChange }: PlaybackRangeFieldsProps) {
+export function PlaybackRangeFields({
+  cue,
+  readOnly = false,
+  onChange,
+  onFadeChange,
+}: PlaybackRangeFieldsProps) {
   const { t } = useTranslation();
   const inTime = cue.inTime ?? 0;
   const outTime = cue.outTime;
@@ -81,6 +88,10 @@ export function PlaybackRangeFields({ cue, readOnly = false, onChange }: Playbac
               mediaKind={isVideo ? "video" : "audio"}
               hoverPreview={isVideo && !readOnly}
               zoomable
+              fadeIn={cue.fadeIn}
+              fadeOut={cue.fadeOut}
+              fadeCurve={cue.fadeCurve}
+              onFadeChange={onFadeChange}
             />
           )}
           <Typography component="p" sx={inspectorWaveformRangeSummarySx}>

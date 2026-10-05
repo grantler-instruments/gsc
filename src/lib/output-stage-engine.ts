@@ -1,5 +1,6 @@
 import { visualLayerSx } from "../components/visualStageSx";
 import type { OutputLayer } from "../types/output";
+import { outputLayerOpacityAt } from "./output-opacity";
 import {
   isOutputLayerLooping,
   isOutputLayerPlaybackComplete,
@@ -19,10 +20,6 @@ interface LayerEntry {
   goAtMs: number;
 }
 
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
 function seekVideo(video: HTMLVideoElement, timeSec: number): void {
   const target = Math.max(0, timeSec);
   if (typeof video.fastSeek === "function") {
@@ -38,6 +35,12 @@ function seekVideo(video: HTMLVideoElement, timeSec: number): void {
   } catch {
     /* seek not ready */
   }
+}
+
+function mediaDurationOf(media: HTMLVideoElement | HTMLImageElement): number | undefined {
+  return media instanceof HTMLVideoElement && Number.isFinite(media.duration)
+    ? media.duration
+    : undefined;
 }
 
 /** Imperative compositor for the Tauri output webview — avoids React video remounts. */
@@ -114,7 +117,9 @@ export class OutputStageEngine {
     }
 
     existing.wrap.style.zIndex = String(zIndex);
-    existing.wrap.style.opacity = String(clamp01(layer.opacity));
+    existing.wrap.style.opacity = String(
+      outputLayerOpacityAt(layer, Date.now(), mediaDurationOf(existing.media)),
+    );
 
     if (existing.layer.inTime !== layer.inTime || existing.layer.sliceSec !== layer.sliceSec) {
       existing.layer = layer;
@@ -152,7 +157,7 @@ export class OutputStageEngine {
       position: "absolute",
       inset: "0",
       zIndex: String(zIndex),
-      opacity: String(clamp01(layer.opacity)),
+      opacity: String(outputLayerOpacityAt(layer)),
     });
 
     let media: HTMLVideoElement | HTMLImageElement;

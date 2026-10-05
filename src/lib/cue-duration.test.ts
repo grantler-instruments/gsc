@@ -22,7 +22,7 @@ describe("estimateCueDurationMs", () => {
     expect(estimateCueDurationMs(cue, [cue])).toBe(3000);
   });
 
-  it("estimates audio from slice plus fade padding", () => {
+  it("keeps built-in fades inside the audio slice", () => {
     setMediaDurationSec("assets/a.wav", 30);
     const cue = testCue("a", "A", "audio", {
       assetPath: "assets/a.wav",
@@ -31,7 +31,7 @@ describe("estimateCueDurationMs", () => {
       fadeIn: 1,
       fadeOut: 0.5,
     });
-    expect(estimateCueDurationMs(cue, [cue])).toBe(11500);
+    expect(estimateCueDurationMs(cue, [cue])).toBe(10000);
   });
 
   it("uses infinite estimate for looping audio", () => {

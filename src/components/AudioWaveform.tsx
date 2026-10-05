@@ -1,10 +1,18 @@
+import CheckIcon from "@mui/icons-material/Check";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import ZoomOutMapIcon from "@mui/icons-material/ZoomOutMap";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import ListSubheader from "@mui/material/ListSubheader";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import Slider from "@mui/material/Slider";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import type { Instance as PopperInstance } from "@popperjs/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -12,13 +20,21 @@ import {
   useMediaWaveform,
   useWaveformDetailPeaks,
 } from "../hooks/useMediaWaveform";
+import {
+  clampMediaFadeSec,
+  DEFAULT_MEDIA_FADE_CURVE,
+  MEDIA_FADE_CURVES,
+  mediaFadeGain,
+} from "../lib/media-fade";
 import { formatTime, normalizePlaybackRange } from "../lib/time";
 import { getVideoThumbnailDataUrl } from "../lib/video-thumbnail";
 import { WAVEFORM_MAX_ZOOM } from "../lib/waveform";
+import type { MediaFadeCurve } from "../types/cue";
 import {
   waveformCanvasSx,
   waveformDraggingSx,
   waveformEditableSx,
+  waveformFadeHandleSx,
   waveformHandleInSx,
   waveformHandleOutSx,
   waveformHandlesSx,
@@ -53,7 +69,27 @@ export interface AudioWaveformProps {
   onSeek?: (positionSec: number) => void;
   /** Show zoom controls; Ctrl/⌘ + wheel zooms, Shift + wheel or drag pans (inspector). */
   zoomable?: boolean;
+  /** Built-in fade lengths (seconds), drawn as an envelope over the slice. */
+  fadeIn?: number;
+  fadeOut?: number;
+  fadeCurve?: MediaFadeCurve;
+  /** Shows draggable fade handles when set together with `editable`; right-click picks the curve. */
+  onFadeChange?: (patch: { fadeIn?: number; fadeOut?: number; fadeCurve?: MediaFadeCurve }) => void;
 }
+
+const FADE_CURVE_LABEL_KEYS: Record<MediaFadeCurve, string> = {
+  linear: "inspector.fadeCurveLinear",
+  equalPower: "inspector.fadeCurveEqualPower",
+  sCurve: "inspector.fadeCurveSCurve",
+  exponential: "inspector.fadeCurveExponential",
+};
+
+/** Fades shorter than this snap to zero while dragging. */
+const FADE_SNAP_SEC = 0.05;
+/** Arrow-key step for fade knobs; Shift multiplies by 10. */
+const FADE_KEY_STEP_SEC = 0.1;
+
+type DragTarget = "in" | "out" | "fadeIn" | "fadeOut" | "seek" | "pan";
 
 const END_SNAP_SEC = 0.05;
 const MIN_SLICE_SEC = 0.1;
@@ -115,6 +151,9 @@ function drawWaveform(
     hoverSec: number | undefined;
     height: number;
     view: WaveformView;
+    fadeIn: number;
+    fadeOut: number;
+    fadeCurve: MediaFadeCurve;
   },
 ) {
   const dpr = window.devicePixelRatio || 1;
@@ -188,6 +227,20 @@ function drawWaveform(
     }
   }
 
+  if ((opts.fadeIn > 0 || opts.fadeOut > 0) && durationSec > 0 && viewSpan > 0) {
+    drawFadeEnvelope(ctx, {
+      inTime,
+      outTime,
+      fadeIn: opts.fadeIn,
+      fadeOut: opts.fadeOut,
+      curve: opts.fadeCurve,
+      width,
+      height,
+      xOf,
+      colors,
+    });
+  }
+
   if (opts.hoverSec !== undefined && durationSec > 0 && Number.isFinite(opts.hoverSec)) {
     const x = xOf(opts.hoverSec);
     ctx.strokeStyle = colors.scrub;
@@ -211,6 +264,200 @@ function drawWaveform(
   }
 }
 
+/** Shade the faded-out area above the envelope and stroke the envelope line. */
+function drawFadeEnvelope(
+  ctx: CanvasRenderingContext2D,
+  opts: {
+    inTime: number;
+    outTime: number;
+    fadeIn: number;
+    fadeOut: number;
+    curve: MediaFadeCurve;
+    width: number;
+    height: number;
+    xOf: (seconds: number) => number;
+    colors: ReturnType<typeof readWaveformColors>;
+  },
+) {
+  const { inTime, outTime, width, height, xOf, colors } = opts;
+  const sliceSec = outTime - inTime;
+  if (sliceSec <= 0) return;
+  const envelope = {
+    fadeInSec: opts.fadeIn,
+    fadeOutSec: opts.fadeOut,
+    curve: opts.curve,
+    totalRunSec: sliceSec,
+  };
+  const x0 = Math.max(0, xOf(inTime));
+  const x1 = Math.min(width, xOf(outTime));
+  if (x1 <= x0) return;
+  const pad = 1;
+  const yOf = (gain: number) => pad + (1 - gain) * (height - pad * 2);
+  const timeOf = (x: number) =>
+    inTime + ((x - xOf(inTime)) / (xOf(outTime) - xOf(inTime))) * sliceSec;
+
+  const points: [number, number][] = [];
+  for (let x = x0; x <= x1; x += 1) {
+    points.push([x, yOf(mediaFadeGain(envelope, timeOf(x) - inTime))]);
+  }
+  points.push([x1, yOf(mediaFadeGain(envelope, timeOf(x1) - inTime))]);
+
+  ctx.fillStyle = colors.dim;
+  ctx.globalAlpha = 0.7;
+  ctx.beginPath();
+  ctx.moveTo(x0, 0);
+  for (const [x, y] of points) ctx.lineTo(x, y);
+  ctx.lineTo(x1, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  ctx.strokeStyle = colors.slice;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  points.forEach(([x, y], i) => {
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+interface FadeHandleProps {
+  handle: "fadeIn" | "fadeOut";
+  pct: number;
+  value: number;
+  maxSec: number;
+  dragging: boolean;
+  curve: MediaFadeCurve;
+  onCurveChange: (curve: MediaFadeCurve) => void;
+  onStep: (nextSec: number) => void;
+  onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void;
+  onPointerMove: (e: React.PointerEvent) => void;
+  onPointerUp: (e: React.PointerEvent) => void;
+}
+
+/** Round fade knob; its length shows in a tooltip while hovered, focused or dragged. */
+function FadeHandle({
+  handle,
+  pct,
+  value,
+  maxSec,
+  dragging,
+  curve,
+  onCurveChange,
+  onStep,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+}: FadeHandleProps) {
+  const { t } = useTranslation();
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [menu, setMenu] = useState<{ mouseX: number; mouseY: number } | null>(null);
+  const popperRef = useRef<PopperInstance | null>(null);
+  const seconds = Math.round(value * 100) / 100;
+
+  // The knob moves while dragging; keep the tooltip attached to it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reposition when the knob moves
+  useEffect(() => {
+    void popperRef.current?.update();
+  }, [pct]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const step = e.shiftKey ? FADE_KEY_STEP_SEC * 10 : FADE_KEY_STEP_SEC;
+    let next: number | null = null;
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") next = value + step;
+    else if (e.key === "ArrowLeft" || e.key === "ArrowDown") next = value - step;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = maxSec;
+    if (next === null) return;
+    e.preventDefault();
+    onStep(Math.max(0, Math.min(maxSec, next)));
+  };
+
+  const openMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // The context-menu key reports 0,0; anchor to the knob instead.
+    const rect = e.currentTarget.getBoundingClientRect();
+    const fromKeyboard = e.clientX === 0 && e.clientY === 0;
+    setMenu({
+      mouseX: fromKeyboard ? rect.left + rect.width / 2 : e.clientX,
+      mouseY: fromKeyboard ? rect.bottom : e.clientY,
+    });
+  };
+
+  return (
+    <>
+      <Tooltip
+        title={t(handle === "fadeIn" ? "playback.fadeInTooltip" : "playback.fadeOutTooltip", {
+          seconds,
+        })}
+        open={(hovered || focused || dragging) && menu === null}
+        placement="top"
+        arrow
+        disableInteractive
+        slotProps={{ popper: { popperRef } }}
+      >
+        <Box
+          data-waveform-handle
+          data-waveform-fade-handle={handle}
+          sx={{
+            ...waveformFadeHandleSx,
+            left: `${pct}%`,
+            // Sit inside the fade so the knob stays grabbable at the edges.
+            ml: handle === "fadeIn" ? 0 : "-12px",
+          }}
+          role="slider"
+          tabIndex={0}
+          aria-label={t(handle === "fadeIn" ? "playback.fadeInAria" : "playback.fadeOutAria")}
+          aria-valuemin={0}
+          aria-valuemax={Math.round(maxSec * 100) / 100}
+          aria-valuenow={seconds}
+          aria-valuetext={t(
+            handle === "fadeIn" ? "playback.fadeInTooltip" : "playback.fadeOutTooltip",
+            { seconds },
+          )}
+          onPointerEnter={() => setHovered(true)}
+          onPointerLeave={() => setHovered(false)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          onKeyDown={handleKeyDown}
+          onContextMenu={openMenu}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+        />
+      </Tooltip>
+      <Menu
+        open={menu !== null}
+        onClose={() => setMenu(null)}
+        anchorReference="anchorPosition"
+        anchorPosition={menu ? { top: menu.mouseY, left: menu.mouseX } : undefined}
+        slotProps={{ list: { "aria-label": t("inspector.fadeCurve"), dense: true } }}
+      >
+        <ListSubheader sx={{ lineHeight: "28px" }}>{t("inspector.fadeCurve")}</ListSubheader>
+        {MEDIA_FADE_CURVES.map((option) => (
+          <MenuItem
+            key={option}
+            role="menuitemradio"
+            aria-checked={option === curve}
+            selected={option === curve}
+            onClick={() => {
+              onCurveChange(option);
+              setMenu(null);
+            }}
+          >
+            <ListItemIcon>{option === curve && <CheckIcon fontSize="small" />}</ListItemIcon>
+            <ListItemText>{t(FADE_CURVE_LABEL_KEYS[option])}</ListItemText>
+          </MenuItem>
+        ))}
+      </Menu>
+    </>
+  );
+}
+
 export function AudioWaveform({
   assetPath,
   inTime,
@@ -225,15 +472,21 @@ export function AudioWaveform({
   seekable = false,
   onSeek,
   zoomable = false,
+  fadeIn = 0,
+  fadeOut = 0,
+  fadeCurve = DEFAULT_MEDIA_FADE_CURVE,
+  onFadeChange,
 }: AudioWaveformProps) {
   const { t } = useTranslation();
   const { data, loading, missing } = useMediaWaveform(assetPath, mediaKind);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [dragging, setDragging] = useState<"in" | "out" | "seek" | "pan" | null>(null);
+  const [dragging, setDragging] = useState<DragTarget | null>(null);
   const [zoom, setZoom] = useState(1);
   const [viewStartSec, setViewStartSec] = useState(0);
   const panOriginRef = useRef<{ clientX: number; viewStart: number } | null>(null);
+  /** Pointer distance from the fade point when a fade knob was grabbed (px). */
+  const fadeGrabOffsetRef = useRef(0);
   const detailPeaks = useWaveformDetailPeaks(assetPath, zoomable && zoom > 1);
   const seekThrottleRef = useRef(0);
   const [hoverSec, setHoverSec] = useState<number | null>(null);
@@ -362,6 +615,22 @@ export function AudioWaveform({
     [data, inTime, onRangeChange, outTime, timeFromClientX],
   );
 
+  const applyFadeDrag = useCallback(
+    (handle: "fadeIn" | "fadeOut", clientX: number) => {
+      if (!data || !onFadeChange) return;
+      const sliceSec = effectiveOut - effectiveIn;
+      const t = timeFromClientX(clientX - fadeGrabOffsetRef.current);
+      const raw = handle === "fadeIn" ? t - effectiveIn : effectiveOut - t;
+      const next = clampMediaFadeSec(
+        raw < FADE_SNAP_SEC ? 0 : snapTime(raw),
+        handle === "fadeIn" ? fadeOut : fadeIn,
+        sliceSec,
+      );
+      onFadeChange(handle === "fadeIn" ? { fadeIn: next } : { fadeOut: next });
+    },
+    [data, effectiveIn, effectiveOut, fadeIn, fadeOut, onFadeChange, timeFromClientX],
+  );
+
   const updateHover = useCallback(
     (clientX: number) => {
       if (!data || dragging) return;
@@ -407,11 +676,17 @@ export function AudioWaveform({
           : undefined,
       height,
       view: { start: viewStart, span: viewSpan },
+      fadeIn,
+      fadeOut,
+      fadeCurve,
     });
   }, [
     data,
     detailPeaks,
     dragging,
+    fadeCurve,
+    fadeIn,
+    fadeOut,
     height,
     hoverSec,
     inTime,
@@ -440,6 +715,9 @@ export function AudioWaveform({
   const inVisible = inPct >= 0 && inPct <= 100;
   const outVisible = outPct >= 0 && outPct <= 100;
   const showHandles = editable && !!data && !!onRangeChange;
+  const showFadeHandles = editable && !!data && !!onFadeChange;
+  const fadeInPct = pctOf(effectiveIn + fadeIn);
+  const fadeOutPct = pctOf(effectiveOut - fadeOut);
   const showThumbnail =
     hoverPreview && hoverSec !== null && dragging !== "seek" && dragging !== "pan" && thumbnailUrl;
   const pannable = zoomable && zoom > 1 && !seekable;
@@ -458,6 +736,10 @@ export function AudioWaveform({
       const t = clampSeekTime(timeFromClientX(e.clientX));
       setHoverSec(t);
       commitSeek(e.clientX);
+      return;
+    }
+    if (dragging === "fadeIn" || dragging === "fadeOut") {
+      applyFadeDrag(dragging, e.clientX);
       return;
     }
     if (dragging) {
@@ -550,9 +832,49 @@ export function AudioWaveform({
               </Typography>
             </Box>
           )}
-          {showHandles && (
+          {(showHandles || showFadeHandles) && (
             <Box sx={waveformHandlesSx}>
-              {inVisible && (
+              {showFadeHandles &&
+                (["fadeIn", "fadeOut"] as const).map((handle) => {
+                  const pct = handle === "fadeIn" ? fadeInPct : fadeOutPct;
+                  if (pct < 0 || pct > 100) return null;
+                  const value = handle === "fadeIn" ? fadeIn : fadeOut;
+                  const other = handle === "fadeIn" ? fadeOut : fadeIn;
+                  const sliceSec = effectiveOut - effectiveIn;
+                  return (
+                    <FadeHandle
+                      key={handle}
+                      handle={handle}
+                      pct={pct}
+                      value={value}
+                      maxSec={Math.max(0, sliceSec - other)}
+                      dragging={dragging === handle}
+                      curve={fadeCurve}
+                      onCurveChange={(fadeCurve) => onFadeChange?.({ fadeCurve })}
+                      onStep={(next) =>
+                        onFadeChange?.({
+                          [handle]: clampMediaFadeSec(snapTime(next), other, sliceSec),
+                        })
+                      }
+                      onPointerDown={(e) => {
+                        // Leave right-click to the curve menu.
+                        if (e.button !== 0) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        clearHover();
+                        const rect = wrapRef.current?.getBoundingClientRect();
+                        fadeGrabOffsetRef.current = rect
+                          ? e.clientX - (rect.left + (pct / 100) * rect.width)
+                          : 0;
+                        e.currentTarget.setPointerCapture(e.pointerId);
+                        setDragging(handle);
+                      }}
+                      onPointerMove={handlePointerMove}
+                      onPointerUp={endDrag}
+                    />
+                  );
+                })}
+              {showHandles && inVisible && (
                 <Box
                   data-waveform-handle
                   sx={{ ...waveformHandleInSx, left: `${inPct}%` }}
@@ -573,7 +895,7 @@ export function AudioWaveform({
                   onPointerCancel={endDrag}
                 />
               )}
-              {outVisible && (
+              {showHandles && outVisible && (
                 <Box
                   data-waveform-handle
                   sx={{ ...waveformHandleOutSx, left: `${outPct}%` }}

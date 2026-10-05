@@ -118,6 +118,26 @@ export const waveformHandleOutSx = {
   },
 };
 
+/** Round knob on the top edge that sets a fade length. */
+export const waveformFadeHandleSx = {
+  position: "absolute",
+  top: 0,
+  width: 12,
+  height: 12,
+  borderRadius: "50%",
+  border: 2,
+  borderColor: "primary.main",
+  bgcolor: "background.paper",
+  boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.35)",
+  pointerEvents: "auto",
+  cursor: "ew-resize",
+  touchAction: "none",
+  zIndex: 2,
+  "&:hover": {
+    bgcolor: "primary.main",
+  },
+};
+
 export const waveformThumbnailSx = {
   position: "absolute",
   bottom: "calc(100% + 8px)",

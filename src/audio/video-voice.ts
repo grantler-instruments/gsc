@@ -1,4 +1,6 @@
 import { getLoopPlayCount } from "../lib/loop";
+import { getMediaDurationSec } from "../lib/media-duration";
+import { createMediaFadeEnvelope, type MediaFadeRelease } from "../lib/media-fade";
 import {
   isVideoLooping,
   isVideoPlaybackComplete,
@@ -9,6 +11,7 @@ import {
 import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
 import type { Cue } from "../types/cue";
 import { vfsGetObjectUrl } from "../vfs/engine";
+import { scheduleFadeEnvelope } from "./fade-envelope";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
@@ -22,11 +25,43 @@ export interface VideoVoice {
   cueId: string;
   video: HTMLVideoElement;
   source: MediaElementAudioSourceNode;
+  /** Built-in fade in / fade out, scheduled at audio rate. */
+  envelope: GainNode;
   gain: GainNode;
   panner: StereoPannerNode;
   goAtMs: number;
   loopIteration: number;
   audioBusId?: string;
+  /** Fading stop currently scheduled on the envelope. */
+  release?: MediaFadeRelease;
+}
+
+/** Slice length once the element knows its duration; else only when an Out point is set. */
+function videoVoiceSliceSec(cue: Cue, video: HTMLVideoElement): number | undefined {
+  const duration = Number.isFinite(video.duration)
+    ? video.duration
+    : cue.assetPath
+      ? getMediaDurationSec(cue.assetPath)
+      : undefined;
+  if (duration !== undefined) return videoPlaybackWindow(cue, duration).durationSec;
+  if (cue.outTime !== undefined) return Math.max(0.01, cue.outTime - (cue.inTime ?? 0));
+  return undefined;
+}
+
+/** (Re)schedule the fade envelope from the voice's GO time; `undefined` clears a release. */
+export function scheduleVideoVoiceEnvelope(
+  voice: VideoVoice,
+  cue: Cue,
+  release: MediaFadeRelease | undefined,
+): void {
+  voice.release = release;
+  scheduleFadeEnvelope(
+    voice.envelope.gain,
+    voice.envelope.context,
+    createMediaFadeEnvelope(cue, videoVoiceSliceSec(cue, voice.video)),
+    voice.goAtMs,
+    release,
+  );
 }
 
 export type VideoVoiceEndedHandler = (cueId: string) => void;
@@ -37,6 +72,7 @@ export function startVideoVoice(
   goAtMs: number,
   onEnded: VideoVoiceEndedHandler,
   connectPanner: (panner: StereoPannerNode) => string | undefined,
+  release?: MediaFadeRelease,
 ): VideoVoice | null {
   const objectUrl = cue.assetPath ? vfsGetObjectUrl(cue.assetPath) : undefined;
   if (!objectUrl) return null;
@@ -49,13 +85,15 @@ export function startVideoVoice(
   document.body.appendChild(video);
 
   const source = ctx.createMediaElementSource(video);
+  const envelope = ctx.createGain();
   const gain = ctx.createGain();
   gain.gain.value = clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1));
 
   const panner = ctx.createStereoPanner();
   panner.pan.value = clampPan(resolveEffectivePan(cue.id, cue.pan ?? 0));
 
-  source.connect(gain);
+  source.connect(envelope);
+  envelope.connect(gain);
   gain.connect(panner);
   const audioBusId = connectPanner(panner);
 
@@ -63,12 +101,14 @@ export function startVideoVoice(
     cueId: cue.id,
     video,
     source,
+    envelope,
     gain,
     panner,
     goAtMs,
     loopIteration: 0,
     audioBusId,
   };
+  scheduleVideoVoiceEnvelope(voice, cue, release);
 
   const loopPlayCount = getLoopPlayCount(cue);
   const looping = isVideoLooping(cue);
@@ -92,6 +132,8 @@ export function startVideoVoice(
 
   const seekAndPlay = () => {
     seekToClock();
+    // The end fade needs the real duration, which is known from here on.
+    scheduleVideoVoiceEnvelope(voice, cue, voice.release);
     void video.play().catch((err) => {
       console.warn("[audio] Video voice play blocked — interact with the page first", err);
     });
@@ -175,6 +217,7 @@ export function startVideoVoice(
 export function seekVideoVoice(voice: VideoVoice, cue: Cue, goAtMs: number): void {
   voice.goAtMs = goAtMs;
   voice.loopIteration = 0;
+  scheduleVideoVoiceEnvelope(voice, cue, voice.release);
 
   if (!Number.isFinite(voice.video.duration)) return;
 
@@ -197,6 +240,7 @@ export function stopVideoVoice(voice: VideoVoice): void {
   voice.video.load();
   voice.video.remove();
   voice.source.disconnect();
+  voice.envelope.disconnect();
   voice.gain.disconnect();
   voice.panner.disconnect();
 }

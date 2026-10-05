@@ -11,13 +11,30 @@ import type { OutputLayer, OutputState } from "../types/output";
 import { vfsGetObjectUrl } from "../vfs/engine";
 import { getLoopPlayCount } from "./loop";
 import { getMediaDurationSec } from "./media-duration";
+import {
+  type MediaFadeRelease,
+  mediaFadeCurve,
+  mediaFadeInSec,
+  mediaFadeOutSec,
+} from "./media-fade";
 import { getPlaybackSliceSec } from "./playback-slice";
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
-async function buildLayer(cue: Cue, goAtMs: number): Promise<OutputLayer | undefined> {
+function buildLayerFade(cue: Cue, release?: MediaFadeRelease): OutputLayer["fade"] {
+  const fadeInSec = mediaFadeInSec(cue);
+  const fadeOutSec = mediaFadeOutSec(cue);
+  if (fadeInSec <= 0 && fadeOutSec <= 0 && !release) return undefined;
+  return { fadeInSec, fadeOutSec, curve: mediaFadeCurve(cue), release };
+}
+
+async function buildLayer(
+  cue: Cue,
+  goAtMs: number,
+  release?: MediaFadeRelease,
+): Promise<OutputLayer | undefined> {
   if ((cue.type !== "video" && cue.type !== "image") || !cue.assetPath) {
     return undefined;
   }
@@ -51,12 +68,13 @@ async function buildLayer(cue: Cue, goAtMs: number): Promise<OutputLayer | undef
     goAtMs,
     loop: loopCount !== 1,
     loopCount,
+    fade: buildLayerFade(cue, release),
   };
 }
 
 /** Build the current visual output snapshot from live stores. */
 export async function buildOutputState(revision: number): Promise<OutputState> {
-  const { activeCueIds, cueStartedAtMs } = useTransportStore.getState();
+  const { activeCueIds, cueStartedAtMs, releasingCues } = useTransportStore.getState();
   const progressByCueId = usePlaybackStore.getState().byCueId;
 
   // Use every cue across all cue lists so hot cues still resolve even when
@@ -77,7 +95,7 @@ export async function buildOutputState(revision: number): Promise<OutputState> {
     const progress = progressByCueId[cueId];
     const goAtMs = cueStartedAtMs[cueId] ?? (progress ? now - progress.elapsedSec * 1000 : now);
 
-    const layer = await buildLayer(cue, goAtMs);
+    const layer = await buildLayer(cue, goAtMs, releasingCues[cueId]);
     if (layer) layers.push(layer);
   }
 

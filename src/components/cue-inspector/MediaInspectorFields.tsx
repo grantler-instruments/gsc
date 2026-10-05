@@ -5,6 +5,7 @@ import type { Cue } from "../../types/cue";
 import { CueAssetPreview } from "../CueAssetPreview";
 import { inspectorFieldLabelSx, inspectorFieldSx } from "../inspectorSx";
 import { LoopFields } from "../LoopFields";
+import { MediaFadeFields } from "../MediaFadeFields";
 import { PlaybackRangeFields } from "../PlaybackRangeFields";
 import { SliderNumberField } from "../SliderNumberField";
 
@@ -18,6 +19,7 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
   const { t } = useTranslation();
   const isMedia = cue.type === "audio" || cue.type === "video" || cue.type === "image";
   if (!isMedia) return null;
+  const hasWaveform = (cue.type === "audio" || cue.type === "video") && !!cue.assetPath;
 
   return (
     <>
@@ -30,7 +32,15 @@ export function MediaInspectorFields({ cue, readOnly, onChange }: MediaInspector
         </Box>
       )}
 
-      <PlaybackRangeFields cue={cue} readOnly={readOnly} onChange={onChange} />
+      <PlaybackRangeFields
+        cue={cue}
+        readOnly={readOnly}
+        onChange={onChange}
+        onFadeChange={onChange}
+      />
+
+      {/* Waveform knobs set fades and curve; other media types use the fields. */}
+      {!hasWaveform && <MediaFadeFields cue={cue} readOnly={readOnly} onChange={onChange} />}
 
       {(cue.type === "audio" || cue.type === "video") && (
         <LoopFields cue={cue} readOnly={readOnly} onChange={onChange} />

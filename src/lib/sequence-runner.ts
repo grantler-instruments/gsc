@@ -83,7 +83,7 @@ function runSequenceStep(
     {
       goMany: (ids) => transport.goMany(ids),
       go: (id) => transport.go(id),
-      stopMany: (ids) => transport.stopMany(ids),
+      stopMany: (ids) => transport.releaseMany(ids),
     },
     { runSequence: (cue, list) => runSequence(cue, list, { scope }) },
   );

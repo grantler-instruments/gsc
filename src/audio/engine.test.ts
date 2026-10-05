@@ -6,12 +6,18 @@ import { getCachedAudioBuffer, preloadAudioBuffer } from "./buffer-cache";
 import { AudioEngine } from "./engine";
 import { audioMeters, cueMeterId, SILENT_METER } from "./meters";
 import { createMockAudioContext, createMockAudioNode } from "./test/mock-audio-context";
-import { startVideoVoice, stopVideoVoice, type VideoVoice } from "./video-voice";
+import {
+  scheduleVideoVoiceEnvelope,
+  startVideoVoice,
+  stopVideoVoice,
+  type VideoVoice,
+} from "./video-voice";
 
 vi.mock("../lib/audio-input", () => ({ openAudioInputStream: vi.fn() }));
 vi.mock("./effects/worklet", () => ({ prepareBusEffects: vi.fn(async () => {}) }));
 vi.mock("../platform/vfs-asset", () => ({ resolveAssetBlob: vi.fn() }));
 vi.mock("./video-voice", () => ({
+  scheduleVideoVoiceEnvelope: vi.fn(),
   seekVideoVoice: vi.fn(),
   startVideoVoice: vi.fn(),
   stopVideoVoice: vi.fn(),
@@ -38,7 +44,14 @@ beforeEach(() => {
     state: "running",
     currentTime: 0,
     createGain: () => {
-      const node = createMockAudioNode({ gain: { value: 1 } }) as unknown as GainNode;
+      const node = createMockAudioNode({
+        gain: {
+          value: 1,
+          cancelScheduledValues: vi.fn(),
+          setValueAtTime: vi.fn(),
+          setValueCurveAtTime: vi.fn(),
+        },
+      }) as unknown as GainNode;
       gains.push(node);
       return node;
     },
@@ -139,6 +152,88 @@ describe("cue meter lifecycle", () => {
 
     await engine.sync([], [longCue], 1);
     expect(stopVideoVoice).toHaveBeenCalledWith(voice);
+  });
+});
+
+describe("built-in fades", () => {
+  type MockGainParam = {
+    cancelScheduledValues: ReturnType<typeof vi.fn>;
+    setValueCurveAtTime: ReturnType<typeof vi.fn>;
+  };
+  const fadedCue: Cue = {
+    id: "faded",
+    number: "2",
+    name: "Faded",
+    type: "audio",
+    assetPath: "tone.wav",
+    fadeIn: 1,
+    fadeOut: 2,
+  };
+
+  beforeEach(() => {
+    ctx.createBufferSource = () =>
+      ({
+        ...createMockAudioNode(),
+        start: vi.fn(),
+        stop: vi.fn(),
+        onended: null,
+      }) as unknown as AudioBufferSourceNode;
+    vi.mocked(getCachedAudioBuffer).mockReturnValue({ duration: 10 } as AudioBuffer);
+  });
+
+  it("puts a fade envelope gain between the source and the level gain", async () => {
+    await engine.sync([fadedCue.id], [fadedCue], 1, { faded: Date.now() });
+    const envelope = gains[gains.length - 2].gain as unknown as MockGainParam;
+    // Fade in at GO, fade out before the end of the 10 s file.
+    expect(envelope.setValueCurveAtTime).toHaveBeenCalledTimes(2);
+    expect(envelope.setValueCurveAtTime.mock.calls[0][2]).toBeCloseTo(1, 1);
+    expect(envelope.setValueCurveAtTime.mock.calls[1][2]).toBeCloseTo(2, 1);
+    expect(gains[gains.length - 1].gain.value).toBe(1);
+  });
+
+  it("switches a running voice to a fade out when the transport releases it", async () => {
+    const goAtMs = Date.now() - 4_000;
+    await engine.sync([fadedCue.id], [fadedCue], 1, { faded: goAtMs });
+    const envelope = gains[gains.length - 2].gain as unknown as MockGainParam;
+    envelope.setValueCurveAtTime.mockClear();
+    envelope.cancelScheduledValues.mockClear();
+
+    const release = { startedAtMs: Date.now(), durationSec: 2 };
+    await engine.sync([fadedCue.id], [fadedCue], 1, { faded: goAtMs }, [], {
+      faded: release,
+    });
+    expect(envelope.cancelScheduledValues).toHaveBeenCalledOnce();
+    expect(envelope.setValueCurveAtTime).toHaveBeenCalledOnce();
+    const [curve, , duration] = envelope.setValueCurveAtTime.mock.calls[0];
+    expect(duration).toBeCloseTo(2, 1);
+    expect(curve[0]).toBeCloseTo(1, 1);
+    expect(curve[curve.length - 1]).toBeCloseTo(0);
+
+    // Same release again: nothing is rescheduled.
+    await engine.sync([fadedCue.id], [fadedCue], 1, { faded: goAtMs }, [], {
+      faded: release,
+    });
+    expect(envelope.setValueCurveAtTime).toHaveBeenCalledOnce();
+  });
+
+  it("passes the release on to streamed and video voices", async () => {
+    const voice = { cueId: "long", goAtMs: 1 } as VideoVoice;
+    vi.mocked(getCachedAudioBuffer).mockReturnValue(undefined);
+    vi.mocked(resolveAssetBlob).mockResolvedValue(new Blob());
+    vi.mocked(startVideoVoice).mockReturnValue(voice);
+    const longCue: Cue = { ...fadedCue, id: "long", assetPath: "long.mp3" };
+
+    await engine.sync([longCue.id], [longCue], 1, { long: 1 });
+    expect(scheduleVideoVoiceEnvelope).not.toHaveBeenCalled();
+
+    const release = { startedAtMs: Date.now(), durationSec: 2 };
+    await engine.sync([longCue.id], [longCue], 1, { long: 1 }, [], { long: release });
+    expect(scheduleVideoVoiceEnvelope).toHaveBeenCalledWith(voice, longCue, release);
+
+    // Fired again mid fade: the transport drops the release and the voice recovers.
+    voice.release = release;
+    await engine.sync([longCue.id], [longCue], 1, { long: 1 }, [], {});
+    expect(scheduleVideoVoiceEnvelope).toHaveBeenLastCalledWith(voice, longCue, undefined);
   });
 });
 

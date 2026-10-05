@@ -25,7 +25,7 @@ export function triggerGoAndAdvance(cue: Cue): void {
   triggerGo(cue, list.cues, {
     go: transport.go,
     goMany: transport.goMany,
-    stopMany: transport.stopMany,
+    stopMany: transport.releaseMany,
   });
   selectNextCueAfterGo(cue.id, list.id);
 }
@@ -50,7 +50,7 @@ export function triggerHotCue(cue: Cue): void {
     {
       go: transport.go,
       goMany: transport.goMany,
-      stopMany: transport.stopMany,
+      stopMany: transport.releaseMany,
     },
     { sequenceScope: "overlay" },
   );

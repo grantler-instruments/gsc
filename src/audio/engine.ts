@@ -2,6 +2,7 @@ import { resolveCueAudioBusId } from "../lib/audio-buses";
 import { openAudioInputStream } from "../lib/audio-input";
 import { getLoopPlayCount } from "../lib/loop";
 import { getMediaDurationSec } from "../lib/media-duration";
+import { createMediaFadeEnvelope, type MediaFadeRelease } from "../lib/media-fade";
 import { videoTargetTime } from "../lib/video-playback";
 import { resolveAssetBlob } from "../platform/vfs-asset";
 import { resolveEffectivePan, resolveEffectiveVolume } from "../stores/fade";
@@ -10,9 +11,11 @@ import type { AudioBus } from "../types/audio-bus";
 import type { Cue } from "../types/cue";
 import { getCachedAudioBuffer, preloadAudioBuffer } from "./buffer-cache";
 import { prepareBusEffects } from "./effects/worklet";
+import { scheduleFadeEnvelope } from "./fade-envelope";
 import { audioMeters, cueMeterId } from "./meters";
 import { MixerGraph } from "./mixer";
 import {
+  scheduleVideoVoiceEnvelope,
   seekVideoVoice,
   startVideoVoice,
   stopVideoVoice,
@@ -66,10 +69,16 @@ function playbackWindow(cue: Cue, bufferDuration: number) {
 
 interface ActiveVoice {
   source: AudioBufferSourceNode;
+  /** Built-in fade in / fade out, scheduled at audio rate. */
+  envelope: GainNode;
   gain: GainNode;
   panner: StereoPannerNode;
   goAtMs: number;
+  /** In→out slice length, for the end fade. */
+  sliceSec: number;
   audioBusId?: string;
+  /** Fading stop currently scheduled on the envelope. */
+  release?: MediaFadeRelease;
 }
 
 interface LiveAudioVoice {
@@ -101,6 +110,7 @@ export class AudioEngine {
   private syncGeneration = 0;
   private onVoiceEndedHandler: VoiceEndedHandler | null = null;
   private lastSyncArgs: Parameters<AudioEngine["sync"]> | null = null;
+  private releasingCues: Record<string, MediaFadeRelease> = {};
   private recovering: Promise<void> | null = null;
   private unlocking: Promise<AudioContext> | null = null;
 
@@ -279,6 +289,7 @@ export class AudioEngine {
       /* already stopped */
     }
     voice.source.disconnect();
+    voice.envelope.disconnect();
     voice.gain.disconnect();
     voice.panner.disconnect();
     this.voices.delete(cueId);
@@ -350,13 +361,24 @@ export class AudioEngine {
     const source = ctx.createBufferSource();
     source.buffer = buffer;
 
+    const envelope = ctx.createGain();
+    const release = this.releasingCues[cue.id];
+    scheduleFadeEnvelope(
+      envelope.gain,
+      ctx,
+      createMediaFadeEnvelope(cue, durationSec),
+      goAtMs,
+      release,
+    );
+
     const gain = ctx.createGain();
     gain.gain.value = clamp01(resolveEffectiveVolume(cue.id, cue.volume ?? 1));
 
     const panner = ctx.createStereoPanner();
     panner.pan.value = clampPan(resolveEffectivePan(cue.id, cue.pan ?? 0));
 
-    source.connect(gain);
+    source.connect(envelope);
+    envelope.connect(gain);
     gain.connect(panner);
     const audioBusId = this.connectVoicePanner(panner, cue);
 
@@ -385,7 +407,16 @@ export class AudioEngine {
       }
     };
 
-    this.voices.set(cue.id, { source, gain, panner, goAtMs, audioBusId });
+    this.voices.set(cue.id, {
+      source,
+      envelope,
+      gain,
+      panner,
+      goAtMs,
+      sliceSec: durationSec,
+      audioBusId,
+      release,
+    });
   }
 
   private updateVoiceLevels(cueId: string, cue: Cue): void {
@@ -407,6 +438,29 @@ export class AudioEngine {
     if (voice.audioBusId === nextBusId) return;
     voice.panner.disconnect();
     voice.audioBusId = this.connectVoicePanner(voice.panner, cue);
+  }
+
+  /** Start (or cancel) fading stops on running voices to match the transport. */
+  private applyReleases(cueById: Map<string, Cue>): void {
+    for (const [cueId, voice] of this.voices) {
+      const release = this.releasingCues[cueId];
+      const cue = cueById.get(cueId);
+      if (voice.release === release || !cue || !this.ctx) continue;
+      voice.release = release;
+      scheduleFadeEnvelope(
+        voice.envelope.gain,
+        this.ctx,
+        createMediaFadeEnvelope(cue, voice.sliceSec),
+        voice.goAtMs,
+        release,
+      );
+    }
+    for (const voice of [...this.videoVoices.values(), ...this.streamedAudioVoices.values()]) {
+      const release = this.releasingCues[voice.cueId];
+      const cue = cueById.get(voice.cueId);
+      if (voice.release === release || !cue) continue;
+      scheduleVideoVoiceEnvelope(voice, cue, release);
+    }
   }
 
   /** Refresh gain and pan for all active voices (e.g. during a fade). */
@@ -447,9 +501,18 @@ export class AudioEngine {
     masterVolume: number,
     cueStartedAtMs: Record<string, number> = {},
     audioBuses: AudioBus[] = [],
+    releasingCues: Record<string, MediaFadeRelease> = {},
   ): Promise<void> {
     const generation = ++this.syncGeneration;
-    this.lastSyncArgs = [activeCueIds, cues, masterVolume, cueStartedAtMs, audioBuses];
+    this.lastSyncArgs = [
+      activeCueIds,
+      cues,
+      masterVolume,
+      cueStartedAtMs,
+      audioBuses,
+      releasingCues,
+    ];
+    this.releasingCues = releasingCues;
     this.syncMixer(audioBuses, masterVolume);
 
     try {
@@ -527,6 +590,7 @@ export class AudioEngine {
             }
           },
           (panner) => this.connectVoicePanner(panner, cue),
+          this.releasingCues[cueId],
         );
 
         if (!voice) {
@@ -601,6 +665,7 @@ export class AudioEngine {
             }
           },
           (panner) => this.connectVoicePanner(panner, cue),
+          this.releasingCues[cueId],
         );
         if (!voice) {
           console.warn(`[audio] Missing asset in VFS: ${assetPath}`);
@@ -616,6 +681,7 @@ export class AudioEngine {
       }
 
       if (generation !== this.syncGeneration) return;
+      this.applyReleases(cueById);
       this.updateActiveVoiceLevels(cues);
 
       const missingAudio =

@@ -8,6 +8,7 @@ import { CueChannelStrip, hasCueChannelStrip } from "../audio-mixer/CueChannelSt
 import { ContainerInspectorFields } from "../ContainerInspectorFields";
 import { CueAssetAssign } from "../CueAssetAssign";
 import { FadeInspectorFields } from "../FadeInspectorFields";
+import { MediaFadeFields } from "../MediaFadeFields";
 import { StopInspectorFields } from "../StopInspectorFields";
 import { WaitInspectorFields } from "../WaitInspectorFields";
 import { AudioRoutingInspectorFields } from "./AudioRoutingInspectorFields";
@@ -131,6 +132,7 @@ export function CueInspectorBody({
       />
 
       <TtsInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
+      {cue.type === "tts" && <MediaFadeFields cue={cue} readOnly={readOnly} onChange={onUpdate} />}
 
       <MediaInspectorFields cue={cue} readOnly={readOnly} onChange={onUpdate} />
 

@@ -74,13 +74,9 @@ function createCueFromOpts(opts: NewCueOpts, fixtures: ProjectState["fixtures"])
         : undefined,
     opacity: type === "video" || type === "image" ? 1 : undefined,
     fadeIn:
-      type === "audio" || type === "liveAudio" || type === "video" || type === "tts"
-        ? 0
-        : undefined,
+      type === "audio" || type === "video" || type === "tts" || type === "image" ? 0 : undefined,
     fadeOut:
-      type === "audio" || type === "liveAudio" || type === "video" || type === "tts"
-        ? 0
-        : undefined,
+      type === "audio" || type === "video" || type === "tts" || type === "image" ? 0 : undefined,
     inTime: isMediaCueType(type) || type === "tts" ? 0 : undefined,
     outTime: undefined,
     waitDurationSec: type === "wait" ? 1 : undefined,

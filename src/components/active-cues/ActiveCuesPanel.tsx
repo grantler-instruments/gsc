@@ -23,7 +23,7 @@ export function ActiveCuesPanel() {
   const selectCue = useProjectStore((s) => s.selectCue);
   const fixtures = useProjectStore((s) => s.fixtures);
   const activeCueId = useTransportStore((s) => s.activeCueId);
-  const stopMany = useTransportStore((s) => s.stopMany);
+  const releaseMany = useTransportStore((s) => s.releaseMany);
   const stop = useTransportStore((s) => s.stop);
   const activeCues = useActivePlaybackCues();
 
@@ -31,9 +31,9 @@ export function ActiveCuesPanel() {
     (cueId: string) => {
       const found = findCueInLists(cueLists, cueId);
       if (!found) return;
-      triggerStopCue(found.cue, found.list.cues, stopMany);
+      triggerStopCue(found.cue, found.list.cues, releaseMany);
     },
-    [cueLists, stopMany],
+    [cueLists, releaseMany],
   );
 
   return (

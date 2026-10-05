@@ -13,7 +13,7 @@ import { createOutputChannel, isOutputMessage, postRequestState } from "../lib/o
 import { isOutputStateFadeOnly, outputStatesEqual } from "../lib/output-layer-sync";
 import { applyOutputLayerOpacities } from "../lib/output-opacity";
 import { toggleWindowFullscreen } from "../platform/window-fullscreen";
-import type { OutputState } from "../types/output";
+import type { OutputLayer, OutputState } from "../types/output";
 import { OutputImperativeStage } from "./OutputImperativeStage";
 
 /** Full-screen output window — subscribes to cross-window state. */
@@ -28,6 +28,8 @@ export function OutputApp() {
     layers: [],
   });
   const stateRef = useRef(state);
+  /** Newest layers, including fade-only updates that skip a React render. */
+  const latestLayersRef = useRef<OutputLayer[]>([]);
   const fullscreenControlTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   stateRef.current = state;
   const layers = useResolvedOutputLayers(state);
@@ -101,6 +103,7 @@ export function OutputApp() {
 
       const next = event.data.payload;
       const prev = stateRef.current;
+      latestLayersRef.current = next.layers;
 
       if (outputStatesEqual(prev, next)) return;
 
@@ -120,6 +123,18 @@ export function OutputApp() {
       cancelled = true;
       channel.close();
     };
+  }, []);
+
+  // Built-in layer fades are timed from GO, so drive opacity every frame.
+  useEffect(() => {
+    let rafId = 0;
+    const tick = () => {
+      const fading = latestLayersRef.current.filter((layer) => layer.fade);
+      if (fading.length > 0) applyOutputLayerOpacities(fading);
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
   }, []);
 
   return (

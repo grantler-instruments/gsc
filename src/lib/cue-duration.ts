@@ -49,9 +49,6 @@ function leafDurationMs(cue: Cue): number {
     return Math.max(MIN_STEP_SEC * 1000, sec * 1000);
   }
 
-  const fadeIn = (cue.fadeIn ?? 0) * 1000;
-  const fadeOut = (cue.fadeOut ?? 0) * 1000;
-
   if (cue.type === "midi" || cue.type === "osc" || cue.type === "dmx") {
     return Math.max(MIN_STEP_SEC * 1000, DEFAULT_MIDI_SEC * 1000);
   }
@@ -65,7 +62,8 @@ function leafDurationMs(cue: Cue): number {
 
   const sourceDur = cue.assetPath ? getMediaDurationSec(cue.assetPath) : undefined;
   const slice = getPlaybackSliceSec(cue, sourceDur);
-  const sliceMs = slice * 1000 + fadeIn + fadeOut;
+  // Built-in fades sit inside the slice, so they never extend the cue.
+  const sliceMs = slice * 1000;
   const plays = getLoopPlayCount(cue);
   if (plays === "inf") {
     return INFINITE_LOOP_ESTIMATE_SEC * 1000;

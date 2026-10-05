@@ -1,4 +1,16 @@
-import type { OutputLayer, OutputState } from "../types/output";
+import type { OutputLayer, OutputLayerFade, OutputState } from "../types/output";
+
+function layerFadesEqual(a?: OutputLayerFade, b?: OutputLayerFade): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.fadeInSec === b.fadeInSec &&
+    a.fadeOutSec === b.fadeOutSec &&
+    a.curve === b.curve &&
+    a.release?.startedAtMs === b.release?.startedAtMs &&
+    a.release?.durationSec === b.release?.durationSec
+  );
+}
 
 /** Compare layers for visual/output sync — ignores publisher-only objectUrl differences. */
 export function outputLayersEqual(a: OutputLayer[], b: OutputLayer[]): boolean {
@@ -18,7 +30,8 @@ export function outputLayersEqual(a: OutputLayer[], b: OutputLayer[]): boolean {
       left.sliceSec !== right.sliceSec ||
       left.goAtMs !== right.goAtMs ||
       left.loop !== right.loop ||
-      left.loopCount !== right.loopCount
+      left.loopCount !== right.loopCount ||
+      !layerFadesEqual(left.fade, right.fade)
     ) {
       return false;
     }

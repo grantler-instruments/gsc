@@ -1,3 +1,15 @@
+import type { MediaFadeRelease } from "../lib/media-fade";
+import type { MediaFadeCurve } from "./cue";
+
+/** Built-in fade in / fade out for a layer; receivers apply it to opacity each frame. */
+export interface OutputLayerFade {
+  fadeInSec: number;
+  fadeOutSec: number;
+  curve: MediaFadeCurve;
+  /** Set while a stop is fading the layer out. */
+  release?: MediaFadeRelease;
+}
+
 /** Visual layer snapshot sent to the output window. */
 export interface OutputLayer {
   cueId: string;
@@ -16,6 +28,7 @@ export interface OutputLayer {
   goAtMs: number;
   loop: boolean;
   loopCount: number | "inf";
+  fade?: OutputLayerFade;
 }
 
 export interface OutputState {

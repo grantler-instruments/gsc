@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { audioEngine } from "../audio/engine";
+import type { MediaFadeRelease } from "../lib/media-fade";
 import { notifyStepPlaybackEnded } from "../lib/sequence-runner";
 import { useFadeStore } from "../stores/fade";
 import { useProjectStore } from "../stores/project";
@@ -14,10 +15,12 @@ const selectAudioSyncState = (s: {
   activeCueIds: string[];
   masterVolume: number;
   cueStartedAtMs: Record<string, number>;
+  releasingCues: Record<string, MediaFadeRelease>;
 }) => ({
   activeCueIds: s.activeCueIds,
   masterVolume: s.masterVolume,
   cueStartedAtMs: s.cueStartedAtMs,
+  releasingCues: s.releasingCues,
 });
 
 function audioSyncStateChanged(
@@ -27,7 +30,8 @@ function audioSyncStateChanged(
   return (
     prev.activeCueIds !== next.activeCueIds ||
     prev.masterVolume !== next.masterVolume ||
-    prev.cueStartedAtMs !== next.cueStartedAtMs
+    prev.cueStartedAtMs !== next.cueStartedAtMs ||
+    prev.releasingCues !== next.releasingCues
   );
 }
 
@@ -46,7 +50,8 @@ export function useAudioEngine(): void {
     });
 
     const runSync = () => {
-      const { activeCueIds, masterVolume, cueStartedAtMs } = useTransportStore.getState();
+      const { activeCueIds, masterVolume, cueStartedAtMs, releasingCues } =
+        useTransportStore.getState();
       const { cueLists, audioBuses } = useProjectStore.getState();
       if (activeCueIds.length === 0) {
         audioEngine.syncMixer(audioBuses, masterVolume);
@@ -54,7 +59,14 @@ export function useAudioEngine(): void {
         return;
       }
       const cues = allProjectCues({ cueLists });
-      void audioEngine.sync(activeCueIds, cues, masterVolume, cueStartedAtMs, audioBuses);
+      void audioEngine.sync(
+        activeCueIds,
+        cues,
+        masterVolume,
+        cueStartedAtMs,
+        audioBuses,
+        releasingCues,
+      );
     };
 
     const syncMixerOnly = () => {

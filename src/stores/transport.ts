@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { getMediaDurationSec } from "../lib/media-duration";
+import { type MediaFadeRelease, mediaFadeOutSec } from "../lib/media-fade";
 import { goAtMsForSeekPosition } from "../lib/playback-seek";
 import { clearSequenceTimers } from "../lib/sequence-timers";
 import type { Cue } from "../types/cue";
@@ -31,6 +32,8 @@ interface TransportState {
   cueStartedAtMs: Record<string, number>;
   /** Running sequences keyed by root cue id (main list + any overlay/hot ones). */
   runningSequences: Record<string, RunningSequence>;
+  /** Cues fading out after a stop; they stay active until the fade ends. */
+  releasingCues: Record<string, MediaFadeRelease>;
   masterVolume: number;
   go: (cueId: string) => void;
   goMany: (cueIds: string[]) => void;
@@ -40,10 +43,47 @@ interface TransportState {
   stop: () => void;
   stopCue: (cueId: string) => void;
   stopMany: (cueIds: string[]) => void;
+  /**
+   * Operator stop: cues with a fade out ramp down first, the rest stop at once.
+   * Stopping a cue that is already fading out cuts it immediately.
+   */
+  releaseMany: (cueIds: string[]) => void;
   panic: () => void;
   setMasterVolume: (v: number) => void;
   /** Jump an active audio/video cue to a position in the source file (seconds). */
   seekCue: (cueId: string, positionSec: number) => void;
+}
+
+const releaseTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+function clearReleaseTimers(cueIds?: Iterable<string>): void {
+  for (const id of cueIds ?? [...releaseTimers.keys()]) {
+    const timer = releaseTimers.get(id);
+    if (timer === undefined) continue;
+    clearTimeout(timer);
+    releaseTimers.delete(id);
+  }
+}
+
+function withoutReleasing(
+  releasingCues: Record<string, MediaFadeRelease>,
+  cueIds: Iterable<string>,
+): Record<string, MediaFadeRelease> {
+  let next = releasingCues;
+  for (const id of cueIds) {
+    if (!(id in next)) continue;
+    if (next === releasingCues) next = { ...releasingCues };
+    delete next[id];
+  }
+  return next;
+}
+
+function findProjectCue(cueId: string): Cue | undefined {
+  for (const list of useProjectStore.getState().cueLists) {
+    const cue = list.cues.find((c) => c.id === cueId);
+    if (cue) return cue;
+  }
+  return undefined;
 }
 
 function findActiveCue(cueId: string): Cue | undefined {
@@ -85,18 +125,20 @@ function mergeActiveIds(existing: string[], incoming: string[]): string[] {
 
 export const useTransportStore = create<TransportState>()(
   devtools(
-    (set) => ({
+    (set, get) => ({
       isPlaying: false,
       activeCueId: null,
       activeCueIds: [],
       cueStartedAtMs: {},
       runningSequences: {},
+      releasingCues: {},
       masterVolume: 1,
 
       go: (cueId) => {
         useFadeStore.getState().clearFade(cueId);
         useFadeStore.getState().clearRuntimeLevels([cueId]);
         useFadeStore.getState().clearDmxFade(cueId);
+        clearReleaseTimers([cueId]);
         set((s) => {
           const now = Date.now();
           const activeCueIds = mergeActiveIds(
@@ -108,6 +150,7 @@ export const useTransportStore = create<TransportState>()(
             activeCueId: cueId,
             activeCueIds,
             cueStartedAtMs: { ...s.cueStartedAtMs, [cueId]: now },
+            releasingCues: withoutReleasing(s.releasingCues, [cueId]),
           };
         });
       },
@@ -118,6 +161,7 @@ export const useTransportStore = create<TransportState>()(
         for (const id of cueIds) {
           useFadeStore.getState().clearDmxFade(id);
         }
+        clearReleaseTimers(cueIds);
         set((s) => {
           if (cueIds.length === 0) return s;
           const now = Date.now();
@@ -131,6 +175,7 @@ export const useTransportStore = create<TransportState>()(
             activeCueId: cueIds[cueIds.length - 1] ?? s.activeCueId,
             activeCueIds,
             cueStartedAtMs,
+            releasingCues: withoutReleasing(s.releasingCues, cueIds),
           };
         });
       },
@@ -153,16 +198,16 @@ export const useTransportStore = create<TransportState>()(
         for (const id of Object.keys(useFadeStore.getState().dmxFadesByFadeCueId)) {
           useFadeStore.getState().clearDmxFade(id);
         }
-        set({
-          isPlaying: false,
-          activeCueId: null,
-          activeCueIds: [],
-          cueStartedAtMs: {},
-          runningSequences: {},
-        });
+        set({ runningSequences: {} });
+        // Cues with a fade out ramp down; everything else stops at once.
+        get().releaseMany(get().activeCueIds);
+        if (get().activeCueIds.length === 0) {
+          set({ isPlaying: false, activeCueId: null, cueStartedAtMs: {} });
+        }
       },
 
-      stopCue: (cueId) =>
+      stopCue: (cueId) => {
+        clearReleaseTimers([cueId]);
         set((s) => {
           const activeCueIds = s.activeCueIds.filter((id) => id !== cueId);
           const cueStartedAtMs = { ...s.cueStartedAtMs };
@@ -170,15 +215,18 @@ export const useTransportStore = create<TransportState>()(
           return {
             activeCueIds,
             cueStartedAtMs,
+            releasingCues: withoutReleasing(s.releasingCues, [cueId]),
             activeCueId:
               s.activeCueId === cueId
                 ? (activeCueIds[activeCueIds.length - 1] ?? null)
                 : s.activeCueId,
             isPlaying: activeCueIds.length > 0 || hasRunningSequences(s.runningSequences),
           };
-        }),
+        });
+      },
 
-      stopMany: (cueIds) =>
+      stopMany: (cueIds) => {
+        clearReleaseTimers(cueIds);
         set((s) => {
           for (const id of cueIds) {
             useFadeStore.getState().clearDmxFade(id);
@@ -192,16 +240,48 @@ export const useTransportStore = create<TransportState>()(
           return {
             activeCueIds,
             cueStartedAtMs,
+            releasingCues: withoutReleasing(s.releasingCues, cueIds),
             activeCueId:
               s.activeCueId && remove.has(s.activeCueId)
                 ? (activeCueIds[activeCueIds.length - 1] ?? null)
                 : s.activeCueId,
             isPlaying: activeCueIds.length > 0 || hasRunningSequences(s.runningSequences),
           };
-        }),
+        });
+      },
+
+      releaseMany: (cueIds) => {
+        const { activeCueIds, releasingCues } = get();
+        const now = Date.now();
+        const immediate: string[] = [];
+        const released: Record<string, MediaFadeRelease> = {};
+        for (const id of cueIds) {
+          const cue = findProjectCue(id);
+          const durationSec = cue ? mediaFadeOutSec(cue) : 0;
+          if (durationSec > 0 && activeCueIds.includes(id) && !(id in releasingCues)) {
+            released[id] = { startedAtMs: now, durationSec };
+          } else {
+            immediate.push(id);
+          }
+        }
+        if (immediate.length > 0) get().stopMany(immediate);
+        const releasedIds = Object.keys(released);
+        if (releasedIds.length === 0) return;
+        set((s) => ({ releasingCues: { ...s.releasingCues, ...released } }));
+        for (const id of releasedIds) {
+          releaseTimers.set(
+            id,
+            setTimeout(() => {
+              releaseTimers.delete(id);
+              if (get().releasingCues[id] === released[id]) get().stopMany([id]);
+            }, released[id].durationSec * 1000),
+          );
+        }
+      },
 
       panic: () => {
         clearSequenceTimers();
+        clearReleaseTimers();
         useFadeStore.getState().clearAllFades();
         set({
           isPlaying: false,
@@ -209,6 +289,7 @@ export const useTransportStore = create<TransportState>()(
           activeCueIds: [],
           cueStartedAtMs: {},
           runningSequences: {},
+          releasingCues: {},
         });
       },
 

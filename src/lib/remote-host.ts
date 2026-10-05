@@ -109,7 +109,7 @@ function triggerGoAndAdvanceHost(cueId: string): void {
   triggerGo(cue, list.cues, {
     go: transport.go,
     goMany: transport.goMany,
-    stopMany: transport.stopMany,
+    stopMany: transport.releaseMany,
   });
   selectNextCueAfterGo(cue.id);
 }
